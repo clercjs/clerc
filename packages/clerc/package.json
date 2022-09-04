@@ -1,0 +1,42 @@
+{
+  "name": "clerc",
+  "version": "0.0.0",
+  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "description": "Clerc",
+  "keywords": [],
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/clerc#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/so1ve/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/so1ve/clerc/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "puild",
+    "stub": "puild --stub"
+  },
+  "dependencies": {
+    "lite-emit": "^1.4.0",
+    "type-gym": "^0.5.0"
+  }
+}
