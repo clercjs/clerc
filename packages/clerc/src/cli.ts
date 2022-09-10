@@ -7,6 +7,7 @@ import type {
   Enhancement,
   Handler,
   InternalCommand,
+  Invoker,
   Middleware,
   ToRealCommandOrFlag,
 } from "./types";
@@ -21,6 +22,7 @@ export class Clerc<
   _name = "" as N;
   _description = "" as D;
   _commands = {} as C;
+  _invokers = [] as Invoker[];
 
   private constructor () {}
 
@@ -47,18 +49,27 @@ export class Clerc<
   }
 
   on<Name extends keyof C> (name: Name, handler: Handler<C[Name]>) {
-    this.emitter.on(name, handler);
+    this.emitter.on(name, (...args) => {
+      const next: Invoker = (_cli, next) => {
+        const invoker = this._invokers.shift();
+        if (invoker) {
+          invoker(this, next);
+        } else {
+          // @ts-expect-error That's OK
+          handler(...args);
+        }
+      };
+      next(this, next);
+    });
     return this;
   }
 
-  use< E extends Enhancement>(
-    m: Middleware<E>,
-  ): EnhanceEnhancement<
-    // @ts-expect-error That's OK
-    this,
-    E
-    > {
-    return m(this as any) as any;
+  invoke (c: Invoker) {
+    this._invokers.push(c);
+  }
+
+  use< E extends Enhancement>(m: Middleware<E>): EnhanceEnhancement< this, E > {
+    return m(this) as any;
   }
 
   parse () {}

@@ -21,6 +21,8 @@ export type InternalFlag<T> = Omit<Flag<T>, "default">;
 
 export type ToRealCommandOrFlag<C extends InternalCommand<any> | InternalFlag<any>> = C & { default?: ExtractType<C["type"]> };
 
+export type Invoker = (cli: BaseClerc, next: Invoker) => void;
+
 export type FlagRecord = Record<string, Flag<any>>;
 export type CommandRecord = Record<string, Command<any>>;
 
@@ -39,7 +41,7 @@ export type GetFlags<F extends FlagRecord | undefined> =
 export type Handler<C extends Command<any>> =
   (value: ExtractType<C["type"]>, flags: GetFlags<C["flags"]>) => void;
 
-export type ConvertToEventMap<C extends Record<string, Command<any>>> = {
+export type ConvertToEventMap<C extends CommandRecord> = {
   [K in keyof C]: [ExtractType<C[K]["type"]>, GetFlags<C[K]["flags"]>]
 };
 
@@ -49,7 +51,7 @@ export type EnhanceCommands<
   IComm extends InternalCommand<any>,
 > = Name extends keyof C ? Omit<C, Name> & Record<Name, ToRealCommandOrFlag<IComm>> : C & Record<Name, ToRealCommandOrFlag<IComm>>;
 
-export type BaseClerc = Clerc<string, string, Record<string, any>>;
+export type BaseClerc = Clerc<string, string, any>;
 
 export interface Enhancement {
   commands: CommandRecord
