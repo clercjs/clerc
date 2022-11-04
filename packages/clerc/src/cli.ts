@@ -35,6 +35,15 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   command<N extends string, D extends string>(name: N, description: D, options: CommandOptions = {}): this & Clerc<C & Record<N, Command<N, D>>> {
+    if (this._commands[name]) {
+      throw new Error(`Command "${name}" already exists`);
+    }
+    if (this._commands._) {
+      throw new Error("Already has a wildcard command");
+    }
+    if (name === "_" && Object.keys(this._commands).length > 0) {
+      throw new Error("Already has commands");
+    }
     const { alias = [], flags = {} } = options;
     this._commands[name] = { name, description, alias, flags } as any;
     return this as any;
