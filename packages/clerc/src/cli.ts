@@ -1,28 +1,17 @@
 import { LiteEmit } from "lite-emit";
-import type {
-  CommandRecord,
-  ConvertToEventMap,
-  EnhanceCommands,
-  EnhanceEnhancement,
-  Enhancement,
-  Handler,
-  InternalCommand,
-  Invoker,
-  Middleware,
-  ToRealCommandOrFlag,
-} from "./types";
+import minimist from "minimist";
+import type { Command, CommandOptions, CommandRecord, Handler, Invoker, InvokerContext, MakeEventMap, Plugin } from "./types";
+import { compose, resolveCommand, resolveFlagAlias } from "./utils";
 
-export class Clerc<
-  N extends string,
-  D extends string,
-  C extends CommandRecord = {},
-> {
-  private emitter = new LiteEmit<ConvertToEventMap<C>>();
-
-  _name = "" as N;
-  _description = "" as D;
+export class Clerc<C extends CommandRecord = {}> {
+  _name = "";
+  _description = "";
+  _version = "";
+  _invokers: Invoker[] = [];
   _commands = {} as C;
-  _invokers = [] as Invoker[];
+
+  // Can't use private fields because of plugin
+  __command_emitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor () {}
 
@@ -30,86 +19,67 @@ export class Clerc<
     return new Clerc();
   }
 
-  name<Name extends string> (name: Name): Clerc<Name, D, C> {
-    this._name = name as any;
-    return this as any;
-  }
-
-  description<Desc extends string> (description: Desc): Clerc<N, Desc, C> {
-    this._description = description as any;
-    return this as any;
-  }
-
-  command<
-    Name extends string,
-    IComm extends InternalCommand<any>,
-  > (name: Name, command: ToRealCommandOrFlag<IComm>): Clerc<N, D, EnhanceCommands<C, Name, IComm>> {
-    this._commands[name] = command as any;
-    return this as any;
-  }
-
-  on<Name extends keyof C> (name: Name, handler: Handler<C[Name]>) {
-    this.emitter.on(name, (...args) => {
-      const next: Invoker = (_cli, next) => {
-        const invoker = this._invokers.shift();
-        if (invoker) {
-          invoker(this, next);
-        } else {
-          // @ts-expect-error That's OK
-          handler(...args);
-        }
-      };
-      next(this, next);
-    });
+  name (name: string) {
+    this._name = name;
     return this;
   }
 
-  invoke (c: Invoker) {
-    this._invokers.push(c);
+  description (description: string) {
+    this._description = description;
+    return this;
   }
 
-  use< E extends Enhancement>(m: Middleware<E>): EnhanceEnhancement< this, E > {
-    return m(this) as any;
+  version (version: string) {
+    this._version = version;
+    return this;
   }
 
-  parse () {}
+  command<N extends string, D extends string>(name: N, description: D, options: CommandOptions = {}): this & Clerc<C & Record<N, Command<N, D>>> {
+    const { alias = [], flags = {} } = options;
+    this._commands[name] = { name, description, alias, flags } as any;
+    return this as any;
+  }
+
+  on<K extends keyof C>(name: K, cb: Handler) {
+    this.__command_emitter.on(name, cb);
+    return this;
+  }
+
+  use<T extends Clerc, U>(plugin: Plugin<U, T>): U {
+    return plugin.setup(this as any);
+  }
+
+  registerInvoker (invoker: Invoker) {
+    this._invokers.push(invoker);
+    return this;
+  }
+
+  parse () {
+    const argv = process.argv.slice(2);
+    let parsed = minimist(argv);
+    const name = parsed._[0];
+    const command = resolveCommand(this._commands, name || "_");
+    if (!command) {
+      throw new Error(`No such command: ${name}`);
+    }
+    const commandName = command.name;
+    parsed = minimist(argv, {
+      alias: resolveFlagAlias(this._commands[commandName]),
+    });
+    if (!command) {
+      throw new Error(`Command "${name}" not found`);
+    }
+    const invokerContext: InvokerContext<C> = {
+      name,
+      flags: parsed,
+      cli: this,
+    };
+    const handlerContext = invokerContext;
+    const emitHandler = () => {
+      this.__command_emitter.emit(commandName, handlerContext as any);
+    };
+    const invokers = [...this._invokers, emitHandler];
+    const invoker = compose(invokers);
+    invoker(invokerContext as any);
+  }
 }
-
-const a: Middleware<{
-  commands: {
-    a: {
-      description: ""
-      type: String
-    }
-    csdaf: {
-      description: ""
-      type: String
-    }
-  }
-}> = (c) => {
-  return c;
-};
-
-const _cli = Clerc.create()
-  .name("foo")
-  .description("1")
-  .command("bar", {
-    description: "2",
-    type: Number,
-    default: 1,
-  })
-  .command("fadf", {
-    description: "",
-    default: [1, 1],
-    type: [Number],
-    flags: {
-      a: {
-        description: "",
-        type: String,
-        default: 1,
-        aliases: ["1"],
-      },
-    },
-  })
-  .use(a)
-  .on("fadf", (_v, _a) => {});

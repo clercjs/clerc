@@ -1,10 +1,10 @@
 {
-  "name": "clerc",
+  "name": "@clerc/plugin-help",
   "version": "0.0.0",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc",
   "keywords": [],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/clerc#readme",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-help#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/so1ve/clerc.git",
@@ -36,10 +36,6 @@
     "watch": "puild --watch"
   },
   "dependencies": {
-    "lite-emit": "^1.4.0",
-    "minimist": "^1.2.7"
-  },
-  "devDependencies": {
-    "@types/minimist": "^1.2.2"
+    "clerc": "workspace:*"
   }
 }

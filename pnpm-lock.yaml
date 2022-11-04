@@ -38,14 +38,18 @@ importers:
     specifiers:
       '@types/minimist': ^1.2.2
       lite-emit: ^1.4.0
-      minimist: ^1.2.6
-      type-gym: ^0.5.0
+      minimist: ^1.2.7
     dependencies:
       lite-emit: 1.4.0
-      minimist: 1.2.6
-      type-gym: 0.5.0
+      minimist: 1.2.7
     devDependencies:
       '@types/minimist': 1.2.2
+
+  packages/plugin-help:
+    specifiers:
+      clerc: workspace:*
+    dependencies:
+      clerc: link:../clerc
 
 packages:
 
@@ -2265,7 +2269,7 @@ packages:
     resolution: {integrity: sha512-aKS4WQjPenRxiQsC93MNfjx+nbF4PAdYzmd/1JIj8HYzqfbu86beTuNgXDzPknWk0n0uARlyewZo4s++ES36Ow==}
     hasBin: true
     dependencies:
-      minimist: 1.2.6
+      minimist: 1.2.7
     dev: true
 
   /jsonc-eslint-parser/2.1.0:
@@ -2442,8 +2446,8 @@ packages:
       brace-expansion: 1.1.11
     dev: true
 
-  /minimist/1.2.6:
-    resolution: {integrity: sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==}
+  /minimist/1.2.7:
+    resolution: {integrity: sha512-bzfL1YUZsP41gmu/qjrEk0Q6i2ix/cVeAhbCbqH9u3zYutS1cLg00qhrD0M2MVdCcx4Sc0UpP2eBWo9rotpq6g==}
 
   /ms/2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
@@ -3066,7 +3070,7 @@ packages:
     dependencies:
       '@types/json5': 0.0.29
       json5: 1.0.1
-      minimist: 1.2.6
+      minimist: 1.2.7
       strip-bom: 3.0.0
     dev: true
 
@@ -3121,10 +3125,6 @@ packages:
     resolution: {integrity: sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==}
     engines: {node: '>=8'}
     dev: true
-
-  /type-gym/0.5.0:
-    resolution: {integrity: sha512-Xa/d60N07S1eI0oUgfyUh2VmW3c0mHRCaQc61vA+F/WjxgzKDJa7ti6VcaOVae9n19g6MrAAA3ucnYkMY2HVAQ==}
-    dev: false
 
   /typescript/4.8.2:
     resolution: {integrity: sha512-C0I1UsrrDHo2fYI5oaCGbSejwX4ch+9Y5jTQELvovfmFkK3HHSZJB8MSJcWLmCUBzQBchCrZ9rMRV6GuNrvGtw==}

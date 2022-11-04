@@ -1,1 +1,4 @@
-export const foo = 1;
+export * from "./cli";
+export { definePlugin } from "./plugin";
+export * from "./types";
+export * from "./utils";
