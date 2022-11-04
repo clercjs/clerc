@@ -3,7 +3,14 @@
   "version": "0.0.1",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc",
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "clerc",
+    "arguments",
+    "argv",
+    "args",
+    "terminal"
+  ],
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/clerc#readme",
   "repository": {
     "type": "git",
