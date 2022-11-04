@@ -28,6 +28,7 @@ export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InvokerCo
 export type PossibleFlagKind = string | number | boolean | Dict<any>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N
+  parameters: string[]
   flags: Dict<PossibleFlagKind | PossibleFlagKind[]>
   cli: Clerc<C>
 }

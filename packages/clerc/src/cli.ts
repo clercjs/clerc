@@ -66,12 +66,15 @@ export class Clerc<C extends CommandRecord = {}> {
     parsed = minimist(argv, {
       alias: resolveFlagAlias(this._commands[commandName]),
     });
+    const { _: args, ...flags } = parsed;
+    const [_, ...parameters] = args;
     if (!command) {
       throw new Error(`Command "${name}" not found`);
     }
     const invokerContext: InvokerContext<C> = {
       name,
-      flags: parsed,
+      parameters,
+      flags,
       cli: this,
     };
     const handlerContext = invokerContext;
