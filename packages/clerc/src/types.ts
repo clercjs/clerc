@@ -10,7 +10,6 @@ export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<
 
 export interface FlagOptions {
   alias?: MaybeArray<string>
-  default?: MaybeArray<PossibleFlagKind>
   description: string
 }
 export interface Flag extends FlagOptions {
