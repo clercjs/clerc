@@ -43,6 +43,7 @@
     "watch": "puild --watch"
   },
   "dependencies": {
+    "is-platform": "^0.2.0",
     "lite-emit": "^1.4.0",
     "minimist": "^1.2.7"
   },

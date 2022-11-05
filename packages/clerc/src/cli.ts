@@ -1,39 +1,97 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
 import type { Command, CommandOptions, CommandRecord, Handler, Invoker, InvokerContext, MakeEventMap, Plugin } from "./types";
-import { compose, resolveCommand, resolveFlagAlias } from "./utils";
+import { compose, resolveArgv, resolveCommand, resolveFlagAlias } from "./utils";
 
 export class Clerc<C extends CommandRecord = {}> {
   _name = "";
   _description = "";
-  _version = "";
   _invokers: Invoker[] = [];
   _commands = {} as C;
 
-  // Can't use private fields because of plugin
+  /**
+   * Can't use private fields because of plugin
+   * @private
+   * @internal
+   *
+   */
   __command_emitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor () {}
 
+  /**
+   * Create a new cli
+   * @returns
+   * @example
+   * ```ts
+   * const cli = Clerc.create()
+   * ```
+   */
   static create () {
     return new Clerc();
   }
 
+  /**
+   * Set the name of the cli
+   * @param name
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .name("test")
+   * ```
+   */
   name (name: string) {
     this._name = name;
     return this;
   }
 
+  /**
+   * Set the description of the cli
+   * @param description
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *  .description("test cli")
+   */
   description (description: string) {
     this._description = description;
     return this;
   }
 
-  version (version: string) {
-    this._version = version;
-    return this;
-  }
-
+  /**
+   * Register a command
+   * @param name
+   * @param description
+   * @param options
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .command("test", "test command", {
+   *     alias: "t",
+   *     flags: {
+   *       foo: {
+   *         alias: "f",
+   *         description: "foo flag",
+   *       }
+   *     }
+   *   })
+   * ```
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .command("_", "wildcard command", {
+   *     flags: {
+   *       foo: {
+   *         alias: "f",
+   *         description: "foo flag",
+   *       }
+   *     }
+   *   })
+   * ```
+   */
   command<N extends string, D extends string>(name: N, description: D, options: CommandOptions = {}): this & Clerc<C & Record<N, Command<N, D>>> {
     if (this._commands[name]) {
       throw new Error(`Command "${name}" already exists`);
@@ -49,22 +107,68 @@ export class Clerc<C extends CommandRecord = {}> {
     return this as any;
   }
 
-  on<K extends keyof C>(name: K, cb: Handler) {
-    this.__command_emitter.on(name, cb);
+  /**
+   * Register a handler
+   * @param name
+   * @param handler
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .command("test", "test command")
+   *   .on("test", (ctx) => {
+   *     console.log(ctx);
+   *   })
+   * ```
+   */
+  on<K extends keyof C>(name: K, handler: Handler) {
+    this.__command_emitter.on(name, handler);
     return this;
   }
 
+  /**
+   * Use a plugin
+   * @param plugin
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .use(plugin)
+   * ```
+   */
   use<T extends Clerc, U>(plugin: Plugin<U, T>): U {
     return plugin.setup(this as any);
   }
 
+  /**
+   * Register a invoker
+   * @param invoker
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .registerInvoker((ctx, next) => {
+   *     console.log(ctx);
+   *     next();
+   *   })
+   * ```
+   */
   registerInvoker (invoker: Invoker) {
     this._invokers.push(invoker);
     return this;
   }
 
-  parse () {
-    const argv = process.argv.slice(2);
+  /**
+   * Parse the command line arguments
+   * @param args
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .parse(process.argv.slice(2)) // Optional
+   * ```
+   */
+  parse (argv = resolveArgv()) {
     let parsed = minimist(argv);
     const name = parsed._[0];
     const command = resolveCommand(this._commands, name || "_");
@@ -73,7 +177,7 @@ export class Clerc<C extends CommandRecord = {}> {
     }
     const commandName = command.name;
     parsed = minimist(argv, {
-      alias: resolveFlagAlias(this._commands[commandName]),
+      alias: resolveFlagAlias(command),
     });
     const { _: args, ...flags } = parsed;
     const [_, ...parameters] = args;

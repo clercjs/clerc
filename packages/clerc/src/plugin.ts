@@ -1,9 +1,7 @@
 import type { Clerc } from "./cli";
 
-export interface Plugin<U, T extends Clerc = Clerc> {
-  setup: (cli: T) => U
+export interface Plugin<R, T extends Clerc = Clerc> {
+  setup: (cli: T) => R
 }
 
-export function definePlugin<T extends Clerc, U extends Clerc> (p: Plugin<T, U>): Plugin<T, U> {
-  return p;
-}
+export const definePlugin = <T extends Clerc, R extends Clerc> (p: Plugin<R, T>) => p;

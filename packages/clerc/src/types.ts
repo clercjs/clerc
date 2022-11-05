@@ -10,6 +10,7 @@ export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<
 
 export interface FlagOptions {
   alias?: MaybeArray<string>
+  default?: MaybeArray<PossibleFlagKind>
   description: string
 }
 export interface Flag extends FlagOptions {
@@ -29,7 +30,7 @@ export type PossibleFlagKind = string | number | boolean | Dict<any>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N
   parameters: string[]
-  flags: Dict<PossibleFlagKind | PossibleFlagKind[]>
+  flags: Dict<MaybeArray<PossibleFlagKind> | undefined>
   cli: Clerc<C>
 }
 export type Handler = (ctx: HandlerContext) => void;

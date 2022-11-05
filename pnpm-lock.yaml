@@ -37,9 +37,11 @@ importers:
   packages/clerc:
     specifiers:
       '@types/minimist': ^1.2.2
+      is-platform: ^0.2.0
       lite-emit: ^1.4.0
       minimist: ^1.2.7
     dependencies:
+      is-platform: 0.2.0
       lite-emit: 1.4.0
       minimist: 1.2.7
     devDependencies:
@@ -2187,6 +2189,10 @@ packages:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
     dev: true
+
+  /is-platform/0.2.0:
+    resolution: {integrity: sha512-GwPxwh65nMHZkVPnyvNNU+HXSxoqujHWlB+Bf0dQkNC0dOBQLj4KGU+GxqFqVxR6ohVNB+KYHsZ3ck/KEVbD3A==}
+    dev: false
 
   /is-reference/1.2.1:
     resolution: {integrity: sha512-U82MsXXiFIrjCK4otLT+o2NA2Cd2g5MLoOVXUZjIOhLurrRxpEXzI8O0KZHr3IjLvlAH1kTPYSuqer5T9ZVBKQ==}

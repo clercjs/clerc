@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { Clerc, CommandRecord } from "clerc";
+import type { CommandRecord } from "clerc";
 import { definePlugin } from "clerc";
 
 // A simple to use, efficient, and full-featured Command Line Argument Parser
@@ -22,7 +22,7 @@ import { definePlugin } from "clerc";
 const newline = () => { console.log(); };
 
 export const helpPlugin = definePlugin({
-  setup<T extends Clerc<CommandRecord>>(cli: T): T {
+  setup (cli) {
     return cli.command("help", "Show help")
       .on("help", (_ctx) => {
         console.log(cli._description);
@@ -30,7 +30,7 @@ export const helpPlugin = definePlugin({
         console.log("Usage: %s [OPTIONS] [NAME] [COMMAND]", cli._name);
         newline();
         console.log("Commands:");
-        for (const command of Object.values(cli._commands)) {
+        for (const command of Object.values(cli._commands as CommandRecord)) {
           console.log("  %s\t%s", command.name, command.description);
         }
       });
