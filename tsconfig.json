@@ -11,6 +11,11 @@
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "clerc": [
+        "./packages/clerc/src/index.ts"
+      ]
+    }
   }
 }
