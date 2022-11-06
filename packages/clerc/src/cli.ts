@@ -1,21 +1,15 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
-import type { Command, CommandOptions, CommandRecord, Handler, Invoker, InvokerContext, MakeEventMap, Plugin } from "./types";
-import { compose, resolveArgv, resolveCommand, resolveFlagAlias } from "./utils";
+import type { Command, CommandOptions, CommandRecord, Handler, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
+import { compose, resolveArgv, resolveCommand, resolveDefault, resolveFlagAlias } from "./utils";
 
 export class Clerc<C extends CommandRecord = {}> {
   _name = "";
   _description = "";
-  _invokers: Invoker[] = [];
+  _inspectors: Inspector[] = [];
   _commands = {} as C;
 
-  /**
-   * Can't use private fields because of plugin
-   * @private
-   * @internal
-   *
-   */
-  __command_emitter = new LiteEmit<MakeEventMap<C>>();
+  private __command_emitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor () {}
 
@@ -136,25 +130,25 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .use(plugin)
    * ```
    */
-  use<T extends Clerc, U>(plugin: Plugin<U, T>): U {
+  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): U {
     return plugin.setup(this as any);
   }
 
   /**
-   * Register a invoker
-   * @param invoker
+   * Register a inspector
+   * @param inspector
    * @returns
    * @example
    * ```ts
    * Clerc.create()
-   *   .registerInvoker((ctx, next) => {
+   *   .inspector((ctx, next) => {
    *     console.log(ctx);
    *     next();
    *   })
    * ```
    */
-  registerInvoker (invoker: Invoker) {
-    this._invokers.push(invoker);
+  inspector (inspector: Inspector) {
+    this._inspectors.push(inspector);
     return this;
   }
 
@@ -178,24 +172,26 @@ export class Clerc<C extends CommandRecord = {}> {
     const commandName = command.name;
     parsed = minimist(argv, {
       alias: resolveFlagAlias(command),
+      default: resolveDefault(command),
     });
     const { _: args, ...flags } = parsed;
     const [_, ...parameters] = args;
     if (!command) {
       throw new Error(`Command "${name}" not found`);
     }
-    const invokerContext: InvokerContext<C> = {
-      name,
+    const inspectorContext: InspectorContext<C> = {
+      name: command.name,
+      raw: parsed,
       parameters,
       flags,
       cli: this,
     };
-    const handlerContext = invokerContext;
+    const handlerContext = inspectorContext;
     const emitHandler = () => {
       this.__command_emitter.emit(commandName, handlerContext as any);
     };
-    const invokers = [...this._invokers, emitHandler];
-    const invoker = compose(invokers);
-    invoker(invokerContext as any);
+    const inspectors = [...this._inspectors, emitHandler];
+    const inspector = compose(inspectors);
+    inspector(inspectorContext as any);
   }
 }

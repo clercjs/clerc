@@ -8,8 +8,14 @@ type GetTail<T extends any[]> = T extends [infer _Head, ...infer Tail] ? Tail : 
 type EnhanceSingle<T, E extends Dict<any>> = T & E;
 export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, MustArray<E>[0]>, GetTail<MustArray<E>>>;
 
+interface ParsedArgs {
+  [arg: string]: any
+  "--"?: string[] | undefined
+  _: string[]
+}
 export interface FlagOptions {
   alias?: MaybeArray<string>
+  default?: PossibleInputKind
   description: string
 }
 export interface Flag extends FlagOptions {
@@ -24,16 +30,17 @@ export interface Command<N extends string = string, D extends string = string> e
   description: D
 }
 export type CommandRecord = Dict<Command>;
-export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InvokerContext] };
-export type PossibleFlagKind = string | number | boolean | Dict<any>;
+export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
+export type PossibleInputKind = string | number | boolean | Dict<any>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N
-  parameters: string[]
-  flags: Dict<MaybeArray<PossibleFlagKind> | undefined>
+  raw: ParsedArgs
+  parameters: PossibleInputKind[]
+  flags: Dict<MaybeArray<PossibleInputKind> | undefined>
   cli: Clerc<C>
 }
 export type Handler = (ctx: HandlerContext) => void;
-export interface InvokerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
-export type Invoker = (ctx: InvokerContext<any>, next: Invoker) => void;
+export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
+export type Inspector = (ctx: InspectorContext<any>, next: Inspector) => void;
 
 export type { Plugin } from "./plugin";
