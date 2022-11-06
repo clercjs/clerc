@@ -41,6 +41,6 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
 }
 export type Handler = (ctx: HandlerContext) => void;
 export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
-export type Inspector = (ctx: InspectorContext<any>, next: Inspector) => void;
+export type Inspector = (ctx: InspectorContext<any>, next: () => void) => void;
 
 export type { Plugin } from "./plugin";

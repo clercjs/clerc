@@ -1,5 +1,6 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
+import { CommandExistsError, CommonCommandExistsError, NoSuchCommandsError, SingleCommandError } from "./error";
 import type { Command, CommandOptions, CommandRecord, Handler, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand, resolveDefault, resolveFlagAlias } from "./utils";
 
@@ -9,9 +10,12 @@ export class Clerc<C extends CommandRecord = {}> {
   _inspectors: Inspector[] = [];
   _commands = {} as C;
 
-  private __command_emitter = new LiteEmit<MakeEventMap<C>>();
+  private __commandEmitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor () {}
+
+  private get __isSingleCommand () { return this._commands[""] !== undefined; }
+  private get __hasCommands () { return Object.keys(this._commands).length > 0; }
 
   /**
    * Create a new cli
@@ -76,7 +80,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * @example
    * ```ts
    * Clerc.create()
-   *   .command("_", "wildcard command", {
+   *   .command("", "single command", {
    *     flags: {
    *       foo: {
    *         alias: "f",
@@ -88,13 +92,16 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   command<N extends string, D extends string>(name: N, description: D, options: CommandOptions = {}): this & Clerc<C & Record<N, Command<N, D>>> {
     if (this._commands[name]) {
-      throw new Error(`Command "${name}" already exists`);
+      if (name === "") {
+        throw new CommandExistsError("Single command already exists");
+      }
+      throw new CommandExistsError(`Command "${name}" already exists`);
     }
-    if (this._commands._) {
-      throw new Error("Already has a wildcard command");
+    if (this.__isSingleCommand) {
+      throw new SingleCommandError("Single command mode enabled");
     }
-    if (name === "_" && Object.keys(this._commands).length > 0) {
-      throw new Error("Already has commands");
+    if (name === "" && this.__hasCommands) {
+      throw new CommonCommandExistsError("Common command exists");
     }
     const { alias = [], flags = {} } = options;
     this._commands[name] = { name, description, alias, flags } as any;
@@ -116,7 +123,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   on<K extends keyof C>(name: K, handler: Handler) {
-    this.__command_emitter.on(name, handler);
+    this.__commandEmitter.on(name, handler);
     return this;
   }
 
@@ -164,10 +171,10 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   parse (argv = resolveArgv()) {
     let parsed = minimist(argv);
-    const name = parsed._[0];
-    const command = resolveCommand(this._commands, name || "_");
+    const name = String(parsed._[0]);
+    const command = this.__isSingleCommand ? this._commands[""] : resolveCommand(this._commands, name);
     if (!command) {
-      throw new Error(`No such command: ${name}`);
+      throw new NoSuchCommandsError(`No such command: ${name}`);
     }
     const commandName = command.name;
     parsed = minimist(argv, {
@@ -175,10 +182,7 @@ export class Clerc<C extends CommandRecord = {}> {
       default: resolveDefault(command),
     });
     const { _: args, ...flags } = parsed;
-    const [_, ...parameters] = args;
-    if (!command) {
-      throw new Error(`Command "${name}" not found`);
-    }
+    const parameters = this.__isSingleCommand ? args : args.slice(1);
     const inspectorContext: InspectorContext<C> = {
       name: command.name,
       raw: parsed,
@@ -188,7 +192,7 @@ export class Clerc<C extends CommandRecord = {}> {
     };
     const handlerContext = inspectorContext;
     const emitHandler = () => {
-      this.__command_emitter.emit(commandName, handlerContext as any);
+      this.__commandEmitter.emit(commandName, handlerContext as any);
     };
     const inspectors = [...this._inspectors, emitHandler];
     const inspector = compose(inspectors);
