@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Clerc } from "clerc";
+import { Clerc, SingleCommand } from "clerc";
 
 describe("cli", () => {
   it("should parse", () => {
@@ -15,9 +15,9 @@ describe("cli", () => {
   });
   it("should honor single command", () => {
     Clerc.create()
-      .command("", "single command")
-      .on("", (ctx) => {
-        expect(ctx.name).toBe("");
+      .command(SingleCommand, "single command")
+      .on(SingleCommand, (ctx) => {
+        expect(ctx.name).toEqual(SingleCommand);
         expect(ctx.raw).toStrictEqual({ _: ["bar", "qux"], c: "baz" });
         expect(ctx.parameters).toStrictEqual(["bar", "qux"]);
         expect(ctx.flags).toStrictEqual({ c: "baz" });
@@ -136,7 +136,7 @@ describe("cli", () => {
   it("should throw when single command is set", () => {
     expect(() => {
       Clerc.create()
-        .command("", "single")
+        .command(SingleCommand, "single")
         .command("foo", "foo");
     }).toThrowError();
   });
@@ -144,7 +144,7 @@ describe("cli", () => {
     expect(() => {
       Clerc.create()
         .command("foo", "foo")
-        .command("", "single");
+        .command(SingleCommand, "single");
     }).toThrowError();
   });
 });

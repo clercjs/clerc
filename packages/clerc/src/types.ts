@@ -1,4 +1,4 @@
-import type { Clerc } from "./cli";
+import type { Clerc, SingleCommand, SingleCommandType } from "./cli";
 
 export type Dict<T> = Record<string, T>;
 type MustArray<T> = T extends any[] ? T : [T];
@@ -14,26 +14,36 @@ interface ParsedArgs {
   _: string[]
 }
 export interface FlagOptions {
+  description: string
   alias?: MaybeArray<string>
   default?: PossibleInputKind
-  description: string
+  required?: boolean
 }
 export interface Flag extends FlagOptions {
   name: string
 }
+export interface ParameterOptions {
+  description: string
+  required?: boolean
+}
+export interface Parameter extends ParameterOptions {
+  name: string
+}
 export interface CommandOptions {
   alias?: MaybeArray<string>
+  parameters?: Dict<ParameterOptions>
   flags?: Dict<FlagOptions>
 }
-export interface Command<N extends string = string, D extends string = string> extends CommandOptions {
+export interface Command<N extends string | SingleCommandType = string, D extends string = string> extends CommandOptions {
   name: N
   description: D
 }
-export type CommandRecord = Dict<Command>;
+export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
-  name: N
+  name?: N
+  resolved: boolean
   raw: ParsedArgs
   parameters: PossibleInputKind[]
   flags: Dict<MaybeArray<PossibleInputKind> | undefined>

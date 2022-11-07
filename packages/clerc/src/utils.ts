@@ -1,5 +1,6 @@
 import { isDeno, isNode } from "is-platform";
-import type { Command, CommandRecord, Dict, FlagOptions, HandlerContext, Inspector } from "./types";
+import type { SingleCommandType } from "./cli";
+import type { Command, CommandRecord, Dict, FlagOptions, Inspector, InspectorContext, MaybeArray } from "./types";
 
 function createFlagHoist<K extends keyof FlagOptions> (k: K) {
   return (_command: Command) =>
@@ -12,12 +13,14 @@ function createFlagHoist<K extends keyof FlagOptions> (k: K) {
     }, {} as Dict<NonNullable<FlagOptions[K]>>);
 }
 export const resolveFlagAlias = createFlagHoist("alias");
-export const resolveDefault = createFlagHoist("default");
+export const resolveFlagDefault = createFlagHoist("default");
 
-export function resolveCommand (commands: CommandRecord, name: string): Command | undefined {
-  const possibleCommands = Object.values(commands).filter(c => c.name === name || c.alias?.includes(name));
+const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
+
+export function resolveCommand (commands: CommandRecord, name: string | SingleCommandType): Command | undefined {
+  const possibleCommands = Object.values(commands).filter(c => c.name === name || mustArray(c.alias || []).map(String).includes(name));
   if (possibleCommands.length > 1) {
-    throw new Error(`Multiple commands found with name "${name}"`);
+    throw new Error(`Multiple commands found with name "${name as string}"`);
   }
   return possibleCommands[0];
 }
@@ -31,7 +34,7 @@ export const resolveArgv = (): string[] =>
       : [];
 
 export function compose (inspectors: Inspector[]) {
-  return (ctx: HandlerContext) => {
+  return (ctx: InspectorContext) => {
     return dispatch(0);
     function dispatch (i: number): void {
       const inspector = inspectors[i];

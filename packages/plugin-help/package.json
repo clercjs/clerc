@@ -44,6 +44,7 @@
     "watch": "puild --watch"
   },
   "dependencies": {
-    "clerc": "workspace:*"
+    "clerc": "workspace:*",
+    "picocolors": "^1.0.0"
   }
 }
