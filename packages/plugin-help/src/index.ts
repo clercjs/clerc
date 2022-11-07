@@ -4,14 +4,6 @@ import { NoSuchCommandsError, definePlugin, resolveCommand } from "clerc";
 import pc from "picocolors";
 import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength } from "./utils";
 
-// (desc)
-
-// Usage: (name)[EXE] [OPTIONS] [NAME] [COMMAND]
-
-// Commands:
-//   test  does testing things
-//   help  Print this message or the help of the given subcommand(s)
-
 const newline = () => { console.log(); };
 
 interface Options {
