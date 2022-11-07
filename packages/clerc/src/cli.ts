@@ -141,7 +141,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends keyof C>(name: K, handler: Handler) {
+  on<K extends keyof C>(name: K | string, handler: Handler) {
     this.__commandEmitter.on(name as any, handler);
     return this;
   }
