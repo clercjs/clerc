@@ -42,12 +42,20 @@ export const helpPlugin = (_options?: Options) => definePlugin({
           showHelp(cli, ctx, rest);
         });
     }
-    cli = cli.inspector((ctx, next) => {
+    cli = cli.inspector((_ctx, next) => {
+      const ctx = _ctx as HandlerContext;
       if ((ctx.flags.h || ctx.flags.help)) {
+        if (ctx.name === "help") {
+          showSubcommandHelp(cli, {
+            ...ctx,
+            name: "help",
+          });
+          return;
+        }
         if (ctx.resolved) {
-          showSubcommandHelp(cli, ctx as any);
+          showSubcommandHelp(cli, ctx);
         } else {
-          showHelp(cli, ctx as any, rest);
+          showHelp(cli, ctx, rest);
         }
         return;
       }
@@ -105,19 +113,24 @@ function showSubcommandHelp (cli: Clerc, ctx: HandlerContext) {
   newline();
   console.log(pc.yellow("USAGE:"));
   console.log(`    ${cli._name} ${commandToShowHelp.name} [PARAMETERS] [FLAGS]`);
-  newline();
-  console.log(pc.yellow("PARAMETERS:"));
   const parameters = commandToShowHelp.parameters || {};
-  const parametersPadLength = getPadLength(Object.keys(parameters));
-  for (const [name, param] of Object.entries(parameters)) {
-    const resuired = param.required ? pc.red(" (required)") : "";
-    console.log(`    ${pc.green(name.padEnd(parametersPadLength))}${param.description}${resuired}`);
+  const parameterKeys = Object.keys(parameters);
+  if (parameterKeys.length > 0) {
+    newline();
+    console.log(pc.yellow("PARAMETERS:"));
+    const parametersPadLength = getPadLength(parameterKeys);
+    for (const [name, param] of Object.entries(parameters)) {
+      const resuired = param.required ? pc.red(" (required)") : "";
+      console.log(`    ${pc.green(name.padEnd(parametersPadLength))}${param.description}${resuired}`);
+    }
   }
-  newline();
-  console.log(pc.yellow("FLAGS:"));
   const flagNameAndAlias = generateFlagNameAndAliasFromCommand(commandToShowHelp);
-  const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
-  for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
-    console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${commandToShowHelp.flags![name].description}`);
+  if (Object.keys(flagNameAndAlias).length > 0) {
+    newline();
+    console.log(pc.yellow("FLAGS:"));
+    const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
+    for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
+      console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${commandToShowHelp.flags![name].description}`);
+    }
   }
 }
