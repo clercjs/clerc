@@ -3,7 +3,7 @@ import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
 import type { Command, CommandRecord, Dict, FlagOptions, Inspector, InspectorContext, MaybeArray } from "./types";
 
-const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
+export const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
 export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
   ? `${A}${Capitalize<B>}${CamelCase<C>}`

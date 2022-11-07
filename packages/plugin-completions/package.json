@@ -1,0 +1,52 @@
+{
+  "name": "@clerc/plugin-completions",
+  "version": "0.1.1",
+  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "description": "Clerc plugin completions",
+  "keywords": [
+    "cli",
+    "clerc",
+    "clerc-plugin",
+    "arguments",
+    "argv",
+    "args",
+    "terminal"
+  ],
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/so1ve/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/so1ve/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "puild",
+    "watch": "puild --watch"
+  },
+  "peerDependencies": {
+    "clerc": "*"
+  },
+  "dependencies": {
+    "clerc": "workspace:*"
+  }
+}

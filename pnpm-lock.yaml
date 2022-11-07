@@ -45,6 +45,12 @@ importers:
     devDependencies:
       '@types/minimist': 1.2.2
 
+  packages/plugin-completions:
+    specifiers:
+      clerc: workspace:*
+    dependencies:
+      clerc: link:../clerc
+
   packages/plugin-help:
     specifiers:
       clerc: workspace:*

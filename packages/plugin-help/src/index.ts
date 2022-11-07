@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import type { Clerc, CommandRecord, HandlerContext } from "clerc";
+import type { CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandsError, definePlugin, resolveCommand } from "clerc";
 import pc from "picocolors";
 import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength } from "./utils";
@@ -32,29 +32,29 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     if (command) {
       cli = cli.command("help", "Show help")
         .on("help", (ctx) => {
-          showHelp(cli, ctx, rest);
+          showHelp(ctx, rest);
         });
     }
     cli = cli.inspector((_ctx, next) => {
       const ctx = _ctx as HandlerContext;
       if ((ctx.flags.h || ctx.flags.help)) {
         if (ctx.name === "help") {
-          showSubcommandHelp(cli, {
+          showSubcommandHelp({
             ...ctx,
             name: "help",
           });
           return;
         }
         if (ctx.resolved) {
-          showSubcommandHelp(cli, ctx);
+          showSubcommandHelp(ctx);
         } else {
-          showHelp(cli, ctx, rest);
+          showHelp(ctx, rest);
         }
         return;
       }
       // e.g: $ cli
-      if (!ctx.resolved && ctx.parameters.length === 0) {
-        showHelp(cli, ctx, rest);
+      if (!ctx.resolved && ctx.parameters.length === 0 && Object.keys(ctx.flags).length === 0) {
+        showHelp(ctx, rest);
         return;
       }
       next();
@@ -64,9 +64,10 @@ export const helpPlugin = (_options?: Options) => definePlugin({
 });
 
 type ShowHelpOptions = Required<Omit<Options, "command">>;
-function showHelp (cli: Clerc, ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
+function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
+  const { cli } = ctx;
   if (ctx.parameters.length > 0) {
-    showSubcommandHelp(cli, ctx);
+    showSubcommandHelp(ctx);
     return;
   }
   cli._name && console.log(`${pc.green(cli._name)} ${cli._version}`);
@@ -100,13 +101,14 @@ function showHelp (cli: Clerc, ctx: HandlerContext, { examples, notes }: ShowHel
   }
 }
 
-function showSubcommandHelp (cli: Clerc, ctx: HandlerContext) {
+function showSubcommandHelp (ctx: HandlerContext) {
+  const { cli } = ctx;
   const commandName = String(ctx.name || ctx.parameters[0]);
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
   if (!commandToShowHelp) {
     throw new NoSuchCommandsError(`No such command: ${commandName}`);
   }
-  console.log(`${pc.green(`${cli._name} ${commandToShowHelp.name}`)} ${cli._version}`);
+  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${cli._version}`);
   commandToShowHelp.description && console.log(commandToShowHelp.description);
   newline();
   console.log(pc.yellow("USAGE:"));
