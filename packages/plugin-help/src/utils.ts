@@ -6,7 +6,7 @@ const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${n}`;
 export function generateNameAndAliasFromCommands (commands: CommandRecord) {
   return Object.fromEntries(
     Object.entries(commands)
-      .map(([name, command]) => [name, [name, ...mustArray(command.alias || "")].join(", ")]),
+      .map(([name, command]) => [name, [name, ...(command.alias ? mustArray(command.alias) : [])].join(", ")]),
   );
 }
 export function generateFlagNameAndAliasFromCommand (command: Command) {

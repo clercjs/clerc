@@ -23,7 +23,7 @@ $ pnpm add clerc
 ## 🚀 Usage
 
 ```bash
-$ node ./foo-cli.js foo --bar
+$ node ./foo-cli.mjs foo --bar
 ```
 
 ```js
