@@ -192,7 +192,7 @@ export class Clerc<C extends CommandRecord = {}> {
     let parsed = minimist(argv);
     const name = String(parsed._[0]);
     const command = this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
-    const commandResolved = !!command;
+    const isCommandResolved = !!command;
     parsed = minimist(argv, {
       alias: command ? resolveFlagAlias(command) : {},
       default: command ? resolveFlagDefault(command) : {},
@@ -202,10 +202,10 @@ export class Clerc<C extends CommandRecord = {}> {
       Object.entries(flags).map(([key, value]) => [camelCase(key), value]),
     );
     // e.g cli a-command-does-not-exist -h
-    const parameters = this.__isSingleCommand || !commandResolved ? args : args.slice(1);
+    const parameters = this.__isSingleCommand || !isCommandResolved ? args : args.slice(1);
     const inspectorContext: InspectorContext = {
       name: command?.name,
-      resolved: commandResolved,
+      resolved: isCommandResolved,
       raw: parsed,
       parameters,
       flags: camelCaseFlags,

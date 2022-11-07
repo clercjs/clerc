@@ -3,20 +3,35 @@ import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
 import type { Command, CommandRecord, Dict, FlagOptions, Inspector, InspectorContext, MaybeArray } from "./types";
 
-function createFlagHoist<K extends keyof FlagOptions> (k: K) {
-  return (_command: Command) =>
-    Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
-      const item = command[k];
-      if (item) {
-        acc[name] = item;
-      }
-      return acc;
-    }, {} as Dict<NonNullable<FlagOptions[K]>>);
-}
-export const resolveFlagAlias = createFlagHoist("alias");
-export const resolveFlagDefault = createFlagHoist("default");
-
 const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
+
+export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
+  ? `${A}${Capitalize<B>}${CamelCase<C>}`
+  : T;
+export const camelCase = <T extends string>(s: T): CamelCase<T> => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
+
+export type KebabCase<T extends string, A extends string = ""> = T extends `${infer F}${infer R}`
+  ? KebabCase<R, `${A}${F extends Lowercase<F> ? "" : "-"}${Lowercase<F>}`>
+  : A;
+export const kebabCase = <T extends string>(s: T): KebabCase<T> => s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;
+
+export const resolveFlagAlias = (_command: Command) =>
+  Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
+    if (command.alias) {
+      const item = mustArray(command.alias).map(kebabCase);
+      acc[kebabCase(name)] = item;
+    }
+    return acc;
+  }, {} as Dict<string[]>);
+
+export const resolveFlagDefault = (_command: Command) =>
+  Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
+    const item = command.default;
+    if (item) {
+      acc[name] = item;
+    }
+    return acc;
+  }, {} as Dict<FlagOptions["default"]>);
 
 export function resolveCommand (commands: CommandRecord, name: string | SingleCommandType): Command | undefined {
   if (name === SingleCommand) {
@@ -50,8 +65,3 @@ export function compose (inspectors: Inspector[]) {
     }
   };
 }
-
-export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
-  ? `${A}${Capitalize<B>}${CamelCase<C>}`
-  : T;
-export const camelCase = <T extends string> (s: T): CamelCase<T> => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
