@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+// TODO: unit tests
 import type { Clerc, CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandsError, definePlugin, resolveCommand } from "clerc";
 import pc from "picocolors";
@@ -49,6 +50,11 @@ export const helpPlugin = (_options?: Options) => definePlugin({
         } else {
           showHelp(cli, ctx, rest);
         }
+        return;
+      }
+      // e.g: $ cli
+      if (!ctx.resolved && ctx.parameters.length === 0) {
+        showHelp(cli, ctx, rest);
         return;
       }
       next();
