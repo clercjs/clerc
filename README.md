@@ -34,7 +34,7 @@ const cli = Clerc.create()
   .name("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
-  .use(helpPlugin()) // Usess help plugin
+  .use(helpPlugin()) // Uses help plugin
   .command("foo", "A foo command")
   .on("foo", (ctx) => {
     console.log(ctx);
