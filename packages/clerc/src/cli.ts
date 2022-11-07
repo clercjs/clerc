@@ -2,7 +2,7 @@ import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandsError, SingleCommandError } from "./error";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
-import { compose, resolveArgv, resolveCommand, resolveFlagAlias, resolveFlagDefault } from "./utils";
+import { camelCase, compose, resolveArgv, resolveCommand, resolveFlagAlias, resolveFlagDefault } from "./utils";
 
 export const SingleCommand = Symbol("SingleCommand");
 export type SingleCommandType = typeof SingleCommand;
@@ -198,6 +198,9 @@ export class Clerc<C extends CommandRecord = {}> {
       default: command ? resolveFlagDefault(command) : {},
     });
     const { _: args, ...flags } = parsed;
+    const camelCaseFlags = Object.fromEntries(
+      Object.entries(flags).map(([key, value]) => [camelCase(key), value]),
+    );
     // e.g cli a-command-does-not-exist -h
     const parameters = this.__isSingleCommand || !commandResolved ? args : args.slice(1);
     const inspectorContext: InspectorContext = {
@@ -205,7 +208,7 @@ export class Clerc<C extends CommandRecord = {}> {
       resolved: commandResolved,
       raw: parsed,
       parameters,
-      flags,
+      flags: camelCaseFlags,
       cli: this as any,
     };
     const handlerContext = inspectorContext as HandlerContext;

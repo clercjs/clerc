@@ -50,3 +50,8 @@ export function compose (inspectors: Inspector[]) {
     }
   };
 }
+
+export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
+  ? `${A}${Capitalize<B>}${CamelCase<C>}`
+  : T;
+export const camelCase = <T extends string> (s: T): CamelCase<T> => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
