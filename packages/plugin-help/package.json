@@ -43,6 +43,9 @@
     "build": "puild",
     "watch": "puild --watch"
   },
+  "peerDependencies": {
+    "clerc": "*"
+  },
   "dependencies": {
     "clerc": "workspace:*",
     "picocolors": "^1.0.0"
