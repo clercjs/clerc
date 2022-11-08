@@ -15,6 +15,9 @@
     "paths": {
       "clerc": [
         "./packages/clerc/src/index.ts"
+      ],
+      "@clerc/plugin-help": [
+        "./packages/plugin-help/src/index.ts"
       ]
     }
   }

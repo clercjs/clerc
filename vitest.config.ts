@@ -5,7 +5,8 @@ import { defineConfig } from "vitest/config";
 const r = (p: string) => resolve(__dirname, p);
 
 export const alias: AliasOptions = {
-  clerc: r("./packages/clerc/src"),
+  "clerc": r("./packages/clerc/src"),
+  "@clerc/plugin-help": r("./packages/plugin-help/src"),
 };
 
 export default defineConfig({
