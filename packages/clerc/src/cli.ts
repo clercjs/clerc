@@ -1,6 +1,6 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
-import { CommandExistsError, CommonCommandExistsError, NoSuchCommandsError, SingleCommandError } from "./error";
+import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./error";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { camelCase, compose, resolveArgv, resolveCommand, resolveFlagAlias, resolveFlagDefault } from "./utils";
 
@@ -214,7 +214,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const handlerContext = inspectorContext as HandlerContext;
     const emitHandler = () => {
       if (!command) {
-        throw new NoSuchCommandsError(`No such command: ${name}`);
+        throw new NoSuchCommandError(`No such command: ${name}`);
       }
       this.__commandEmitter.emit(command.name, handlerContext);
     };

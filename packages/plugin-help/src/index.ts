@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 // TODO: unit tests
 import type { CommandRecord, HandlerContext } from "clerc";
-import { NoSuchCommandsError, definePlugin, resolveCommand } from "clerc";
+import { NoSuchCommandError, definePlugin, resolveCommand } from "clerc";
 import pc from "picocolors";
 import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength } from "./utils";
 
@@ -106,7 +106,7 @@ function showSubcommandHelp (ctx: HandlerContext) {
   const commandName = String(ctx.name || ctx.parameters[0]);
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
   if (!commandToShowHelp) {
-    throw new NoSuchCommandsError(`No such command: ${commandName}`);
+    throw new NoSuchCommandError(`No such command: ${commandName}`);
   }
   console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${cli._version}`);
   commandToShowHelp.description && console.log(commandToShowHelp.description);
