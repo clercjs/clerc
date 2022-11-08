@@ -1,7 +1,7 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./error";
-import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
+import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, LiteralUnion, MakeEventMap, Plugin } from "./types";
 import { camelCase, compose, resolveArgv, resolveCommand, resolveFlagAlias, resolveFlagDefault } from "./utils";
 
 export const SingleCommand = Symbol("SingleCommand");
@@ -141,8 +141,12 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends keyof C>(name: K | string, handler: Handler) {
-    this.__commandEmitter.on(name, handler);
+  on<K extends keyof C>(
+    name: LiteralUnion<K, string>,
+    // @ts-expect-error TODO: Fix this type error
+    handler: Handler<this>,
+  ) {
+    this.__commandEmitter.on(name, handler as any);
     return this;
   }
 
@@ -206,6 +210,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const inspectorContext: InspectorContext = {
       name: command?.name,
       resolved: isCommandResolved,
+      isSingleCommand: this.__isSingleCommand,
       raw: parsed,
       parameters,
       flags: camelCaseFlags,

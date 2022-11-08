@@ -1,5 +1,23 @@
 import type { Clerc, SingleCommand, SingleCommandType } from "./cli";
 
+/**
+ * Copied from type-fest
+ */
+export type Primitive =
+  | null
+  | undefined
+  | string
+  | number
+  | boolean
+  | symbol
+  | bigint;
+/**
+ * Copied from type-fest
+ */
+export type LiteralUnion<
+  LiteralType,
+  BaseType extends Primitive,
+> = LiteralType | (BaseType & Record<never, never>);
 export type Dict<T> = Record<string, T>;
 type MustArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
@@ -44,12 +62,13 @@ export type PossibleInputKind = string | number | boolean | Dict<any>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
+  isSingleCommand: boolean
   raw: ParsedArgs
   parameters: PossibleInputKind[]
   flags: Dict<MaybeArray<PossibleInputKind> | undefined>
   cli: Clerc<C>
 }
-export type Handler = (ctx: HandlerContext) => void;
+export type Handler<C extends Clerc = Clerc> = (ctx: HandlerContext<C["_commands"]>) => void;
 export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
 export type Inspector = (ctx: InspectorContext<any>, next: () => void) => void;
 
