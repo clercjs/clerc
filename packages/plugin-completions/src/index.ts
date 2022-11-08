@@ -1,7 +1,11 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import { definePlugin } from "clerc";
+import { NoSuchCommandError, definePlugin } from "clerc";
 import { getPwshCompletion } from "./completions/pwsh";
+
+const completionMap = {
+  pwsh: getPwshCompletion,
+};
 
 export interface Options {
   command?: boolean
@@ -12,12 +16,14 @@ export const completionsPlugin = (options: Options = {}) => definePlugin({
     if (command) {
       cli = cli.command("completions", "Print shell completions to stdout")
         .on("completions", (ctx) => {
-          switch (ctx.parameters[0]) {
-            case "pwsh":
-              console.log(getPwshCompletion(ctx));
-              break;
-            default:
-              throw new Error(`Unknown shell: ${ctx.parameters[0]}`);
+          const shell = String(ctx.parameters[0]);
+          if (!shell) {
+            throw new Error("Missing shell name");
+          }
+          if (shell in completionMap) {
+            console.log(completionMap[shell as keyof typeof completionMap](ctx));
+          } else {
+            throw new NoSuchCommandError(`No such shell: ${shell}`);
           }
         });
     }
