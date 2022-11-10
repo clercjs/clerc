@@ -195,7 +195,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const name = String(parsed._[0]);
     const command = this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
     const isCommandResolved = !!command;
-    const parsedWithType = typeFlag(command?.flags || {});
+    const parsedWithType = typeFlag(command?.flags || {}, argv);
     // const parsedWithType = typeFlag();
     const { _: args, flags } = parsedWithType;
     // e.g cli a-command-does-not-exist -h

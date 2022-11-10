@@ -7,7 +7,15 @@ describe("cli", () => {
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"] });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {},
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
         expect(ctx.flags).toStrictEqual({});
       })
@@ -15,91 +23,286 @@ describe("cli", () => {
   });
   it("should honor single command", () => {
     Clerc.create()
-      .command(SingleCommand, "single command")
+      .command(SingleCommand, "single command", {
+        flags: {
+          foo: {
+            description: "",
+            type: String,
+            default: "",
+          },
+        },
+      })
       .on(SingleCommand, (ctx) => {
         expect(ctx.name).toEqual(SingleCommand);
-        expect(ctx.raw).toStrictEqual({ _: ["bar", "qux"], c: "baz" });
-        expect(ctx.parameters).toStrictEqual(["bar", "qux"]);
-        expect(ctx.flags).toStrictEqual({ c: "baz" });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "bar",
+              "qux",
+            ],
+            "flags": {
+              "foo": "baz",
+            },
+            "unknownFlags": {},
+          }
+        `);
+        expect(ctx.parameters).toMatchInlineSnapshot(`
+          [
+            "bar",
+            "qux",
+          ]
+        `);
+        expect(ctx.flags).toMatchInlineSnapshot(`
+          {
+            "foo": "baz",
+          }
+        `);
       })
-      .parse(["bar", "-c", "baz", "qux"]);
+      .parse(["bar", "--foo", "baz", "qux"]);
   });
   it("should parse parameters", () => {
     Clerc.create()
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo", "bar", "qux"], c: "baz" });
-        expect(ctx.parameters).toStrictEqual(["bar", "qux"]);
-        expect(ctx.flags).toStrictEqual({ c: "baz" });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+              "bar",
+              "baz",
+              "qux",
+            ],
+            "flags": {},
+            "unknownFlags": {
+              "c": [
+                true,
+              ],
+            },
+          }
+        `);
+        expect(ctx.parameters).toMatchInlineSnapshot(`
+          [
+            "bar",
+            "baz",
+            "qux",
+          ]
+        `);
+        expect(ctx.flags).toMatchInlineSnapshot("{}");
       })
       .parse(["foo", "bar", "-c", "baz", "qux"]);
   });
   it("should parse boolean flag", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        flags: {
+          foo: {
+            description: "",
+            type: Boolean,
+            default: false,
+          },
+        },
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], f: true });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {
+              "foo": true,
+            },
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ f: true });
+        expect(ctx.flags).toStrictEqual({ foo: true });
       })
-      .parse(["foo", "-f"]);
+      .parse(["foo", "--foo"]);
   });
   it("should parse string flag", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        flags: {
+          foo: {
+            description: "",
+            type: String,
+            default: "",
+          },
+        },
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], f: "bar" });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {
+              "foo": "bar",
+            },
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ f: "bar" });
+        expect(ctx.flags).toStrictEqual({ foo: "bar" });
       })
-      .parse(["foo", "-f", "bar"]);
+      .parse(["foo", "--foo", "bar"]);
   });
   it("should parse number flag", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        flags: {
+          foo: {
+            description: "",
+            type: Number,
+            default: 0,
+          },
+        },
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], f: 42 });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {
+              "foo": 42,
+            },
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ f: 42 });
+        expect(ctx.flags).toStrictEqual({ foo: 42 });
       })
-      .parse(["foo", "-f", "42"]);
+      .parse(["foo", "--foo", "42"]);
   });
   it("should parse dot-nested flag", () => {
+    function Foo (value: string) {
+      const [propertyName, propertyValue] = value.split("=");
+      return {
+        [propertyName]: propertyValue || true,
+      };
+    }
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        flags: {
+          foo: {
+            description: "",
+            type: [Foo],
+            default: {},
+          },
+        },
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], f: { a: 42, b: "bar" } });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {
+              "foo": [
+                {
+                  "a": "42",
+                },
+                {
+                  "b": "bar",
+                },
+              ],
+            },
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ f: { a: 42, b: "bar" } });
+        expect(ctx.flags).toMatchInlineSnapshot(`
+          {
+            "foo": [
+              {
+                "a": "42",
+              },
+              {
+                "b": "bar",
+              },
+            ],
+          }
+        `);
       })
-      .parse(["foo", "--f.a", "42", "--f.b", "bar"]);
+      .parse(["foo", "--foo.a=42", "--foo.b=bar"]);
   });
   it("should parse shorthand flag", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {})
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], a: true, b: true, c: true, d: "bar" });
-        expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ a: true, b: true, c: true, d: "bar" });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+              "bar",
+            ],
+            "flags": {},
+            "unknownFlags": {
+              "a": [
+                true,
+              ],
+              "b": [
+                true,
+              ],
+              "c": [
+                true,
+              ],
+              "d": [
+                true,
+              ],
+            },
+          }
+        `);
+        expect(ctx.parameters).toStrictEqual(["bar"]);
+        expect(ctx.flags).toMatchInlineSnapshot("{}");
       })
       .parse(["foo", "-abcd", "bar"]);
   });
   it("should parse array flag", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        flags: {
+          abc: {
+            description: "",
+            type: [String],
+            default: [],
+          },
+        },
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"], a: ["bar", "baz"] });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {
+              "abc": [
+                "bar",
+                "baz",
+              ],
+            },
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
-        expect(ctx.flags).toStrictEqual({ a: ["bar", "baz"] });
+        expect(ctx.flags).toMatchInlineSnapshot(`
+          {
+            "abc": [
+              "bar",
+              "baz",
+            ],
+          }
+        `);
       })
-      .parse(["foo", "-a", "bar", "-a", "baz"]);
+      .parse(["foo", "--abc", "bar", "--abc", "baz"]);
   });
   it("should honor inspector", () => {
     let count = 0;
@@ -117,7 +320,15 @@ describe("cli", () => {
       .inspector((_ctx, next) => { next(); })
       .inspector((ctx, next) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.raw).toStrictEqual({ _: ["foo"] });
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+            ],
+            "flags": {},
+            "unknownFlags": {},
+          }
+        `);
         expect(ctx.parameters).toStrictEqual([]);
         expect(ctx.flags).toStrictEqual({});
         next();
