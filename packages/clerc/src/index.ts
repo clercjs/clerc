@@ -1,5 +1,5 @@
 export * from "./cli";
-export { definePlugin } from "./plugin";
+export * from "./helper";
 export * from "./types";
 export * from "./error";
 export * from "./utils";

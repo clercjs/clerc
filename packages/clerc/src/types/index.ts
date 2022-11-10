@@ -63,8 +63,10 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
   cli: Clerc<C>
 }
-export type Handler<C extends CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
-export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
-export type Inspector = (ctx: InspectorContext<any>, next: () => void) => void;
+export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
+export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C>;
+export type Inspector<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
 
-export type { Plugin } from "../plugin";
+export interface Plugin<T extends Clerc = Clerc, U extends Clerc = Clerc> {
+  setup: (cli: T) => U
+}
