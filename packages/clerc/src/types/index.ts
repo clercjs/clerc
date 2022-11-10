@@ -41,8 +41,16 @@ export type FlagOptions = FlagSchema & {
 export type Flag = FlagOptions & {
   name: string
 };
+export interface ParameterOptions {
+  description: string
+  required?: boolean
+}
+export interface Parameter extends ParameterOptions {
+  name: string
+}
 export interface CommandOptions {
   alias?: MaybeArray<string>
+  parameters?: Dict<ParameterOptions>
   flags?: Dict<FlagOptions>
 }
 export interface Command<N extends string | SingleCommandType = string, D extends string = string> extends CommandOptions {

@@ -143,11 +143,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends keyof C>(
-    name: LiteralUnion<K, string>,
-    // @ts-expect-error TODO: Fix this type error
-    handler: Handler<this>,
-  ) {
+  on<K extends keyof C>(name: LiteralUnion<K, string>, handler: Handler) {
     this.__commandEmitter.on(name, handler as any);
     return this;
   }
