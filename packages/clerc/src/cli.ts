@@ -111,7 +111,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, D extends string>(name: N, description: D, options: CommandOptions = {}): this & Clerc<C & Record<N, Command<N, D>>> {
+  command<N extends string | SingleCommandType, D extends string, O extends CommandOptions>(name: N, description: D, options: O = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
     if (this._commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("Single command already exists");
@@ -143,8 +143,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends keyof C>(name: LiteralUnion<K, string>, handler: Handler) {
-    this.__commandEmitter.on(name, handler as any);
+  on<K extends keyof CM, CM extends this["_commands"] = this["_commands"]>(name: LiteralUnion<K, string>, handler: Handler<CM, K>) {
+    this.__commandEmitter.on(name as any, handler as any);
     return this;
   }
 

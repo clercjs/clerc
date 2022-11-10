@@ -1,7 +1,5 @@
-import { } from "type-flag";
-
 import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
-import type { FlagSchema } from "./type-flag";
+import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
 /**
  * Copied from type-fest
@@ -29,11 +27,6 @@ type GetTail<T extends any[]> = T extends [infer _Head, ...infer Tail] ? Tail : 
 type EnhanceSingle<T, E extends Dict<any>> = T & E;
 export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, MustArray<E>[0]>, GetTail<MustArray<E>>>;
 
-interface ParsedArgs {
-  [arg: string]: any
-  "--"?: string[] | undefined
-  _: string[]
-}
 export type FlagOptions = FlagSchema & {
   description: string
   required?: boolean
@@ -48,28 +41,29 @@ export interface ParameterOptions {
 export interface Parameter extends ParameterOptions {
   name: string
 }
-export interface CommandOptions {
-  alias?: MaybeArray<string>
-  parameters?: Dict<ParameterOptions>
-  flags?: Dict<FlagOptions>
+export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string>, P extends Dict<ParameterOptions> = Dict<ParameterOptions>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
+  alias?: A
+  parameters?: P
+  flags?: F
 }
-export interface Command<N extends string | SingleCommandType = string, D extends string = string> extends CommandOptions {
+export type Command<N extends string | SingleCommandType = string, D extends string = string, Options extends CommandOptions = CommandOptions> = Options & {
   name: N
   description: D
-}
+};
 export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
+type NonNullableFlag<T extends Dict<FlagOptions> | undefined> = T extends undefined ? {} : NonNullable<T>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
   isSingleCommand: boolean
-  raw: ParsedArgs
-  parameters: PossibleInputKind[]
-  flags: Dict<MaybeArray<PossibleInputKind> | undefined>
+  raw: ParsedFlags
+  parameters: C[N]["parameters"]
+  flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
   cli: Clerc<C>
 }
-export type Handler<C extends Clerc = Clerc> = (ctx: HandlerContext<C["_commands"]>) => void;
+export type Handler<C extends CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
 export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
 export type Inspector = (ctx: InspectorContext<any>, next: () => void) => void;
 
