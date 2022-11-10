@@ -38,10 +38,12 @@ importers:
       is-platform: ^0.2.0
       lite-emit: ^1.4.0
       minimist: ^1.2.7
+      type-flag: ^3.0.0
     dependencies:
       is-platform: 0.2.0
       lite-emit: 1.4.0
       minimist: 1.2.7
+      type-flag: 3.0.0
     devDependencies:
       '@types/minimist': 1.2.2
 
@@ -3218,6 +3220,10 @@ packages:
     resolution: {integrity: sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==}
     engines: {node: '>=8'}
     dev: true
+
+  /type-flag/3.0.0:
+    resolution: {integrity: sha512-3YaYwMseXCAhBB14RXW5cRQfJQlEknS6i4C8fCfeUdS3ihG9EdccdR9kt3vP73ZdeTGmPb4bZtkDn5XMIn1DLA==}
+    dev: false
 
   /typescript/4.8.4:
     resolution: {integrity: sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==}

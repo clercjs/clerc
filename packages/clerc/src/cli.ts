@@ -1,8 +1,10 @@
 import { LiteEmit } from "lite-emit";
 import minimist from "minimist";
+import { typeFlag } from "type-flag";
+
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./error";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, LiteralUnion, MakeEventMap, Plugin } from "./types";
-import { camelCase, compose, resolveArgv, resolveCommand, resolveFlagAlias, resolveFlagDefault } from "./utils";
+import { compose, resolveArgv, resolveCommand } from "./utils";
 
 export const SingleCommand = Symbol("SingleCommand");
 export type SingleCommandType = typeof SingleCommand;
@@ -122,8 +124,8 @@ export class Clerc<C extends CommandRecord = {}> {
     if (name === SingleCommand && this.__hasCommands) {
       throw new CommonCommandExistsError("Common command exists");
     }
-    const { alias, flags, parameters } = options;
-    this._commands[name] = { name, description, alias, flags, parameters } as any;
+    const { alias, flags } = options;
+    this._commands[name] = { name, description, alias, flags } as any;
     return this as any;
   }
 
@@ -193,27 +195,22 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse (argv = resolveArgv()) {
-    let parsed = minimist(argv);
+    const parsed = minimist(argv);
     const name = String(parsed._[0]);
     const command = this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
     const isCommandResolved = !!command;
-    parsed = minimist(argv, {
-      alias: command ? resolveFlagAlias(command) : {},
-      default: command ? resolveFlagDefault(command) : {},
-    });
-    const { _: args, ...flags } = parsed;
-    const camelCaseFlags = Object.fromEntries(
-      Object.entries(flags).map(([key, value]) => [camelCase(key), value]),
-    );
+    const parsedWithType = typeFlag(command?.flags || {});
+    // const parsedWithType = typeFlag();
+    const { _: args, flags } = parsedWithType;
     // e.g cli a-command-does-not-exist -h
     const parameters = this.__isSingleCommand || !isCommandResolved ? args : args.slice(1);
     const inspectorContext: InspectorContext = {
       name: command?.name,
       resolved: isCommandResolved,
       isSingleCommand: this.__isSingleCommand,
-      raw: parsed,
+      raw: parsedWithType,
       parameters,
-      flags: camelCaseFlags,
+      flags,
       cli: this as any,
     };
     const handlerContext = inspectorContext as HandlerContext;

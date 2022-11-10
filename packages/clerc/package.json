@@ -45,7 +45,8 @@
   "dependencies": {
     "is-platform": "^0.2.0",
     "lite-emit": "^1.4.0",
-    "minimist": "^1.2.7"
+    "minimist": "^1.2.7",
+    "type-flag": "^3.0.0"
   },
   "devDependencies": {
     "@types/minimist": "^1.2.2"

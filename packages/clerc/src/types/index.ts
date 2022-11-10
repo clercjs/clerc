@@ -1,4 +1,7 @@
-import type { Clerc, SingleCommand, SingleCommandType } from "./cli";
+import { } from "type-flag";
+
+import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
+import type { FlagSchema } from "./type-flag";
 
 /**
  * Copied from type-fest
@@ -31,25 +34,15 @@ interface ParsedArgs {
   "--"?: string[] | undefined
   _: string[]
 }
-export interface FlagOptions {
-  description: string
-  alias?: MaybeArray<string>
-  default?: PossibleInputKind
-  required?: boolean
-}
-export interface Flag extends FlagOptions {
-  name: string
-}
-export interface ParameterOptions {
+export type FlagOptions = FlagSchema & {
   description: string
   required?: boolean
-}
-export interface Parameter extends ParameterOptions {
+};
+export type Flag = FlagOptions & {
   name: string
-}
+};
 export interface CommandOptions {
   alias?: MaybeArray<string>
-  parameters?: Dict<ParameterOptions>
   flags?: Dict<FlagOptions>
 }
 export interface Command<N extends string | SingleCommandType = string, D extends string = string> extends CommandOptions {
@@ -72,4 +65,4 @@ export type Handler<C extends Clerc = Clerc> = (ctx: HandlerContext<C["_commands
 export interface InspectorContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> extends HandlerContext<C, N> {}
 export type Inspector = (ctx: InspectorContext<any>, next: () => void) => void;
 
-export type { Plugin } from "./plugin";
+export type { Plugin } from "../plugin";
