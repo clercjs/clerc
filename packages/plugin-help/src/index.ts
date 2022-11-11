@@ -37,7 +37,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     }
     cli = cli.inspector((_ctx, next) => {
       const ctx = _ctx as HandlerContext;
-      if ((ctx.flags.h || ctx.flags.help)) {
+      if ((_ctx.flags.h || _ctx.flags.help)) {
         if (ctx.name === "help") {
           showSubcommandHelp({
             ...ctx,
@@ -113,17 +113,17 @@ function showSubcommandHelp (ctx: HandlerContext) {
   newline();
   console.log(pc.yellow("USAGE:"));
   console.log(`    ${cli._name} ${commandToShowHelp.name} [PARAMETERS] [FLAGS]`);
-  const parameters = commandToShowHelp.parameters || {};
-  const parameterKeys = Object.keys(parameters);
-  if (parameterKeys.length > 0) {
-    newline();
-    console.log(pc.yellow("PARAMETERS:"));
-    const parametersPadLength = getPadLength(parameterKeys);
-    for (const [name, param] of Object.entries(parameters)) {
-      const resuired = param.required ? pc.red(" (required)") : "";
-      console.log(`    ${pc.green(name.padEnd(parametersPadLength))}${param.description}${resuired}`);
-    }
-  }
+  // const parameters = commandToShowHelp.parameters || {};
+  // const parameterKeys = Object.keys(parameters);
+  // if (parameterKeys.length > 0) {
+  //   newline();
+  //   console.log(pc.yellow("PARAMETERS:"));
+  //   const parametersPadLength = getPadLength(parameterKeys);
+  //   for (const [name, param] of Object.entries(parameters)) {
+  //     const resuired = param.required ? pc.red(" (required)") : "";
+  //     console.log(`    ${pc.green(name.padEnd(parametersPadLength))}${param.description}${resuired}`);
+  //   }
+  // }
   const flagNameAndAlias = generateFlagNameAndAliasFromCommand(commandToShowHelp);
   if (Object.keys(flagNameAndAlias).length > 0) {
     newline();

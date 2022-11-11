@@ -34,16 +34,16 @@ export type FlagOptions = FlagSchema & {
 export type Flag = FlagOptions & {
   name: string
 };
-export interface ParameterOptions {
-  description: string
-  required?: boolean
-}
-export interface Parameter extends ParameterOptions {
-  name: string
-}
-export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string>, P extends Dict<ParameterOptions> = Dict<ParameterOptions>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
+// export interface ParameterOptions {
+//   description: string
+//   required?: boolean
+// }
+// export interface Parameter extends ParameterOptions {
+//   name: string
+// }
+export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
   alias?: A
-  parameters?: P
+  // parameters?: P
   flags?: F
 }
 export type Command<N extends string | SingleCommandType = string, D extends string = string, Options extends CommandOptions = CommandOptions> = Options & {
@@ -59,12 +59,14 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   resolved: boolean
   isSingleCommand: boolean
   raw: ParsedFlags
-  parameters: C[N]["parameters"]
+  parameters: PossibleInputKind[]
   flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
-export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C>;
+export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
+  flags: {} extends TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"] ? Dict<any> : TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"]
+};
 export type Inspector<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
 
 export interface Plugin<T extends Clerc = Clerc, U extends Clerc = Clerc> {
