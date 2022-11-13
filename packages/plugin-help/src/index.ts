@@ -76,7 +76,7 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
     newline();
   }
   console.log(pc.yellow("USAGE:"));
-  console.log(`    ${cli._name} <SUBCOMMAND> [OPTIONS]`);
+  console.log(`    ${cli._name || "<CLI NAME>"} <SUBCOMMAND> [OPTIONS]`);
   newline();
   console.log(pc.yellow("COMMANDS:"));
   const commandNameAndAlias = generateNameAndAliasFromCommands(cli._commands);
