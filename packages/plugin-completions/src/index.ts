@@ -16,6 +16,9 @@ export const completionsPlugin = (options: Options = {}) => definePlugin({
     if (command) {
       cli = cli.command("completions", "Print shell completions to stdout")
         .on("completions", (ctx) => {
+          if (!cli.name) {
+            throw new Error("CLI name is not defined!");
+          }
           const shell = String(ctx.parameters[0]);
           if (!shell) {
             throw new Error("Missing shell name");
