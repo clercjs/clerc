@@ -10,12 +10,14 @@ describe("plugin-help", () => {
   });
   it("should show help", () => {
     Clerc.create()
+      .name("test")
       .use(helpPlugin())
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
+        "[32mtest[39m ",
         "[33mUSAGE:[39m",
-        "     <SUBCOMMAND> [OPTIONS]",
+        "    test <SUBCOMMAND> [OPTIONS]",
         undefined,
         "[33mCOMMANDS:[39m",
         "    [32mhelp    [39mShow help",
@@ -25,12 +27,34 @@ describe("plugin-help", () => {
   });
   it("should show --help", () => {
     Clerc.create()
+      .name("test")
       .use(helpPlugin())
       .parse(["--help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
+        "[32mtest[39m ",
         "[33mUSAGE:[39m",
-        "     <SUBCOMMAND> [OPTIONS]",
+        "    test <SUBCOMMAND> [OPTIONS]",
+        undefined,
+        "[33mCOMMANDS:[39m",
+        "    [32mhelp    [39mShow help",
+      ]
+    `);
+  });
+  it("should show placeholder", () => {
+    Clerc.create()
+      .use(helpPlugin())
+      .parse(["help"]);
+    expect(msgs).toMatchInlineSnapshot(`
+      [
+        "[32mtest[39m ",
+        "[33mUSAGE:[39m",
+        "    test <SUBCOMMAND> [OPTIONS]",
+        undefined,
+        "[33mCOMMANDS:[39m",
+        "    [32mhelp    [39mShow help",
+        "[33mUSAGE:[39m",
+        "    <CLI NAME> <SUBCOMMAND> [OPTIONS]",
         undefined,
         "[33mCOMMANDS:[39m",
         "    [32mhelp    [39mShow help",
