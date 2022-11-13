@@ -1,5 +1,5 @@
 import { LiteEmit } from "lite-emit";
-import minimist from "minimist";
+import mri from "mri";
 import { typeFlag } from "type-flag";
 
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./error";
@@ -191,7 +191,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse (argv = resolveArgv()) {
-    const parsed = minimist(argv);
+    const parsed = mri(argv);
     const name = String(parsed._[0]);
     const command = this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
     const isCommandResolved = !!command;
