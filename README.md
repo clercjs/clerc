@@ -43,9 +43,9 @@ const cli = Clerc.create()
         name: 'foo',
         resolved: true,
         isSingleCommand: false,
-        raw: { flags: {}, unknownFlags: { bar: [Array] }, _: [ 'foo', '--': [] ] },
+        raw: { flags: { bar: true }, unknownFlags: {}, _: [ 'foo', '--': [] ] },
         parameters: [],
-        flags: {},
+        flags: { bar: true },
         cli: ...
       }
     */
