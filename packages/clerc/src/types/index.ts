@@ -64,8 +64,9 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
+export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
-  flags: {} extends TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"] ? Dict<any> : TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"]
+  flags: FallbackType<TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"], Dict<any>>
 };
 export type Inspector<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
 
