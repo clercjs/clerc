@@ -13,11 +13,12 @@ interface Options {
    */
   command?: boolean
   /**
-   * [example command, description]
+   * Examples
+   * Syntax: [example command, description]
    */
   examples?: [string, string][]
   /**
-   * notes
+   * Notes
    */
   notes?: string[]
 }
