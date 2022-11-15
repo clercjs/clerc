@@ -1,7 +1,7 @@
 {
   "name": "clerc-monorepo",
   "private": true,
-  "version": "0.3.2",
+  "version": "0.3.1",
   "packageManager": "pnpm@7.9.5",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "",
@@ -20,8 +20,8 @@
     "watch": "pnpm -r --parallel run watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepublish": "nr build",
-    "release": "bumpp package.json packages/*/package.json --commit --push --tag && pnpm publish -r --filter ./packages/*",
+    "prepublishOnly": "nr build",
+    "release": "bumpp package.json packages/*/package.json --commit --push --tag && nr build && pnpm publish -r --filter ./packages/*",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
