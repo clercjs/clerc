@@ -34,7 +34,13 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
     cli.inspector((inspectorCtx, next) => {
       if (command && !inspectorCtx.isSingleCommand) {
-        cli = cli.command("help", "Show help")
+        cli = cli.command("help", "Show help", {
+          examples: [
+            [`${cli._name} help`, "Displays help of the cli"],
+            [`${cli._name} -h`, "Displays help of the cli"],
+            [`${cli._name} help help`, "Displays help of the help command"],
+          ],
+        })
           .on("help", (ctx) => {
             showHelp(ctx, rest);
           });
@@ -109,6 +115,27 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   }
 }
 
+const showCommandExamples = (examples?: [string, string][]) => {
+  if (examples && examples.length > 0) {
+    newline();
+    console.log(pc.yellow("EXAMPLES:"));
+    const examplesPadLength = getPadLength(examples.map(e => e[0]));
+    for (const [exampleCommand, exampleDescription] of examples) {
+      console.log(`  ${exampleCommand.padEnd(examplesPadLength)}${exampleDescription}`);
+    }
+  }
+};
+
+const showCommandNotes = (notes?: string[]) => {
+  if (notes && notes.length > 0) {
+    newline();
+    console.log(pc.yellow("NOTES:"));
+    for (const note of notes) {
+      console.log(`  ${note}`);
+    }
+  }
+};
+
 function showSubcommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
   const commandName = String(ctx.name || ctx.parameters[0]);
@@ -130,6 +157,8 @@ function showSubcommandHelp (ctx: HandlerContext) {
       console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${commandToShowHelp.flags![name].description}`);
     }
   }
+  showCommandExamples(commandToShowHelp.examples);
+  showCommandNotes(commandToShowHelp.notes);
 }
 
 function showSingleCommandHelp (ctx: HandlerContext) {
@@ -149,4 +178,6 @@ function showSingleCommandHelp (ctx: HandlerContext) {
       console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${singleCommand.flags![name].description}`);
     }
   }
+  showCommandExamples(singleCommand.examples);
+  showCommandNotes(singleCommand.notes);
 }
