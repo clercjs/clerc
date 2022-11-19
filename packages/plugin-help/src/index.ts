@@ -31,14 +31,15 @@ const defaultOptions: Required<Options> = {
 export const helpPlugin = (_options?: Options) => definePlugin({
   setup (cli) {
     const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
-    if (command) {
-      cli = cli.command("help", "Show help")
-        .on("help", (ctx) => {
-          showHelp(ctx, rest);
-        });
-    }
-    cli = cli.inspector((_ctx, next) => {
-      const ctx = _ctx as HandlerContext;
+    cli.inspector((inspectorCtx, next) => {
+      if (command && !inspectorCtx.isSingleCommand) {
+        cli.command("help", "Show help")
+          .on("help", (ctx) => {
+            showHelp(ctx, rest);
+          });
+      }
+      next();
+      const ctx = inspectorCtx as HandlerContext;
       const flags = mergeFlags(ctx);
       if ((flags.h || flags.help)) {
         if (ctx.isSingleCommand) {
