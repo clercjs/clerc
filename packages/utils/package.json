@@ -6,6 +6,8 @@
   "keywords": [
     "cli",
     "clerc",
+    "clerc-utils",
+    "utils",
     "arguments",
     "argv",
     "args",
