@@ -3,7 +3,7 @@
 import type { CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandError, definePlugin, resolveCommand } from "clerc";
 import pc from "picocolors";
-import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength } from "./utils";
+import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, gracefulVersion } from "./utils";
 
 const newline = () => { console.log(); };
 
@@ -71,7 +71,7 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
     showSubcommandHelp(ctx);
     return;
   }
-  cli._name && console.log(`${pc.green(cli._name)} ${cli._version}`);
+  cli._name && console.log(`${pc.green(cli._name)} ${gracefulVersion(cli._version)}`);
   if (cli._description) {
     console.log(cli._description);
     newline();

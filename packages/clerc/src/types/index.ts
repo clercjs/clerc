@@ -1,31 +1,6 @@
+import type { Dict, MaybeArray } from "@clerc/utils";
 import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
-
-/**
- * Copied from type-fest
- */
-export type Primitive =
-  | null
-  | undefined
-  | string
-  | number
-  | boolean
-  | symbol
-  | bigint;
-/**
- * Copied from type-fest
- */
-export type LiteralUnion<
-  LiteralType,
-  BaseType extends Primitive,
-> = LiteralType | (BaseType & Record<never, never>);
-export type Dict<T> = Record<string, T>;
-type MustArray<T> = T extends any[] ? T : [T];
-export type MaybeArray<T> = T | T[];
-type GetLength<T extends any[]> = T extends { length: infer L extends number } ? L : never;
-type GetTail<T extends any[]> = T extends [infer _Head, ...infer Tail] ? Tail : never;
-type EnhanceSingle<T, E extends Dict<any>> = T & E;
-export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, MustArray<E>[0]>, GetTail<MustArray<E>>>;
 
 export type FlagOptions = FlagSchema & {
   description: string

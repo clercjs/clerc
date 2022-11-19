@@ -1,9 +1,10 @@
 import { LiteEmit } from "lite-emit";
 import mri from "mri";
 import { typeFlag } from "type-flag";
+import type { LiteralUnion } from "@clerc/utils";
 
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./errors";
-import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, LiteralUnion, MakeEventMap, Plugin } from "./types";
+import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand } from "./utils";
 
 export const SingleCommand = Symbol("SingleCommand");

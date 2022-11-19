@@ -1,7 +1,9 @@
-import type { Command, CommandRecord, MaybeArray } from "clerc";
+import type { Command, CommandRecord } from "clerc";
+import type { MaybeArray } from "@clerc/utils";
 
 const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
-const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${n}`;
+export const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${n}`;
+export const gracefulVersion = (v: string) => v.startsWith("v") ? v : `v${v}`;
 
 export function generateNameAndAliasFromCommands (commands: CommandRecord) {
   return Object.fromEntries(

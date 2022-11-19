@@ -1,8 +1,8 @@
 {
-  "name": "clerc",
+  "name": "@clerc/utils",
   "version": "0.3.3",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
-  "description": "Clerc is a simple and easy-to-use cli framework.",
+  "description": "Clerc utils",
   "keywords": [
     "cli",
     "clerc",
@@ -11,7 +11,7 @@
     "args",
     "terminal"
   ],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/clerc#readme",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/utils#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/so1ve/clerc.git",
@@ -42,11 +42,7 @@
     "build": "puild",
     "watch": "puild --watch"
   },
-  "dependencies": {
-    "@clerc/utils": "workspace:*",
-    "is-platform": "^0.2.0",
-    "lite-emit": "^1.4.0",
-    "mri": "^1.2.0",
-    "type-flag": "^3.0.0"
+  "peerDependencies": {
+    "clerc": "*"
   }
 }
