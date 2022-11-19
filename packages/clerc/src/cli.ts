@@ -11,19 +11,23 @@ export const SingleCommand = Symbol("SingleCommand");
 export type SingleCommandType = typeof SingleCommand;
 
 export class Clerc<C extends CommandRecord = {}> {
-  _name = "";
-  _description = "";
-  _version = "";
-  _inspectors: Inspector[] = [];
-  _commands = {} as C;
-
-  // TODO: Shall we use ES private fields?
-  private __commandEmitter = new LiteEmit<MakeEventMap<C>>();
+  #name = "";
+  #description = "";
+  #version = "";
+  #inspectors: Inspector[] = [];
+  #commands = {} as C;
+  #commandEmitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor () {}
 
-  private get __isSingleCommand () { return this._commands[SingleCommand] !== undefined; }
-  private get __hasCommands () { return Object.keys(this._commands).length > 0; }
+  get #isSingleCommand () { return this.#commands[SingleCommand] !== undefined; }
+  get #hasCommands () { return Object.keys(this.#commands).length > 0; }
+
+  get _name () { return this.#name; }
+  get _description () { return this.#description; }
+  get _version () { return this.#version; }
+  get _inspectors () { return this.#inspectors; }
+  get _commands () { return this.#commands; }
 
   /**
    * Create a new cli
@@ -48,7 +52,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   name (name: string) {
-    this._name = name;
+    this.#name = name;
     return this;
   }
 
@@ -62,7 +66,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *  .description("test cli")
    */
   description (description: string) {
-    this._description = description;
+    this.#description = description;
     return this;
   }
 
@@ -76,7 +80,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *  .version("1.0.0")
    */
   version (version: string) {
-    this._version = version;
+    this.#version = version;
     return this;
   }
 
@@ -113,20 +117,20 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   command<N extends string | SingleCommandType, D extends string, O extends CommandOptions>(name: N, description: D, options: O = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
-    if (this._commands[name]) {
+    if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("Single command already exists");
       }
       throw new CommandExistsError(`Command "${name === SingleCommand ? "[SingleCommand]" : name as string}" already exists`);
     }
-    if (this.__isSingleCommand) {
+    if (this.#isSingleCommand) {
       throw new SingleCommandError("Single command mode enabled");
     }
-    if (name === SingleCommand && this.__hasCommands) {
+    if (name === SingleCommand && this.#hasCommands) {
       throw new CommonCommandExistsError("Common command exists");
     }
     const { alias, flags } = options;
-    this._commands[name] = { name, description, alias, flags } as any;
+    this.#commands[name] = { name, description, alias, flags } as any;
     return this as any;
   }
 
@@ -145,7 +149,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   on<K extends keyof CM, CM extends this["_commands"] = this["_commands"]>(name: LiteralUnion<K, string>, handler: Handler<CM, K>) {
-    this.__commandEmitter.on(name as any, handler as any);
+    this.#commandEmitter.on(name as any, handler as any);
     return this;
   }
 
@@ -177,7 +181,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   inspector (inspector: Inspector) {
-    this._inspectors.push(inspector);
+    this.#inspectors.push(inspector);
     return this;
   }
 
@@ -194,18 +198,17 @@ export class Clerc<C extends CommandRecord = {}> {
   parse (argv = resolveArgv()) {
     const parsed = mri(argv);
     const name = String(parsed._[0]);
-    const getCommand = () => this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
+    const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
     const command = getCommand();
     const isCommandResolved = !!command;
     const parsedWithType = typeFlag(command?.flags || {}, argv);
-    // const parsedWithType = typeFlag();
     const { _: args, flags } = parsedWithType;
     // e.g cli a-command-does-not-exist -h
-    const parameters = this.__isSingleCommand || !isCommandResolved ? args : args.slice(1);
+    const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(1);
     const inspectorContext: InspectorContext = {
       name: command?.name,
       resolved: isCommandResolved,
-      isSingleCommand: this.__isSingleCommand,
+      isSingleCommand: this.#isSingleCommand,
       raw: parsedWithType,
       parameters,
       flags,
@@ -218,9 +221,9 @@ export class Clerc<C extends CommandRecord = {}> {
       if (!command) {
         throw new NoSuchCommandError(`No such command: ${name}`);
       }
-      this.__commandEmitter.emit(command.name, handlerContext);
+      this.#commandEmitter.emit(command.name, handlerContext);
     };
-    const inspectors = [...this._inspectors, emitHandler];
+    const inspectors = [...this.#inspectors, emitHandler];
     const inspector = compose(inspectors);
     inspector(inspectorContext);
   }
