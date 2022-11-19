@@ -18,7 +18,7 @@ const getCompletionFlag = (command: Command) => {
     .join("\n            ");
 };
 
-export function getPwshCompletion (ctx: HandlerContext) {
+export const getPwshCompletion = (ctx: HandlerContext) => {
   const { cli } = ctx;
   const { _name: name, _commands: commands } = cli;
   return `using namespace System.Management.Automation
@@ -58,4 +58,4 @@ Register-ArgumentCompleter -Native -CommandName '${name}' -ScriptBlock {
     $completions.Where{ $_.CompletionText -like "$wordToComplete*" } |
         Sort-Object -Property ListItemText
 }`;
-}
+};

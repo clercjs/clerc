@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 // TODO: unit tests
 import { NoSuchCommandError, definePlugin } from "clerc";
-import { getPwshCompletion } from "./completions/pwsh";
+import { getBashCompletion, getPwshCompletion } from "./completions";
 
 const completionMap = {
+  bash: getBashCompletion,
   pwsh: getPwshCompletion,
 };
 
@@ -14,12 +15,20 @@ export const completionsPlugin = (options: Options = {}) => definePlugin({
   setup (cli) {
     const { command = true } = options;
     if (command) {
-      cli = cli.command("completions", "Print shell completions to stdout")
+      cli = cli.command("completions", "Print shell completions to stdout", {
+        flags: {
+          shell: {
+            description: "Shell type",
+            type: String,
+            default: "",
+          },
+        },
+      })
         .on("completions", (ctx) => {
           if (!cli._name) {
             throw new Error("CLI name is not defined!");
           }
-          const shell = String(ctx.parameters[0]);
+          const shell = String(ctx.parameters[0] || ctx.flags.shell);
           if (!shell) {
             throw new Error("Missing shell name");
           }
