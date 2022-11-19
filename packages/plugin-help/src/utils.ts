@@ -15,9 +15,9 @@ export function generateFlagNameAndAliasFromCommand (command: Command) {
   return Object.fromEntries(
     Object.entries(command.flags || {})
       .map(([name, flag]) => {
-        let nameAndAlias = [name];
+        const nameAndAlias = [name];
         if (flag.alias) {
-          nameAndAlias = [...nameAndAlias, ...mustArray(flag.alias)];
+          nameAndAlias.push(...mustArray(flag.alias));
         }
         return [name, nameAndAlias.map(gracefulFlagName).join(", ")];
       },

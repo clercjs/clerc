@@ -5,13 +5,12 @@ const getCompletionValue = (command: Command) => `[CompletionResult]::new('${com
 const getCompletionFlag = (command: Command) => {
   return Object.entries(command.flags || {})
     .map(([flagName, flag]) => {
-      let gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${flagName}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || ""}')`];
+      const gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${flagName}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || ""}')`];
       if (flag?.alias) {
         const arrayAlias = mustArray(flag.alias);
-        gen = [
-          ...gen,
+        gen.push(
           ...arrayAlias.map(n => `[CompletionResult]::new('${gracefulFlagName(n)}', '${n}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || ""}')`),
-        ];
+        );
       }
       return gen.join("\n            ");
     })
