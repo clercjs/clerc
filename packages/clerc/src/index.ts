@@ -1,5 +1,5 @@
 export * from "./cli";
-export * from "./helper";
+export * from "./helpers";
 export * from "./types";
-export * from "./error";
+export * from "./errors";
 export * from "./utils";

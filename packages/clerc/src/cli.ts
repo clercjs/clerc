@@ -2,7 +2,7 @@ import { LiteEmit } from "lite-emit";
 import mri from "mri";
 import { typeFlag } from "type-flag";
 
-import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./error";
+import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./errors";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, LiteralUnion, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand } from "./utils";
 
