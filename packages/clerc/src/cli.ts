@@ -129,8 +129,7 @@ export class Clerc<C extends CommandRecord = {}> {
     if (name === SingleCommand && this.#hasCommands) {
       throw new CommonCommandExistsError("Common command exists");
     }
-    const { alias, flags } = options;
-    this.#commands[name] = { name, description, alias, flags } as any;
+    this.#commands[name] = { name, description, ...options } as any;
     return this as any;
   }
 
@@ -199,25 +198,30 @@ export class Clerc<C extends CommandRecord = {}> {
     const parsed = mri(argv);
     const name = String(parsed._[0]);
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
-    const command = getCommand();
-    const isCommandResolved = !!command;
-    const parsedWithType = typeFlag(command?.flags || {}, argv);
-    const { _: args, flags } = parsedWithType;
-    // e.g cli a-command-does-not-exist -h
-    const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(1);
-    const inspectorContext: InspectorContext = {
-      name: command?.name,
-      resolved: isCommandResolved,
-      isSingleCommand: this.#isSingleCommand,
-      raw: parsedWithType,
-      parameters,
-      flags,
-      unknownFlags: parsedWithType.unknownFlags,
-      cli: this as any,
+    const getContext = () => {
+      const command = getCommand();
+      const isCommandResolved = !!command;
+      // [...argv] is a workaround
+      // WTF... typeFlag modifies argv????????
+      const parsedWithType = typeFlag(command?.flags || {}, [...argv]);
+      const { _: args, flags } = parsedWithType;
+      const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(1);
+      const context: InspectorContext | HandlerContext = {
+        name: command?.name,
+        resolved: isCommandResolved,
+        isSingleCommand: this.#isSingleCommand,
+        raw: parsedWithType,
+        parameters,
+        flags,
+        unknownFlags: parsedWithType.unknownFlags,
+        cli: this as any,
+      };
+      return context;
     };
-    const handlerContext = inspectorContext as HandlerContext;
+    const inspectorContext: InspectorContext = getContext();
     const emitHandler = () => {
       const command = getCommand();
+      const handlerContext = getContext();
       if (!command) {
         throw new NoSuchCommandError(`No such command: ${name}`);
       }
