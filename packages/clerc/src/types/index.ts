@@ -20,6 +20,8 @@ export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string
   alias?: A
   // parameters?: P
   flags?: F
+  examples?: [string, string][]
+  notes?: string[]
 }
 export type Command<N extends string | SingleCommandType = string, D extends string = string, Options extends CommandOptions = CommandOptions> = Options & {
   name: N
