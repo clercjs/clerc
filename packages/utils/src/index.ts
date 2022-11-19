@@ -38,7 +38,7 @@ export const kebabCase = <T extends string>(s: T): KebabCase<T> => s.replace(/([
 export const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${n}`;
 export const gracefulVersion = (v: string) =>
   v.length === 0
-    ? v.startsWith("v")
+    ? ""
+    : v.startsWith("v")
       ? v
-      : `v${v}`
-    : "";
+      : `v${v}`;
