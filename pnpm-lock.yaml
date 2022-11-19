@@ -64,6 +64,18 @@ importers:
       clerc: link:../clerc
       picocolors: 1.0.0
 
+  packages/plugin-not-found:
+    specifiers:
+      '@clerc/utils': workspace:*
+      clerc: workspace:*
+      fastest-levenshtein: ^1.0.16
+      picocolors: ^1.0.0
+    dependencies:
+      '@clerc/utils': link:../utils
+      clerc: link:../clerc
+      fastest-levenshtein: 1.0.16
+      picocolors: 1.0.0
+
   packages/utils:
     specifiers: {}
 
@@ -1842,6 +1854,11 @@ packages:
   /fast-levenshtein/2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
+
+  /fastest-levenshtein/1.0.16:
+    resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
+    engines: {node: '>= 4.9.1'}
+    dev: false
 
   /fastq/1.10.1:
     resolution: {integrity: sha512-AWuv6Ery3pM+dY7LYS8YIaCiQvUaos9OB1RyNgaOWnaX+Tik7Onvcsf8x8c+YtDeT0maYLniBip2hox5KtEXXA==}
