@@ -18,6 +18,9 @@
       ],
       "@clerc/plugin-help": [
         "./packages/plugin-help/src/index.ts"
+      ],
+      "@clerc/utils": [
+        "./packages/utils/src/index.ts"
       ]
     }
   }
