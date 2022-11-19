@@ -36,4 +36,9 @@ export type KebabCase<T extends string, A extends string = ""> = T extends `${in
 export const kebabCase = <T extends string>(s: T): KebabCase<T> => s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;
 
 export const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${n}`;
-export const gracefulVersion = (v: string) => v.startsWith("v") ? v : `v${v}`;
+export const gracefulVersion = (v: string) =>
+  v.length === 0
+    ? v.startsWith("v")
+      ? v
+      : `v${v}`
+    : "";

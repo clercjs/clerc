@@ -78,7 +78,7 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
     showSubcommandHelp(ctx);
     return;
   }
-  cli._name && console.log(`${pc.green(cli._name)} ${getVersion(cli._version)}`);
+  cli._name && console.log(`${pc.green(cli._name)} ${gracefulVersion(cli._version)}`);
   if (cli._description) {
     console.log(cli._description);
     newline();
@@ -116,7 +116,7 @@ function showSubcommandHelp (ctx: HandlerContext) {
   if (!commandToShowHelp) {
     throw new NoSuchCommandError(`No such command: ${commandName}`);
   }
-  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${getVersion(cli._version)}`);
+  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
   commandToShowHelp.description && console.log(commandToShowHelp.description);
   newline();
   console.log(pc.yellow("USAGE:"));
@@ -135,7 +135,7 @@ function showSubcommandHelp (ctx: HandlerContext) {
 function showSingleCommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
   const singleCommand = cli._commands[SingleCommand]!;
-  console.log(`${pc.green(`${cli._name} ${getVersion(cli._version)}`)}`);
+  console.log(`${pc.green(`${cli._name} ${gracefulVersion(cli._version)}`)}`);
   singleCommand.description && console.log(singleCommand.description);
   newline();
   console.log(pc.yellow("USAGE:"));
@@ -149,8 +149,4 @@ function showSingleCommandHelp (ctx: HandlerContext) {
       console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${singleCommand.flags![name].description}`);
     }
   }
-}
-
-function getVersion (version: string) {
-  return version ? gracefulVersion(version) : "";
 }
