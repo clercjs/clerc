@@ -2,9 +2,10 @@
 // TODO: unit tests
 import type { CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "clerc";
-
+import { gracefulVersion } from "@clerc/utils";
 import pc from "picocolors";
-import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, gracefulVersion, mergeFlags } from "./utils";
+
+import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, mergeFlags } from "./utils";
 
 const newline = () => { console.log(); };
 
