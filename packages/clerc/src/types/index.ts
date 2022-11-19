@@ -35,6 +35,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   isSingleCommand: boolean
   raw: ParsedFlags
   parameters: PossibleInputKind[]
+  unknownFlags: ParsedFlags["unknownFlags"]
   flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
   cli: Clerc<C>
 }

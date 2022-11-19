@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 // TODO: unit tests
 import type { CommandRecord, HandlerContext } from "clerc";
-import { NoSuchCommandError, definePlugin, resolveCommand } from "clerc";
+import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "clerc";
+
 import pc from "picocolors";
-import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, gracefulVersion } from "./utils";
+import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, gracefulVersion, mergeFlags } from "./utils";
 
 const newline = () => { console.log(); };
 
@@ -38,7 +39,12 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     }
     cli = cli.inspector((_ctx, next) => {
       const ctx = _ctx as HandlerContext;
-      if ((_ctx.flags.h || _ctx.flags.help)) {
+      const flags = mergeFlags(ctx);
+      if ((flags.h || flags.help)) {
+        if (ctx.isSingleCommand) {
+          showSingleCommandHelp(ctx);
+          return;
+        }
         if (ctx.name === "help") {
           showSubcommandHelp({
             ...ctx,
@@ -54,7 +60,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
         return;
       }
       // e.g: $ cli
-      if (!ctx.resolved && ctx.parameters.length === 0 && Object.keys(ctx.flags).length === 0) {
+      if (!ctx.resolved && ctx.parameters.length === 0 && Object.keys(flags).length === 0) {
         showHelp(ctx, rest);
         return;
       }
@@ -109,22 +115,11 @@ function showSubcommandHelp (ctx: HandlerContext) {
   if (!commandToShowHelp) {
     throw new NoSuchCommandError(`No such command: ${commandName}`);
   }
-  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${cli._version}`);
+  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
   commandToShowHelp.description && console.log(commandToShowHelp.description);
   newline();
   console.log(pc.yellow("USAGE:"));
   console.log(`    ${cli._name} ${commandToShowHelp.name} [PARAMETERS] [FLAGS]`);
-  // const parameters = commandToShowHelp.parameters || {};
-  // const parameterKeys = Object.keys(parameters);
-  // if (parameterKeys.length > 0) {
-  //   newline();
-  //   console.log(pc.yellow("PARAMETERS:"));
-  //   const parametersPadLength = getPadLength(parameterKeys);
-  //   for (const [name, param] of Object.entries(parameters)) {
-  //     const resuired = param.required ? pc.red(" (required)") : "";
-  //     console.log(`    ${pc.green(name.padEnd(parametersPadLength))}${param.description}${resuired}`);
-  //   }
-  // }
   const flagNameAndAlias = generateFlagNameAndAliasFromCommand(commandToShowHelp);
   if (Object.keys(flagNameAndAlias).length > 0) {
     newline();
@@ -132,6 +127,25 @@ function showSubcommandHelp (ctx: HandlerContext) {
     const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
     for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
       console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${commandToShowHelp.flags![name].description}`);
+    }
+  }
+}
+
+function showSingleCommandHelp (ctx: HandlerContext) {
+  const { cli } = ctx;
+  const singleCommand = cli._commands[SingleCommand]!;
+  console.log(`${pc.green(`${cli._name} ${gracefulVersion(cli._version)}`)}`);
+  singleCommand.description && console.log(singleCommand.description);
+  newline();
+  console.log(pc.yellow("USAGE:"));
+  console.log(`    ${cli._name} [PARAMETERS] [FLAGS]`);
+  const flagNameAndAlias = generateFlagNameAndAliasFromCommand(singleCommand);
+  if (Object.keys(flagNameAndAlias).length > 0) {
+    newline();
+    console.log(pc.yellow("FLAGS:"));
+    const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
+    for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
+      console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${singleCommand.flags![name].description}`);
     }
   }
 }

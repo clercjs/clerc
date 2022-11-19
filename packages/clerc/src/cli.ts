@@ -208,6 +208,7 @@ export class Clerc<C extends CommandRecord = {}> {
       raw: parsedWithType,
       parameters,
       flags,
+      unknownFlags: parsedWithType.unknownFlags,
       cli: this as any,
     };
     const handlerContext = inspectorContext as HandlerContext;

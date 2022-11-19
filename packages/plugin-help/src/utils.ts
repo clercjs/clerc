@@ -1,4 +1,4 @@
-import type { Command, CommandRecord } from "clerc";
+import type { Command, CommandRecord, HandlerContext, InspectorContext } from "clerc";
 import type { MaybeArray } from "@clerc/utils";
 
 const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
@@ -14,7 +14,14 @@ export function generateNameAndAliasFromCommands (commands: CommandRecord) {
 export function generateFlagNameAndAliasFromCommand (command: Command) {
   return Object.fromEntries(
     Object.entries(command.flags || {})
-      .map(([name, flag]) => [name, [name, ...mustArray(flag.alias || "")].map(gracefulFlagName).join(", ")]),
+      .map(([name, flag]) => {
+        let nameAndAlias = [name];
+        if (flag.alias) {
+          nameAndAlias = [...nameAndAlias, ...mustArray(flag.alias)];
+        }
+        return [name, nameAndAlias.map(gracefulFlagName).join(", ")];
+      },
+      ),
   );
 }
 
@@ -22,3 +29,5 @@ export function getPadLength (strings: string[]) {
   const maxLength = Math.max(...strings.map(n => n.length));
   return Math.floor((maxLength + 4) / 4) * 4;
 }
+
+export const mergeFlags = (ctx: HandlerContext | InspectorContext) => ({ ...ctx.flags, ...ctx.unknownFlags });
