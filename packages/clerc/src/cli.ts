@@ -194,7 +194,8 @@ export class Clerc<C extends CommandRecord = {}> {
   parse (argv = resolveArgv()) {
     const parsed = mri(argv);
     const name = String(parsed._[0]);
-    const command = this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
+    const getCommand = () => this.__isSingleCommand ? this._commands[SingleCommand] : resolveCommand(this._commands, name);
+    const command = getCommand();
     const isCommandResolved = !!command;
     const parsedWithType = typeFlag(command?.flags || {}, argv);
     // const parsedWithType = typeFlag();
@@ -213,6 +214,7 @@ export class Clerc<C extends CommandRecord = {}> {
     };
     const handlerContext = inspectorContext as HandlerContext;
     const emitHandler = () => {
+      const command = getCommand();
       if (!command) {
         throw new NoSuchCommandError(`No such command: ${name}`);
       }

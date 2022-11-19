@@ -18,12 +18,11 @@ describe("plugin-help", () => {
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mtest[39m v",
-        "[33mUSAGE:[39m",
-        "    test <SUBCOMMAND> [OPTIONS]",
+        "[32mtest.help[39m v",
+        "Show help",
         undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
+        "[33mUSAGE:[39m",
+        "    test help [PARAMETERS] [FLAGS]",
       ]
     `);
     msgs.length = 0;
@@ -50,11 +49,11 @@ describe("plugin-help", () => {
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[33mUSAGE:[39m",
-        "    <CLI NAME> <SUBCOMMAND> [OPTIONS]",
+        "[32m.help[39m v",
+        "Show help",
         undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
+        "[33mUSAGE:[39m",
+        "     help [PARAMETERS] [FLAGS]",
       ]
     `);
   });
@@ -67,14 +66,11 @@ describe("plugin-help", () => {
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mfoo[39m v1.0.0",
-        "foo cli",
+        "[32mfoo.help[39m v1.0.0",
+        "Show help",
         undefined,
         "[33mUSAGE:[39m",
-        "    foo <SUBCOMMAND> [OPTIONS]",
-        undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
+        "    foo help [PARAMETERS] [FLAGS]",
       ]
     `);
   });

@@ -33,12 +33,11 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
     cli.inspector((inspectorCtx, next) => {
       if (command && !inspectorCtx.isSingleCommand) {
-        cli.command("help", "Show help")
+        cli = cli.command("help", "Show help")
           .on("help", (ctx) => {
             showHelp(ctx, rest);
           });
       }
-      next();
       const ctx = inspectorCtx as HandlerContext;
       const flags = mergeFlags(ctx);
       if ((flags.h || flags.help)) {
