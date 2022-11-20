@@ -124,10 +124,10 @@ export class Clerc<C extends CommandRecord = {}> {
       throw new CommandExistsError(`Command "${name === SingleCommand ? "[SingleCommand]" : name as string}" already exists`);
     }
     if (this.#isSingleCommand) {
-      throw new SingleCommandError("Single command mode enabled");
+      throw new SingleCommandError();
     }
     if (name === SingleCommand && this.#hasCommands) {
-      throw new CommonCommandExistsError("Common command exists");
+      throw new CommonCommandExistsError();
     }
     this.#commands[name] = { name, description, ...options } as any;
     return this as any;
@@ -223,7 +223,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const command = getCommand();
       const handlerContext = getContext();
       if (!command) {
-        throw new NoSuchCommandError(`No such command: ${name}`);
+        throw new NoSuchCommandError(name);
       }
       this.#commandEmitter.emit(command.name, handlerContext);
     };
