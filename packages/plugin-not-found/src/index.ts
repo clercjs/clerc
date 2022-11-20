@@ -15,7 +15,8 @@ export const notFoundPlugin = () => definePlugin({
           console.log(`Possible commands: ${Object.keys(cli._commands).join(", ")}.`);
           return;
         }
-        const calledCommandName = String(ctx.parameters[0]);
+        // Bad example :(
+        const calledCommandName = e.message.replace("No such command: ", "");
         const closestCommandName = closest(calledCommandName, Object.keys(cli._commands));
         console.log(`Command "${calledCommandName}" not found.`);
         console.log(`Did you mean "${closestCommandName}"?`);

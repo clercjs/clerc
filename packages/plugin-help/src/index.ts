@@ -140,10 +140,10 @@ function showCommandNotes (notes?: string[]) {
 
 function showSubcommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
-  const commandName = String(ctx.name || ctx.parameters[0]);
+  const commandName = String(ctx.parameters[0]);
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
   if (!commandToShowHelp) {
-    throw new NoSuchCommandError(`No such command: ${commandName}`);
+    throw new NoSuchCommandError(commandName);
   }
   // Name, command name and version
   console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
