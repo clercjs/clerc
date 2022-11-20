@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import type { CommandRecord, HandlerContext } from "clerc";
+import type { Clerc, CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "clerc";
 import { gracefulVersion } from "@clerc/utils";
 import pc from "picocolors";
@@ -8,6 +8,11 @@ import pc from "picocolors";
 import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, mergeFlags } from "./utils";
 
 const newline = () => { console.log(); };
+const getExamples = (cli: Clerc) => [
+  [`${cli._name} help`, "Displays help of the cli"],
+  [`${cli._name} -h`, "Displays help of the cli"],
+  [`${cli._name} help help`, "Displays help of the help command"],
+] as [string, string][];
 
 interface Options {
   /**
@@ -35,11 +40,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
     cli.inspector((inspectorCtx, next) => {
       if (command && !inspectorCtx.isSingleCommand) {
         cli = cli.command("help", "Show help", {
-          examples: [
-            [`${cli._name} help`, "Displays help of the cli"],
-            [`${cli._name} -h`, "Displays help of the cli"],
-            [`${cli._name} help help`, "Displays help of the help command"],
-          ],
+          examples: getExamples(cli),
         })
           .on("help", (ctx) => {
             showHelp(ctx, rest);
@@ -80,24 +81,30 @@ export const helpPlugin = (_options?: Options) => definePlugin({
 type ShowHelpOptions = Required<Omit<Options, "command">>;
 function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   const { cli } = ctx;
+  // When parameters are passed, treat them as subcommand.
   if (ctx.parameters.length > 0) {
     showSubcommandHelp(ctx);
     return;
   }
+  // Name
   cli._name && console.log(`${pc.green(cli._name)} ${gracefulVersion(cli._version)}`);
+  // Description
   if (cli._description) {
     console.log(cli._description);
     newline();
   }
+  // Usage
   console.log(pc.yellow("USAGE:"));
   console.log(`    ${cli._name || "<CLI NAME>"} <SUBCOMMAND> [OPTIONS]`);
   newline();
+  // Commands
   console.log(pc.yellow("COMMANDS:"));
   const commandNameAndAlias = generateNameAndAliasFromCommands(cli._commands);
   const commandsPadLength = getPadLength(Object.values(commandNameAndAlias));
   for (const [name, nameAndAlias] of Object.entries(commandNameAndAlias)) {
     console.log(`    ${pc.green(nameAndAlias.padEnd(commandsPadLength))}${(cli._commands as CommandRecord)[name].description}`);
   }
+  // Examples
   if (examples.length > 0) {
     newline();
     console.log(pc.yellow("EXAMPLES:"));
@@ -106,16 +113,11 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
       console.log(`  ${exampleCommand.padEnd(examplesPadLength)}${exampleDescription}`);
     }
   }
-  if (notes.length > 0) {
-    newline();
-    console.log(pc.yellow("NOTES:"));
-    for (const note of notes) {
-      console.log(`  ${note}`);
-    }
-  }
+  // Notes
+  showCommandNotes(notes);
 }
 
-const showCommandExamples = (examples?: [string, string][]) => {
+function showCommandExamples (examples?: [string, string][]) {
   if (examples && examples.length > 0) {
     newline();
     console.log(pc.yellow("EXAMPLES:"));
@@ -124,9 +126,9 @@ const showCommandExamples = (examples?: [string, string][]) => {
       console.log(`  ${exampleCommand.padEnd(examplesPadLength)}${exampleDescription}`);
     }
   }
-};
+}
 
-const showCommandNotes = (notes?: string[]) => {
+function showCommandNotes (notes?: string[]) {
   if (notes && notes.length > 0) {
     newline();
     console.log(pc.yellow("NOTES:"));
@@ -134,7 +136,7 @@ const showCommandNotes = (notes?: string[]) => {
       console.log(`  ${note}`);
     }
   }
-};
+}
 
 function showSubcommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
@@ -143,11 +145,15 @@ function showSubcommandHelp (ctx: HandlerContext) {
   if (!commandToShowHelp) {
     throw new NoSuchCommandError(`No such command: ${commandName}`);
   }
+  // Name, command name and version
   console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
+  // Description
   commandToShowHelp.description && console.log(commandToShowHelp.description);
+  // Usage;
   newline();
   console.log(pc.yellow("USAGE:"));
   console.log(`    ${cli._name} ${commandToShowHelp.name} [PARAMETERS] [FLAGS]`);
+  // Flags
   const flagNameAndAlias = generateFlagNameAndAliasFromCommand(commandToShowHelp);
   if (Object.keys(flagNameAndAlias).length > 0) {
     newline();
