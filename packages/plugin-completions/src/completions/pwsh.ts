@@ -1,15 +1,16 @@
 import type { Command, HandlerContext } from "clerc";
 import { gracefulFlagName, mustArray } from "@clerc/utils";
 
+const NO_DESCRIPTION = '(No Description)'
 const getCompletionValue = (command: Command) => `[CompletionResult]::new('${command.name}', '${command.name}', [CompletionResultType]::ParameterValue, '${command.description}')`;
 const getCompletionFlag = (command: Command) => {
   return Object.entries(command.flags || {})
     .map(([flagName, flag]) => {
-      const gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${flagName}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || ""}')`];
+      const gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${flagName}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`];
       if (flag?.alias) {
         const arrayAlias = mustArray(flag.alias);
         gen.push(
-          ...arrayAlias.map(n => `[CompletionResult]::new('${gracefulFlagName(n)}', '${n}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || ""}')`),
+          ...arrayAlias.map(n => `[CompletionResult]::new('${gracefulFlagName(n)}', '${n}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`),
         );
       }
       return gen.join("\n            ");
