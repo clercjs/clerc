@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import { NoSuchCommandError, definePlugin } from "clerc";
+import { definePlugin } from "clerc";
 import { getBashCompletion, getPwshCompletion } from "./completions";
 
 const completionMap = {
@@ -35,7 +35,7 @@ export const completionsPlugin = (options: Options = {}) => definePlugin({
           if (shell in completionMap) {
             console.log(completionMap[shell as keyof typeof completionMap](ctx));
           } else {
-            throw new NoSuchCommandError(`No such shell: ${shell}`);
+            throw new Error(`No such shell: ${shell}`);
           }
         });
     }
