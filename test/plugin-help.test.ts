@@ -18,7 +18,7 @@ describe("plugin-help", () => {
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mtest[39m v",
+        "[32mtest[39m ",
         "[33mUSAGE:[39m",
         "    test <SUBCOMMAND> [OPTIONS]",
         undefined,
@@ -35,7 +35,7 @@ describe("plugin-help", () => {
       .parse(["--help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mtest[39m v",
+        "[32mtest[39m ",
         "[33mUSAGE:[39m",
         "    test <SUBCOMMAND> [OPTIONS]",
         undefined,
@@ -67,7 +67,7 @@ describe("plugin-help", () => {
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mfoo[39m ",
+        "[32mfoo[39m v1.0.0",
         "foo cli",
         undefined,
         "[33mUSAGE:[39m",
