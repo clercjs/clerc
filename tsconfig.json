@@ -19,6 +19,9 @@
       "@clerc/plugin-help": [
         "./packages/plugin-help/src/index.ts"
       ],
+      "@clerc/plugin-not-found": [
+        "./packages/plugin-not-found/src/index.ts"
+      ],
       "@clerc/utils": [
         "./packages/utils/src/index.ts"
       ]
