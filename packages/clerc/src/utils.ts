@@ -47,11 +47,11 @@ export const resolveArgv = (): string[] =>
       : [];
 
 export function compose (inspectors: Inspector[]) {
-  return (ctx: InspectorContext) => {
+  return (getCtx: () => InspectorContext) => {
     return dispatch(0);
     function dispatch (i: number): void {
       const inspector = inspectors[i];
-      return inspector(ctx, dispatch.bind(null, i + 1));
+      return inspector(getCtx(), dispatch.bind(null, i + 1));
     }
   };
 }

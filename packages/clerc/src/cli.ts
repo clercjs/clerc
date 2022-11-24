@@ -218,7 +218,6 @@ export class Clerc<C extends CommandRecord = {}> {
       };
       return context;
     };
-    const inspectorContext: InspectorContext = getContext();
     const emitHandler = () => {
       const command = getCommand();
       const handlerContext = getContext();
@@ -229,6 +228,6 @@ export class Clerc<C extends CommandRecord = {}> {
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const inspector = compose(inspectors);
-    inspector(inspectorContext);
+    inspector(getContext);
   }
 }
