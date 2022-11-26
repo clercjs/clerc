@@ -2,8 +2,9 @@ import { LiteEmit } from "lite-emit";
 import mri from "mri";
 import { typeFlag } from "type-flag";
 import type { LiteralUnion } from "@clerc/utils";
+import { arrayStartsWith } from "@clerc/utils";
 
-import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, SingleCommandError } from "./errors";
+import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandError, SubcommandExistsError } from "./errors";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand } from "./utils";
 
@@ -129,6 +130,22 @@ export class Clerc<C extends CommandRecord = {}> {
     if (name === SingleCommand && this.#hasCommands) {
       throw new CommonCommandExistsError();
     }
+    // Check if this is a subcommand
+    // Cannot exist with its parent
+    // e.g `foo` and `foo bar`
+    if (name !== SingleCommand) {
+      const splitedName = name.split(" ");
+      const existedCommandNames = Object.keys(this.#commands)
+        .filter(name => typeof name === "string")
+        .map(name => name.split(" "));
+      if (existedCommandNames.some(name => arrayStartsWith(splitedName, name))) {
+        throw new ParentCommandExistsError(splitedName.join(" "));
+      }
+      if (existedCommandNames.some(name => arrayStartsWith(name, splitedName))) {
+        throw new SubcommandExistsError(splitedName.join(" "));
+      }
+    }
+
     this.#commands[name] = { name, description, ...options } as any;
     return this as any;
   }
@@ -196,7 +213,8 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   parse (argv = resolveArgv()) {
     const parsed = mri(argv);
-    const name = String(parsed._[0]);
+    const name = parsed._.map(String);
+    const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
     const getContext = () => {
       const command = getCommand();
@@ -205,7 +223,7 @@ export class Clerc<C extends CommandRecord = {}> {
       // WTF... typeFlag modifies argv????????
       const parsedWithType = typeFlag(command?.flags || {}, [...argv]);
       const { _: args, flags } = parsedWithType;
-      const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(1);
+      const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
       const context: InspectorContext | HandlerContext = {
         name: command?.name,
         resolved: isCommandResolved,
@@ -222,12 +240,13 @@ export class Clerc<C extends CommandRecord = {}> {
       const command = getCommand();
       const handlerContext = getContext();
       if (!command) {
-        throw new NoSuchCommandError(name);
+        throw new NoSuchCommandError(stringName);
       }
       this.#commandEmitter.emit(command.name, handlerContext);
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const inspector = compose(inspectors);
     inspector(getContext);
+    return this;
   }
 }

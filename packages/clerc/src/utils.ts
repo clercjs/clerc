@@ -1,6 +1,7 @@
 import { isDeno, isNode } from "is-platform";
 import type { Dict } from "@clerc/utils";
-import { kebabCase, mustArray } from "@clerc/utils";
+import { arrayStartsWith, kebabCase, mustArray } from "@clerc/utils";
+
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
 import type { Command, CommandRecord, FlagOptions, Inspector, InspectorContext } from "./types";
@@ -23,20 +24,37 @@ export const resolveFlagDefault = (_command: Command) =>
     return acc;
   }, {} as Dict<FlagOptions["default"]>);
 
-export function resolveCommand (commands: CommandRecord, name: string | SingleCommandType): Command | undefined {
+export function resolveCommand (commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
   if (name === SingleCommand) {
     return commands[SingleCommand];
   }
+  const nameArr = Array.isArray(name) ? name : name.split(" ");
+  const nameString = nameArr.join(" ");
   const possibleCommands = Object.values(commands)
-    .filter(c => c.name === name || mustArray(c.alias || [])
+    .filter(c => arrayStartsWith(nameArr, c.name.split(" ")) || mustArray(c.alias || [])
       .map(String)
-      .includes(name),
+      .includes(nameString),
     );
   if (possibleCommands.length > 1) {
-    throw new Error(`Multiple commands found with name "${name as string}"`);
+    throw new Error(`Multiple commands found with name "${nameString}"`);
   }
   return possibleCommands[0];
 }
+
+export function resolveSubcommandsByParent (commands: CommandRecord, parent: string | string[], depth = Infinity) {
+  const parentArr = parent === ""
+    ? []
+    : Array.isArray(parent)
+      ? parent
+      : parent.split(" ");
+  return Object.values(commands)
+    .filter((c) => {
+      const commandNameArr = c.name.split(" ");
+      return arrayStartsWith(commandNameArr, parentArr) && commandNameArr.length - parentArr.length <= depth;
+    });
+}
+
+export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
 
 export const resolveArgv = (): string[] =>
   isNode()

@@ -1,3 +1,5 @@
+import type { Command, CommandRecord } from "clerc";
+
 /**
  * Copied from type-fest
  */
@@ -42,3 +44,26 @@ export const gracefulVersion = (v: string) =>
     : v.startsWith("v")
       ? v
       : `v${v}`;
+
+export const arrayStartsWith = <T>(arr: T[], start: T[]) => {
+  if (start.length > arr.length) {
+    return false;
+  }
+  return arr.slice(0, start.length)
+    .every((item, i) => item === start[i]);
+};
+
+export const arrayEquals = <T>(arr1: T[], arr2: T[]) => {
+  if (arr2.length !== arr1.length) {
+    return false;
+  }
+  return arr1.every((item, i) => item === arr2[i]);
+};
+
+export const generateCommandRecordFromCommandArray = <C extends Command[]>(commands: C) => {
+  const record = {} as CommandRecord;
+  for (const command of commands) {
+    record[command.name] = command;
+  }
+  return record;
+};

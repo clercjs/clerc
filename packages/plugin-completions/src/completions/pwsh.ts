@@ -48,7 +48,7 @@ Register-ArgumentCompleter -Native -CommandName '${name}' -ScriptBlock {
         }
         ${
           Object.entries(commands).map(([commandName, command]) =>
-          `'${name};${commandName}' {
+          `'${name};${commandName.split(" ").join(";")}' {
             ${getCompletionFlag(command)}
             break
         }`).join("\n        ")

@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 // TODO: unit tests
 import type { Clerc, CommandRecord, HandlerContext } from "clerc";
-import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "clerc";
-import { gracefulVersion } from "@clerc/utils";
+import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "clerc";
+
+import { generateCommandRecordFromCommandArray, gracefulVersion } from "@clerc/utils";
 import pc from "picocolors";
 
 import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, mergeFlags } from "./utils";
@@ -54,10 +55,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
           return;
         }
         if (ctx.name === "help") {
-          showSubcommandHelp({
-            ...ctx,
-            name: "help",
-          });
+          showSubcommandHelp(ctx);
           return;
         }
         if (ctx.resolved) {
@@ -99,7 +97,7 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   newline();
   // Commands
   console.log(pc.yellow("COMMANDS:"));
-  const commandNameAndAlias = generateNameAndAliasFromCommands(cli._commands);
+  const commandNameAndAlias = generateNameAndAliasFromCommands(generateCommandRecordFromCommandArray(resolveRootCommands(cli._commands)));
   const commandsPadLength = getPadLength(Object.values(commandNameAndAlias));
   for (const [name, nameAndAlias] of Object.entries(commandNameAndAlias)) {
     console.log(`    ${pc.green(nameAndAlias.padEnd(commandsPadLength))}${(cli._commands as CommandRecord)[name].description}`);
@@ -140,13 +138,13 @@ function showCommandNotes (notes?: string[]) {
 
 function showSubcommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
-  const commandName = String(ctx.parameters[0]);
+  const commandName = ctx.parameters.map(String);
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
   if (!commandToShowHelp) {
-    throw new NoSuchCommandError(commandName);
+    throw new NoSuchCommandError(commandName.join(" "));
   }
   // Name, command name and version
-  console.log(`${pc.green(`${cli._name}.${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
+  console.log(`${pc.green(`${cli._name} ${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
   // Description
   commandToShowHelp.description && console.log(commandToShowHelp.description);
   // Usage;
