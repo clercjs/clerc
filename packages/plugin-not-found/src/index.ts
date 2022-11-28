@@ -2,6 +2,7 @@
 // TODO: unit tests
 import { NoSuchCommandError, definePlugin } from "clerc";
 import { closest } from "fastest-levenshtein";
+import pc from "picocolors";
 
 export const notFoundPlugin = () => definePlugin({
   setup (cli) {
@@ -12,14 +13,14 @@ export const notFoundPlugin = () => definePlugin({
         if (!(e instanceof NoSuchCommandError)) { throw e; }
         if (ctx.parameters.length === 0) {
           console.log("No command given.");
-          console.log(`Possible commands: ${Object.keys(cli._commands).join(", ")}.`);
+          console.log(`Possible commands: ${pc.bold(Object.keys(cli._commands).join(", "))}.`);
           return;
         }
         // Bad example :(
         const calledCommandName = e.message.replace("No such command: ", "");
         const closestCommandName = closest(calledCommandName, Object.keys(cli._commands));
-        console.log(`Command "${calledCommandName}" not found.`);
-        console.log(`Did you mean "${closestCommandName}"?`);
+        console.log(`Command "${pc.strikethrough(calledCommandName)}" not found.`);
+        console.log(`Did you mean "${pc.bold(closestCommandName)}"?`);
       }
     });
   },
