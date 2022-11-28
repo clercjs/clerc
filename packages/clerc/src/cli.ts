@@ -1,12 +1,11 @@
 import { LiteEmit } from "lite-emit";
-import mri from "mri";
 import { typeFlag } from "type-flag";
 import type { LiteralUnion } from "@clerc/utils";
 import { arrayStartsWith } from "@clerc/utils";
 
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandError, SubcommandExistsError } from "./errors";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
-import { compose, resolveArgv, resolveCommand } from "./utils";
+import { compose, resolveArgv, resolveCommand, resolveParametersBeforeFlag } from "./utils";
 
 export const SingleCommand = Symbol("SingleCommand");
 export type SingleCommandType = typeof SingleCommand;
@@ -212,8 +211,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse (argv = resolveArgv()) {
-    const parsed = mri(argv);
-    const name = parsed._.map(String);
+    const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
     const getContext = () => {

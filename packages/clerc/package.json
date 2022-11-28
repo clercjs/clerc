@@ -46,7 +46,6 @@
     "@clerc/utils": "workspace:*",
     "is-platform": "^0.2.0",
     "lite-emit": "^1.4.0",
-    "mri": "^1.2.0",
     "type-flag": "^3.0.0"
   }
 }

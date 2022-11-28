@@ -56,6 +56,17 @@ export function resolveSubcommandsByParent (commands: CommandRecord, parent: str
 
 export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
 
+export function resolveParametersBeforeFlag (argv: string[]) {
+  const parameters = [];
+  for (const arg of argv) {
+    if (arg.startsWith("-")) {
+      break;
+    }
+    parameters.push(arg);
+  }
+  return parameters;
+}
+
 export const resolveArgv = (): string[] =>
   isNode()
     ? process.argv.slice(2)
