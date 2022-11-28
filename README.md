@@ -10,7 +10,9 @@ Clerc is a simple and easy-to-use cli framework.
 - Parses arguments
 - Extensible with plugins
 - Converts flags to camelCase
-- Outputs description and supplied help text when --help (via [@clerc/plugin-help](./packages/plugin-help/))
+- Outputs description and supplied help text when `help` or `--help` (via [@clerc/plugin-help](./packages/plugin-help/))
+- Completions (via [@clerc/plugin-completions](./packages/plugin-completions/))
+- Not found info (via [@clerc/plugin-not-found](./packages/plugin-not-found/))
 
 ## 📦 Installation
 
