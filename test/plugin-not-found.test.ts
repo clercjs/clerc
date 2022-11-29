@@ -18,8 +18,8 @@ describe("plugin-help", () => {
       .parse([""]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "Command \\"\\" not found.",
-        "Did you mean \\"undefined\\"?",
+        "Command \\"[9m[29m\\" not found.",
+        "Did you mean \\"[1mundefined[22m\\"?",
       ]
     `);
     msgs.length = 0;
@@ -32,8 +32,8 @@ describe("plugin-help", () => {
       .parse(["fo"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "Command \\"fo\\" not found.",
-        "Did you mean \\"foo\\"?",
+        "Command \\"[9mfo[29m\\" not found.",
+        "Did you mean \\"[1mfoo[22m\\"?",
       ]
     `);
   });
