@@ -27,7 +27,7 @@ export type Command<N extends string | SingleCommandType = string, D extends str
   name: N
   description: D
 };
-type StripBrackets<Parameter> = (
+type StripBrackets<Parameter extends string> = (
   Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
     ? (
         ParameterName extends `${infer SpreadName}...`
@@ -37,7 +37,7 @@ type StripBrackets<Parameter> = (
     : never
 );
 
-type ParameterType<Parameter> = (
+type ParameterType<Parameter extends string> = (
   Parameter extends `<${infer _ParameterName}...>` | `[${infer _ParameterName}...]`
     ? string[]
     : Parameter extends `<${infer _ParameterName}>`
@@ -50,13 +50,14 @@ export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 type NonNullableFlag<T extends Dict<FlagOptions> | undefined> = T extends undefined ? {} : NonNullable<T>;
+type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
   isSingleCommand: boolean
   raw: ParsedFlags
   parameters: {
-    [Parameter in C[N]["parameters"][keyof C[N]["parameters"]] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
+    [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
   }
   unknownFlags: ParsedFlags["unknownFlags"]
   flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]

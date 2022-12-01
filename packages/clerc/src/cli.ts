@@ -226,10 +226,9 @@ export class Clerc<C extends CommandRecord = {}> {
       const mapping: Record<string, string | string[]> = Object.create(null);
       mapParametersToArguments(
         mapping,
-        parseParameters(parameters),
+        parseParameters(command?.parameters || []),
         parameters,
       );
-      console.log(args, 1231231312);
       const context: InspectorContext | HandlerContext = {
         name: command?.name,
         resolved: isCommandResolved,
