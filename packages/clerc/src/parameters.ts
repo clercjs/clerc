@@ -1,3 +1,5 @@
+// Adapted from [privatenumber/cleye](https://github.com/privatenumber/cleye).
+// Thanks for his awesome work!
 import { camelCase } from "@clerc/utils";
 
 const { stringify } = JSON;
