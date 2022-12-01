@@ -11,7 +11,7 @@ export const notFoundPlugin = () => definePlugin({
         next();
       } catch (e) {
         if (!(e instanceof NoSuchCommandError)) { throw e; }
-        if (ctx.parameters.length === 0) {
+        if (ctx.raw._.length === 0) {
           console.log("No command given.");
           console.log(`Possible commands: ${pc.bold(Object.keys(cli._commands).join(", "))}.`);
           return;
