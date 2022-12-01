@@ -117,7 +117,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, D extends string, O extends CommandOptions>(name: N, description: D, options: O = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
+  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options: O & CommandOptions<[...P]> = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
     if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("Single command already exists");

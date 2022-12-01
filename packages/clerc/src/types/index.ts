@@ -16,7 +16,7 @@ export type Flag = FlagOptions & {
 // export interface Parameter extends ParameterOptions {
 //   name: string
 // }
-export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string>, P extends string[] = string[], F extends Dict<FlagOptions> = Dict<FlagOptions>> {
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
   alias?: A
   parameters?: P
   flags?: F

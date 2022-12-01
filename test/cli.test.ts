@@ -50,10 +50,12 @@ describe("cli", () => {
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
-          [
-            "bar",
-            "qux",
-          ]
+          {
+            "optional": [
+              "bar",
+              "qux",
+            ],
+          }
         `);
         expect(ctx.flags).toMatchInlineSnapshot(`
           {
@@ -89,11 +91,13 @@ describe("cli", () => {
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
-          [
-            "bar",
-            "baz",
-            "qux",
-          ]
+          {
+            "optional ": [
+              "bar",
+              "baz",
+              "qux",
+            ],
+          }
         `);
         expect(ctx.flags).toMatchInlineSnapshot("{}");
       })

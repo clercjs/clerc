@@ -35,7 +35,6 @@ describe("plugin-help", () => {
       .parse(["--help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        [],
         "[32mtest[39m ",
         "[33mUSAGE:[39m",
         "    test <SUBCOMMAND> [OPTIONS]",
