@@ -16,7 +16,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({});
       })
       .parse(["foo"]);
@@ -31,6 +31,9 @@ describe("cli", () => {
             default: "",
           },
         },
+        parameters: [
+          "[optional...]",
+        ],
       })
       .on(SingleCommand, (ctx) => {
         expect(ctx.name).toEqual(SingleCommand);
@@ -62,7 +65,11 @@ describe("cli", () => {
   });
   it("should parse parameters", () => {
     Clerc.create()
-      .command("foo", "foo")
+      .command("foo", "foo", {
+        parameters: [
+          "[optional ...]",
+        ],
+      })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
         expect(ctx.raw).toMatchInlineSnapshot(`
@@ -116,7 +123,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({ foo: true });
       })
       .parse(["foo", "--foo"]);
@@ -145,7 +152,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({ foo: "bar" });
       })
       .parse(["foo", "--foo", "bar"]);
@@ -174,7 +181,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({ foo: 42 });
       })
       .parse(["foo", "--foo", "42"]);
@@ -216,7 +223,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toMatchInlineSnapshot(`
           {
             "foo": [
@@ -260,7 +267,7 @@ describe("cli", () => {
             },
           }
         `);
-        expect(ctx.parameters).toStrictEqual(["bar"]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toMatchInlineSnapshot("{}");
       })
       .parse(["foo", "-abcd", "bar"]);
@@ -292,7 +299,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toMatchInlineSnapshot(`
           {
             "abc": [
@@ -329,7 +336,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-        expect(ctx.parameters).toStrictEqual([]);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({});
         next();
       })
