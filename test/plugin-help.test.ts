@@ -38,15 +38,15 @@ describe("plugin-help", () => {
       .use(helpPlugin())
       .parse(["--help"]);
     expect(msgs).toMatchInlineSnapshot(`
-        [
-          "undefined test",
-          "[33mUSAGE:[39m",
-          "    test <SUBCOMMAND> [OPTIONS]",
-          undefined,
-          "[33mCOMMANDS:[39m",
-          "    [32mhelp    [39mShow help",
-        ]
-      `);
+      [
+        "[32mtest[39m ",
+        "[33mUSAGE:[39m",
+        "    test <SUBCOMMAND> [OPTIONS]",
+        undefined,
+        "[33mCOMMANDS:[39m",
+        "    [32mhelp    [39mShow help",
+      ]
+    `);
   });
   it("should show placeholder", () => {
     Clerc.create()
