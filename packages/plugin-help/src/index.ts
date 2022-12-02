@@ -2,7 +2,6 @@
 // TODO: unit tests
 import type { Clerc, CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "clerc";
-
 import { generateCommandRecordFromCommandArray, gracefulVersion } from "@clerc/utils";
 import pc from "picocolors";
 
