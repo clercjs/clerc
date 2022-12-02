@@ -6,6 +6,7 @@ import { arrayStartsWith } from "@clerc/utils";
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandError, SubcommandExistsError } from "./errors";
 import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand, resolveParametersBeforeFlag } from "./utils";
+import { mapParametersToArguments, parseParameters } from "./parameters";
 
 export const SingleCommand = Symbol("SingleCommand");
 export type SingleCommandType = typeof SingleCommand;
@@ -116,7 +117,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, D extends string, O extends CommandOptions>(name: N, description: D, options: O = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
+  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options: O & CommandOptions<[...P]> = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
     if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("Single command already exists");
@@ -211,7 +212,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse (argv = resolveArgv()) {
-    const name = resolveParametersBeforeFlag(argv);
+    const name = resolveParametersBeforeFlag(argv, this.#isSingleCommand);
     const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
     const getContext = () => {
@@ -219,17 +220,23 @@ export class Clerc<C extends CommandRecord = {}> {
       const isCommandResolved = !!command;
       // [...argv] is a workaround
       // WTF... typeFlag modifies argv????????
-      const parsedWithType = typeFlag(command?.flags || {}, [...argv]);
-      const { _: args, flags } = parsedWithType;
+      const parsed = typeFlag(command?.flags || {}, [...argv]);
+      const { _: args, flags } = parsed;
       const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
+      const mapping: Record<string, string | string[]> = Object.create(null);
+      mapParametersToArguments(
+        mapping,
+        parseParameters(command?.parameters || []),
+        parameters,
+      );
       const context: InspectorContext | HandlerContext = {
         name: command?.name,
         resolved: isCommandResolved,
         isSingleCommand: this.#isSingleCommand,
-        raw: parsedWithType,
-        parameters,
+        raw: parsed,
+        parameters: mapping,
         flags,
-        unknownFlags: parsedWithType.unknownFlags,
+        unknownFlags: parsed.unknownFlags,
         cli: this as any,
       };
       return context;

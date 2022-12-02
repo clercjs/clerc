@@ -1,4 +1,4 @@
-import type { Dict, MaybeArray } from "@clerc/utils";
+import type { CamelCase, Dict, MaybeArray } from "@clerc/utils";
 import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
@@ -16,9 +16,9 @@ export type Flag = FlagOptions & {
 // export interface Parameter extends ParameterOptions {
 //   name: string
 // }
-export interface CommandOptions<A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
   alias?: A
-  // parameters?: P
+  parameters?: P
   flags?: F
   examples?: [string, string][]
   notes?: string[]
@@ -27,16 +27,38 @@ export type Command<N extends string | SingleCommandType = string, D extends str
   name: N
   description: D
 };
+type StripBrackets<Parameter extends string> = (
+  Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
+    ? (
+        ParameterName extends `${infer SpreadName}...`
+          ? SpreadName
+          : ParameterName
+      )
+    : never
+);
+
+type ParameterType<Parameter extends string> = (
+  Parameter extends `<${infer _ParameterName}...>` | `[${infer _ParameterName}...]`
+    ? string[]
+    : Parameter extends `<${infer _ParameterName}>`
+      ? string
+      : Parameter extends `[${infer _ParameterName}]`
+        ? string | undefined
+        : never
+);
 export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 type NonNullableFlag<T extends Dict<FlagOptions> | undefined> = T extends undefined ? {} : NonNullable<T>;
+type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
   isSingleCommand: boolean
   raw: ParsedFlags
-  parameters: PossibleInputKind[]
+  parameters: {
+    [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
+  }
   unknownFlags: ParsedFlags["unknownFlags"]
   flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
   cli: Clerc<C>

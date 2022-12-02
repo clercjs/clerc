@@ -56,7 +56,10 @@ export function resolveSubcommandsByParent (commands: CommandRecord, parent: str
 
 export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
 
-export function resolveParametersBeforeFlag (argv: string[]) {
+export function resolveParametersBeforeFlag (argv: string[], isSingleCommand: boolean) {
+  if (isSingleCommand) {
+    return [];
+  }
   const parameters = [];
   for (const arg of argv) {
     if (arg.startsWith("-")) {

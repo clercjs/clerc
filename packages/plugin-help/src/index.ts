@@ -66,7 +66,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
         return;
       }
       // e.g: $ cli
-      if (!ctx.resolved && ctx.parameters.length === 0 && Object.keys(flags).length === 0) {
+      if (!ctx.resolved && ctx.raw._.length === 0 && Object.keys(flags).length === 0) {
         showHelp(ctx, rest);
         return;
       }
@@ -80,7 +80,7 @@ type ShowHelpOptions = Required<Omit<Options, "command">>;
 function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   const { cli } = ctx;
   // When parameters are passed, treat them as subcommand.
-  if (ctx.parameters.length > 0) {
+  if (ctx.raw._.length > 0) {
     showSubcommandHelp(ctx);
     return;
   }
@@ -138,7 +138,7 @@ function showCommandNotes (notes?: string[]) {
 
 function showSubcommandHelp (ctx: HandlerContext) {
   const { cli } = ctx;
-  const commandName = ctx.parameters.map(String);
+  const commandName = ctx.raw._.map(String);
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
   if (!commandToShowHelp) {
     throw new NoSuchCommandError(commandName.join(" "));
