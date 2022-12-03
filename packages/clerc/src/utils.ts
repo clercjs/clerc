@@ -1,29 +1,10 @@
 import { isDeno, isNode } from "is-platform";
-import type { Dict } from "@clerc/utils";
-import { arrayStartsWith, kebabCase, mustArray } from "@clerc/utils";
+import { arrayStartsWith, mustArray } from "@clerc/utils";
 
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
-import type { Command, CommandRecord, FlagOptions, Inspector, InspectorContext } from "./types";
+import type { Command, CommandRecord, Inspector, InspectorContext } from "./types";
 import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
-
-export const resolveFlagAlias = (_command: Command) =>
-  Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
-    if (command.alias) {
-      const item = mustArray(command.alias).map(kebabCase);
-      acc[kebabCase(name)] = item;
-    }
-    return acc;
-  }, {} as Dict<string[]>);
-
-export const resolveFlagDefault = (_command: Command) =>
-  Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
-    const item = command.default;
-    if (item) {
-      acc[name] = item;
-    }
-    return acc;
-  }, {} as Dict<FlagOptions["default"]>);
 
 export function resolveCommand (commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
   if (name === SingleCommand) {
