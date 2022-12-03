@@ -1,10 +1,10 @@
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
-import type { LiteralUnion } from "@clerc/utils";
+import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
 import { arrayStartsWith } from "@clerc/utils";
 
 import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandError, SubcommandExistsError } from "./errors";
-import type { Command, CommandOptions, CommandRecord, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
+import type { Command, CommandOptions, CommandRecord, CommandWithHandler, FlagOptions, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand, resolveParametersBeforeFlag } from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
 
@@ -117,12 +117,16 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options: O & CommandOptions<[...P]> = {} as any): this & Clerc<C & Record<N, Command<N, D, O>>> {
+  command<N extends string | SingleCommandType, D extends string, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, D, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, D, O>>>;
+  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options: O & CommandOptions<[...P]>): this & Clerc<C & Record<N, Command<N, D, O>>>;
+  command (nameOrCommand: any, description?: any, options?: any) {
+    const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string");
+    const isCommandObject = checkIsCommandObject(nameOrCommand);
+    const name = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("Single command already exists");
       }
-      throw new CommandExistsError(`Command "${name === SingleCommand ? "[SingleCommand]" : name as string}" already exists`);
     }
     if (this.#isSingleCommand) {
       throw new SingleCommandError();
@@ -146,7 +150,10 @@ export class Clerc<C extends CommandRecord = {}> {
       }
     }
 
-    this.#commands[name] = { name, description, ...options } as any;
+    this.#commands[name as keyof C] = !isCommandObject ? { name, description, ...options } : nameOrCommand;
+    if (isCommandObject && nameOrCommand.handler) {
+      this.on(nameOrCommand.name, nameOrCommand.handler as any);
+    }
     return this as any;
   }
 

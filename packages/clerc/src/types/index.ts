@@ -23,9 +23,15 @@ export interface CommandOptions<P extends string[] = string[], A extends MaybeAr
   examples?: [string, string][]
   notes?: string[]
 }
-export type Command<N extends string | SingleCommandType = string, D extends string = string, Options extends CommandOptions = CommandOptions> = Options & {
+export type Command<N extends string | SingleCommandType = string, D extends string = string, O extends CommandOptions = CommandOptions> = O & {
   name: N
   description: D
+};
+export type CommandWithHandler<N extends string | SingleCommandType = string, D extends string = string, O extends CommandOptions = CommandOptions> = Command<N, D, O> & {
+  handler?: HandlerInCommand<
+    // @ts-expect-error That's OK
+    Record<N, Command<N, D, O>>, N
+  >
 };
 type StripBrackets<Parameter extends string> = (
   Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
@@ -64,6 +70,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
+export type HandlerInCommand<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K> & { name: K }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
   flags: FallbackType<TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"], Dict<any>>
