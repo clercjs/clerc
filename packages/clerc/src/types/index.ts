@@ -9,14 +9,9 @@ export type FlagOptions = FlagSchema & {
 export type Flag = FlagOptions & {
   name: string
 };
-// export interface ParameterOptions {
-//   description: string
-//   required?: boolean
-// }
-// export interface Parameter extends ParameterOptions {
-//   name: string
-// }
-export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> {
+// Custom properties
+export declare interface CommandCustomProperties {}
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
   alias?: A
   parameters?: P
   flags?: F
