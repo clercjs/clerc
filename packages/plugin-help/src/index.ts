@@ -43,7 +43,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
         cli = cli.command("help", "Show help", {
           examples: getExamples(cli),
           parameters: [
-            "<command...>",
+            "[command...]",
           ],
         })
           .on("help", (ctx) => {
