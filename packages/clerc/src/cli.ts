@@ -122,7 +122,7 @@ export class Clerc<C extends CommandRecord = {}> {
   command (nameOrCommand: any, description?: any, options?: any) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
     const isCommandObject = checkIsCommandObject(nameOrCommand);
-    const name = !isCommandObject ? nameOrCommand : nameOrCommand.name;
+    const name: string | SingleCommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("SingleCommand");
