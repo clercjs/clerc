@@ -137,8 +137,8 @@ export class Clerc<C extends CommandRecord = {}> {
     if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
       throw new SingleCommandAliasError();
     }
-    // Check if this is a subcommand
-    // Cannot exist with its parent
+    // Check if this is a subcommand, or a parent command
+    // Cannot exist with its parent or children
     // e.g `foo` and `foo bar`
     if (name !== SingleCommand) {
       const splitedName = name.split(" ");
