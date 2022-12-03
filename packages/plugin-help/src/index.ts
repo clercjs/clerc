@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
+// TODO: parameters
 import type { Clerc, CommandRecord, HandlerContext } from "clerc";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "clerc";
 import { generateCommandRecordFromCommandArray, gracefulVersion } from "@clerc/utils";
@@ -41,6 +42,9 @@ export const helpPlugin = (_options?: Options) => definePlugin({
       if (command && !inspectorCtx.isSingleCommand) {
         cli = cli.command("help", "Show help", {
           examples: getExamples(cli),
+          parameters: [
+            "<command...>",
+          ],
         })
           .on("help", (ctx) => {
             showHelp(ctx, rest);
