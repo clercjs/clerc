@@ -222,13 +222,34 @@ export class Clerc<C extends CommandRecord = {}> {
       // WTF... typeFlag modifies argv????????
       const parsed = typeFlag(command?.flags || {}, [...argv]);
       const { _: args, flags } = parsed;
-      const parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
+      let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
+      let commandParameters = command?.parameters || [];
+      const hasEof = commandParameters.indexOf("--");
+      const eofParameters = commandParameters.slice(hasEof + 1) || [];
       const mapping: Record<string, string | string[]> = Object.create(null);
-      mapParametersToArguments(
-        mapping,
-        parseParameters(command?.parameters || []),
-        parameters,
-      );
+      // Support `--` eof parameters
+      if (hasEof > -1 && eofParameters.length > 0) {
+        commandParameters = commandParameters.slice(0, hasEof);
+        const eofArguments = parsed._["--"];
+        parameters = parameters.slice(0, -eofArguments.length || undefined);
+
+        mapParametersToArguments(
+          mapping,
+          parseParameters(commandParameters),
+          parameters,
+        );
+        mapParametersToArguments(
+          mapping,
+          parseParameters(eofParameters),
+          eofArguments,
+        );
+      } else {
+        mapParametersToArguments(
+          mapping,
+          parseParameters(commandParameters),
+          parameters,
+        );
+      }
       const context: InspectorContext | HandlerContext = {
         name: command?.name,
         resolved: isCommandResolved,
