@@ -3,7 +3,7 @@ import { typeFlag } from "type-flag";
 import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
 import { arrayStartsWith } from "@clerc/utils";
 
-import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandError, SubcommandExistsError } from "./errors";
+import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandAliasError, SingleCommandError, SubcommandExistsError } from "./errors";
 import type { Command, CommandOptions, CommandRecord, CommandWithHandler, FlagOptions, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
 import { compose, resolveArgv, resolveCommand, resolveParametersBeforeFlag } from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
@@ -125,7 +125,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const name = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (this.#commands[name]) {
       if (name === SingleCommand) {
-        throw new CommandExistsError("Single command already exists");
+        throw new CommandExistsError("SingleCommand");
       }
     }
     if (this.#isSingleCommand) {
@@ -133,6 +133,9 @@ export class Clerc<C extends CommandRecord = {}> {
     }
     if (name === SingleCommand && this.#hasCommands) {
       throw new CommonCommandExistsError();
+    }
+    if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
+      throw new SingleCommandAliasError();
     }
     // Check if this is a subcommand
     // Cannot exist with its parent

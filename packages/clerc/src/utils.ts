@@ -5,6 +5,7 @@ import { arrayStartsWith, kebabCase, mustArray } from "@clerc/utils";
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
 import type { Command, CommandRecord, FlagOptions, Inspector, InspectorContext } from "./types";
+import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
 
 export const resolveFlagAlias = (_command: Command) =>
   Object.entries(_command?.flags || {}).reduce((acc, [name, command]) => {
@@ -28,15 +29,29 @@ export function resolveCommand (commands: CommandRecord, name: string | string[]
   if (name === SingleCommand) {
     return commands[SingleCommand];
   }
-  const nameArr = Array.isArray(name) ? name : name.split(" ");
-  const nameString = nameArr.join(" ");
-  const possibleCommands = Object.values(commands)
-    .filter(c => arrayStartsWith(nameArr, c.name.split(" ")) || mustArray(c.alias || [])
-      .map(String)
-      .includes(nameString),
-    );
+  const nameArr = mustArray(name) as string[];
+  const commandsMap = new Map<string[], Command>();
+  for (const command of Object.values(commands)) {
+    if (command.alias) {
+      const aliases = mustArray(command.alias);
+      for (const alias of aliases) {
+        if (alias in commands) {
+          throw new CommandNameConflictError(commands[alias].name, command.name);
+        }
+        commandsMap.set(alias.split(" "), command);
+      }
+    }
+    commandsMap.set(command.name.split(" "), command);
+  }
+  const possibleCommands: Command[] = [];
+  commandsMap.forEach((v, k) => {
+    if (arrayStartsWith(nameArr, k)) {
+      possibleCommands.push(v);
+    }
+  });
   if (possibleCommands.length > 1) {
-    throw new Error(`Multiple commands found with name "${nameString}"`);
+    const matchedCommandNames = possibleCommands.map(c => c.name).join(", ");
+    throw new MultipleCommandsMatchedError(matchedCommandNames);
   }
   return possibleCommands[0];
 }
