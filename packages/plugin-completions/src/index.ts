@@ -23,12 +23,15 @@ export const completionsPlugin = (options: Options = {}) => definePlugin({
             default: "",
           },
         },
+        parameters: [
+          "[shell]",
+        ],
       })
         .on("completions", (ctx) => {
           if (!cli._name) {
             throw new Error("CLI name is not defined!");
           }
-          const shell = String(ctx.parameters[0] || ctx.flags.shell);
+          const shell = String(ctx.parameters.shell || ctx.flags.shell);
           if (!shell) {
             throw new Error("Missing shell name");
           }
