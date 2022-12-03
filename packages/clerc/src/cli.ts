@@ -118,7 +118,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   command<N extends string | SingleCommandType, D extends string, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, D, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, D, O>>>;
-  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options: O & CommandOptions<[...P]>): this & Clerc<C & Record<N, Command<N, D, O>>>;
+  command<N extends string | SingleCommandType, D extends string, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: D, options?: O & CommandOptions<[...P]>): this & Clerc<C & Record<N, Command<N, D, O>>>;
   command (nameOrCommand: any, description?: any, options?: any) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
     const isCommandObject = checkIsCommandObject(nameOrCommand);
