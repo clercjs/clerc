@@ -234,6 +234,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const { _: args, flags } = parsed;
       let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];
+      // eof handle
       const hasEof = commandParameters.indexOf("--");
       const eofParameters = commandParameters.slice(hasEof + 1) || [];
       const mapping: Record<string, string | string[]> = Object.create(null);
@@ -281,8 +282,8 @@ export class Clerc<C extends CommandRecord = {}> {
       this.#commandEmitter.emit(command.name, handlerContext);
     };
     const inspectors = [...this.#inspectors, emitHandler];
-    const inspector = compose(inspectors);
-    inspector(getContext);
+    const callInspector = compose(inspectors);
+    callInspector(getContext);
     return this;
   }
 }
