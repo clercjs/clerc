@@ -18,14 +18,14 @@ export interface CommandOptions<P extends string[] = string[], A extends MaybeAr
   examples?: [string, string][]
   notes?: string[]
 }
-export type Command<N extends string | SingleCommandType = string, D extends string = string, O extends CommandOptions = CommandOptions> = O & {
+export type Command<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = O & {
   name: N
-  description: D
+  description: string
 };
-export type CommandWithHandler<N extends string | SingleCommandType = string, D extends string = string, O extends CommandOptions = CommandOptions> = Command<N, D, O> & {
+export type CommandWithHandler<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   handler?: HandlerInCommand<
     // @ts-expect-error That's OK
-    Record<N, Command<N, D, O>>, N
+    Record<N, Command<N, O>>, N
   >
 };
 type StripBrackets<Parameter extends string> = (
@@ -56,7 +56,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   name?: N
   resolved: boolean
   isSingleCommand: boolean
-  raw: ParsedFlags
+  raw: TypeFlag<NonNullableFlag<C[N]["flags"]>>
   parameters: {
     [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
   }
