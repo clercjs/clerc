@@ -1,21 +1,19 @@
 {
-  "name": "@clerc/toolkit",
-  "version": "0.7.0",
+  "name": "@clerc/utils",
+  "version": "0.6.1",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
-  "description": "Clerc toolkit",
+  "description": "Clerc utils",
   "keywords": [
     "cli",
     "clerc",
-    "clerc-toolkit",
+    "clerc-utils",
     "utils",
     "arguments",
     "argv",
     "args",
-    "terminal",
-    "toolkit"
+    "terminal"
   ],
-  "type": "module",
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/utils#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/so1ve/clerc.git",
@@ -29,10 +27,11 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     }
   },
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -44,5 +43,22 @@
   "scripts": {
     "build": "puild",
     "watch": "puild --watch"
+  },
+  "peerDependencies": {
+    "clerc": "*"
+  },
+  "dependencies": {
+    "@types/cli-progress": "^3.11.0",
+    "cli-progress": "^3.11.2",
+    "cli-table3": "^0.6.3",
+    "enquirer": "^2.3.6",
+    "figures": "^5.0.0",
+    "kons": "^0.5.4",
+    "open": "^8.4.0",
+    "ora": "^6.1.2",
+    "picocolors": "^1.0.0",
+    "tasuku": "^2.0.0",
+    "terminal-columns": "^1.4.1",
+    "terminal-link": "^3.0.0"
   }
 }
