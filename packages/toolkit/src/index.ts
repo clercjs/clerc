@@ -1,8 +1,6 @@
 import * as kons from "kons";
 import * as konsola from "kons/consola";
 import colors from "picocolors";
-import figures from "figures";
-import task from "tasuku";
 import spinner from "ora";
 import open from "open";
 import progress from "cli-progress";
@@ -13,8 +11,6 @@ import prompt from "prompts";
 
 export const Toolkit = {
   prompt,
-  task,
-  figures,
   colors,
   spinner,
   open,
