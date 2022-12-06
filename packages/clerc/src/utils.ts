@@ -3,15 +3,11 @@ import { arrayStartsWith, mustArray } from "@clerc/utils";
 
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
-import type { Command, CommandRecord, Inspector, InspectorContext } from "./types";
+import type { Command, CommandAlias, CommandRecord, Inspector, InspectorContext } from "./types";
 import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
 
-export function resolveCommand (commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
-  if (name === SingleCommand) {
-    return commands[SingleCommand];
-  }
-  const nameArr = mustArray(name) as string[];
-  const commandsMap = new Map<string[], Command>();
+export function resolveFlattenCommands (commands: CommandRecord) {
+  const commandsMap = new Map<string[], CommandAlias>();
   for (const command of Object.values(commands)) {
     if (command.alias) {
       const aliases = mustArray(command.alias);
@@ -19,11 +15,20 @@ export function resolveCommand (commands: CommandRecord, name: string | string[]
         if (alias in commands) {
           throw new CommandNameConflictError(commands[alias].name, command.name);
         }
-        commandsMap.set(alias.split(" "), command);
+        commandsMap.set(alias.split(" "), { ...command, __isAlias: true });
       }
     }
     commandsMap.set(command.name.split(" "), command);
   }
+  return commandsMap;
+}
+
+export function resolveCommand (commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
+  if (name === SingleCommand) {
+    return commands[SingleCommand];
+  }
+  const nameArr = mustArray(name) as string[];
+  const commandsMap = resolveFlattenCommands(commands);
   const possibleCommands: Command[] = [];
   commandsMap.forEach((v, k) => {
     if (arrayStartsWith(nameArr, k)) {

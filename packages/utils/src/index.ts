@@ -1,4 +1,4 @@
-import type { Command, CommandRecord } from "clerc";
+import type { Command } from "clerc";
 
 /**
  * Copied from type-fest
@@ -60,8 +60,8 @@ export const arrayEquals = <T>(arr1: T[], arr2: T[]) => {
   return arr1.every((item, i) => item === arr2[i]);
 };
 
-export const generateCommandRecordFromCommandArray = <C extends Command[]>(commands: C) => {
-  const record = {} as CommandRecord;
+export const generateCommandRecordFromCommandArray = <C extends Command>(commands: C[]) => {
+  const record = {} as Dict<C>;
   for (const command of commands) {
     record[command.name] = command;
   }

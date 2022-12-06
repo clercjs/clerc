@@ -22,6 +22,9 @@ export type Command<N extends string | SingleCommandType = string, O extends Com
   name: N
   description: string
 };
+export type CommandAlias<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
+  __isAlias?: true
+};
 export type CommandWithHandler<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   handler?: HandlerInCommand<
     // @ts-expect-error That's OK
