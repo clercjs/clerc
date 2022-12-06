@@ -9,7 +9,9 @@ import progress from "cli-progress";
 import columns from "terminal-columns";
 import link from "terminal-link";
 import Table from "cli-table3";
-import { prompt } from "enquirer";
+import Enquirer from "enquirer";
+
+const { prompt } = new Enquirer();
 
 export const Toolkit = {
   prompt,
@@ -24,4 +26,5 @@ export const Toolkit = {
   kons,
   konsola,
   Table,
+  Enquirer,
 };
