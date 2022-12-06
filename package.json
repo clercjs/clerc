@@ -1,7 +1,7 @@
 {
   "name": "@clerc/monorepo",
   "private": true,
-  "version": "0.8.6",
+  "version": "0.8.7",
   "packageManager": "pnpm@7.16.1",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "",
