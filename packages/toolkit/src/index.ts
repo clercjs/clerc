@@ -8,8 +8,10 @@ import columns from "terminal-columns";
 import link from "terminal-link";
 import Table from "cli-table3";
 import prompt from "prompts";
+import { execa as exec } from "execa";
 
 export const Toolkit = {
+  exec,
   prompt,
   colors,
   spinner,
