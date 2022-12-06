@@ -1,19 +1,19 @@
 {
-  "name": "@clerc/utils",
+  "name": "@clerc/toolkit",
   "version": "0.8.2",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
-  "description": "Clerc utils",
+  "description": "Clerc toolkit",
   "keywords": [
     "cli",
     "clerc",
-    "clerc-utils",
+    "clerc-toolkit",
     "utils",
     "arguments",
     "argv",
     "args",
     "terminal"
   ],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/utils#readme",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/so1ve/clerc.git",
