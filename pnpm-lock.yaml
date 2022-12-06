@@ -39,7 +39,7 @@ importers:
       lite-emit: ^1.4.0
       type-flag: ^3.0.0
     dependencies:
-      '@clerc/utils': link:../toolkit
+      '@clerc/utils': link:../utils
       is-platform: 0.2.0
       lite-emit: 1.4.0
       type-flag: 3.0.0
@@ -49,7 +49,7 @@ importers:
       '@clerc/utils': workspace:*
       clerc: workspace:*
     dependencies:
-      '@clerc/utils': link:../toolkit
+      '@clerc/utils': link:../utils
       clerc: link:../clerc
 
   packages/plugin-help:
@@ -58,7 +58,7 @@ importers:
       clerc: workspace:*
       picocolors: ^1.0.0
     dependencies:
-      '@clerc/utils': link:../toolkit
+      '@clerc/utils': link:../utils
       clerc: link:../clerc
       picocolors: 1.0.0
 
@@ -69,7 +69,7 @@ importers:
       fastest-levenshtein: ^1.0.16
       picocolors: ^1.0.0
     dependencies:
-      '@clerc/utils': link:../toolkit
+      '@clerc/utils': link:../utils
       clerc: link:../clerc
       fastest-levenshtein: 1.0.16
       picocolors: 1.0.0
@@ -77,27 +77,29 @@ importers:
   packages/toolkit:
     specifiers:
       '@types/cli-progress': ^3.11.0
+      '@types/prompts': ^2.4.2
       cli-progress: ^3.11.2
       cli-table3: ^0.6.3
-      enquirer: ^2.3.6
       figures: ^5.0.0
       kons: ^0.5.4
       open: ^8.4.0
       ora: ^6.1.2
       picocolors: ^1.0.0
+      prompts: ^2.4.2
       tasuku: ^2.0.0
       terminal-columns: ^1.4.1
       terminal-link: ^3.0.0
     dependencies:
       '@types/cli-progress': 3.11.0
+      '@types/prompts': 2.4.2
       cli-progress: 3.11.2
       cli-table3: 0.6.3
-      enquirer: 2.3.6
       figures: 5.0.0
       kons: 0.5.4
       open: 8.4.0
       ora: 6.1.2
       picocolors: 1.0.0
+      prompts: 2.4.2
       tasuku: 2.0.0
       terminal-columns: 1.4.1
       terminal-link: 3.0.0
@@ -520,7 +522,6 @@ packages:
 
   /@types/node/18.11.11:
     resolution: {integrity: sha512-KJ021B1nlQUBLopzZmPBVuGU9un7WJd/W4ya7Ih02B4Uwky5Nja0yGYav2EfYIk0RR2Q9oVhf60S2XR1BCWJ2g==}
-    dev: true
 
   /@types/node/18.11.9:
     resolution: {integrity: sha512-CRpX21/kGdzjOpFsZSkcrXMGIBWMGNIHXXBVFSH+ggkftxg+XYP20TESbh+zFvFj3EQOl5byk0HTRn1IL6hbqg==}
@@ -529,6 +530,12 @@ packages:
   /@types/normalize-package-data/2.4.0:
     resolution: {integrity: sha512-f5j5b/Gf71L+dbqxIpQ4Z2WlmI/mPJ0fOkGGmFgtb6sAu97EPczzbS3/tJKxmcYDj55OX6ssqwDAWOHIYDRDGA==}
     dev: true
+
+  /@types/prompts/2.4.2:
+    resolution: {integrity: sha512-TwNx7qsjvRIUv/BCx583tqF5IINEVjCNqg9ofKHRlSoUHE62WBHrem4B1HGXcIrG511v29d1kJ9a/t2Esz7MIg==}
+    dependencies:
+      '@types/node': 18.11.11
+      kleur: 3.0.3
 
   /@types/resolve/1.17.1:
     resolution: {integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==}
@@ -710,11 +717,6 @@ packages:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
     dev: true
-
-  /ansi-colors/4.1.3:
-    resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
-    engines: {node: '>=6'}
-    dev: false
 
   /ansi-escapes/5.0.0:
     resolution: {integrity: sha512-5GFMVX8HqE/TB+FuBJGuO5XG0WrsA6ptUqoODaT/n9mmUaZFkqnBueB4leqGBCmrUHnCnC4PCZTCd0E7QQ83bA==}
@@ -1132,13 +1134,6 @@ packages:
 
   /emoji-regex/8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
-    dev: false
-
-  /enquirer/2.3.6:
-    resolution: {integrity: sha512-yjNnPr315/FjS4zIsUxYguYUPP2e1NK4d7E7ZOLiyYCcbFBiTMyID+2wvm2w6+pZ/odMA7cRkjhsPbltwBOrLg==}
-    engines: {node: '>=8.6'}
-    dependencies:
-      ansi-colors: 4.1.3
     dev: false
 
   /entities/4.4.0:
@@ -2496,7 +2491,6 @@ packages:
   /kleur/3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
-    dev: true
 
   /kleur/4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -2942,6 +2936,14 @@ packages:
       sisteransi: 1.0.5
     dev: true
 
+  /prompts/2.4.2:
+    resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
+    engines: {node: '>= 6'}
+    dependencies:
+      kleur: 3.0.3
+      sisteransi: 1.0.5
+    dev: false
+
   /puild/1.3.2_typescript@4.9.3:
     resolution: {integrity: sha512-eKPFYThSyHtAGv5oGzu8Af32PGYjcc51s47Vs2he4lO9GFBieQhlSh0OgGCjhhxlV6oJfHizrzT3cRRvKnJX2Q==}
     hasBin: true
@@ -3134,7 +3136,6 @@ packages:
 
   /sisteransi/1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
-    dev: true
 
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}

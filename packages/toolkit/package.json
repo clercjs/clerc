@@ -50,14 +50,15 @@
   },
   "dependencies": {
     "@types/cli-progress": "^3.11.0",
+    "@types/prompts": "^2.4.2",
     "cli-progress": "^3.11.2",
     "cli-table3": "^0.6.3",
-    "enquirer": "^2.3.6",
     "figures": "^5.0.0",
     "kons": "^0.5.4",
     "open": "^8.4.0",
     "ora": "^6.1.2",
     "picocolors": "^1.0.0",
+    "prompts": "^2.4.2",
     "tasuku": "^2.0.0",
     "terminal-columns": "^1.4.1",
     "terminal-link": "^3.0.0"
