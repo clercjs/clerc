@@ -11,7 +11,7 @@ import link from "terminal-link";
 import Table from "cli-table3";
 import { prompt } from "enquirer";
 
-const Toolkit = {
+export const Toolkit = {
   prompt,
   task,
   figures,
@@ -25,6 +25,3 @@ const Toolkit = {
   konsola,
   Table,
 };
-
-export default Toolkit;
-export { Toolkit };
