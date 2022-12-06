@@ -11,7 +11,8 @@
     "arguments",
     "argv",
     "args",
-    "terminal"
+    "terminal",
+    "toolkit"
   ],
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
   "repository": {
