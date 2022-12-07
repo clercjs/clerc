@@ -67,3 +67,10 @@ export const generateCommandRecordFromCommandArray = <C extends Command>(command
   }
   return record;
 };
+
+export const semanticArray = (arr: string[]) => {
+  if (arr.length <= 1) {
+    return arr[0];
+  }
+  return `${arr.slice(0, -1).join(", ")} and ${arr[arr.length - 1]}`;
+};
