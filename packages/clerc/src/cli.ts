@@ -265,7 +265,7 @@ export class Clerc<C extends CommandRecord = {}> {
         name: command?.name,
         resolved: isCommandResolved,
         isSingleCommand: this.#isSingleCommand,
-        raw: parsed,
+        raw: { ...parsed, parameters },
         parameters: mapping,
         flags,
         unknownFlags: parsed.unknownFlags,

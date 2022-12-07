@@ -83,7 +83,7 @@ type ShowHelpOptions = Required<Omit<Options, "command">>;
 function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   const { cli } = ctx;
   // When parameters are passed, treat them as subcommand.
-  if (ctx.resolved && ctx.parameters!.command!.length > 0) {
+  if (ctx.raw.parameters.length > 0) {
     showSubcommandHelp(ctx);
     return;
   }

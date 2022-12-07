@@ -3,8 +3,7 @@ import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
 export type FlagOptions = FlagSchema & {
-  description: string
-  required?: boolean
+  description?: string
 };
 export type Flag = FlagOptions & {
   name: string
@@ -59,7 +58,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   name?: N
   resolved: boolean
   isSingleCommand: boolean
-  raw: TypeFlag<NonNullableFlag<C[N]["flags"]>>
+  raw: TypeFlag<NonNullableFlag<C[N]["flags"]>> & { parameters: string[] }
   parameters: {
     [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
   }

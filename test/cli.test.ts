@@ -13,6 +13,7 @@ describe("cli", () => {
               "foo",
             ],
             "flags": {},
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -46,6 +47,10 @@ describe("cli", () => {
             "flags": {
               "foo": "baz",
             },
+            "parameters": [
+              "bar",
+              "qux",
+            ],
             "unknownFlags": {},
           }
         `);
@@ -83,6 +88,11 @@ describe("cli", () => {
               "qux",
             ],
             "flags": {},
+            "parameters": [
+              "bar",
+              "baz",
+              "qux",
+            ],
             "unknownFlags": {
               "c": [
                 true,
@@ -124,6 +134,7 @@ describe("cli", () => {
             "flags": {
               "foo": true,
             },
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -153,6 +164,7 @@ describe("cli", () => {
             "flags": {
               "foo": "bar",
             },
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -182,6 +194,7 @@ describe("cli", () => {
             "flags": {
               "foo": 42,
             },
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -224,6 +237,7 @@ describe("cli", () => {
                 },
               ],
             },
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -255,6 +269,9 @@ describe("cli", () => {
               "bar",
             ],
             "flags": {},
+            "parameters": [
+              "bar",
+            ],
             "unknownFlags": {
               "a": [
                 true,
@@ -300,6 +317,7 @@ describe("cli", () => {
                 "baz",
               ],
             },
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
@@ -337,6 +355,7 @@ describe("cli", () => {
               "foo",
             ],
             "flags": {},
+            "parameters": [],
             "unknownFlags": {},
           }
         `);
