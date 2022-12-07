@@ -10,7 +10,7 @@ import Table from "cli-table3";
 import prompt from "prompts";
 import { execa as exec } from "execa";
 
-export const Toolkit = {
+export {
   exec,
   prompt,
   colors,
