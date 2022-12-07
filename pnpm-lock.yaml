@@ -74,6 +74,12 @@ importers:
       fastest-levenshtein: 1.0.16
       picocolors: 1.0.0
 
+  packages/plugin-strict-flags:
+    specifiers:
+      clerc: workspace:*
+    dependencies:
+      clerc: link:../clerc
+
   packages/toolkit:
     specifiers:
       '@types/cli-progress': ^3.11.0
