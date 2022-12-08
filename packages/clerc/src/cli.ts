@@ -153,9 +153,10 @@ export class Clerc<C extends CommandRecord = {}> {
       }
     }
 
-    this.#commands[name as keyof C] = !isCommandObject ? { name, description, ...options } : nameOrCommand;
-    if (isCommandObject && nameOrCommand.handler) {
-      this.on(nameOrCommand.name, nameOrCommand.handler as any);
+    const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
+    this.#commands[name as keyof C] = commandToSave;
+    if (isCommandObject && handler) {
+      this.on(nameOrCommand.name, handler as any);
     }
     return this as any;
   }

@@ -52,26 +52,24 @@ type ParameterType<Parameter extends string> = (
 export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
-type NonNullableFlag<T extends Dict<FlagOptions> | undefined> = T extends undefined ? {} : NonNullable<T>;
 type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
   isSingleCommand: boolean
-  raw: TypeFlag<NonNullableFlag<C[N]["flags"]>> & { parameters: string[] }
+  raw: TypeFlag<NonNullable<C[N]["flags"]>> & { parameters: string[] }
   parameters: {
     [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
   }
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: TypeFlag<NonNullableFlag<C[N]["flags"]>>["flags"]
+  flags: TypeFlag<NonNullable<C[N]["flags"]>>["flags"]
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
-export type HandlerInCommand<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> =
-  (ctx: HandlerContext<C, K> & { name: K; flags: Exclude<TypeFlag<NonNullableFlag<C[K]["flags"]>>["flags"], Record<string, never>> }) => void;
+export type HandlerInCommand<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K> & { name: K }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
-  flags: FallbackType<TypeFlag<NonNullableFlag<C[keyof C]["flags"]>>["flags"], Dict<any>>
+  flags: FallbackType<TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"], Dict<any>>
 };
 export type Inspector<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
 
