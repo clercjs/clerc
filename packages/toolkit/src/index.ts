@@ -1,3 +1,4 @@
+// NOTE: We inline tasuku due to https://github.com/facebook/yoga/issues/1048
 import * as kons from "kons";
 import * as konsola from "kons/consola";
 import colors from "picocolors";
@@ -8,6 +9,7 @@ import columns from "terminal-columns";
 import link from "terminal-link";
 import Table from "cli-table3";
 import prompt from "prompts";
+import task from "tasuku";
 import { execa as exec } from "execa";
 
 export {
@@ -21,5 +23,6 @@ export {
   link,
   kons,
   konsola,
+  task,
   Table,
 };

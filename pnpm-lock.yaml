@@ -1,5 +1,10 @@
 lockfileVersion: 5.4
 
+patchedDependencies:
+  yoga-layout-prebuilt@1.10.0:
+    hash: 47eboidwschvvkf5sc53oki4ma
+    path: patches/yoga-layout-prebuilt@1.10.0.patch
+
 importers:
 
   .:
@@ -65,8 +70,9 @@ importers:
       '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
     dependencies:
-      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
+    devDependencies:
+      '@clerc/core': link:../core
 
   packages/plugin-help:
     specifiers:
@@ -74,9 +80,10 @@ importers:
       '@clerc/utils': workspace:*
       picocolors: ^1.0.0
     dependencies:
-      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
       picocolors: 1.0.0
+    devDependencies:
+      '@clerc/core': link:../core
 
   packages/plugin-not-found:
     specifiers:
@@ -85,15 +92,16 @@ importers:
       fastest-levenshtein: ^1.0.16
       picocolors: ^1.0.0
     dependencies:
-      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
       fastest-levenshtein: 1.0.16
       picocolors: 1.0.0
+    devDependencies:
+      '@clerc/core': link:../core
 
   packages/plugin-strict-flags:
     specifiers:
       '@clerc/core': workspace:*
-    dependencies:
+    devDependencies:
       '@clerc/core': link:../core
 
   packages/toolkit:
@@ -108,6 +116,7 @@ importers:
       ora: ^6.1.2
       picocolors: ^1.0.0
       prompts: ^2.4.2
+      tasuku: ^2.0.0
       terminal-columns: ^1.4.1
       terminal-link: ^3.0.0
     dependencies:
@@ -123,6 +132,8 @@ importers:
       prompts: 2.4.2
       terminal-columns: 1.4.1
       terminal-link: 3.0.0
+    devDependencies:
+      tasuku: 2.0.0
 
   packages/utils:
     specifiers: {}
@@ -570,6 +581,10 @@ packages:
 
   /@types/unist/2.0.6:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
+    dev: true
+
+  /@types/yoga-layout/1.9.2:
+    resolution: {integrity: sha512-S9q47ByT2pPvD65IvrWp7qppVMpk9WGMbVq9wbWZOHg6tnXSD4vyhao6nOSBwwfDdV2p3Kx9evA9vI+XWTfDvw==}
     dev: true
 
   /@typescript-eslint/eslint-plugin/5.42.0_a5rfxo4mdxx72s7a4lrhgcwtsq:
@@ -3358,6 +3373,12 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
+  /tasuku/2.0.0:
+    resolution: {integrity: sha512-8y1ZtIBzMfTy0/XxRW9gfGts/CPrt7zSMQEfjWXbLdEz09EcXaAZEAFg8vNV8WAlLUQfoIfaaikRJ0YrBWkGlA==}
+    dependencies:
+      yoga-layout-prebuilt: 1.10.0_47eboidwschvvkf5sc53oki4ma
+    dev: true
+
   /terminal-columns/1.4.1:
     resolution: {integrity: sha512-IKVL/itiMy947XWVv4IHV7a0KQXvKjj4ptbi7Ew9MPMcOLzkiQeyx3Gyvh62hKrfJ0RZc4M1nbhzjNM39Kyujw==}
     dev: false
@@ -3663,3 +3684,11 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  /yoga-layout-prebuilt/1.10.0_47eboidwschvvkf5sc53oki4ma:
+    resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@types/yoga-layout': 1.9.2
+    dev: true
+    patched: true

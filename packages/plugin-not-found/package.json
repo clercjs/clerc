@@ -47,9 +47,11 @@
     "@clerc/core": "*"
   },
   "dependencies": {
-    "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
     "fastest-levenshtein": "^1.0.16",
     "picocolors": "^1.0.0"
+  },
+  "devDependencies": {
+    "@clerc/core": "workspace:*"
   }
 }

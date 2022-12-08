@@ -44,5 +44,8 @@
   "scripts": {
     "build": "puild",
     "watch": "puild --watch"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }

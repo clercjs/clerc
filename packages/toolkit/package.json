@@ -14,6 +14,7 @@
     "terminal",
     "toolkit"
   ],
+  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
   "repository": {
     "type": "git",
@@ -61,5 +62,8 @@
     "prompts": "^2.4.2",
     "terminal-columns": "^1.4.1",
     "terminal-link": "^3.0.0"
+  },
+  "devDependencies": {
+    "tasuku": "^2.0.0"
   }
 }

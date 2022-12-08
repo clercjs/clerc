@@ -47,7 +47,9 @@
     "clerc": "*"
   },
   "dependencies": {
-    "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@clerc/core": "workspace:*"
   }
 }

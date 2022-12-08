@@ -39,5 +39,10 @@
     "typescript": "^4.9.3",
     "vite": "^3.2.5",
     "vitest": "^0.25.4"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "yoga-layout-prebuilt@1.10.0": "patches/yoga-layout-prebuilt@1.10.0.patch"
+    }
   }
 }

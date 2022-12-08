@@ -46,7 +46,7 @@
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "dependencies": {
+  "devDependencies": {
     "@clerc/core": "workspace:*"
   }
 }
