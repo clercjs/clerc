@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Clerc, SingleCommand } from "clerc";
+import { Clerc, SingleCommand } from "@clerc/core";
 
 describe("cli", () => {
   it("should parse", () => {
@@ -387,5 +387,51 @@ describe("cli", () => {
         .command("foo", "foo")
         .command(SingleCommand, "single");
     }).toThrowError();
+  });
+  it("should throw when subcommand exists", () => {
+    expect(() => {
+      Clerc.create()
+        .command("foo bar", "foo")
+        .command("foo", "foo");
+    }).toThrowError();
+  });
+  it("should throw when parent command exists", () => {
+    expect(() => {
+      Clerc.create()
+        .command("foo", "foo")
+        .command("foo bar", "foo");
+    }).toThrowError();
+  });
+  it("should parse subcommand", () => {
+    Clerc.create()
+      .command("foo bar", "foo")
+      .on("foo bar", (ctx) => {
+        expect(ctx.name).toBe("foo bar");
+        expect(ctx.raw).toMatchInlineSnapshot(`
+          {
+            "_": [
+              "foo",
+              "bar",
+            ],
+            "flags": {},
+            "parameters": [],
+            "unknownFlags": {},
+          }
+        `);
+        expect(ctx.parameters).toMatchInlineSnapshot("{}");
+        expect(ctx.flags).toMatchInlineSnapshot("{}");
+      })
+      .parse(["foo", "bar"]);
+  });
+  it("should register command with handler", () => {
+    let count = 0;
+    Clerc.create()
+      .command({
+        name: "foo",
+        description: "foo",
+        handler: () => { count++; },
+      })
+      .parse(["foo"]);
+    expect(count).toBe(1);
   });
 });

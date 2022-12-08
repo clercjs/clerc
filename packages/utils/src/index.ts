@@ -1,4 +1,4 @@
-import type { Command } from "clerc";
+import type { Command } from "@clerc/core";
 
 /**
  * Copied from type-fest

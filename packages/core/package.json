@@ -1,18 +1,17 @@
 {
-  "name": "@clerc/plugin-completions",
+  "name": "@clerc/core",
   "version": "0.9.2",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
-  "description": "Clerc plugin completions",
+  "description": "Clerc core",
   "keywords": [
     "cli",
     "clerc",
-    "clerc-plugin",
     "arguments",
     "argv",
     "args",
     "terminal"
   ],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/core#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/so1ve/clerc.git",
@@ -43,11 +42,10 @@
     "build": "puild",
     "watch": "puild --watch"
   },
-  "peerDependencies": {
-    "clerc": "*"
-  },
   "dependencies": {
-    "@clerc/core": "workspace:*",
-    "@clerc/utils": "workspace:*"
+    "@clerc/utils": "workspace:*",
+    "is-platform": "^0.2.0",
+    "lite-emit": "^1.4.0",
+    "type-flag": "^3.0.0"
   }
 }

@@ -34,6 +34,22 @@ importers:
 
   packages/clerc:
     specifiers:
+      '@clerc/core': workspace:*
+      '@clerc/plugin-completions': workspace:*
+      '@clerc/plugin-help': workspace:*
+      '@clerc/plugin-not-found': workspace:*
+      '@clerc/plugin-strict-flags': workspace:*
+      '@clerc/toolkit': workspace:*
+    dependencies:
+      '@clerc/core': link:../core
+      '@clerc/plugin-completions': link:../plugin-completions
+      '@clerc/plugin-help': link:../plugin-help
+      '@clerc/plugin-not-found': link:../plugin-not-found
+      '@clerc/plugin-strict-flags': link:../plugin-strict-flags
+      '@clerc/toolkit': link:../toolkit
+
+  packages/core:
+    specifiers:
       '@clerc/utils': workspace:*
       is-platform: ^0.2.0
       lite-emit: ^1.4.0
@@ -46,39 +62,39 @@ importers:
 
   packages/plugin-completions:
     specifiers:
+      '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
-      clerc: workspace:*
     dependencies:
+      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
-      clerc: link:../clerc
 
   packages/plugin-help:
     specifiers:
+      '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
-      clerc: workspace:*
       picocolors: ^1.0.0
     dependencies:
+      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
-      clerc: link:../clerc
       picocolors: 1.0.0
 
   packages/plugin-not-found:
     specifiers:
+      '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
-      clerc: workspace:*
       fastest-levenshtein: ^1.0.16
       picocolors: ^1.0.0
     dependencies:
+      '@clerc/core': link:../core
       '@clerc/utils': link:../utils
-      clerc: link:../clerc
       fastest-levenshtein: 1.0.16
       picocolors: 1.0.0
 
   packages/plugin-strict-flags:
     specifiers:
-      clerc: workspace:*
+      '@clerc/core': workspace:*
     dependencies:
-      clerc: link:../clerc
+      '@clerc/core': link:../core
 
   packages/toolkit:
     specifiers:

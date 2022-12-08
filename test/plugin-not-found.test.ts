@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { Clerc } from "clerc";
+import { Clerc } from "@clerc/core";
 import { notFoundPlugin } from "@clerc/plugin-not-found";
 
 describe("plugin-help", () => {

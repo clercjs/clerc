@@ -46,7 +46,7 @@
     "watch": "puild --watch"
   },
   "peerDependencies": {
-    "clerc": "*"
+    "@clerc/core": "*"
   },
   "dependencies": {
     "@types/cli-progress": "^3.11.0",

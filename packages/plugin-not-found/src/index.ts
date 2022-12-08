@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import { NoSuchCommandError, definePlugin } from "clerc";
+import { NoSuchCommandError, definePlugin } from "@clerc/core";
 import { closest } from "fastest-levenshtein";
 import pc from "picocolors";
 

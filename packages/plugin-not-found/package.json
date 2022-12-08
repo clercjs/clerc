@@ -44,11 +44,11 @@
     "watch": "puild --watch"
   },
   "peerDependencies": {
-    "clerc": "*"
+    "@clerc/core": "*"
   },
   "dependencies": {
+    "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
-    "clerc": "workspace:*",
     "fastest-levenshtein": "^1.0.16",
     "picocolors": "^1.0.0"
   }

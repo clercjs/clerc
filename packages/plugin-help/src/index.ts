@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 // TODO: unit tests
 // TODO: parameters
-import type { Clerc, CommandRecord, HandlerContext } from "clerc";
-import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "clerc";
+import type { Clerc, CommandRecord, HandlerContext } from "@clerc/core";
+import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "@clerc/core";
 import { generateCommandRecordFromCommandArray, gracefulVersion } from "@clerc/utils";
 import pc from "picocolors";
 

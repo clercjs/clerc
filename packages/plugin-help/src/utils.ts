@@ -1,4 +1,4 @@
-import type { Command, CommandRecord, HandlerContext, InspectorContext } from "clerc";
+import type { Command, CommandRecord, HandlerContext, InspectorContext } from "@clerc/core";
 import { gracefulFlagName, mustArray } from "@clerc/utils";
 
 export function generateNameAndAliasFromCommands (commands: CommandRecord) {

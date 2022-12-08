@@ -1,5 +1,5 @@
 // TODO
-import type { HandlerContext } from "clerc";
+import type { HandlerContext } from "@clerc/core";
 
 const generateCommandCompletion = (name: string) => `
             ${name})

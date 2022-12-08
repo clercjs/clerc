@@ -44,9 +44,9 @@
     "watch": "puild --watch"
   },
   "peerDependencies": {
-    "clerc": "*"
+    "@clerc/core": "*"
   },
   "dependencies": {
-    "clerc": "workspace:*"
+    "@clerc/core": "workspace:*"
   }
 }

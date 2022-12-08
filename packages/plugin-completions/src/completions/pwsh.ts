@@ -1,4 +1,4 @@
-import type { Command, HandlerContext } from "clerc";
+import type { Command, HandlerContext } from "@clerc/core";
 import { gracefulFlagName, mustArray } from "@clerc/utils";
 
 const NO_DESCRIPTION = "(No Description)";

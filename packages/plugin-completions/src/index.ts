@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import { definePlugin } from "clerc";
+import { definePlugin } from "@clerc/core";
 import { getBashCompletion, getPwshCompletion } from "./completions";
 
 const completionMap = {

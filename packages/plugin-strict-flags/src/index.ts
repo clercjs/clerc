@@ -1,6 +1,6 @@
 // TODO: unit tests
 // TODO: parameters
-import { definePlugin } from "clerc";
+import { definePlugin } from "@clerc/core";
 
 export const strictFlagsPlugin = () => definePlugin({
   setup (cli) {
