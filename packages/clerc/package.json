@@ -2,7 +2,7 @@
   "name": "clerc",
   "version": "0.10.1",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
-  "description": "Clerc is a simple and easy-to-use cli framework.",
+  "description": "Clerc: The full-featured cli framework.",
   "keywords": [
     "cli",
     "clerc",
