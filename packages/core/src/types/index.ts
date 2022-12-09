@@ -10,7 +10,7 @@ export type Flag = FlagOptions & {
 };
 // Custom properties
 export declare interface CommandCustomProperties {}
-export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = {}> extends CommandCustomProperties {
   alias?: A
   parameters?: P
   flags?: F
@@ -52,17 +52,34 @@ type ParameterType<Parameter extends string> = (
 export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
-type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
+type NonNullableParameters<T extends string[] | undefined> = T extends undefined | unknown ? [] : NonNullable<T>;
+type TransformParameters<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> = {
+  [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
+};
+type TransformFlags<F extends Record<string, FlagSchema>> = {
+  [K in keyof F]: F[K]["type"] extends any[]
+    ? F[K]["default"] extends never[]
+      ? F[K] & { default: any[] }
+      : F[K]
+    : F[K]
+};
+type TypeFlagWithDefault<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> = TypeFlag<
+  // @ts-expect-error Fuck
+  TransformFlags<NonNullable<C[N]["flags"]>>
+>;
+type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
+  TypeFlagWithDefault<C, N> & {
+    parameters: string[]
+    mergedFlags: TypeFlagWithDefault<C, N>["flags"] & TypeFlagWithDefault<C, N>["unknownFlags"]
+  };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: N
   resolved: boolean
   isSingleCommand: boolean
-  raw: TypeFlag<NonNullable<C[N]["flags"]>> & { parameters: string[] }
-  parameters: {
-    [Parameter in [...NonNullableParameters<C[N]["parameters"]>][number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
-  }
+  raw: Raw<C, N>
+  parameters: TransformParameters<C, N>
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: TypeFlag<NonNullable<C[N]["flags"]>>["flags"]
+  flags: TypeFlagWithDefault<C, N>["flags"]
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
