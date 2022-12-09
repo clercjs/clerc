@@ -117,8 +117,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | SingleCommandType, P extends string[], O extends CommandOptions<[...P]>>(name: N, description: string, options?: O & CommandOptions<[...P]>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = {}>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = {}>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command (nameOrCommand: any, description?: any, options?: any) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
     const isCommandObject = checkIsCommandObject(nameOrCommand);
@@ -262,11 +262,12 @@ export class Clerc<C extends CommandRecord = {}> {
           parameters,
         );
       }
+      const mergedFlags = { ...parsed.flags, ...parsed.unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name,
         resolved: isCommandResolved,
         isSingleCommand: this.#isSingleCommand,
-        raw: { ...parsed, parameters },
+        raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
         flags,
         unknownFlags: parsed.unknownFlags,
