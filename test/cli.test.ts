@@ -13,6 +13,7 @@ describe("cli", () => {
               "foo",
             ],
             "flags": {},
+            "mergedFlags": {},
             "parameters": [],
             "unknownFlags": {},
           }
@@ -45,6 +46,9 @@ describe("cli", () => {
               "qux",
             ],
             "flags": {
+              "foo": "baz",
+            },
+            "mergedFlags": {
               "foo": "baz",
             },
             "parameters": [
@@ -88,6 +92,11 @@ describe("cli", () => {
               "qux",
             ],
             "flags": {},
+            "mergedFlags": {
+              "c": [
+                true,
+              ],
+            },
             "parameters": [
               "bar",
               "baz",
@@ -134,6 +143,9 @@ describe("cli", () => {
             "flags": {
               "foo": true,
             },
+            "mergedFlags": {
+              "foo": true,
+            },
             "parameters": [],
             "unknownFlags": {},
           }
@@ -164,6 +176,9 @@ describe("cli", () => {
             "flags": {
               "foo": "bar",
             },
+            "mergedFlags": {
+              "foo": "bar",
+            },
             "parameters": [],
             "unknownFlags": {},
           }
@@ -192,6 +207,9 @@ describe("cli", () => {
               "foo",
             ],
             "flags": {
+              "foo": 42,
+            },
+            "mergedFlags": {
               "foo": 42,
             },
             "parameters": [],
@@ -237,6 +255,16 @@ describe("cli", () => {
                 },
               ],
             },
+            "mergedFlags": {
+              "foo": [
+                {
+                  "a": "42",
+                },
+                {
+                  "b": "bar",
+                },
+              ],
+            },
             "parameters": [],
             "unknownFlags": {},
           }
@@ -269,6 +297,20 @@ describe("cli", () => {
               "bar",
             ],
             "flags": {},
+            "mergedFlags": {
+              "a": [
+                true,
+              ],
+              "b": [
+                true,
+              ],
+              "c": [
+                true,
+              ],
+              "d": [
+                true,
+              ],
+            },
             "parameters": [
               "bar",
             ],
@@ -317,6 +359,12 @@ describe("cli", () => {
                 "baz",
               ],
             },
+            "mergedFlags": {
+              "abc": [
+                "bar",
+                "baz",
+              ],
+            },
             "parameters": [],
             "unknownFlags": {},
           }
@@ -355,6 +403,7 @@ describe("cli", () => {
               "foo",
             ],
             "flags": {},
+            "mergedFlags": {},
             "parameters": [],
             "unknownFlags": {},
           }
@@ -414,6 +463,7 @@ describe("cli", () => {
               "bar",
             ],
             "flags": {},
+            "mergedFlags": {},
             "parameters": [],
             "unknownFlags": {},
           }
