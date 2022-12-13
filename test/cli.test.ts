@@ -287,7 +287,7 @@ describe("cli", () => {
   });
   it("should parse shorthand flag", () => {
     Clerc.create()
-      .command("foo", "foo", {})
+      .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
         expect(ctx.raw).toMatchInlineSnapshot(`
