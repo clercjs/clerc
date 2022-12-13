@@ -222,7 +222,7 @@ describe("cli", () => {
       .parse(["foo", "--foo", "42"]);
   });
   it("should parse dot-nested flag", () => {
-    function Foo (value: string) {
+    function Foo(value: string) {
       const [propertyName, propertyValue] = value.split("=");
       return {
         [propertyName]: propertyValue || true,

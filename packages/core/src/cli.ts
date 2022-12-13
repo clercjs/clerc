@@ -19,16 +19,16 @@ export class Clerc<C extends CommandRecord = {}> {
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
 
-  private constructor () {}
+  private constructor() {}
 
-  get #isSingleCommand () { return this.#commands[SingleCommand] !== undefined; }
-  get #hasCommands () { return Object.keys(this.#commands).length > 0; }
+  get #isSingleCommand() { return this.#commands[SingleCommand] !== undefined; }
+  get #hasCommands() { return Object.keys(this.#commands).length > 0; }
 
-  get _name () { return this.#name; }
-  get _description () { return this.#description; }
-  get _version () { return this.#version; }
-  get _inspectors () { return this.#inspectors; }
-  get _commands () { return this.#commands; }
+  get _name() { return this.#name; }
+  get _description() { return this.#description; }
+  get _version() { return this.#version; }
+  get _inspectors() { return this.#inspectors; }
+  get _commands() { return this.#commands; }
 
   /**
    * Create a new cli
@@ -38,7 +38,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * const cli = Clerc.create()
    * ```
    */
-  static create () {
+  static create() {
     return new Clerc();
   }
 
@@ -52,7 +52,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .name("test")
    * ```
    */
-  name (name: string) {
+  name(name: string) {
     this.#name = name;
     return this;
   }
@@ -66,7 +66,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * Clerc.create()
    *  .description("test cli")
    */
-  description (description: string) {
+  description(description: string) {
     this.#description = description;
     return this;
   }
@@ -80,7 +80,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * Clerc.create()
    *  .version("1.0.0")
    */
-  version (version: string) {
+  version(version: string) {
     this.#version = version;
     return this;
   }
@@ -119,7 +119,7 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = {}>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
   command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = {}>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command (nameOrCommand: any, description?: any, options?: any) {
+  command(nameOrCommand: any, description?: any, options?: any) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: string | SingleCommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
@@ -207,7 +207,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  inspector (inspector: Inspector) {
+  inspector(inspector: Inspector) {
     this.#inspectors.push(inspector);
     return this;
   }
@@ -222,7 +222,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .parse(process.argv.slice(2)) // Optional
    * ```
    */
-  parse (argv = resolveArgv()) {
+  parse(argv = resolveArgv()) {
     const name = resolveParametersBeforeFlag(argv, this.#isSingleCommand);
     const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);

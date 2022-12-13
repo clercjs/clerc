@@ -36,7 +36,7 @@ const defaultOptions: Required<Options> = {
   notes: [],
 };
 export const helpPlugin = (_options?: Options) => definePlugin({
-  setup (cli) {
+  setup(cli) {
     const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
     cli.inspector((inspectorCtx, next) => {
       if (command && !inspectorCtx.isSingleCommand) {
@@ -80,7 +80,7 @@ export const helpPlugin = (_options?: Options) => definePlugin({
 });
 
 type ShowHelpOptions = Required<Omit<Options, "command">>;
-function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
+function showHelp(ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   const { cli } = ctx;
   // When parameters are passed, treat them as subcommand.
   if (ctx.raw.parameters.length > 0) {
@@ -118,7 +118,7 @@ function showHelp (ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
   showCommandNotes(notes);
 }
 
-function showCommandExamples (examples?: [string, string][]) {
+function showCommandExamples(examples?: [string, string][]) {
   if (examples && examples.length > 0) {
     newline();
     console.log(pc.yellow("EXAMPLES:"));
@@ -129,7 +129,7 @@ function showCommandExamples (examples?: [string, string][]) {
   }
 }
 
-function showCommandNotes (notes?: string[]) {
+function showCommandNotes(notes?: string[]) {
   if (notes && notes.length > 0) {
     newline();
     console.log(pc.yellow("NOTES:"));
@@ -139,7 +139,7 @@ function showCommandNotes (notes?: string[]) {
   }
 }
 
-function showSubcommandHelp (ctx: HandlerContext) {
+function showSubcommandHelp(ctx: HandlerContext) {
   const { cli } = ctx;
   const commandName = ctx.parameters!.command as string[];
   const commandToShowHelp = resolveCommand(cli._commands, commandName);
@@ -168,7 +168,7 @@ function showSubcommandHelp (ctx: HandlerContext) {
   showCommandNotes(commandToShowHelp.notes);
 }
 
-function showSingleCommandHelp (ctx: HandlerContext) {
+function showSingleCommandHelp(ctx: HandlerContext) {
   const { cli } = ctx;
   const singleCommand = cli._commands[SingleCommand]!;
   console.log(`${pc.green(`${cli._name} ${gracefulVersion(cli._version)}`)}`);
