@@ -41,16 +41,20 @@ importers:
     specifiers:
       '@clerc/core': workspace:*
       '@clerc/plugin-completions': workspace:*
+      '@clerc/plugin-friendly-error': workspace:*
       '@clerc/plugin-help': workspace:*
       '@clerc/plugin-not-found': workspace:*
       '@clerc/plugin-strict-flags': workspace:*
+      '@clerc/plugin-version': workspace:*
       '@clerc/toolkit': workspace:*
     dependencies:
       '@clerc/core': link:../core
       '@clerc/plugin-completions': link:../plugin-completions
+      '@clerc/plugin-friendly-error': link:../plugin-friendly-error
       '@clerc/plugin-help': link:../plugin-help
       '@clerc/plugin-not-found': link:../plugin-not-found
       '@clerc/plugin-strict-flags': link:../plugin-strict-flags
+      '@clerc/plugin-version': link:../plugin-version
       '@clerc/toolkit': link:../toolkit
 
   packages/core:

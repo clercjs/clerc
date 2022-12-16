@@ -49,9 +49,11 @@
   "dependencies": {
     "@clerc/core": "workspace:*",
     "@clerc/plugin-completions": "workspace:*",
+    "@clerc/plugin-friendly-error": "workspace:*",
     "@clerc/plugin-help": "workspace:*",
     "@clerc/plugin-not-found": "workspace:*",
     "@clerc/plugin-strict-flags": "workspace:*",
+    "@clerc/plugin-version": "workspace:*",
     "@clerc/toolkit": "workspace:*"
   }
 }
