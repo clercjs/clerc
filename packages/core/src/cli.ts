@@ -265,7 +265,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const mergedFlags = { ...parsed.flags, ...parsed.unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
-        resolved: isCommandResolved,
+        resolved: isCommandResolved as any,
         isSingleCommand: this.#isSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
