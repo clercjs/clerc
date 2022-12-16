@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Clerc } from "@clerc/core";
 import { notFoundPlugin } from "@clerc/plugin-not-found";
 
-describe("plugin-help", () => {
+describe("plugin-not-found", () => {
   const msgs: string[] = [];
   beforeAll(() => {
     // eslint-disable-next-line no-console
@@ -15,11 +15,11 @@ describe("plugin-help", () => {
     Clerc.create()
       .name("test")
       .use(notFoundPlugin())
-      .parse([""]);
+      .parse([]);
+
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "Command \\"[9m[29m\\" not found.",
-        "Did you mean \\"[1mundefined[22m\\"?",
+        "No command given.",
       ]
     `);
     msgs.length = 0;
