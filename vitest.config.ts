@@ -11,7 +11,7 @@ export const alias: AliasOptions = {
   "@clerc/plugin-help": r("./packages/plugin-help/src"),
   "@clerc/plugin-not-found": r("./packages/plugin-not-found/src"),
   "@clerc/plugin-completions": r("./packages/plugin-completions/src"),
-  "@clerc/plugin-strict-flags": r("./packages/plugin-plugin-strict-flags/src"),
+  "@clerc/plugin-strict-flags": r("./packages/plugin-strict-flags/src"),
 };
 
 export default defineConfig({
