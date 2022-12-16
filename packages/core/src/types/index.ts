@@ -87,7 +87,12 @@ export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
   flags: FallbackType<TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"], Dict<any>>
 };
-export type Inspector<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
+export type Inspector<C extends CommandRecord = CommandRecord> = InspectorFn<C> | InspectorObject<C>;
+export type InspectorFn<C extends CommandRecord = CommandRecord> = (ctx: InspectorContext<C>, next: () => void) => void;
+export interface InspectorObject<C extends CommandRecord = CommandRecord> {
+  enforce?: "pre" | "post"
+  fn: InspectorFn<C>
+}
 
 export interface Plugin<T extends Clerc = Clerc, U extends Clerc = Clerc> {
   setup: (cli: T) => U

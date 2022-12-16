@@ -275,13 +275,16 @@ export class Clerc<C extends CommandRecord = {}> {
       };
       return context;
     };
-    const emitHandler = () => {
-      const command = getCommand();
-      const handlerContext = getContext();
-      if (!command) {
-        throw new NoSuchCommandError(stringName);
-      }
-      this.#commandEmitter.emit(command.name, handlerContext);
+    const emitHandler: Inspector = {
+      enforce: "post",
+      fn: () => {
+        const command = getCommand();
+        const handlerContext = getContext();
+        if (!command) {
+          throw new NoSuchCommandError(stringName);
+        }
+        this.#commandEmitter.emit(command.name, handlerContext);
+      },
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);

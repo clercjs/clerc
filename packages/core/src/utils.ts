@@ -3,7 +3,7 @@ import { arrayStartsWith, mustArray } from "@clerc/utils";
 
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
-import type { Command, CommandAlias, CommandRecord, Inspector, InspectorContext } from "./types";
+import type { Command, CommandAlias, CommandRecord, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
 import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
 
 export function resolveFlattenCommands (commands: CommandRecord) {
@@ -80,10 +80,29 @@ export const resolveArgv = (): string[] =>
       : [];
 
 export function compose (inspectors: Inspector[]) {
+  const preInspectors: InspectorFn[] = [];
+  const normalInspectors: InspectorFn[] = [];
+  const postInspectors: InspectorFn[] = [];
+  for (const inspector of inspectors) {
+    const objectInspector: InspectorObject = typeof inspector === "object"
+      ? inspector
+      : { fn: inspector };
+    const { enforce } = objectInspector;
+    (enforce === "pre"
+      ? preInspectors
+      : enforce === "post"
+        ? postInspectors
+        : normalInspectors).push(objectInspector.fn);
+  }
+  const mergedInspectorFns = [
+    ...preInspectors,
+    ...normalInspectors,
+    ...postInspectors,
+  ];
   return (getCtx: () => InspectorContext) => {
     return dispatch(0);
     function dispatch (i: number): void {
-      const inspector = inspectors[i];
+      const inspector = mergedInspectorFns[i];
       return inspector(getCtx(), dispatch.bind(null, i + 1));
     }
   };
