@@ -72,7 +72,7 @@ type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
     mergedFlags: TypeFlagWithDefault<C, N>["flags"] & TypeFlagWithDefault<C, N>["unknownFlags"]
   };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
-  name?: N
+  name: N extends keyof C ? N : N | undefined
   resolved: boolean
   isSingleCommand: boolean
   raw: Raw<C, N>

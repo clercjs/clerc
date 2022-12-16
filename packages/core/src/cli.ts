@@ -175,7 +175,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends keyof CM, CM extends this["_commands"] = this["_commands"]>(name: LiteralUnion<K, string>, handler: Handler<CM, K>) {
+  on<K extends LiteralUnion<keyof CM, string>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K>) {
     this.#commandEmitter.on(name as any, handler as any);
     return this;
   }
@@ -190,8 +190,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .use(plugin)
    * ```
    */
-  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): U {
-    return plugin.setup(this as any);
+  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> {
+    return plugin.setup(this as any) as any;
   }
 
   /**
@@ -264,7 +264,7 @@ export class Clerc<C extends CommandRecord = {}> {
       }
       const mergedFlags = { ...parsed.flags, ...parsed.unknownFlags };
       const context: InspectorContext | HandlerContext = {
-        name: command?.name,
+        name: command?.name as any,
         resolved: isCommandResolved,
         isSingleCommand: this.#isSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
