@@ -6,7 +6,7 @@ import { closest } from "fastest-levenshtein";
 import pc from "picocolors";
 
 export const notFoundPlugin = () => definePlugin({
-  setup (cli) {
+  setup: (cli) => {
     return cli.inspector((ctx, next) => {
       const commandKeys = Object.keys(cli._commands);
       const hasCommands = !!commandKeys.length;

@@ -12,7 +12,7 @@ export interface Options {
   command?: boolean
 }
 export const completionsPlugin = (options: Options = {}) => definePlugin({
-  setup (cli) {
+  setup: (cli) => {
     const { command = true } = options;
     if (command) {
       cli = cli.command("completions", "Print shell completions to stdout", {

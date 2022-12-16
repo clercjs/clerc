@@ -74,6 +74,15 @@ importers:
     devDependencies:
       '@clerc/core': link:../core
 
+  packages/plugin-friendly-error:
+    specifiers:
+      '@clerc/core': workspace:*
+      '@clerc/toolkit': workspace:*
+    dependencies:
+      '@clerc/toolkit': link:../toolkit
+    devDependencies:
+      '@clerc/core': link:../core
+
   packages/plugin-help:
     specifiers:
       '@clerc/core': workspace:*
@@ -99,6 +108,12 @@ importers:
       '@clerc/core': link:../core
 
   packages/plugin-strict-flags:
+    specifiers:
+      '@clerc/core': workspace:*
+    devDependencies:
+      '@clerc/core': link:../core
+
+  packages/plugin-version:
     specifiers:
       '@clerc/core': workspace:*
     devDependencies:

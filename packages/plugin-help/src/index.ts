@@ -36,7 +36,7 @@ const defaultOptions: Required<Options> = {
   notes: [],
 };
 export const helpPlugin = (_options?: Options) => definePlugin({
-  setup (cli) {
+  setup: (cli) => {
     const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
     cli.inspector((inspectorCtx, next) => {
       if (command && !inspectorCtx.isSingleCommand) {

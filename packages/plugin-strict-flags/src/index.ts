@@ -4,7 +4,7 @@ import { definePlugin } from "@clerc/core";
 import { semanticArray } from "@clerc/utils";
 
 export const strictFlagsPlugin = () => definePlugin({
-  setup (cli) {
+  setup: (cli) => {
     return cli.inspector((ctx, next) => {
       const keys = Object.keys(ctx.unknownFlags);
       if (keys.length > 0) {
