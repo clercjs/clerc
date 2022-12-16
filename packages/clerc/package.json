@@ -11,6 +11,7 @@
     "args",
     "terminal"
   ],
+  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/clerc#readme",
   "repository": {
     "type": "git",
@@ -25,16 +26,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
     "./toolkit": {
       "types": "./dist/toolkit.d.ts",
-      "require": "./dist/toolkit.cjs",
       "import": "./dist/toolkit.mjs"
     }
   },
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [

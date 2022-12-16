@@ -12,6 +12,7 @@
     "args",
     "terminal"
   ],
+  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
   "repository": {
     "type": "git",
@@ -26,11 +27,10 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     }
   },
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
