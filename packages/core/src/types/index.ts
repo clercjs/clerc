@@ -63,9 +63,7 @@ type TransformFlags<F extends Record<string, FlagSchema>> = {
       : F[K]
     : F[K]
 };
-type TypeFlagWithDefault<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> = TypeFlag<
-  TransformFlags<NonNullable<C[N]["flags"]>>
->;
+type TypeFlagWithDefault<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> = TypeFlag<TransformFlags<NonNullable<C[N]["flags"]>>>;
 type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
   TypeFlagWithDefault<C, N> & {
     parameters: string[]
