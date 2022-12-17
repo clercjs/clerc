@@ -10,7 +10,7 @@ interface ParsedParameter {
   spread: boolean
 }
 
-export function parseParameters (parameters: string[]) {
+export function parseParameters(parameters: string[]) {
   const parsedParameters: ParsedParameter[] = [];
 
   let hasOptional: string | undefined;
@@ -61,7 +61,7 @@ export function parseParameters (parameters: string[]) {
   return parsedParameters;
 }
 
-export function mapParametersToArguments (
+export function mapParametersToArguments(
   mapping: Record<string, string | string[]>,
   parameters: ParsedParameter[],
   cliArguments: string[],

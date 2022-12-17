@@ -1,6 +1,6 @@
 {
   "name": "@clerc/core",
-  "version": "0.10.1",
+  "version": "0.10.4",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc core",
   "keywords": [
@@ -32,6 +32,14 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist"
   ],
