@@ -25,8 +25,7 @@ export const versionPlugin = ({
             break;
           }
         }
-        if (!hasVersionFlag) { next(); }
-        console.log(gracefullyVersion);
+        if (!hasVersionFlag) { next(); } else { console.log(gracefullyVersion); }
       });
   },
 });
