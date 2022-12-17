@@ -7,10 +7,11 @@ export const strictFlagsPlugin = () => definePlugin({
   setup: (cli) => {
     return cli.inspector((ctx, next) => {
       const keys = Object.keys(ctx.unknownFlags);
-      if (keys.length > 0) {
+      if (!ctx.resolved || keys.length === 0) {
+        next();
+      } else {
         throw new Error(`Unexpected flags: ${semanticArray(keys)}`);
       }
-      next();
     });
   },
 });
