@@ -6,7 +6,7 @@ import { SingleCommand } from "./cli";
 import type { Command, CommandAlias, CommandRecord, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
 import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
 
-export function resolveFlattenCommands (commands: CommandRecord) {
+export function resolveFlattenCommands(commands: CommandRecord) {
   const commandsMap = new Map<string[], CommandAlias>();
   for (const command of Object.values(commands)) {
     if (command.alias) {
@@ -23,7 +23,7 @@ export function resolveFlattenCommands (commands: CommandRecord) {
   return commandsMap;
 }
 
-export function resolveCommand (commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
+export function resolveCommand(commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
   if (name === SingleCommand) {
     return commands[SingleCommand];
   }
@@ -42,7 +42,7 @@ export function resolveCommand (commands: CommandRecord, name: string | string[]
   return possibleCommands[0];
 }
 
-export function resolveSubcommandsByParent (commands: CommandRecord, parent: string | string[], depth = Infinity) {
+export function resolveSubcommandsByParent(commands: CommandRecord, parent: string | string[], depth = Infinity) {
   const parentArr = parent === ""
     ? []
     : Array.isArray(parent)
@@ -57,7 +57,7 @@ export function resolveSubcommandsByParent (commands: CommandRecord, parent: str
 
 export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
 
-export function resolveParametersBeforeFlag (argv: string[], isSingleCommand: boolean) {
+export function resolveParametersBeforeFlag(argv: string[], isSingleCommand: boolean) {
   if (isSingleCommand) {
     return [];
   }
@@ -79,7 +79,7 @@ export const resolveArgv = (): string[] =>
       ? Deno.args
       : [];
 
-export function compose (inspectors: Inspector[]) {
+export function compose(inspectors: Inspector[]) {
   const preInspectors: InspectorFn[] = [];
   const normalInspectors: InspectorFn[] = [];
   const postInspectors: InspectorFn[] = [];
@@ -101,7 +101,7 @@ export function compose (inspectors: Inspector[]) {
   ];
   return (getCtx: () => InspectorContext) => {
     return dispatch(0);
-    function dispatch (i: number): void {
+    function dispatch(i: number): void {
       const inspector = mergedInspectorFns[i];
       return inspector(getCtx(), dispatch.bind(null, i + 1));
     }
