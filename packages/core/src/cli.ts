@@ -190,7 +190,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .use(plugin)
    * ```
    */
-  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> {
+  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> & U {
     return plugin.setup(this as any) as any;
   }
 
