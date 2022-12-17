@@ -6,15 +6,26 @@ import { gracefulVersion } from "@clerc/utils";
 
 interface Options {
   alias?: string[]
+  command?: boolean
 }
 export const versionPlugin = ({
   alias = ["V"],
+  command = true,
 }: Options = {}) => definePlugin({
   setup: (cli) => {
     const gracefullyVersion = gracefulVersion(cli._version);
-    return cli.command("version", "Show version")
-      .on("version", () => {
-        console.log(gracefullyVersion);
+    return cli
+      .inspector({
+        enforce: "post",
+        fn: (ctx, next) => {
+          if (!ctx.isSingleCommand && command) {
+            cli = cli.command("version", "Show version")
+              .on("version", () => {
+                console.log(gracefullyVersion);
+              });
+          }
+          next();
+        },
       })
       .inspector((ctx, next) => {
         let hasVersionFlag = false;
