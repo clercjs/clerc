@@ -45,19 +45,18 @@ export const gracefulVersion = (v: string) =>
       ? v
       : `v${v}`;
 
-export const arrayStartsWith = <T>(arr: T[], start: T[]) => {
-  if (start.length > arr.length) {
-    return false;
-  }
-  return arr.slice(0, start.length)
-    .every((item, i) => item === start[i]);
-};
-
 export const arrayEquals = <T>(arr1: T[], arr2: T[]) => {
   if (arr2.length !== arr1.length) {
     return false;
   }
   return arr1.every((item, i) => item === arr2[i]);
+};
+
+export const arrayStartsWith = <T>(arr: T[], start: T[]) => {
+  if (start.length > arr.length) {
+    return false;
+  }
+  return arrayEquals(arr.slice(0, start.length), start);
 };
 
 export const generateCommandRecordFromCommandArray = <C extends Command>(commands: C[]) => {
