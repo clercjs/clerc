@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Clerc } from "@clerc/core";
 import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
+
 describe("plugin-strict-flags", () => {
   const msgs: string[] = [];
   beforeAll(() => {
