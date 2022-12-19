@@ -94,6 +94,7 @@ export function compose(inspectors: Inspector[]) {
         ? postInspectors
         : normalInspectors).push(objectInspector.fn);
   }
+
   const mergedInspectorFns = [
     ...preInspectors,
     ...normalInspectors,

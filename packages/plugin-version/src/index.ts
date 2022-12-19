@@ -27,16 +27,19 @@ export const versionPlugin = ({
           next();
         },
       })
-      .inspector((ctx, next) => {
-        let hasVersionFlag = false;
-        const versionFlags = ["version", ...alias];
-        for (const k of Object.keys(ctx.raw.mergedFlags)) {
-          if (versionFlags.includes(k)) {
-            hasVersionFlag = true;
-            break;
+      .inspector({
+        enforce: "pre",
+        fn: (ctx, next) => {
+          let hasVersionFlag = false;
+          const versionFlags = ["version", ...alias];
+          for (const k of Object.keys(ctx.raw.mergedFlags)) {
+            if (versionFlags.includes(k)) {
+              hasVersionFlag = true;
+              break;
+            }
           }
-        }
-        if (!hasVersionFlag) { next(); } else { console.log(gracefullyVersion); }
+          if (!hasVersionFlag) { next(); } else { console.log(gracefullyVersion); }
+        },
       });
   },
 });
