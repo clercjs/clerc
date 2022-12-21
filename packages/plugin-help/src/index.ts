@@ -151,44 +151,41 @@ export const helpPlugin = ({
   examples,
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
-    cli = cli.inspector({
-      enforce: "post",
-      fn: (ctx, next) => {
-        if (command && !ctx.isSingleCommand) {
-          cli = cli.command("help", "Show help", {
-            parameters: [
-              "[command...]",
-            ],
-            notes: [
-              "If no command is specified, show help for the CLI.",
-              "If a command is specified, show help for the command.",
-              "-h is an alias for --help.",
-            ],
-            examples: [
-              [`$ ${cli._name} help`, "Show help"],
-              [`$ ${cli._name} help <command>`, "Show help for a specific command"],
-              [`$ ${cli._name} <command> --help`, "Show help for a specific command"],
-            ],
-          })
-            .on("help", (ctx) => {
-              if (ctx.parameters.command.length) {
-                showSubcommandHelp(ctx, ctx.parameters.command);
-              } else {
-                showHelp(ctx, notes, examples);
-              }
-            });
-        }
-        if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
-          if (ctx.raw._.length) {
-            showSubcommandHelp(ctx, ctx.raw._);
+    if (command) {
+      cli = cli.command("help", "Show help", {
+        parameters: [
+          "[command...]",
+        ],
+        notes: [
+          "If no command is specified, show help for the CLI.",
+          "If a command is specified, show help for the command.",
+          "-h is an alias for --help.",
+        ],
+        examples: [
+          [`$ ${cli._name} help`, "Show help"],
+          [`$ ${cli._name} help <command>`, "Show help for a specific command"],
+          [`$ ${cli._name} <command> --help`, "Show help for a specific command"],
+        ],
+      })
+        .on("help", (ctx) => {
+          if (ctx.parameters.command.length) {
+            showSubcommandHelp(ctx, ctx.parameters.command);
           } else {
             showHelp(ctx, notes, examples);
           }
-          return;
+        });
+    }
+
+    cli.inspector((ctx) => {
+      if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
+        if (ctx.raw._.length) {
+          showSubcommandHelp(ctx, ctx.raw._);
+        } else {
+          showHelp(ctx, notes, examples);
         }
-        next();
-      },
+      }
     });
+
     return cli;
   },
 });
