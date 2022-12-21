@@ -2,7 +2,7 @@
 
 // TODO: unit tests
 // TODO: parameters
-import type { Clerc, HandlerContext } from "@clerc/core";
+import type { Clerc, Command, HandlerContext } from "@clerc/core";
 import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
 import { gracefulFlagName } from "@clerc/utils";
 
@@ -13,7 +13,7 @@ import { table } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: string) => {
+const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command) => {
   const items = [
     {
       title: pc.gray("Name:"),
@@ -27,7 +27,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: string)
   if (subcommand) {
     items.push({
       title: pc.gray("Subcommand:"),
-      body: pc.green(subcommand),
+      body: pc.green(subcommand.name),
     });
   }
   sections.push({
@@ -36,7 +36,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: string)
   });
   sections.push({
     title: "Description:",
-    body: [cli._description],
+    body: [subcommand?.description || cli._description],
   });
 };
 
@@ -90,7 +90,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
     throw new NoSuchCommandError(command.join(" "));
   }
   const sections = [] as Section[];
-  generateCliDetail(sections, cli, subcommand.name);
+  generateCliDetail(sections, cli, subcommand);
   const parameters = subcommand.parameters?.join(", ") || "";
   sections.push({
     title: "Usage:",
