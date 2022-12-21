@@ -5,8 +5,8 @@
 import type { Clerc, Command, HandlerContext } from "@clerc/core";
 import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
 import { gracefulFlagName } from "@clerc/utils";
-
 import pc from "picocolors";
+
 import type { Section } from "./renderer";
 import { render } from "./renderer";
 import { table } from "./utils";
