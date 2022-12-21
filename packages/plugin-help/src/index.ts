@@ -1,190 +1,194 @@
 /* eslint-disable no-console */
+
 // TODO: unit tests
 // TODO: parameters
-import type { Clerc, CommandRecord, HandlerContext } from "@clerc/core";
-import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand, resolveRootCommands } from "@clerc/core";
-import { generateCommandRecordFromCommandArray, gracefulVersion } from "@clerc/utils";
+import type { Clerc, HandlerContext } from "@clerc/core";
+import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
+import { gracefulFlagName } from "@clerc/utils";
+
 import pc from "picocolors";
+import type { Section } from "./renderer";
+import { render } from "./renderer";
+import { table } from "./utils";
 
-import { generateFlagNameAndAliasFromCommand, generateNameAndAliasFromCommands, getPadLength, mergeFlags } from "./utils";
+const DELIMITER = pc.yellow("-");
 
-const newline = () => { console.log(); };
-const getExamples = (cli: Clerc) => [
-  [`${cli._name} help`, "Displays help of the cli"],
-  [`${cli._name} -h`, "Displays help of the cli"],
-  [`${cli._name} help help`, "Displays help of the help command"],
-] as [string, string][];
+const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: string) => {
+  const items = [
+    {
+      title: pc.gray("Name:"),
+      body: pc.red(cli._name),
+    },
+    {
+      title: pc.gray("Version:"),
+      body: pc.yellow(cli._version),
+    },
+  ];
+  if (subcommand) {
+    items.push({
+      title: pc.gray("Subcommand:"),
+      body: pc.green(subcommand),
+    });
+  }
+  sections.push({
+    type: "inline",
+    items,
+  });
+  sections.push({
+    title: "Description:",
+    body: [cli._description],
+  });
+};
 
-interface Options {
+const generateExamples = (sections: Section[], examples: [string, string][]) => {
+  const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
+  sections.push({
+    title: "Examples:",
+    body: table(...examplesFormatted).toString().split("\n"),
+  });
+};
+
+const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
+  const { cli } = ctx;
+  const sections = [] as Section[];
+  generateCliDetail(sections, cli);
+  if (ctx.isSingleCommand) {
+    sections.push({
+      title: "Usage:",
+      body: [`$ ${cli._name} [options]`],
+    });
+  } else {
+    sections.push({
+      title: "Usage:",
+      body: [`$ ${cli._name} [command] [options]`],
+    });
+  }
+  if (!ctx.isSingleCommand) {
+    sections.push({
+      title: "Commands:",
+      body: Object.values(cli._commands).map((command) => {
+        return table([pc.cyan(command.name), DELIMITER, command.description]).toString();
+      }),
+    });
+  }
+  if (notes) {
+    sections.push({
+      title: "Notes:",
+      body: notes,
+    });
+  }
+  if (examples) {
+    generateExamples(sections, examples);
+  }
+  console.log(render(sections));
+};
+
+const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
+  const { cli } = ctx;
+  const subcommand = resolveCommand(cli._commands, command);
+  if (!subcommand) {
+    throw new NoSuchCommandError(command.join(" "));
+  }
+  const sections = [] as Section[];
+  generateCliDetail(sections, cli, subcommand.name);
+  const parameters = subcommand.parameters?.join(", ") || "";
+  sections.push({
+    title: "Usage:",
+    body: [`$ ${cli._name} ${subcommand.name}${parameters ? ` ${parameters}` : ""} [options]`],
+  });
+  if (subcommand.flags) {
+    sections.push({
+      title: "Flags:",
+      body: Object.entries(subcommand.flags).map(([name, flag]) => {
+        const flagNameWithAlias = [gracefulFlagName(name)];
+        if (flag.alias) {
+          flagNameWithAlias.push(gracefulFlagName(flag.alias));
+        }
+        const items = [pc.blue(flagNameWithAlias.join(", "))];
+        if (flag.description) {
+          items.push(DELIMITER, flag.description);
+        }
+        if (flag.type) {
+          const type = Array.isArray(flag.type)
+            ? `Array<${flag.type[0].name}>`
+            : (flag.type as any).name;
+          items.push(pc.gray(`(${type})`));
+        }
+        return table(items).toString();
+      }),
+    });
+  }
+  if (subcommand.notes) {
+    sections.push({
+      title: "Notes:",
+      body: subcommand.notes,
+    });
+  }
+  if (subcommand.examples) {
+    generateExamples(sections, subcommand.examples);
+  }
+  console.log(render(sections));
+};
+
+export interface Options {
   /**
-   * Register a help command or not.
+   * Whether to registr the help command.
+   * @default true
    */
   command?: boolean
   /**
-   * Examples
-   * Syntax: [example command, description]
-   */
-  examples?: [string, string][]
-  /**
-   * Notes
+   * Global notes.
    */
   notes?: string[]
+  /**
+   * Global examples.
+   */
+  examples?: [string, string][]
 }
-const defaultOptions: Required<Options> = {
-  command: true,
-  examples: [],
-  notes: [],
-};
-export const helpPlugin = (_options?: Options) => definePlugin({
+export const helpPlugin = ({
+  command = true,
+  notes,
+  examples,
+}: Options = {}) => definePlugin({
   setup: (cli) => {
-    const { command, ...rest } = { ...defaultOptions, ..._options } as Required<Options>;
-    cli.inspector((inspectorCtx, next) => {
-      if (command && !inspectorCtx.isSingleCommand) {
-        cli = cli.command("help", "Show help", {
-          examples: getExamples(cli),
-          parameters: [
-            "[command...]",
-          ],
-        })
-          .on("help", (ctx) => {
-            showHelp(ctx, rest);
-          });
-      }
-      const ctx = inspectorCtx as HandlerContext;
-      const flags = mergeFlags(ctx);
-      if ((flags.h || flags.help)) {
-        if (ctx.isSingleCommand) {
-          showSingleCommandHelp(ctx);
+    cli = cli.inspector({
+      enforce: "post",
+      fn: (ctx, next) => {
+        if (command && !ctx.isSingleCommand) {
+          cli = cli.command("help", "Show help", {
+            parameters: [
+              "[command...]",
+            ],
+            notes: [
+              "If no command is specified, show help for the CLI.",
+              "If a command is specified, show help for the command.",
+              "-h is an alias for --help.",
+            ],
+            examples: [
+              [`$ ${cli._name} help`, "Show help"],
+              [`$ ${cli._name} help <command>`, "Show help for a specific command"],
+              [`$ ${cli._name} <command> --help`, "Show help for a specific command"],
+            ],
+          })
+            .on("help", (ctx) => {
+              if (ctx.parameters.command.length) {
+                showSubcommandHelp(ctx, ctx.parameters.command);
+              } else {
+                showHelp(ctx, notes, examples);
+              }
+            });
+        }
+        if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
+          if (ctx.raw._.length) {
+            showSubcommandHelp(ctx, ctx.raw._);
+          } else {
+            showHelp(ctx, notes, examples);
+          }
           return;
         }
-        if (ctx.name === "help") {
-          showSubcommandHelp(ctx);
-          return;
-        }
-        if (ctx.resolved) {
-          showSubcommandHelp(ctx);
-        } else {
-          showHelp(ctx, rest);
-        }
-        return;
-      }
-      // e.g: $ cli
-      if (!ctx.resolved && ctx.raw._.length === 0 && Object.keys(flags).length === 0) {
-        showHelp(ctx, rest);
-        return;
-      }
-      next();
+        next();
+      },
     });
     return cli;
   },
 });
-
-type ShowHelpOptions = Required<Omit<Options, "command">>;
-function showHelp(ctx: HandlerContext, { examples, notes }: ShowHelpOptions) {
-  const { cli } = ctx;
-  // When parameters are passed, treat them as subcommand.
-  if (ctx.raw.parameters.length > 0) {
-    showSubcommandHelp(ctx);
-    return;
-  }
-  // Name
-  cli._name && console.log(`${pc.green(cli._name)} ${gracefulVersion(cli._version)}`);
-  // Description
-  if (cli._description) {
-    console.log(cli._description);
-    newline();
-  }
-  // Usage
-  console.log(pc.yellow("USAGE:"));
-  console.log(`    ${cli._name || "<CLI NAME>"} <SUBCOMMAND> [OPTIONS]`);
-  newline();
-  // Commands
-  console.log(pc.yellow("COMMANDS:"));
-  const commandNameAndAlias = generateNameAndAliasFromCommands(generateCommandRecordFromCommandArray(resolveRootCommands(cli._commands)));
-  const commandsPadLength = getPadLength(Object.values(commandNameAndAlias));
-  for (const [name, nameAndAlias] of Object.entries(commandNameAndAlias)) {
-    console.log(`    ${pc.green(nameAndAlias.padEnd(commandsPadLength))}${(cli._commands as CommandRecord)[name].description}`);
-  }
-  // Examples
-  if (examples.length > 0) {
-    newline();
-    console.log(pc.yellow("EXAMPLES:"));
-    const examplesPadLength = getPadLength(examples.map(e => e[0]));
-    for (const [exampleCommand, exampleDescription] of examples) {
-      console.log(`  ${exampleCommand.padEnd(examplesPadLength)}${exampleDescription}`);
-    }
-  }
-  // Notes
-  showCommandNotes(notes);
-}
-
-function showCommandExamples(examples?: [string, string][]) {
-  if (examples && examples.length > 0) {
-    newline();
-    console.log(pc.yellow("EXAMPLES:"));
-    const examplesPadLength = getPadLength(examples.map(e => e[0]));
-    for (const [exampleCommand, exampleDescription] of examples) {
-      console.log(`  ${exampleCommand.padEnd(examplesPadLength)}${exampleDescription}`);
-    }
-  }
-}
-
-function showCommandNotes(notes?: string[]) {
-  if (notes && notes.length > 0) {
-    newline();
-    console.log(pc.yellow("NOTES:"));
-    for (const note of notes) {
-      console.log(`  ${note}`);
-    }
-  }
-}
-
-function showSubcommandHelp(ctx: HandlerContext) {
-  const { cli } = ctx;
-  const commandName = ctx.parameters!.command as string[];
-  const commandToShowHelp = resolveCommand(cli._commands, commandName);
-  if (!commandToShowHelp) {
-    throw new NoSuchCommandError(commandName.join(" "));
-  }
-  // Name, command name and version
-  console.log(`${pc.green(`${cli._name} ${commandToShowHelp.name}`)} ${gracefulVersion(cli._version)}`);
-  // Description
-  commandToShowHelp.description && console.log(commandToShowHelp.description);
-  // Usage;
-  newline();
-  console.log(pc.yellow("USAGE:"));
-  console.log(`    ${cli._name} ${commandToShowHelp.name} [PARAMETERS] [FLAGS]`);
-  // Flags
-  const flagNameAndAlias = generateFlagNameAndAliasFromCommand(commandToShowHelp);
-  if (Object.keys(flagNameAndAlias).length > 0) {
-    newline();
-    console.log(pc.yellow("FLAGS:"));
-    const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
-    for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
-      console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${commandToShowHelp.flags![name].description}`);
-    }
-  }
-  showCommandExamples(commandToShowHelp.examples);
-  showCommandNotes(commandToShowHelp.notes);
-}
-
-function showSingleCommandHelp(ctx: HandlerContext) {
-  const { cli } = ctx;
-  const singleCommand = cli._commands[SingleCommand]!;
-  console.log(`${pc.green(`${cli._name} ${gracefulVersion(cli._version)}`)}`);
-  singleCommand.description && console.log(singleCommand.description);
-  newline();
-  console.log(pc.yellow("USAGE:"));
-  console.log(`    ${cli._name} [PARAMETERS] [FLAGS]`);
-  const flagNameAndAlias = generateFlagNameAndAliasFromCommand(singleCommand);
-  if (Object.keys(flagNameAndAlias).length > 0) {
-    newline();
-    console.log(pc.yellow("FLAGS:"));
-    const flagsPadLength = getPadLength(Object.values(flagNameAndAlias));
-    for (const [name, nameAndAlias] of Object.entries(flagNameAndAlias)) {
-      console.log(`    ${pc.green(nameAndAlias.padEnd(flagsPadLength))}${singleCommand.flags![name].description}`);
-    }
-  }
-  showCommandExamples(singleCommand.examples);
-  showCommandNotes(singleCommand.notes);
-}

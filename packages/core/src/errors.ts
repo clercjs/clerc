@@ -43,3 +43,18 @@ export class CommandNameConflictError extends Error {
     super(`Command name ${n1} conflicts with ${n2}. Maybe caused by alias.`);
   }
 }
+export class NameNotSetError extends Error {
+  constructor() {
+    super("Name not set.");
+  }
+}
+export class DescriptionNotSetError extends Error {
+  constructor() {
+    super("Description not set.");
+  }
+}
+export class VersionNotSetError extends Error {
+  constructor() {
+    super("Version not set.");
+  }
+}

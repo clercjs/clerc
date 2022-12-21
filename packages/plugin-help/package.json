@@ -55,6 +55,7 @@
     "@clerc/core": "*"
   },
   "dependencies": {
+    "@clerc/toolkit": "workspace:*",
     "@clerc/utils": "workspace:*",
     "picocolors": "^1.0.0"
   },

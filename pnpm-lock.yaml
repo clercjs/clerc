@@ -90,9 +90,11 @@ importers:
   packages/plugin-help:
     specifiers:
       '@clerc/core': workspace:*
+      '@clerc/toolkit': workspace:*
       '@clerc/utils': workspace:*
       picocolors: ^1.0.0
     dependencies:
+      '@clerc/toolkit': link:../toolkit
       '@clerc/utils': link:../utils
       picocolors: 1.0.0
     devDependencies:

@@ -3,9 +3,37 @@ import { typeFlag } from "type-flag";
 import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
 import { arrayStartsWith } from "@clerc/utils";
 
-import { CommandExistsError, CommonCommandExistsError, NoSuchCommandError, ParentCommandExistsError, SingleCommandAliasError, SingleCommandError, SubcommandExistsError } from "./errors";
-import type { Command, CommandOptions, CommandRecord, CommandWithHandler, FlagOptions, Handler, HandlerContext, Inspector, InspectorContext, MakeEventMap, Plugin } from "./types";
-import { compose, resolveArgv, resolveCommand, resolveParametersBeforeFlag } from "./utils";
+import {
+  CommandExistsError,
+  CommonCommandExistsError,
+  DescriptionNotSetError,
+  NameNotSetError,
+  NoSuchCommandError,
+  ParentCommandExistsError,
+  SingleCommandAliasError,
+  SingleCommandError,
+  SubcommandExistsError,
+  VersionNotSetError,
+} from "./errors";
+import type {
+  Command,
+  CommandOptions,
+  CommandRecord,
+  CommandWithHandler,
+  FlagOptions,
+  Handler,
+  HandlerContext,
+  Inspector,
+  InspectorContext,
+  MakeEventMap,
+  Plugin,
+} from "./types";
+import {
+  compose,
+  resolveArgv,
+  resolveCommand,
+  resolveParametersBeforeFlag,
+} from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
 
 export const SingleCommand = Symbol("SingleCommand");
@@ -223,6 +251,15 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse(argv = resolveArgv()) {
+    if (!this.#name) {
+      throw new NameNotSetError();
+    }
+    if (!this.#description) {
+      throw new DescriptionNotSetError();
+    }
+    if (!this.#version) {
+      throw new VersionNotSetError();
+    }
     const name = resolveParametersBeforeFlag(argv, this.#isSingleCommand);
     const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
