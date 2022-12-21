@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { Clerc, SingleCommand } from "@clerc/core";
+import { SingleCommand } from "@clerc/core";
+import { create } from "./create";
 
 describe("cli", () => {
   it("should parse", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
@@ -24,7 +25,7 @@ describe("cli", () => {
       .parse(["foo"]);
   });
   it("should honor single command", () => {
-    Clerc.create()
+    create()
       .command(SingleCommand, "single command", {
         flags: {
           foo: {
@@ -75,7 +76,7 @@ describe("cli", () => {
       .parse(["bar", "--foo", "baz", "qux"]);
   });
   it("should parse parameters", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         parameters: [
           "[optional ...]",
@@ -123,7 +124,7 @@ describe("cli", () => {
       .parse(["foo", "bar", "-c", "baz", "qux"]);
   });
   it("should parse boolean flag", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -156,7 +157,7 @@ describe("cli", () => {
       .parse(["foo", "--foo"]);
   });
   it("should parse string flag", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -189,7 +190,7 @@ describe("cli", () => {
       .parse(["foo", "--foo", "bar"]);
   });
   it("should parse number flag", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -228,7 +229,7 @@ describe("cli", () => {
         [propertyName]: propertyValue || true,
       };
     }
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -286,7 +287,7 @@ describe("cli", () => {
       .parse(["foo", "--foo.a=42", "--foo.b=bar"]);
   });
   it("should parse shorthand flag", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
@@ -336,7 +337,7 @@ describe("cli", () => {
       .parse(["foo", "-abcd", "bar"]);
   });
   it("should parse array flag", () => {
-    Clerc.create()
+    create()
       .command("foo", "foo", {
         flags: {
           abc: {
@@ -383,7 +384,7 @@ describe("cli", () => {
   });
   it("should honor inspector", () => {
     let count = 0;
-    Clerc.create()
+    create()
       .command("foo", "foo")
       .inspector(() => {})
       .on("foo", () => { count++; })
@@ -392,7 +393,7 @@ describe("cli", () => {
   });
   it("should next", () => {
     let count = 0;
-    Clerc.create()
+    create()
       .command("foo", "foo")
       .inspector((_ctx, next) => { next(); })
       .inspector((ctx, next) => {
@@ -418,41 +419,41 @@ describe("cli", () => {
   });
   it("should have exact one command", () => {
     expect(() => {
-      Clerc.create()
+      create()
         .command("foo", "foo")
         .command("foo", "foo");
     }).toThrowError();
   });
   it("should throw when single command is set", () => {
     expect(() => {
-      Clerc.create()
+      create()
         .command(SingleCommand, "single")
         .command("foo", "foo");
     }).toThrowError();
   });
   it("should throw when common command is set", () => {
     expect(() => {
-      Clerc.create()
+      create()
         .command("foo", "foo")
         .command(SingleCommand, "single");
     }).toThrowError();
   });
   it("should throw when subcommand exists", () => {
     expect(() => {
-      Clerc.create()
+      create()
         .command("foo bar", "foo")
         .command("foo", "foo");
     }).toThrowError();
   });
   it("should throw when parent command exists", () => {
     expect(() => {
-      Clerc.create()
+      create()
         .command("foo", "foo")
         .command("foo bar", "foo");
     }).toThrowError();
   });
   it("should parse subcommand", () => {
-    Clerc.create()
+    create()
       .command("foo bar", "foo")
       .on("foo bar", (ctx) => {
         expect(ctx.name).toBe("foo bar");
@@ -475,7 +476,7 @@ describe("cli", () => {
   });
   it("should register command with handler", () => {
     let count = 0;
-    Clerc.create()
+    create()
       .command({
         name: "foo",
         description: "foo",

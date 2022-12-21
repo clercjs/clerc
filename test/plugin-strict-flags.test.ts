@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { Clerc } from "@clerc/core";
 import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
+import { create } from "./create";
 
 describe("plugin-strict-flags", () => {
   const msgs: string[] = [];
@@ -13,8 +13,7 @@ describe("plugin-strict-flags", () => {
   });
   it("shouldn't show when flags are not passed", () => {
     try {
-      Clerc.create()
-        .name("test")
+      create()
         .use(strictFlagsPlugin())
         .command("a", "a")
         .parse([]);
@@ -25,8 +24,7 @@ describe("plugin-strict-flags", () => {
   });
   it("should show unknown flags", () => {
     try {
-      Clerc.create()
-        .name("test")
+      create()
         .use(strictFlagsPlugin())
         .command("a", "a")
         .parse(["a", "-a", "-bc", "--foo"]);

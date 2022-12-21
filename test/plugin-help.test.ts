@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { Clerc } from "@clerc/core";
 import { helpPlugin } from "@clerc/plugin-help";
+import { create } from "./create";
 
 describe("plugin-help", () => {
   const msgs: string[] = [];
@@ -12,70 +12,76 @@ describe("plugin-help", () => {
     msgs.length = 0;
   });
   it("should show help", () => {
-    Clerc.create()
-      .name("test")
+    create()
       .use(helpPlugin())
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
-      [
-        "[32mtest[39m ",
-        "[33mUSAGE:[39m",
-        "    test <SUBCOMMAND> [OPTIONS]",
-        undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
-      ]
-    `);
+        [
+          "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m 
+        [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+
+        [1mDescription:[22m
+                    
+            test    
+
+        [1mUsage:[22m                        
+                                      
+            $ test [command] [options]
+
+        [1mCommands:[22m           
+                            
+            [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+        ",
+        ]
+      `);
     msgs.length = 0;
   });
   it("should show --help", () => {
-    Clerc.create()
-      .name("test")
+    create()
       .use(helpPlugin())
       .parse(["--help"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
-        "[32mtest[39m ",
-        "[33mUSAGE:[39m",
-        "    test <SUBCOMMAND> [OPTIONS]",
-        undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
-      ]
-    `);
-  });
-  it("should show placeholder", () => {
-    Clerc.create()
-      .use(helpPlugin())
-      .parse(["help"]);
-    expect(msgs).toMatchInlineSnapshot(`
-      [
-        "[33mUSAGE:[39m",
-        "    <CLI NAME> <SUBCOMMAND> [OPTIONS]",
-        undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
+        "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m 
+      [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+
+      [1mDescription:[22m
+                  
+          test    
+
+      [1mUsage:[22m                        
+                                    
+          $ test [command] [options]
+
+      [1mCommands:[22m           
+                          
+          [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+      ",
       ]
     `);
   });
   it("should show name, description and version", () => {
-    Clerc.create()
-      .name("foo")
-      .description("foo cli")
-      .version("1.0.0")
+    create()
       .use(helpPlugin())
       .parse(["help"]);
     expect(msgs).toMatchInlineSnapshot(`
-      [
-        "[32mfoo[39m v1.0.0",
-        "foo cli",
-        undefined,
-        "[33mUSAGE:[39m",
-        "    foo <SUBCOMMAND> [OPTIONS]",
-        undefined,
-        "[33mCOMMANDS:[39m",
-        "    [32mhelp    [39mShow help",
-      ]
-    `);
+    [
+      "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m 
+    [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+
+    [1mDescription:[22m
+                
+        test    
+
+    [1mUsage:[22m                        
+                                  
+        $ test [command] [options]
+
+    [1mCommands:[22m           
+                        
+        [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+    ",
+    ]
+  `);
   });
 });
