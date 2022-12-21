@@ -1,7 +1,7 @@
 Clerc: The full-featured cli framework.
 =======================================
 
-[![Version](https://img.shields.io/npm/v/oclif.svg)](https://npmjs.org/package/clerc)
+[![Version](https://img.shields.io/npm/v/clerc.svg)](https://npmjs.org/package/clerc)
 [![CI](https://github.com/so1ve/clerc/actions/workflows/ci.yml/badge.svg)](https://github.com/so1ve/clerc/actions/workflows/ci.yml)
 [![Downloads/week](https://img.shields.io/npm/dw/clerc.svg)](https://npmjs.org/package/clerc)
 [![License](https://img.shields.io/npm/l/clerc.svg)](https://github.com/so1ve/clerc/blob/main/package.json)
