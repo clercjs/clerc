@@ -130,7 +130,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
   console.log(render(sections));
 };
 
-export interface Options {
+export interface HelpPluginOptions {
   /**
    * Whether to registr the help command.
    * @default true
@@ -149,7 +149,7 @@ export const helpPlugin = ({
   command = true,
   notes,
   examples,
-}: Options = {}) => definePlugin({
+}: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     cli = cli.inspector({
       enforce: "post",

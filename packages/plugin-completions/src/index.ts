@@ -8,10 +8,10 @@ const completionMap = {
   pwsh: getPwshCompletion,
 };
 
-export interface Options {
+export interface CompletionsPluginOptions {
   command?: boolean
 }
-export const completionsPlugin = (options: Options = {}) => definePlugin({
+export const completionsPlugin = (options: CompletionsPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const { command = true } = options;
     if (command) {

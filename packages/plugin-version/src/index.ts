@@ -4,14 +4,14 @@
 import { definePlugin } from "@clerc/core";
 import { gracefulVersion } from "@clerc/utils";
 
-interface Options {
+interface VersionPluginOptions {
   alias?: string[]
   command?: boolean
 }
 export const versionPlugin = ({
   alias = ["V"],
   command = true,
-}: Options = {}) => definePlugin({
+}: VersionPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const gracefullyVersion = gracefulVersion(cli._version);
     return cli
