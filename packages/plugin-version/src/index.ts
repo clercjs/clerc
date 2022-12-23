@@ -21,7 +21,7 @@ export const versionPlugin = ({
           if (!ctx.isSingleCommand && command) {
             cli = cli.command("version", "Show version")
               .on("version", () => {
-                console.log(gracefullyVersion);
+                process.stdout.write(gracefullyVersion);
               });
           }
           next();
@@ -38,7 +38,7 @@ export const versionPlugin = ({
               break;
             }
           }
-          if (!hasVersionFlag) { next(); } else { console.log(gracefullyVersion); }
+          if (!hasVersionFlag) { next(); } else { process.stdout.write(gracefullyVersion); }
         },
       });
   },

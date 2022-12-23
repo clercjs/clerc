@@ -80,7 +80,7 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (examples) {
     generateExamples(sections, examples);
   }
-  console.log(render(sections));
+  process.stdout.write(render(sections));
 };
 
 const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
@@ -127,7 +127,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples);
   }
-  console.log(render(sections));
+  process.stdout.write(render(sections));
 };
 
 export interface HelpPluginOptions {

@@ -36,7 +36,7 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) => def
             throw new Error("Missing shell name");
           }
           if (shell in completionMap) {
-            console.log(completionMap[shell as keyof typeof completionMap](ctx));
+            process.stdout.write(completionMap[shell as keyof typeof completionMap](ctx));
           } else {
             throw new Error(`No such shell: ${shell}`);
           }
