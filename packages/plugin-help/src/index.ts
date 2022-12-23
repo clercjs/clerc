@@ -176,13 +176,15 @@ export const helpPlugin = ({
         });
     }
 
-    cli.inspector((ctx) => {
+    cli.inspector((ctx, next) => {
       if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
         if (ctx.raw._.length) {
           showSubcommandHelp(ctx, ctx.raw._);
         } else {
           showHelp(ctx, notes, examples);
         }
+      } else {
+        next();
       }
     });
 

@@ -75,6 +75,59 @@ describe("cli", () => {
       })
       .parse(["bar", "--foo", "baz", "qux"]);
   });
+  it("should honor single command object", () => {
+    create()
+      .command({
+        name: SingleCommand,
+        description: "foo",
+        flags: {
+          foo: {
+            description: "",
+            type: String,
+            default: "",
+          },
+        },
+        parameters: [
+          "[optional...]",
+        ],
+        handler: (ctx) => {
+          expect(ctx.name).toEqual(SingleCommand);
+          expect(ctx.raw).toMatchInlineSnapshot(`
+            {
+              "_": [
+                "bar",
+                "qux",
+              ],
+              "flags": {
+                "foo": "baz",
+              },
+              "mergedFlags": {
+                "foo": "baz",
+              },
+              "parameters": [
+                "bar",
+                "qux",
+              ],
+              "unknownFlags": {},
+            }
+          `);
+          expect(ctx.parameters).toMatchInlineSnapshot(`
+            {
+              "optional": [
+                "bar",
+                "qux",
+              ],
+            }
+          `);
+          expect(ctx.flags).toMatchInlineSnapshot(`
+            {
+              "foo": "baz",
+            }
+          `);
+        },
+      })
+      .parse(["bar", "--foo", "baz", "qux"]);
+  });
   it("should parse parameters", () => {
     create()
       .command("foo", "foo", {
