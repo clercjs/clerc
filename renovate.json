@@ -1,0 +1,3 @@
+{
+  "extends": ["github>anaconda/renovate-config"]
+}
