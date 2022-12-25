@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+
 // TODO: unit tests
 // TODO: parameters
 import { definePlugin } from "@clerc/core";

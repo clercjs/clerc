@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+
 // TODO: unit tests
 import { definePlugin } from "@clerc/core";
 import { getBashCompletion, getPwshCompletion } from "./completions";

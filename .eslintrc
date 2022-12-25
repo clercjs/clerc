@@ -1,6 +1,3 @@
 {
-  "extends": "@so1ve",
-  "rules": {
-    "@so1ve/space-between-generic-and-paren": "off"
-  }
+  "extends": "@so1ve"
 }

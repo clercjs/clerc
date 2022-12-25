@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 
 // TODO: unit tests
 // TODO: parameters
