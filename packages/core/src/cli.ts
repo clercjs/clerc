@@ -263,7 +263,9 @@ export class Clerc<C extends CommandRecord = {}> {
     const name = resolveParametersBeforeFlag(argv, this.#isSingleCommand);
     const stringName = name.join(" ");
     const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
+    const mapErrors = [] as (Error | undefined)[];
     const getContext = () => {
+      mapErrors.length = 0;
       const command = getCommand();
       const isCommandResolved = !!command;
       // [...argv] is a workaround
@@ -282,22 +284,22 @@ export class Clerc<C extends CommandRecord = {}> {
         const eofArguments = parsed._["--"];
         parameters = parameters.slice(0, -eofArguments.length || undefined);
 
-        mapParametersToArguments(
+        mapErrors.push(mapParametersToArguments(
           mapping,
           parseParameters(commandParameters),
           parameters,
-        );
-        mapParametersToArguments(
+        ));
+        mapErrors.push(mapParametersToArguments(
           mapping,
           parseParameters(eofParameters),
           eofArguments,
-        );
+        ));
       } else {
-        mapParametersToArguments(
+        mapErrors.push(mapParametersToArguments(
           mapping,
           parseParameters(commandParameters),
           parameters,
-        );
+        ));
       }
       const mergedFlags = { ...parsed.flags, ...parsed.unknownFlags };
       const context: InspectorContext | HandlerContext = {
@@ -317,6 +319,10 @@ export class Clerc<C extends CommandRecord = {}> {
       fn: () => {
         const command = getCommand();
         const handlerContext = getContext();
+        const errors = mapErrors.filter(Boolean) as Error[];
+        if (errors.length > 0) {
+          throw errors[0];
+        }
         if (!command) {
           throw new NoSuchCommandError(stringName);
         }

@@ -1,8 +1,9 @@
 
 // TODO: unit tests
 // TODO: parameters
-import type { Clerc, Command, HandlerContext } from "@clerc/core";
-import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
+import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
+import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
+
 import { gracefulFlagName } from "@clerc/utils";
 import pc from "picocolors";
 
@@ -11,6 +12,12 @@ import { render } from "./renderer";
 import { table } from "./utils";
 
 const DELIMITER = pc.yellow("-");
+
+const formatCommandName = (name: string | string[] | SingleCommandType) => Array.isArray(name)
+  ? name.join(" ")
+  : typeof name === "string"
+    ? name
+    : "<Single Command>";
 
 const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command) => {
   const items = [
@@ -26,7 +33,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
   if (subcommand) {
     items.push({
       title: pc.gray("Subcommand:"),
-      body: pc.green(subcommand.name),
+      body: pc.green(formatCommandName(subcommand.name)),
     });
   }
   sections.push({
@@ -82,18 +89,18 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   process.stdout.write(render(sections));
 };
 
-const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
+const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
   if (!subcommand) {
-    throw new NoSuchCommandError(command.join(" "));
+    throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
   generateCliDetail(sections, cli, subcommand);
   const parameters = subcommand.parameters?.join(", ") || "";
   sections.push({
     title: "Usage:",
-    body: [`$ ${cli._name} ${subcommand.name}${parameters ? ` ${parameters}` : ""} [flags]`],
+    body: [`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`],
   });
   if (subcommand.flags) {
     sections.push({
@@ -180,7 +187,11 @@ export const helpPlugin = ({
         if (ctx.raw._.length) {
           showSubcommandHelp(ctx, ctx.raw._);
         } else {
-          showHelp(ctx, notes, examples);
+          if (!ctx.isSingleCommand) {
+            showHelp(ctx, notes, examples);
+          } else {
+            showSubcommandHelp(ctx, SingleCommand);
+          }
         }
       } else {
         next();

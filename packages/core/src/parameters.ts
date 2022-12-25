@@ -70,7 +70,7 @@ export function mapParametersToArguments(
     const { name, required, spread } = parameters[i];
     const camelCaseName = camelCase(name);
     if (camelCaseName in mapping) {
-      throw new Error(`Invalid parameter: ${stringify(name)} is used more than once.`);
+      return new Error(`Invalid parameter: ${stringify(name)} is used more than once.`);
     }
 
     const value = spread ? cliArguments.slice(i) : cliArguments[i];
@@ -83,8 +83,7 @@ export function mapParametersToArguments(
       required
       && (!value || (spread && value.length === 0))
     ) {
-      console.error(`Error: Missing required parameter ${stringify(name)}\n`);
-      return process.exit(1);
+      return new Error(`Error: Missing required parameter ${stringify(name)}`);
     }
 
     mapping[camelCaseName] = value;
