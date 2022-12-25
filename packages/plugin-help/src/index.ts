@@ -4,7 +4,7 @@
 import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
 
-import { gracefulFlagName } from "@clerc/utils";
+import { gracefulFlagName, mustArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Section } from "./renderer";
@@ -73,7 +73,8 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
     sections.push({
       title: "Commands:",
       body: table(...Object.values(cli._commands).map((command) => {
-        return [pc.cyan(command.name), DELIMITER, command.description];
+        const commandNameWithAlias = [command.name, ...mustArray(command.alias || [])].join(", ");
+        return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
       })).toString().split("\n"),
     });
   }
@@ -183,7 +184,9 @@ export const helpPlugin = ({
     }
 
     cli.inspector((ctx, next) => {
-      if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
+      if (!ctx.isSingleCommand && !ctx.raw._.length) {
+        showHelp(ctx, notes, examples);
+      } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
         if (ctx.raw._.length) {
           showSubcommandHelp(ctx, ctx.raw._);
         } else {
