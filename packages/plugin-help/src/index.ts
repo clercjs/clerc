@@ -54,12 +54,12 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (ctx.isSingleCommand) {
     sections.push({
       title: "Usage:",
-      body: [`$ ${cli._name} [options]`],
+      body: [`$ ${cli._name} [flags]`],
     });
   } else {
     sections.push({
       title: "Usage:",
-      body: [`$ ${cli._name} [command] [options]`],
+      body: [`$ ${cli._name} [command] [flags]`],
     });
   }
   if (!ctx.isSingleCommand) {
@@ -93,7 +93,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[]) => {
   const parameters = subcommand.parameters?.join(", ") || "";
   sections.push({
     title: "Usage:",
-    body: [`$ ${cli._name} ${subcommand.name}${parameters ? ` ${parameters}` : ""} [options]`],
+    body: [`$ ${cli._name} ${subcommand.name}${parameters ? ` ${parameters}` : ""} [flags]`],
   });
   if (subcommand.flags) {
     sections.push({
