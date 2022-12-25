@@ -65,9 +65,9 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (!ctx.isSingleCommand) {
     sections.push({
       title: "Commands:",
-      body: Object.values(cli._commands).map((command) => {
-        return table([pc.cyan(command.name), DELIMITER, command.description]).toString();
-      }),
+      body: table(...Object.values(cli._commands).map((command) => {
+        return [pc.cyan(command.name), DELIMITER, command.description];
+      })).toString().split("\n"),
     });
   }
   if (notes) {
