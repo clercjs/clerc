@@ -96,7 +96,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
     throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
-  generateCliDetail(sections, cli, subcommand);
+  generateCliDetail(sections, cli, ctx.isSingleCommand ? undefined : subcommand);
   const parameters = subcommand.parameters?.join(", ") || "";
   sections.push({
     title: "Usage:",
