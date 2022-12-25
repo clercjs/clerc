@@ -30,7 +30,7 @@
     "@antfu/ni": "^0.18.8",
     "@babel/types": "^7.20.7",
     "@mini-cz/config-default": "^0.1.2",
-    "@so1ve/eslint-config": "^0.35.5",
+    "@so1ve/eslint-config": "^0.36.0",
     "@types/node": "^18.11.17",
     "bumpp": "^8.2.1",
     "eslint": "^8.30.0",
