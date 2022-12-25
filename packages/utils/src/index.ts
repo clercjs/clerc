@@ -14,9 +14,7 @@ export type Primitive =
 /**
 * Copied from type-fest
 */
-export type LiteralUnion<
-  LiteralType, BaseType extends Primitive,
-> = LiteralType | (BaseType & Record<never, never>);
+export type LiteralUnion<LiteralType, BaseType extends Primitive> = LiteralType | (BaseType & Record<never, never>);
 export type Dict<T> = Record<string, T>;
 export type MustArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
