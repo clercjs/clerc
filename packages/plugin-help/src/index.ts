@@ -98,7 +98,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   }
   const sections = [] as Section[];
   generateCliDetail(sections, cli, ctx.isSingleCommand ? undefined : subcommand);
-  const parameters = subcommand.parameters?.join(", ") || "";
+  const parameters = subcommand.parameters?.join(" ") || undefined;
   sections.push({
     title: "Usage:",
     body: [`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`],
