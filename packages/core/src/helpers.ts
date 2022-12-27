@@ -9,8 +9,6 @@ export const defineHandler = <C extends Clerc, K extends keyof C["_commands"]>(_
 export const defineInspector = <C extends Clerc>(_cli: C, inspector: Inspector<C["_commands"]>) => inspector;
 
 export const defineCommand = <N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(
-  c: Command<N, O & CommandOptions<[...P], A, F>>,
-  handler?: HandlerInCommand<
-    Record<N, Command<N, O>> & Record<PropertyKey, never>, N
-  >,
-) => ({ ...c, handler });
+  command: Command<N, O & CommandOptions<[...P], A, F>>,
+  handler?: HandlerInCommand<Record<N, Command<N, O>> & Record<PropertyKey, never>, N>,
+) => ({ ...command, handler });
