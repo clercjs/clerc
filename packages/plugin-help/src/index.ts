@@ -101,7 +101,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   const parameters = subcommand.parameters?.join(" ") || undefined;
   sections.push({
     title: "Usage:",
-    body: [`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`],
+    body: [pc.magenta(`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
   });
   if (subcommand.flags) {
     sections.push({
