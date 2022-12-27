@@ -26,8 +26,7 @@ export type CommandAlias<N extends string | SingleCommandType = string, O extend
 };
 export type CommandWithHandler<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   handler?: HandlerInCommand<
-    // @ts-expect-error That's OK
-    Record<N, Command<N, O>>, N
+    Record<N, Command<N, O>> & Record<never, never>, N
   >
 };
 type StripBrackets<Parameter extends string> = (
