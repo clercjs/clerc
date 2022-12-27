@@ -8,6 +8,7 @@ import {
   CommonCommandExistsError,
   DescriptionNotSetError,
   NameNotSetError,
+  NoCommandGivenError,
   NoSuchCommandError,
   ParentCommandExistsError,
   SingleCommandAliasError,
@@ -324,7 +325,11 @@ export class Clerc<C extends CommandRecord = {}> {
           throw errors[0];
         }
         if (!command) {
-          throw new NoSuchCommandError(stringName);
+          if (stringName) {
+            throw new NoSuchCommandError(stringName);
+          } else {
+            throw new NoCommandGivenError();
+          }
         }
         this.#commandEmitter.emit(command.name, handlerContext);
       },

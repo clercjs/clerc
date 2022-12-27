@@ -23,14 +23,19 @@ export class NoSuchCommandError extends Error {
     super(`No such command: ${name}`);
   }
 }
+export class NoCommandGivenError extends Error {
+  constructor() {
+    super("No command given.");
+  }
+}
 export class ParentCommandExistsError extends Error {
   constructor(name: string) {
-    super(`Command "${name}" cannot exist with its parent`);
+    super(`Command "${name}" cannot exist with its parent.`);
   }
 }
 export class SubcommandExistsError extends Error {
   constructor(name: string) {
-    super(`Command "${name}" cannot exist with its subcommand`);
+    super(`Command "${name}" cannot exist with its subcommand.`);
   }
 }
 export class MultipleCommandsMatchedError extends Error {
