@@ -22,17 +22,17 @@ const formatCommandName = (name: string | string[] | SingleCommandType) => Array
 const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command) => {
   const items = [
     {
-      title: pc.gray("Name:"),
+      title: "Name:",
       body: pc.red(cli._name),
     },
     {
-      title: pc.gray("Version:"),
+      title: "Version:",
       body: pc.yellow(cli._version),
     },
   ];
   if (subcommand) {
     items.push({
-      title: pc.gray("Subcommand:"),
+      title: "Subcommand:",
       body: pc.green(formatCommandName(subcommand.name)),
     });
   }
@@ -61,12 +61,12 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (ctx.isSingleCommand) {
     sections.push({
       title: "Usage:",
-      body: [`$ ${cli._name} [flags]`],
+      body: [pc.magenta(`$ ${cli._name} [flags]`)],
     });
   } else {
     sections.push({
       title: "Usage:",
-      body: [`$ ${cli._name} [command] [flags]`],
+      body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
     });
   }
   if (!ctx.isSingleCommand) {
@@ -144,6 +144,11 @@ export interface HelpPluginOptions {
    */
   command?: boolean
   /**
+   * Whether to show help when no command is specified.
+   * @default true
+   */
+  showHelpWhenNoCommand?: boolean
+  /**
    * Global notes.
    */
   notes?: string[]
@@ -154,6 +159,7 @@ export interface HelpPluginOptions {
 }
 export const helpPlugin = ({
   command = true,
+  showHelpWhenNoCommand = true,
   notes,
   examples,
 }: HelpPluginOptions = {}) => definePlugin({
@@ -184,7 +190,7 @@ export const helpPlugin = ({
     }
 
     cli.inspector((ctx, next) => {
-      if (!ctx.isSingleCommand && !ctx.raw._.length) {
+      if (!ctx.isSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
         showHelp(ctx, notes, examples);
       } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
         if (ctx.raw._.length) {
