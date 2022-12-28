@@ -18,7 +18,7 @@ describe("plugin-strict-flags", () => {
         .command("a", "a")
         .parse([]);
     } catch (e: any) {
-      expect(e.message).toEqual("No such command: ");
+      expect(e.message).toEqual("No command given.");
     }
     msgs.length = 0;
   });

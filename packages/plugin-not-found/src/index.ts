@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // TODO: unit tests
-import { NoSuchCommandError, definePlugin } from "@clerc/core";
+import { NoCommandGivenError, NoSuchCommandError, definePlugin } from "@clerc/core";
 import { semanticArray } from "@clerc/utils";
 import didyoumean from "didyoumean2";
 import pc from "picocolors";
@@ -14,8 +14,8 @@ export const notFoundPlugin = () => definePlugin({
         const hasCommands = !!commandKeys.length;
         try {
           next();
-        } catch (e) {
-          if (!(e instanceof NoSuchCommandError)) { throw e; }
+        } catch (e: any) {
+          if (!(e instanceof NoSuchCommandError || e instanceof NoCommandGivenError)) { throw e; }
           if (ctx.raw._.length === 0) {
             console.log("No command given.");
             if (hasCommands) {
