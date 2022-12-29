@@ -25,9 +25,7 @@ export type CommandAlias<N extends string | SingleCommandType = string, O extend
   __isAlias?: true
 };
 export type CommandWithHandler<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
-  handler?: HandlerInCommand<
-    Record<N, Command<N, O>> & Record<never, never>, N
-  >
+  handler?: HandlerInCommand<Record<N, Command<N, O>> & Record<never, never>, N>
 };
 type StripBrackets<Parameter extends string> = (
   Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
