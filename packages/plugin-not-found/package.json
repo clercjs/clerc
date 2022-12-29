@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@clerc/utils": "workspace:*",
-    "didyoumean2": "^5.0.0",
-    "picocolors": "^1.0.0"
+    "colorette": "^2.0.19",
+    "didyoumean2": "^5.0.0"
   },
   "devDependencies": {
     "@clerc/core": "workspace:*"

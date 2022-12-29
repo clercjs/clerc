@@ -5,13 +5,13 @@ import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/c
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
 
 import { gracefulFlagName, mustArray } from "@clerc/utils";
-import pc from "picocolors";
+import * as colors from "colorette";
 
 import type { Section } from "./renderer";
 import { render } from "./renderer";
 import { table } from "./utils";
 
-const DELIMITER = pc.yellow("-");
+const DELIMITER = colors.yellow("-");
 
 const formatCommandName = (name: string | string[] | SingleCommandType) => Array.isArray(name)
   ? name.join(" ")
@@ -23,17 +23,17 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
   const items = [
     {
       title: "Name:",
-      body: pc.red(cli._name),
+      body: colors.red(cli._name),
     },
     {
       title: "Version:",
-      body: pc.yellow(cli._version),
+      body: colors.yellow(cli._version),
     },
   ];
   if (subcommand) {
     items.push({
       title: "Subcommand:",
-      body: pc.green(formatCommandName(subcommand.name)),
+      body: colors.green(formatCommandName(subcommand.name)),
     });
   }
   sections.push({
@@ -61,12 +61,12 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (ctx.isSingleCommand) {
     sections.push({
       title: "Usage:",
-      body: [pc.magenta(`$ ${cli._name} [flags]`)],
+      body: [colors.magenta(`$ ${cli._name} [flags]`)],
     });
   } else {
     sections.push({
       title: "Usage:",
-      body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
+      body: [colors.magenta(`$ ${cli._name} [command] [flags]`)],
     });
   }
   if (!ctx.isSingleCommand) {
@@ -74,7 +74,7 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
       title: "Commands:",
       body: table(...Object.values(cli._commands).map((command) => {
         const commandNameWithAlias = [command.name, ...mustArray(command.alias || [])].join(", ");
-        return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
+        return [colors.cyan(commandNameWithAlias), DELIMITER, command.description];
       })).toString().split("\n"),
     });
   }
@@ -101,7 +101,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   const parameters = subcommand.parameters?.join(" ") || undefined;
   sections.push({
     title: "Usage:",
-    body: [pc.magenta(`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
+    body: [colors.magenta(`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
   });
   if (subcommand.flags) {
     sections.push({
@@ -111,7 +111,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
         if (flag.alias) {
           flagNameWithAlias.push(gracefulFlagName(flag.alias));
         }
-        const items = [pc.blue(flagNameWithAlias.join(", "))];
+        const items = [colors.blue(flagNameWithAlias.join(", "))];
         if (flag.description) {
           items.push(DELIMITER, flag.description);
         }
@@ -119,7 +119,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
           const type = Array.isArray(flag.type)
             ? `Array<${flag.type[0].name}>`
             : (flag.type as any).name;
-          items.push(pc.gray(`(${type})`));
+          items.push(colors.gray(`(${type})`));
         }
         return table(items).toString();
       }),
