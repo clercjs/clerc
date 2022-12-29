@@ -1,4 +1,4 @@
-import * as colors from "colorette";
+import pc from "picocolors";
 import { table } from "./utils";
 
 export interface BlockSection {
@@ -26,10 +26,10 @@ export const render = (sections: Section[]) => {
         .map(line => indent + line);
       formattedBody.unshift("");
       const body = formattedBody.join("\n");
-      rendered.push(table([colors.bold(section.title)], [body]).toString());
+      rendered.push(table([pc.bold(section.title)], [body]).toString());
     } else if (section.type === "inline") {
       const formattedBody = section.items
-        .map(item => [colors.bold(item.title), item.body]);
+        .map(item => [pc.bold(item.title), item.body]);
       const tableGenerated = table(...formattedBody);
       rendered.push(tableGenerated.toString());
     }

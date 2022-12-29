@@ -1,7 +1,7 @@
 // NOTE: We inline tasuku due to https://github.com/facebook/yoga/issues/1048
 import * as kons from "kons";
 import * as konsola from "kons/consola";
-import * as colors from "colorette";
+import colors from "picocolors";
 import spinner from "ora";
 import open from "open";
 import progress from "cli-progress";
