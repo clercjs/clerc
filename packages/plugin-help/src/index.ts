@@ -9,7 +9,7 @@ import pc from "picocolors";
 
 import type { Section } from "./renderer";
 import { render } from "./renderer";
-import { table } from "./utils";
+import { splitTable } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 
@@ -50,7 +50,7 @@ const generateExamples = (sections: Section[], examples: [string, string][]) => 
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
     title: "Examples:",
-    body: table(...examplesFormatted).toString().split("\n"),
+    body: splitTable(...examplesFormatted),
   });
 };
 
@@ -72,10 +72,10 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (!ctx.isSingleCommand) {
     sections.push({
       title: "Commands:",
-      body: table(...Object.values(cli._commands).map((command) => {
+      body: splitTable(...Object.values(cli._commands).map((command) => {
         const commandNameWithAlias = [command.name, ...mustArray(command.alias || [])].join(", ");
         return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
-      })).toString().split("\n"),
+      })),
     });
   }
   if (notes) {
@@ -106,23 +106,25 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   if (subcommand.flags) {
     sections.push({
       title: "Flags:",
-      body: Object.entries(subcommand.flags).map(([name, flag]) => {
-        const flagNameWithAlias = [gracefulFlagName(name)];
-        if (flag.alias) {
-          flagNameWithAlias.push(gracefulFlagName(flag.alias));
-        }
-        const items = [pc.blue(flagNameWithAlias.join(", "))];
-        if (flag.description) {
-          items.push(DELIMITER, flag.description);
-        }
-        if (flag.type) {
-          const type = Array.isArray(flag.type)
-            ? `Array<${flag.type[0].name}>`
-            : (flag.type as any).name;
-          items.push(pc.gray(`(${type})`));
-        }
-        return table(items).toString();
-      }),
+      body: splitTable(
+        ...Object.entries(subcommand.flags).map(([name, flag]) => {
+          const flagNameWithAlias = [gracefulFlagName(name)];
+          if (flag.alias) {
+            flagNameWithAlias.push(gracefulFlagName(flag.alias));
+          }
+          const items = [pc.blue(flagNameWithAlias.join(", "))];
+          if (flag.description) {
+            items.push(DELIMITER, flag.description);
+          }
+          if (flag.type) {
+            const type = Array.isArray(flag.type)
+              ? `Array<${flag.type[0].name}>`
+              : (flag.type as any).name;
+            items.push(pc.gray(`(${type})`));
+          }
+          return items;
+        }),
+      ),
     });
   }
   if (subcommand.notes) {

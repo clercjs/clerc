@@ -24,3 +24,7 @@ export const table = (...items: string[][]) => {
   table.push(...items);
   return table;
 };
+
+export const splitTable = (...items: string[][]) => {
+  return table(...items).toString().split("\n");
+};
