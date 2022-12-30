@@ -63,3 +63,8 @@ export class VersionNotSetError extends Error {
     super("Version not set.");
   }
 }
+export class InvalidCommandNameError extends Error {
+  constructor(name: string) {
+    super(`Bad name format: ${name}`);
+  }
+}

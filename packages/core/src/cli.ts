@@ -1,12 +1,13 @@
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
 import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
-import { arrayStartsWith } from "@clerc/utils";
+import { arrayStartsWith, mustArray } from "@clerc/utils";
 
 import {
   CommandExistsError,
   CommonCommandExistsError,
   DescriptionNotSetError,
+  InvalidCommandNameError,
   NameNotSetError,
   NoCommandGivenError,
   NoSuchCommandError,
@@ -46,6 +47,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #version = "";
   #inspectors: Inspector[] = [];
   #commands = {} as C;
+  #flattenCommands = {} as CommandRecord;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor() {}
@@ -157,6 +159,9 @@ export class Clerc<C extends CommandRecord = {}> {
         throw new CommandExistsError("SingleCommand");
       }
     }
+    if (typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "))) {
+      throw new InvalidCommandNameError(name);
+    }
     if (this.#isSingleCommand) {
       throw new SingleCommandError();
     }
@@ -183,9 +188,26 @@ export class Clerc<C extends CommandRecord = {}> {
     }
 
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
+    const nameList = [commandToSave.name];
+    if (commandToSave.alias) {
+      const aliasList = mustArray(commandToSave.alias);
+      nameList.push(...aliasList);
+    }
+    for (const name of nameList) {
+      if (this.#flattenCommands[name]) {
+        throw new CommandExistsError(name);
+      }
+    }
     this.#commands[name as keyof C] = commandToSave;
     if (isCommandObject && handler) {
       this.on(nameOrCommand.name, handler as any);
+    }
+    this.#flattenCommands[name] = commandToSave;
+    if (commandToSave.alias) {
+      const aliasList = mustArray(commandToSave.alias);
+      aliasList.forEach((alias) => {
+        this.#flattenCommands[alias] = commandToSave;
+      });
     }
     return this as any;
   }
