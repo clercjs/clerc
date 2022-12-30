@@ -1,6 +1,6 @@
 {
   "name": "@clerc/plugin-friendly-error",
-  "version": "0.17.1",
+  "version": "0.17.2",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc plugin friendly error",
   "keywords": [
