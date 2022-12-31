@@ -96,10 +96,12 @@ importers:
       '@clerc/core': workspace:*
       '@clerc/toolkit': workspace:*
       '@clerc/utils': workspace:*
+      get-func-name: ^2.0.0
       picocolors: ^1.0.0
     dependencies:
       '@clerc/toolkit': link:../toolkit
       '@clerc/utils': link:../utils
+      get-func-name: 2.0.0
       picocolors: 1.0.0
     devDependencies:
       '@clerc/core': link:../core
@@ -2318,7 +2320,6 @@ packages:
 
   /get-func-name/2.0.0:
     resolution: {integrity: sha512-Hm0ixYtaSZ/V7C8FJrtZIuBBI+iSgL+1Aq82zSu8VQNB4S3Gk8e7Qs3VwBDJAhmRZcFqkl3tQu36g/Foh5I5ig==}
-    dev: true
 
   /get-intrinsic/1.1.3:
     resolution: {integrity: sha512-QJVz1Tj7MS099PevUG5jvnt9tSkXN8K14dxQlikJuPt4uD9hHAHjLyLBiLR5zELelBdD9QNRAXZzsJx0WaDL9A==}

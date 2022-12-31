@@ -9,7 +9,7 @@ import pc from "picocolors";
 
 import type { Section } from "./renderer";
 import { render } from "./renderer";
-import { splitTable } from "./utils";
+import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 
@@ -117,9 +117,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
             items.push(DELIMITER, flag.description);
           }
           if (flag.type) {
-            const type = Array.isArray(flag.type)
-              ? `Array<${flag.type[0].name}>`
-              : (flag.type as any).name;
+            const type = stringifyType(flag.type);
             items.push(pc.gray(`(${type})`));
           }
           return items;

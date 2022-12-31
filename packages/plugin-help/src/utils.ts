@@ -1,3 +1,4 @@
+import getFuncName from "get-func-name";
 import { Table } from "@clerc/toolkit";
 
 export const table = (...items: string[][]) => {
@@ -27,4 +28,10 @@ export const table = (...items: string[][]) => {
 
 export const splitTable = (...items: string[][]) => {
   return table(...items).toString().split("\n");
+};
+
+export const stringifyType = (type: any) => {
+  return Array.isArray(type)
+    ? `Array<${getFuncName(type[0])}>`
+    : getFuncName(type);
 };
