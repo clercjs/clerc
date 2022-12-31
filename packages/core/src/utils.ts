@@ -1,16 +1,16 @@
 import { isDeno, isNode } from "is-platform";
-import { arrayStartsWith, mustArray } from "@clerc/utils";
+import { arrayStartsWith, toArray } from "@clerc/utils";
 
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
-import type { Command, CommandAlias, CommandRecord, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
-import { CommandNameConflictError, MultipleCommandsMatchedError } from "./errors";
+import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
+import { CommandNameConflictError } from "./errors";
 
 export function resolveFlattenCommands(commands: CommandRecord) {
   const commandsMap = new Map<string[], CommandAlias>();
   for (const command of Object.values(commands)) {
     if (command.alias) {
-      const aliases = mustArray(command.alias);
+      const aliases = toArray(command.alias);
       for (const alias of aliases) {
         if (alias in commands) {
           throw new CommandNameConflictError(commands[alias].name, command.name);
@@ -27,19 +27,22 @@ export function resolveCommand(commands: CommandRecord, name: string | string[] 
   if (name === SingleCommand) {
     return commands[SingleCommand];
   }
-  const nameArr = mustArray(name) as string[];
+  const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands);
-  const possibleCommands: Command[] = [];
+  let current: Command | undefined;
+  let currentName: string[] | undefined;
+  // Logic:
+  // Imagine we have to commands: `foo` and `foo bar`
+  // If the given argv starts with `foo bar`, we return `foo bar`.
+  // But if the given argv starts with `foo baz`, we return `foo`.
+  // Just simply compare their length, longer is better =)
   commandsMap.forEach((v, k) => {
-    if (arrayStartsWith(nameArr, k)) {
-      possibleCommands.push(v);
+    if (arrayStartsWith(nameArr, k) && (!currentName || k.length > currentName.length)) {
+      current = v;
+      currentName = k;
     }
   });
-  if (possibleCommands.length > 1) {
-    const matchedCommandNames = possibleCommands.map(c => c.name).join(", ");
-    throw new MultipleCommandsMatchedError(matchedCommandNames);
-  }
-  return possibleCommands[0];
+  return current;
 }
 
 export function resolveSubcommandsByParent(commands: CommandRecord, parent: string | string[], depth = Infinity) {
@@ -108,3 +111,5 @@ export function compose(inspectors: Inspector[]) {
     }
   };
 }
+
+export const isInvalidName = (name: CommandType) => typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "));

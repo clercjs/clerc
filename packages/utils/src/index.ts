@@ -16,14 +16,14 @@ export type Primitive =
 */
 export type LiteralUnion<LiteralType, BaseType extends Primitive> = LiteralType | (BaseType & Record<never, never>);
 export type Dict<T> = Record<string, T>;
-export type MustArray<T> = T extends any[] ? T : [T];
+export type ToArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
 export type GetLength<T extends any[]> = T extends { length: infer L extends number } ? L : never;
 export type GetTail<T extends any[]> = T extends [infer _Head, ...infer Tail] ? Tail : never;
 type EnhanceSingle<T, E extends Dict<any>> = T & E;
-export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<MustArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, MustArray<E>[0]>, GetTail<MustArray<E>>>;
+export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<ToArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, ToArray<E>[0]>, GetTail<ToArray<E>>>;
 
-export const mustArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
+export const toArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
 export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
   ? `${A}${Capitalize<B>}${CamelCase<C>}`

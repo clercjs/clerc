@@ -491,19 +491,78 @@ describe("cli", () => {
         .command(SingleCommand, "single");
     }).toThrowError();
   });
-  it("should throw when subcommand exists", () => {
-    expect(() => {
-      create()
-        .command("foo bar", "foo")
-        .command("foo", "foo");
-    }).toThrowError();
+  it("should parse nested command", () => {
+    create()
+      .command("foo bar", "foo bar", {
+        flags: {
+          aa: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        parameters: [
+          "<param>",
+        ],
+      })
+      .on("foo bar", (ctx) => {
+        expect(ctx.flags.aa).toEqual(true);
+        expect(ctx.parameters.param).toEqual("param");
+      })
+      .parse(["foo", "bar", "--aa", "param"]);
   });
-  it("should throw when parent command exists", () => {
-    expect(() => {
-      create()
-        .command("foo", "foo")
-        .command("foo bar", "foo");
-    }).toThrowError();
+  it("shouldn't parse nested command when parent command is called", () => {
+    create()
+      .command("foo bar", "foo bar", {
+        flags: {
+          aa: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      })
+      .command("foo", "foo", {
+        flags: {
+          bb: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        parameters: [
+          "<param>",
+        ],
+      })
+      .on("foo", (ctx) => {
+        expect(ctx.flags.bb).toEqual(true);
+        expect(ctx.parameters.param).toEqual("param");
+      })
+      .parse(["foo", "--bb", "param"]);
+  });
+  it("shouldn't parse when command is after command", () => {
+    create()
+      .command("foo bar", "foo bar", {
+        flags: {
+          aa: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      })
+      .command("foo", "foo", {
+        flags: {
+          bb: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        parameters: [
+          "<param>",
+        ],
+      })
+      .on("foo", (ctx) => {
+        expect(ctx.flags.bb).toEqual(true);
+        expect(ctx.parameters.param).toEqual("bar");
+      })
+      .parse(["foo", "--bb", "bar"]);
   });
   it("should parse subcommand", () => {
     create()

@@ -1,7 +1,7 @@
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
 import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
-import { arrayStartsWith, mustArray } from "@clerc/utils";
+import { toArray } from "@clerc/utils";
 
 import {
   CommandExistsError,
@@ -11,16 +11,15 @@ import {
   NameNotSetError,
   NoCommandGivenError,
   NoSuchCommandError,
-  ParentCommandExistsError,
   SingleCommandAliasError,
   SingleCommandError,
-  SubcommandExistsError,
   VersionNotSetError,
 } from "./errors";
 import type {
   Command,
   CommandOptions,
   CommandRecord,
+  CommandType,
   CommandWithHandler,
   FlagOptions,
   Handler,
@@ -32,6 +31,7 @@ import type {
 } from "./types";
 import {
   compose,
+  isInvalidName,
   resolveArgv,
   resolveCommand,
   resolveParametersBeforeFlag,
@@ -47,7 +47,6 @@ export class Clerc<C extends CommandRecord = {}> {
   #version = "";
   #inspectors: Inspector[] = [];
   #commands = {} as C;
-  #flattenCommands = {} as CommandRecord;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
 
   private constructor() {}
@@ -152,15 +151,16 @@ export class Clerc<C extends CommandRecord = {}> {
   command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options?: any) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
+
     const isCommandObject = checkIsCommandObject(nameOrCommand);
-    const name: string | SingleCommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
+    const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (this.#commands[name]) {
       if (name === SingleCommand) {
         throw new CommandExistsError("SingleCommand");
       }
     }
-    if (typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "))) {
-      throw new InvalidCommandNameError(name);
+    if (isInvalidName(name)) {
+      throw new InvalidCommandNameError(name as string);
     }
     if (this.#isSingleCommand) {
       throw new SingleCommandError();
@@ -171,44 +171,24 @@ export class Clerc<C extends CommandRecord = {}> {
     if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
       throw new SingleCommandAliasError();
     }
-    // Check if this is a subcommand, or a parent command
-    // Cannot exist with its parent or children
-    // e.g `foo` and `foo bar`
-    if (name !== SingleCommand) {
-      const splitedName = name.split(" ");
-      const existedCommandNames = Object.keys(this.#commands)
-        .filter(name => typeof name === "string")
-        .map(name => name.split(" "));
-      if (existedCommandNames.some(name => arrayStartsWith(splitedName, name))) {
-        throw new ParentCommandExistsError(splitedName.join(" "));
-      }
-      if (existedCommandNames.some(name => arrayStartsWith(name, splitedName))) {
-        throw new SubcommandExistsError(splitedName.join(" "));
-      }
-    }
-
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
+
+    // Check if alias or name conflicts
     const nameList = [commandToSave.name];
-    if (commandToSave.alias) {
-      const aliasList = mustArray(commandToSave.alias);
-      nameList.push(...aliasList);
-    }
+    commandToSave.alias && nameList.push(...toArray(commandToSave.alias));
     for (const name of nameList) {
-      if (this.#flattenCommands[name]) {
+      if (
+        Object.keys(this.#commands).includes(name)
+          || Object.values(this.#commands).some(({ alias }) => alias ? toArray(alias).includes(name) : false)
+      ) {
         throw new CommandExistsError(name);
       }
     }
     this.#commands[name as keyof C] = commandToSave;
-    if (isCommandObject && handler) {
-      this.on(nameOrCommand.name, handler as any);
-    }
-    this.#flattenCommands[name] = commandToSave;
-    if (commandToSave.alias) {
-      const aliasList = mustArray(commandToSave.alias);
-      aliasList.forEach((alias) => {
-        this.#flattenCommands[alias] = commandToSave;
-      });
-    }
+
+    // Register handler
+    isCommandObject && handler && this.on(nameOrCommand.name, handler as any);
+
     return this as any;
   }
 
@@ -291,8 +271,7 @@ export class Clerc<C extends CommandRecord = {}> {
       mapErrors.length = 0;
       const command = getCommand();
       const isCommandResolved = !!command;
-      // [...argv] is a workaround
-      // WTF... typeFlag modifies argv????????
+      // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
       const { _: args, flags } = parsed;
       let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);

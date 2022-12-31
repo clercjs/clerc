@@ -1,5 +1,5 @@
 import type { Command, HandlerContext } from "@clerc/core";
-import { gracefulFlagName, mustArray } from "@clerc/utils";
+import { gracefulFlagName } from "@clerc/utils";
 
 const NO_DESCRIPTION = "(No Description)";
 const getCompletionValue = (command: Command) => `[CompletionResult]::new('${command.name}', '${command.name}', [CompletionResultType]::ParameterValue, '${command.description}')`;
@@ -8,9 +8,8 @@ const getCompletionFlag = (command: Command) => {
     .map(([flagName, flag]) => {
       const gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${flagName}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`];
       if (flag?.alias) {
-        const arrayAlias = mustArray(flag.alias);
         gen.push(
-          ...arrayAlias.map(n => `[CompletionResult]::new('${gracefulFlagName(n)}', '${n}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`),
+          `[CompletionResult]::new('${gracefulFlagName(flag.alias)}', '${flag.alias}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`,
         );
       }
       return gen.join("\n            ");

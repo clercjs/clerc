@@ -4,7 +4,7 @@
 import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
 
-import { gracefulFlagName, mustArray } from "@clerc/utils";
+import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Section } from "./renderer";
@@ -73,7 +73,7 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
     sections.push({
       title: "Commands:",
       body: splitTable(...Object.values(cli._commands).map((command) => {
-        const commandNameWithAlias = [command.name, ...mustArray(command.alias || [])].join(", ");
+        const commandNameWithAlias = [command.name, ...toArray(command.alias || [])].join(", ");
         return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
       })),
     });
