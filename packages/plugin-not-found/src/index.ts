@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // TODO: unit tests
 import { NoCommandGivenError, NoSuchCommandError, definePlugin } from "@clerc/core";
 import { semanticArray } from "@clerc/utils";
