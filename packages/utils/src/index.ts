@@ -25,12 +25,12 @@ export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<ToArray<E>
 
 export const toArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
-export type CamelCase<T extends string> = T extends `${infer A}-${infer B}${infer C}`
+export type CamelCase<T> = T extends `${infer A}-${infer B}${infer C}`
   ? `${A}${Capitalize<B>}${CamelCase<C>}`
   : T;
 export const camelCase = <T extends string>(s: T): CamelCase<T> => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
 
-export type KebabCase<T extends string, A extends string = ""> = T extends `${infer F}${infer R}`
+export type KebabCase<T, A extends string = ""> = T extends `${infer F}${infer R}`
   ? KebabCase<R, `${A}${F extends Lowercase<F> ? "" : "-"}${Lowercase<F>}`>
   : A;
 export const kebabCase = <T extends string>(s: T): KebabCase<T> => s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;

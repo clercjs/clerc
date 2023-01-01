@@ -73,8 +73,8 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   isSingleCommand: boolean
   raw: Raw<C, N>
   parameters: TransformParameters<C, N>
-  unknownFlags: ParsedFlags["unknownFlags"]
-  flags: TypeFlagWithDefault<C, N>["flags"]
+  unknownFlags: FlagsToCamelCase<ParsedFlags["unknownFlags"]>
+  flags: FlagsToCamelCase<TypeFlagWithDefault<C, N>["flags"]>
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
@@ -89,6 +89,9 @@ export interface InspectorObject<C extends CommandRecord = CommandRecord> {
   enforce?: "pre" | "post"
   fn: InspectorFn<C>
 }
+export type FlagsToCamelCase<T extends Dict<any>> = {
+  [K in keyof T as CamelCase<K>]: T[K]
+};
 
 export interface Plugin<T extends Clerc = Clerc, U extends Clerc = Clerc> {
   setup: (cli: T) => U

@@ -31,6 +31,7 @@ import type {
 } from "./types";
 import {
   compose,
+  flagsToCamelCase,
   isInvalidName,
   resolveArgv,
   resolveCommand,
@@ -273,7 +274,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const isCommandResolved = !!command;
       // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
-      const { _: args, flags } = parsed;
+      const { _: args, flags, unknownFlags } = parsed;
       let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];
       // eof handle
@@ -310,8 +311,8 @@ export class Clerc<C extends CommandRecord = {}> {
         isSingleCommand: this.#isSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
-        flags,
-        unknownFlags: parsed.unknownFlags,
+        flags: flagsToCamelCase(flags),
+        unknownFlags: flagsToCamelCase(unknownFlags),
         cli: this as any,
       };
       return context;
