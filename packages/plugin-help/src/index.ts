@@ -12,6 +12,7 @@ import { render } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
+const print = (s: string) => { process.stdout.write(s); };
 
 const formatCommandName = (name: string | string[] | SingleCommandType) => Array.isArray(name)
   ? name.join(" ")
@@ -87,7 +88,7 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (examples) {
     generateExamples(sections, examples);
   }
-  process.stdout.write(render(sections));
+  print(render(sections));
 };
 
 const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
@@ -134,7 +135,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples);
   }
-  process.stdout.write(render(sections));
+  print(render(sections));
 };
 
 export interface HelpPluginOptions {
@@ -191,7 +192,10 @@ export const helpPlugin = ({
 
     cli.inspector((ctx, next) => {
       if (!ctx.isSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
+        print("No command supplied.");
+        print("\n\n");
         showHelp(ctx, notes, examples);
+        print("\n");
         process.exit(1);
       } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
         if (ctx.raw._.length) {
