@@ -38,6 +38,8 @@ Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed bot
 
 # 📦 Installation
 
+> NOTE: The `clerc` packages exports `@clerc/core`, `@clerc/toolkit` and all plugins, so it may increase your bundle size. To reduce, please install `@clerc/core` and plugins on demand.
+
 ```bash
 $ npm install clerc -S
 $ yarn add clerc
@@ -51,9 +53,7 @@ $ node ./foo-cli.mjs foo --bar baz
 ```
 
 ```js
-import { Clerc } from "clerc";
-import { helpPlugin } from "@clerc/plugin-help";
-import { completionsPlugin } from "@clerc/plugin-completions";
+import { Clerc, completionsPlugin, helpPlugin } from "clerc";
 
 const cli = Clerc.create()
   .name("foo-cli")
@@ -81,12 +81,14 @@ const cli = Clerc.create()
         resolved: true,
         isSingleCommand: false,
         raw: {
-          flags: { bar: true },
+          flags: { bar: false },
           unknownFlags: {},
-          _: [ 'foo', 'baz', '--': [] ]
+          _: [ 'foo', '--': [] ],
+          parameters: [],
+          mergedFlags: { bar: false }
         },
-        parameters: [Object: null prototype] { param: [ 'baz' ] },
-        flags: { bar: true },
+        parameters: [Object: null prototype] { param: [] },
+        flags: { bar: false },
         unknownFlags: {},
         cli: _Clerc {}
       }
