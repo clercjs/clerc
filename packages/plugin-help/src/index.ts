@@ -4,7 +4,7 @@
 import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
 
-import { gracefulFlagName, toArray } from "@clerc/utils";
+import { gracefulFlagName, kebabCase, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Section } from "./renderer";
@@ -112,7 +112,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
           if (flag.alias) {
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
-          const items = [pc.blue(flagNameWithAlias.join(", "))];
+          const items = [pc.blue(flagNameWithAlias.map(kebabCase).join(", "))];
           if (flag.description) {
             items.push(DELIMITER, flag.description);
           }
