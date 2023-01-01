@@ -10,7 +10,7 @@ export const strictFlagsPlugin = () => definePlugin({
       if (!ctx.resolved || keys.length === 0) {
         next();
       } else {
-        throw new Error(`Unexpected flags: ${semanticArray(keys)}`);
+        throw new Error(`Unexpected flag${keys.length > 1 ? "s" : ""}: ${semanticArray(keys)}`);
       }
     });
   },
