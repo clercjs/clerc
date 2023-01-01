@@ -1,6 +1,6 @@
 
 // TODO: unit tests
-// TODO: parameters
+
 import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
 import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
 

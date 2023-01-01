@@ -1,5 +1,5 @@
 // TODO: unit tests
-// TODO: parameters
+
 import { definePlugin } from "@clerc/core";
 import { semanticArray } from "@clerc/utils";
 
