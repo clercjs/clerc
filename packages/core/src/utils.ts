@@ -1,10 +1,9 @@
 import { isDeno, isNode } from "is-platform";
-import type { Dict } from "@clerc/utils";
-import { arrayStartsWith, camelCase, toArray } from "@clerc/utils";
+import { arrayStartsWith, toArray } from "@clerc/utils";
 
 import type { SingleCommandType } from "./cli";
 import { SingleCommand } from "./cli";
-import type { Command, CommandAlias, CommandRecord, CommandType, FlagsToCamelCase, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
+import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
 import { CommandNameConflictError } from "./errors";
 
 export function resolveFlattenCommands(commands: CommandRecord) {
@@ -114,10 +113,3 @@ export function compose(inspectors: Inspector[]) {
 }
 
 export const isInvalidName = (name: CommandType) => typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "));
-
-export const flagsToCamelCase = <T extends Dict<any>>(flags: T): FlagsToCamelCase<T> => {
-  return Object.fromEntries(
-    Object.entries(flags)
-      .map(([k, v]) => [camelCase(k), v]),
-  ) as any;
-};
