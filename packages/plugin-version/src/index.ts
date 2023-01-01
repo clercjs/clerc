@@ -1,6 +1,6 @@
 
 // TODO: unit tests
-// TODO: parameters
+
 import { definePlugin } from "@clerc/core";
 import { gracefulVersion } from "@clerc/utils";
 
@@ -14,32 +14,25 @@ export const versionPlugin = ({
 }: VersionPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const gracefullyVersion = gracefulVersion(cli._version);
-    return cli
-      .inspector({
-        enforce: "post",
-        fn: (ctx, next) => {
-          if (!ctx.isSingleCommand && command) {
-            cli = cli.command("version", "Show version")
-              .on("version", () => {
-                process.stdout.write(gracefullyVersion);
-              });
+    if (command) {
+      cli = cli.command("version", "Show version")
+        .on("version", () => {
+          process.stdout.write(gracefullyVersion);
+        });
+    }
+    return cli.inspector({
+      enforce: "pre",
+      fn: (ctx, next) => {
+        let hasVersionFlag = false;
+        const versionFlags = ["version", ...alias];
+        for (const k of Object.keys(ctx.raw.mergedFlags)) {
+          if (versionFlags.includes(k)) {
+            hasVersionFlag = true;
+            break;
           }
-          next();
-        },
-      })
-      .inspector({
-        enforce: "pre",
-        fn: (ctx, next) => {
-          let hasVersionFlag = false;
-          const versionFlags = ["version", ...alias];
-          for (const k of Object.keys(ctx.raw.mergedFlags)) {
-            if (versionFlags.includes(k)) {
-              hasVersionFlag = true;
-              break;
-            }
-          }
-          if (!hasVersionFlag) { next(); } else { process.stdout.write(gracefullyVersion); }
-        },
-      });
+        }
+        if (!hasVersionFlag) { next(); } else { process.stdout.write(gracefullyVersion); }
+      },
+    });
   },
 });
