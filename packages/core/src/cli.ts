@@ -272,7 +272,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const isCommandResolved = !!command;
       // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
-      const { _: args, flags } = parsed;
+      const { _: args, flags, unknownFlags } = parsed;
       let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];
       // eof handle
@@ -282,7 +282,7 @@ export class Clerc<C extends CommandRecord = {}> {
       // Support `--` eof parameters
       if (hasEof > -1 && eofParameters.length > 0) {
         commandParameters = commandParameters.slice(0, hasEof);
-        const eofArguments = parsed._["--"];
+        const eofArguments = args["--"];
         parameters = parameters.slice(0, -eofArguments.length || undefined);
 
         mapErrors.push(mapParametersToArguments(
@@ -302,7 +302,7 @@ export class Clerc<C extends CommandRecord = {}> {
           parameters,
         ));
       }
-      const mergedFlags = { ...parsed.flags, ...parsed.unknownFlags };
+      const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
         resolved: isCommandResolved as any,
@@ -310,7 +310,7 @@ export class Clerc<C extends CommandRecord = {}> {
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
         flags,
-        unknownFlags: parsed.unknownFlags,
+        unknownFlags,
         cli: this as any,
       };
       return context;
