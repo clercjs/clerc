@@ -17,20 +17,20 @@ export const notFoundPlugin = () => definePlugin({
         } catch (e: any) {
           if (!(e instanceof NoSuchCommandError || e instanceof NoCommandGivenError)) { throw e; }
           if (ctx.raw._.length === 0) {
-            console.log("No command given.");
+            console.error("No command given.");
             if (hasCommands) {
-              console.log(`Possible commands: ${pc.bold(semanticArray(commandKeys))}.`);
+              console.error(`Possible commands: ${pc.bold(semanticArray(commandKeys))}.`);
             }
             return;
           }
           // Bad example :(
           const calledCommandName = e.message.replace("No such command: ", "");
           const closestCommandName = didyoumean(calledCommandName, commandKeys);
-          console.log(`Command "${pc.strikethrough(calledCommandName)}" not found.`);
+          console.error(`Command "${pc.strikethrough(calledCommandName)}" not found.`);
           if (hasCommands && closestCommandName) {
-            console.log(`Did you mean "${pc.bold(closestCommandName)}"?`);
+            console.error(`Did you mean "${pc.bold(closestCommandName)}"?`);
           } else if (!hasCommands) {
-            console.log("NOTE: You haven't register any command yet.");
+            console.error("NOTE: You haven't register any command yet.");
           }
         }
       },
