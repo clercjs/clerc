@@ -1,6 +1,6 @@
 {
   "name": "@clerc/plugin-strict-flags",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc plugin strict flags",
   "keywords": [
