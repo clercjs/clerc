@@ -49,6 +49,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
+  #usedNames: string[] = [];
 
   private constructor() {}
 
@@ -178,14 +179,12 @@ export class Clerc<C extends CommandRecord = {}> {
     const nameList = [commandToSave.name];
     commandToSave.alias && nameList.push(...toArray(commandToSave.alias));
     for (const name of nameList) {
-      if (
-        Object.keys(this.#commands).includes(name)
-          || Object.values(this.#commands).some(({ alias }) => alias ? toArray(alias).includes(name) : false)
-      ) {
+      if (this.#usedNames.includes(name)) {
         throw new CommandExistsError(name);
       }
     }
     this.#commands[name as keyof C] = commandToSave;
+    this.#usedNames.push(commandToSave.name, ...(toArray(commandToSave.alias) || []));
 
     // Register handler
     isCommandObject && handler && this.on(nameOrCommand.name, handler as any);
