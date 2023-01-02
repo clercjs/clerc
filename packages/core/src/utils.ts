@@ -6,21 +6,26 @@ import { SingleCommand } from "./cli";
 import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
 import { CommandNameConflictError } from "./errors";
 
+function setCommand(commandsMap: Map<string[] | SingleCommandType, CommandAlias>, commands: CommandRecord, command: Command) {
+  if (command.alias) {
+    const aliases = toArray(command.alias);
+    for (const alias of aliases) {
+      if (alias in commands) {
+        throw new CommandNameConflictError(commands[alias]!.name, command.name);
+      }
+      commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), { ...command, __isAlias: true });
+    }
+  }
+}
+
 export function resolveFlattenCommands(commands: CommandRecord) {
   const commandsMap = new Map<string[] | SingleCommandType, CommandAlias>();
   if (commands[SingleCommand]) {
     commandsMap.set(SingleCommand, commands[SingleCommand]);
+    setCommand(commandsMap, commands, commands[SingleCommand]);
   }
   for (const command of Object.values(commands)) {
-    if (command.alias) {
-      const aliases = toArray(command.alias);
-      for (const alias of aliases) {
-        if (alias in commands) {
-          throw new CommandNameConflictError(commands[alias]!.name, command.name);
-        }
-        commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), { ...command, __isAlias: true });
-      }
-    }
+    setCommand(commandsMap, commands, command);
     commandsMap.set(command.name.split(" "), command);
   }
   return commandsMap;
@@ -48,7 +53,6 @@ export function resolveCommand(commands: CommandRecord, name: string | string[] 
       currentName = k;
     }
   });
-
   return current;
 }
 

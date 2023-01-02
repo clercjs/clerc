@@ -45,11 +45,17 @@ export class Clerc<C extends CommandRecord = {}> {
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
-  #usedNames: string[] = [];
+  #usedNames: (string | SingleCommandType)[] = [];
 
   private constructor() {}
 
-  #hasSingleCommand = false;
+  get #hasSingleCommandOrAlias() {
+    return this.#usedNames.includes(SingleCommand);
+  }
+
+  get #hasSingleCommand() {
+    return !!this.#commands[SingleCommand];
+  }
 
   get _name() { return this.#name; }
   get _description() { return this.#description; }
@@ -176,9 +182,6 @@ export class Clerc<C extends CommandRecord = {}> {
         throw new CommandExistsError(name);
       }
     }
-    if (nameList.includes(SingleCommand)) {
-      this.#hasSingleCommand = true;
-    }
     this.#commands[name as keyof C] = commandToSave;
     this.#usedNames.push(commandToSave.name, ...(toArray(commandToSave.alias) || []));
 
@@ -302,7 +305,9 @@ export class Clerc<C extends CommandRecord = {}> {
       const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
+        alias: stringName,
         resolved: isCommandResolved as any,
+        hasSingleCommandOrAlias: this.#hasSingleCommandOrAlias,
         hasSingleCommand: this.#hasSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,

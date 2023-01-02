@@ -69,7 +69,9 @@ type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
   };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N extends keyof C ? N : N | undefined
+  alias?: C[N]["alias"]
   resolved: N extends keyof C ? true : boolean
+  hasSingleCommandOrAlias: boolean
   hasSingleCommand: boolean
   raw: Raw<C, N>
   parameters: TransformParameters<C, N>

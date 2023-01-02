@@ -64,7 +64,16 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
     body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
   });
   const commands = [...(ctx.hasSingleCommand ? [cli._commands[SingleCommand]!] : []), ...Object.values(cli._commands)].map((command) => {
-    const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])].map(n => `${cli._name} ${n}`).join(", ");
+    const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
+      .sort((a, b) => {
+        if (a === SingleCommand) { return -1; }
+        if (b === SingleCommand) { return 1; }
+        return a.length - b.length;
+      })
+      .map((n) => {
+        return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
+      })
+      .join(", ");
     return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
   sections.push({
@@ -86,7 +95,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
 const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
-  if (!subcommand || subcommand.name === SingleCommand) {
+  if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
@@ -94,7 +103,7 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
   const parameters = subcommand.parameters?.join(" ") || undefined;
   sections.push({
     title: "Usage:",
-    body: [pc.magenta(`$ ${cli._name}${ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
+    body: [pc.magenta(`$ ${cli._name}${ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""}${subcommand.flags ? " [flags]" : ""}`)],
   });
   if (subcommand.flags) {
     sections.push({
@@ -183,21 +192,24 @@ export const helpPlugin = ({
     }
 
     cli.inspector((ctx, next) => {
-      if (!ctx.hasSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
+      const hasHelpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
+      if (!ctx.hasSingleCommandOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !hasHelpFlag) {
         let str = "No command supplied.\n\n";
         str += generateHelp(ctx, notes, examples);
         str += "\n";
         print(str);
         process.exit(1);
-      } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
-        if (ctx.raw._.length && ctx.name !== SingleCommand) {
-          print(generateSubcommandHelp(ctx, ctx.raw._));
-        } else {
-          if (ctx.hasSingleCommand) {
-            print(generateHelp(ctx, notes, examples));
-          } else {
-            print(generateSubcommandHelp(ctx, SingleCommand));
+      } else if (hasHelpFlag) {
+        if (ctx.raw._.length) {
+          if (ctx.alias !== SingleCommand) {
+            if (ctx.name === SingleCommand) {
+              print(generateHelp(ctx, notes, examples));
+            } else {
+              print(generateSubcommandHelp(ctx, ctx.raw._));
+            }
           }
+        } else {
+          print(generateHelp(ctx, notes, examples));
         }
       } else {
         next();
