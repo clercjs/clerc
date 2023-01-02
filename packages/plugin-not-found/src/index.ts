@@ -1,8 +1,14 @@
 // TODO: unit tests
 import { NoCommandGivenError, NoSuchCommandError, definePlugin } from "@clerc/core";
-import { semanticArray } from "@clerc/utils";
 import didyoumean from "didyoumean2";
 import pc from "picocolors";
+
+const semanticArray = (arr: string[]) => {
+  if (arr.length <= 1) {
+    return arr[0];
+  }
+  return `${arr.slice(0, -1).map(pc.bold).join(", ")} and ${pc.bold(arr[arr.length - 1])}`;
+};
 
 export const notFoundPlugin = () => definePlugin({
   setup: (cli) => {
@@ -15,10 +21,10 @@ export const notFoundPlugin = () => definePlugin({
           next();
         } catch (e: any) {
           if (!(e instanceof NoSuchCommandError || e instanceof NoCommandGivenError)) { throw e; }
-          if (ctx.raw._.length === 0) {
+          if (ctx.raw._.length === 0 || e instanceof NoCommandGivenError) {
             console.error("No command given.");
             if (hasCommands) {
-              console.error(`Possible commands: ${pc.bold(semanticArray(commandKeys))}.`);
+              console.error(`Possible commands: ${semanticArray(commandKeys)}.`);
             }
             return;
           }
