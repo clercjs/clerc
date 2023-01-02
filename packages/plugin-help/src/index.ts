@@ -55,7 +55,7 @@ const generateExamples = (sections: Section[], examples: [string, string][]) => 
   });
 };
 
-const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
+const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
   const sections = [] as Section[];
   generateCliDetail(sections, cli);
@@ -88,10 +88,10 @@ const showHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [s
   if (examples) {
     generateExamples(sections, examples);
   }
-  print(render(sections));
+  return render(sections);
 };
 
-const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
+const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
   if (!subcommand) {
@@ -135,7 +135,7 @@ const showSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleComma
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples);
   }
-  print(render(sections));
+  return render(sections);
 };
 
 export interface HelpPluginOptions {
@@ -183,28 +183,28 @@ export const helpPlugin = ({
       })
         .on("help", (ctx) => {
           if (ctx.parameters.command.length) {
-            showSubcommandHelp(ctx, ctx.parameters.command);
+            print(generateSubcommandHelp(ctx, ctx.parameters.command));
           } else {
-            showHelp(ctx, notes, examples);
+            print(generateHelp(ctx, notes, examples));
           }
         });
     }
 
     cli.inspector((ctx, next) => {
       if (!ctx.isSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
-        print("No command supplied.");
-        print("\n\n");
-        showHelp(ctx, notes, examples);
-        print("\n");
+        let str = "No command supplied.\n\n";
+        str += generateHelp(ctx, notes, examples);
+        str += "\n";
+        print(str);
         process.exit(1);
       } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
         if (ctx.raw._.length) {
-          showSubcommandHelp(ctx, ctx.raw._);
+          print(generateSubcommandHelp(ctx, ctx.raw._));
         } else {
           if (!ctx.isSingleCommand) {
-            showHelp(ctx, notes, examples);
+            print(generateHelp(ctx, notes, examples));
           } else {
-            showSubcommandHelp(ctx, SingleCommand);
+            print(generateSubcommandHelp(ctx, SingleCommand));
           }
         }
       } else {
