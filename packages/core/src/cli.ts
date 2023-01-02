@@ -47,7 +47,11 @@ export class Clerc<C extends CommandRecord = {}> {
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
   #usedNames: (string | SingleCommandType)[] = [];
 
-  private constructor() {}
+  private constructor(name?: string, description?: string, version?: string) {
+    this.#name = name || this.#name;
+    this.#description = description || this.#description;
+    this.#version = version || this.#version;
+  }
 
   get #hasSingleCommandOrAlias() {
     return this.#usedNames.includes(SingleCommand);
@@ -71,8 +75,8 @@ export class Clerc<C extends CommandRecord = {}> {
    * const cli = Clerc.create()
    * ```
    */
-  static create() {
-    return new Clerc();
+  static create(name?: string, description?: string, version?: string) {
+    return new Clerc(name, description, version);
   }
 
   /**
