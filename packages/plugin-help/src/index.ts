@@ -86,7 +86,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
 const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
-  if (!subcommand) {
+  if (!subcommand || subcommand.name === SingleCommand) {
     throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
