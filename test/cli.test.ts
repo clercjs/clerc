@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SingleCommand } from "@clerc/core";
+import { Root } from "@clerc/core";
 import { create } from "./create";
 
 describe("cli", () => {
@@ -24,9 +24,9 @@ describe("cli", () => {
       })
       .parse(["foo"]);
   });
-  it("should honor single command", () => {
+  it("should honor root", () => {
     create()
-      .command(SingleCommand, "single command", {
+      .command(Root, "root", {
         flags: {
           foo: {
             description: "",
@@ -38,8 +38,8 @@ describe("cli", () => {
           "[optional...]",
         ],
       })
-      .on(SingleCommand, (ctx) => {
-        expect(ctx.name).toStrictEqual(SingleCommand);
+      .on(Root, (ctx) => {
+        expect(ctx.name).toStrictEqual(Root);
         expect(ctx.raw).toMatchInlineSnapshot(`
           {
             "_": [
@@ -75,10 +75,10 @@ describe("cli", () => {
       })
       .parse(["bar", "--foo", "baz", "qux"]);
   });
-  it("should honor single command object", () => {
+  it("should honor root object", () => {
     create()
       .command({
-        name: SingleCommand,
+        name: Root,
         description: "foo",
         flags: {
           foo: {
@@ -91,7 +91,7 @@ describe("cli", () => {
           "[optional...]",
         ],
         handler: (ctx) => {
-          expect(ctx.name).toStrictEqual(SingleCommand);
+          expect(ctx.name).toStrictEqual(Root);
           expect(ctx.raw).toMatchInlineSnapshot(`
             {
               "_": [

@@ -1,8 +1,8 @@
 
 // TODO: unit tests
 
-import type { Clerc, Command, HandlerContext, SingleCommandType } from "@clerc/core";
-import { NoSuchCommandError, SingleCommand, definePlugin, resolveCommand } from "@clerc/core";
+import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
+import { NoSuchCommandError, Root, definePlugin, resolveCommand } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
@@ -13,7 +13,7 @@ import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 const NO_DESCRIPTION = "(No description)";
-const SINGLE_COMMAND = "<Single Command>";
+const ROOT = "<Root>";
 const NAME = "Name:";
 const VERSION = "Version:";
 const COMMANDS = "Commands:";
@@ -26,13 +26,13 @@ const NOTES = "Notes:";
 
 const print = (s: string) => { process.stdout.write(s); };
 
-const formatCommandName = (name: string | string[] | SingleCommandType) => Array.isArray(name)
+const formatCommandName = (name: string | string[] | RootType) => Array.isArray(name)
   ? name.join(" ")
   : typeof name === "string"
     ? name
-    : SINGLE_COMMAND;
+    : ROOT;
 
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | SingleCommandType>) => {
+const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
   const items = [
     {
       title: NAME,
@@ -75,11 +75,11 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
     title: USAGE,
     body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
   });
-  const commands = [...(ctx.hasSingleCommand ? [cli._commands[SingleCommand]!] : []), ...Object.values(cli._commands)].map((command) => {
+  const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
     const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
       .sort((a, b) => {
-        if (a === SingleCommand) { return -1; }
-        if (b === SingleCommand) { return 1; }
+        if (a === Root) { return -1; }
+        if (b === Root) { return 1; }
         return a.length - b.length;
       })
       .map((n) => {
@@ -104,7 +104,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
   return render(sections);
 };
 
-const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleCommandType) => {
+const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | RootType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
   if (!subcommand) {
@@ -113,7 +113,7 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
   const sections = [] as Section[];
   generateCliDetail(sections, cli, subcommand);
   const parameters = subcommand.parameters?.join(" ") || undefined;
-  const commandName = ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`;
+  const commandName = ctx.name === Root ? "" : ` ${formatCommandName(subcommand.name)}`;
   const parametersString = parameters ? ` ${parameters}` : "";
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
@@ -206,7 +206,7 @@ export const helpPlugin = ({
 
     cli.inspector((ctx, next) => {
       const hasHelpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
-      if (!ctx.hasSingleCommandOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !hasHelpFlag) {
+      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !hasHelpFlag) {
         let str = "No command supplied.\n\n";
         str += generateHelp(ctx, notes, examples);
         str += "\n";
@@ -214,8 +214,8 @@ export const helpPlugin = ({
         process.exit(1);
       } else if (hasHelpFlag) {
         if (ctx.raw._.length) {
-          if (ctx.called !== SingleCommand) {
-            if (ctx.name === SingleCommand) {
+          if (ctx.called !== Root) {
+            if (ctx.name === Root) {
               print(generateHelp(ctx, notes, examples));
             } else {
               print(generateSubcommandHelp(ctx, ctx.raw._));

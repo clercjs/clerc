@@ -1,8 +1,8 @@
 import type { CamelCase, Dict, MaybeArray } from "@clerc/utils";
-import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
+import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
-export type CommandType = SingleCommandType | string;
+export type CommandType = RootType | string;
 export type FlagOptions = FlagSchema & {
   description?: string
 };
@@ -11,21 +11,21 @@ export type Flag = FlagOptions & {
 };
 // Custom properties
 export declare interface CommandCustomProperties {}
-export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
   alias?: A
   parameters?: P
   flags?: F
   examples?: [string, string][]
   notes?: string[]
 }
-export type Command<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = O & {
+export type Command<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = O & {
   name: N
   description: string
 };
-export type CommandAlias<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
+export type CommandAlias<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   __isAlias?: true
 };
-export type CommandWithHandler<N extends string | SingleCommandType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
+export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   handler?: HandlerInCommand<Record<N, Command<N, O>> & Record<never, never>, N>
 };
 type StripBrackets<Parameter extends string> = (
@@ -47,7 +47,7 @@ type ParameterType<Parameter extends string> = (
         ? string | undefined
         : never
 );
-export type CommandRecord = Dict<Command> & { [SingleCommand]?: Command };
+export type CommandRecord = Dict<Command> & { [Root]?: Command };
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
@@ -69,10 +69,10 @@ type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
   };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N extends keyof C ? N : N | undefined
-  called?: string | SingleCommandType
+  called?: string | RootType
   resolved: N extends keyof C ? true : boolean
-  hasSingleCommandOrAlias: boolean
-  hasSingleCommand: boolean
+  hasRootOrAlias: boolean
+  hasRoot: boolean
   raw: Raw<C, N>
   parameters: TransformParameters<C, N>
   unknownFlags: ParsedFlags["unknownFlags"]

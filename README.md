@@ -78,25 +78,7 @@ const cli = Clerc.create()
     },
   })
   .on("foo", (ctx) => {
-    console.log(ctx);
-    /*
-      {
-        name: 'foo',
-        resolved: true,
-        isSingleCommand: false,
-        raw: {
-          flags: { bar: false },
-          unknownFlags: {},
-          _: [ 'foo', '--': [] ],
-          parameters: [],
-          mergedFlags: { bar: false }
-        },
-        parameters: [Object: null prototype] { param: [] },
-        flags: { bar: false },
-        unknownFlags: {},
-        cli: _Clerc {}
-      }
-    */
+    console.log("It works!");
   })
   .parse();
 ```

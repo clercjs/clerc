@@ -1,12 +1,12 @@
 import { isDeno, isNode } from "is-platform";
 import { arrayStartsWith, toArray } from "@clerc/utils";
 
-import type { SingleCommandType } from "./cli";
-import { SingleCommand } from "./cli";
+import type { RootType } from "./cli";
+import { Root } from "./cli";
 import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
 import { CommandNameConflictError } from "./errors";
 
-function setCommand(commandsMap: Map<string[] | SingleCommandType, CommandAlias>, commands: CommandRecord, command: Command) {
+function setCommand(commandsMap: Map<string[] | RootType, CommandAlias>, commands: CommandRecord, command: Command) {
   if (command.alias) {
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
@@ -19,10 +19,10 @@ function setCommand(commandsMap: Map<string[] | SingleCommandType, CommandAlias>
 }
 
 export function resolveFlattenCommands(commands: CommandRecord) {
-  const commandsMap = new Map<string[] | SingleCommandType, CommandAlias>();
-  if (commands[SingleCommand]) {
-    commandsMap.set(SingleCommand, commands[SingleCommand]);
-    setCommand(commandsMap, commands, commands[SingleCommand]);
+  const commandsMap = new Map<string[] | RootType, CommandAlias>();
+  if (commands[Root]) {
+    commandsMap.set(Root, commands[Root]);
+    setCommand(commandsMap, commands, commands[Root]);
   }
   for (const command of Object.values(commands)) {
     setCommand(commandsMap, commands, command);
@@ -31,24 +31,24 @@ export function resolveFlattenCommands(commands: CommandRecord) {
   return commandsMap;
 }
 
-export function resolveCommand(commands: CommandRecord, name: string | string[] | SingleCommandType): Command<string | SingleCommandType> | undefined {
-  if (name === SingleCommand) { return commands[SingleCommand]; }
+export function resolveCommand(commands: CommandRecord, name: string | string[] | RootType): Command<string | RootType> | undefined {
+  if (name === Root) { return commands[Root]; }
   const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands);
   let current: Command | undefined;
-  let currentName: string[] | SingleCommandType | undefined;
+  let currentName: string[] | RootType | undefined;
   // Logic:
   // Imagine we have to commands: `foo` and `foo bar`
   // If the given argv starts with `foo bar`, we return `foo bar`.
   // But if the given argv starts with `foo baz`, we return `foo`.
   // Just simply compare their length, longer is better =)
   commandsMap.forEach((v, k) => {
-    if (k === SingleCommand) {
-      current = commandsMap.get(SingleCommand);
-      currentName = SingleCommand;
+    if (k === Root) {
+      current = commandsMap.get(Root);
+      currentName = Root;
       return;
     }
-    if (arrayStartsWith(nameArr, k) && (!currentName || currentName === SingleCommand || k.length > currentName.length)) {
+    if (arrayStartsWith(nameArr, k) && (!currentName || currentName === Root || k.length > currentName.length)) {
       current = v;
       currentName = k;
     }

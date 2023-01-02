@@ -35,8 +35,8 @@ import {
 } from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
 
-export const SingleCommand = Symbol("SingleCommand");
-export type SingleCommandType = typeof SingleCommand;
+export const Root = Symbol("Root");
+export type RootType = typeof Root;
 
 export class Clerc<C extends CommandRecord = {}> {
   #name = "";
@@ -45,7 +45,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
-  #usedNames: (string | SingleCommandType)[] = [];
+  #usedNames: (string | RootType)[] = [];
 
   private constructor(name?: string, description?: string, version?: string) {
     this.#name = name || this.#name;
@@ -53,12 +53,12 @@ export class Clerc<C extends CommandRecord = {}> {
     this.#version = version || this.#version;
   }
 
-  get #hasSingleCommandOrAlias() {
-    return this.#usedNames.includes(SingleCommand);
+  get #hasRootOrAlias() {
+    return this.#usedNames.includes(Root);
   }
 
-  get #hasSingleCommand() {
-    return !!this.#commands[SingleCommand];
+  get #hasRoot() {
+    return !!this.#commands[Root];
   }
 
   get _name() { return this.#name; }
@@ -144,7 +144,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * @example
    * ```ts
    * Clerc.create()
-   *   .command("", "single command", {
+   *   .command("", "root", {
    *     flags: {
    *       foo: {
    *         alias: "f",
@@ -154,10 +154,10 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
-    const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
+    const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
@@ -167,14 +167,14 @@ export class Clerc<C extends CommandRecord = {}> {
     if (isInvalidName(name)) {
       throw new InvalidCommandNameError(name as string);
     }
-    // if (this.#isSingleCommand) {
-    //   throw new SingleCommandError();
+    // if (this.#isRoot) {
+    //   throw new RootError();
     // }
-    // if (name === SingleCommand && this.#hasCommands) {
+    // if (name === Root && this.#hasCommands) {
     //   throw new CommonCommandExistsError();
     // }
-    // if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
-    //   throw new SingleCommandAliasError();
+    // if (name === Root && (isCommandObject ? nameOrCommand : options).alias) {
+    //   throw new RootAliasError();
     // }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
 
@@ -277,7 +277,7 @@ export class Clerc<C extends CommandRecord = {}> {
       // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
       const { _: args, flags, unknownFlags } = parsed;
-      let parameters = !isCommandResolved || command.name === SingleCommand ? args : args.slice(command.name.split(" ").length);
+      let parameters = !isCommandResolved || command.name === Root ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];
       // eof handle
       const hasEof = commandParameters.indexOf("--");
@@ -309,10 +309,10 @@ export class Clerc<C extends CommandRecord = {}> {
       const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
-        called: name.length === 0 ? SingleCommand : stringName,
+        called: name.length === 0 ? Root : stringName,
         resolved: isCommandResolved as any,
-        hasSingleCommandOrAlias: this.#hasSingleCommandOrAlias,
-        hasSingleCommand: this.#hasSingleCommand,
+        hasRootOrAlias: this.#hasRootOrAlias,
+        hasRoot: this.#hasRoot,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
         flags,
