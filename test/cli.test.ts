@@ -304,20 +304,6 @@ describe("cli", () => {
         .command("foo", "foo");
     }).toThrowError();
   });
-  it("should throw when single command is set", () => {
-    expect(() => {
-      create()
-        .command(SingleCommand, "single")
-        .command("foo", "foo");
-    }).toThrowError();
-  });
-  it("should throw when common command is set", () => {
-    expect(() => {
-      create()
-        .command("foo", "foo")
-        .command(SingleCommand, "single");
-    }).toThrowError();
-  });
   it("should parse nested command", () => {
     create()
       .command("foo bar", "foo bar", {

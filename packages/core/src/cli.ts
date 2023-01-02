@@ -49,6 +49,8 @@ export class Clerc<C extends CommandRecord = {}> {
 
   private constructor() {}
 
+  #hasSingleCommand = false;
+
   get _name() { return this.#name; }
   get _description() { return this.#description; }
   get _version() { return this.#version; }
@@ -174,6 +176,9 @@ export class Clerc<C extends CommandRecord = {}> {
         throw new CommandExistsError(name);
       }
     }
+    if (nameList.includes(SingleCommand)) {
+      this.#hasSingleCommand = true;
+    }
     this.#commands[name as keyof C] = commandToSave;
     this.#usedNames.push(commandToSave.name, ...(toArray(commandToSave.alias) || []));
 
@@ -298,6 +303,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
         resolved: isCommandResolved as any,
+        hasSingleCommand: this.#hasSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
         flags,

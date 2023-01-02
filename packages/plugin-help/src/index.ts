@@ -20,7 +20,7 @@ const formatCommandName = (name: string | string[] | SingleCommandType) => Array
     ? name
     : "<Single Command>";
 
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command) => {
+const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | SingleCommandType>) => {
   const items = [
     {
       title: "Name:",
@@ -34,7 +34,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
   if (subcommand) {
     items.push({
       title: "Subcommand:",
-      body: pc.green(formatCommandName(subcommand.name)),
+      body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
     });
   }
   sections.push({
@@ -59,26 +59,18 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
   const { cli } = ctx;
   const sections = [] as Section[];
   generateCliDetail(sections, cli);
-  if (ctx.isSingleCommand) {
-    sections.push({
-      title: "Usage:",
-      body: [pc.magenta(`$ ${cli._name} [flags]`)],
-    });
-  } else {
-    sections.push({
-      title: "Usage:",
-      body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
-    });
-  }
-  if (!ctx.isSingleCommand) {
-    sections.push({
-      title: "Commands:",
-      body: splitTable(...Object.values(cli._commands).map((command) => {
-        const commandNameWithAlias = [command.name, ...toArray(command.alias || [])].join(", ");
-        return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
-      })),
-    });
-  }
+  sections.push({
+    title: "Usage:",
+    body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
+  });
+  const commands = [...(ctx.hasSingleCommand ? [cli._commands[SingleCommand]!] : []), ...Object.values(cli._commands)].map((command) => {
+    const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])].map(n => `${cli._name} ${n}`).join(", ");
+    return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
+  });
+  sections.push({
+    title: "Commands:",
+    body: splitTable(...commands),
+  });
   if (notes) {
     sections.push({
       title: "Notes:",
@@ -98,11 +90,11 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
     throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
-  generateCliDetail(sections, cli, ctx.isSingleCommand ? undefined : subcommand);
+  generateCliDetail(sections, cli, subcommand);
   const parameters = subcommand.parameters?.join(" ") || undefined;
   sections.push({
     title: "Usage:",
-    body: [pc.magenta(`$ ${cli._name}${ctx.isSingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
+    body: [pc.magenta(`$ ${cli._name}${ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""} [flags]`)],
   });
   if (subcommand.flags) {
     sections.push({
@@ -191,7 +183,7 @@ export const helpPlugin = ({
     }
 
     cli.inspector((ctx, next) => {
-      if (!ctx.isSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
+      if (!ctx.hasSingleCommand && !ctx.raw._.length && showHelpWhenNoCommand) {
         let str = "No command supplied.\n\n";
         str += generateHelp(ctx, notes, examples);
         str += "\n";
@@ -201,7 +193,7 @@ export const helpPlugin = ({
         if (ctx.raw._.length) {
           print(generateSubcommandHelp(ctx, ctx.raw._));
         } else {
-          if (!ctx.isSingleCommand) {
+          if (ctx.hasSingleCommand) {
             print(generateHelp(ctx, notes, examples));
           } else {
             print(generateSubcommandHelp(ctx, SingleCommand));

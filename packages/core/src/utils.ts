@@ -26,7 +26,8 @@ export function resolveFlattenCommands(commands: CommandRecord) {
   return commandsMap;
 }
 
-export function resolveCommand(commands: CommandRecord, name: string | string[]): Command<string | SingleCommandType> | undefined {
+export function resolveCommand(commands: CommandRecord, name: string | string[] | SingleCommandType): Command<string | SingleCommandType> | undefined {
+  if (name === SingleCommand) { return commands[SingleCommand]; }
   const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands);
   let current: Command | undefined;
@@ -49,6 +50,7 @@ export function resolveCommand(commands: CommandRecord, name: string | string[])
       currentName = k;
     }
   });
+
   return current;
 }
 
