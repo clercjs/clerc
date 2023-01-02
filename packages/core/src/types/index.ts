@@ -1,4 +1,4 @@
-import type { CamelCase, Dict, MaybeArray, ToArray } from "@clerc/utils";
+import type { CamelCase, Dict, MaybeArray } from "@clerc/utils";
 import type { Clerc, SingleCommand, SingleCommandType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
@@ -69,7 +69,7 @@ type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
   };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N extends keyof C ? N : N | undefined
-  called?: ToArray<C[N]["alias"]>[number]
+  called?: string | SingleCommandType
   resolved: N extends keyof C ? true : boolean
   hasSingleCommandOrAlias: boolean
   hasSingleCommand: boolean
