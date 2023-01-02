@@ -1,6 +1,6 @@
 {
   "name": "clerc",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc: The full-featured cli framework.",
   "keywords": [
