@@ -305,7 +305,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
-        called: stringName,
+        called: name.length === 0 ? SingleCommand : stringName,
         resolved: isCommandResolved as any,
         hasSingleCommandOrAlias: this.#hasSingleCommandOrAlias,
         hasSingleCommand: this.#hasSingleCommand,
