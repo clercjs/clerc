@@ -190,7 +190,7 @@ export const helpPlugin = ({
         print(str);
         process.exit(1);
       } else if (ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help) {
-        if (ctx.raw._.length) {
+        if (ctx.raw._.length && ctx.name !== SingleCommand) {
           print(generateSubcommandHelp(ctx, ctx.raw._));
         } else {
           if (ctx.hasSingleCommand) {

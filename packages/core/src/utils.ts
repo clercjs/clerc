@@ -37,14 +37,12 @@ export function resolveCommand(commands: CommandRecord, name: string | string[] 
   // If the given argv starts with `foo bar`, we return `foo bar`.
   // But if the given argv starts with `foo baz`, we return `foo`.
   // Just simply compare their length, longer is better =)
-  if (nameArr.length === 0) {
-    current = commandsMap.get(SingleCommand);
-    currentName = SingleCommand;
-    commandsMap.delete(SingleCommand);
-  }
-
-  commandsMap.forEach((v, _k) => {
-    const k = _k as string[];
+  commandsMap.forEach((v, k) => {
+    if (k === SingleCommand) {
+      current = commandsMap.get(SingleCommand);
+      currentName = SingleCommand;
+      return;
+    }
     if (arrayStartsWith(nameArr, k) && (!currentName || currentName === SingleCommand || k.length > currentName.length)) {
       current = v;
       currentName = k;
