@@ -7,7 +7,10 @@ import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, Insp
 import { CommandNameConflictError } from "./errors";
 
 export function resolveFlattenCommands(commands: CommandRecord) {
-  const commandsMap = new Map<string[], CommandAlias>();
+  const commandsMap = new Map<string[] | SingleCommandType, CommandAlias>();
+  if (commands[SingleCommand]) {
+    commandsMap.set(SingleCommand, commands[SingleCommand]);
+  }
   for (const command of Object.values(commands)) {
     if (command.alias) {
       const aliases = toArray(command.alias);
@@ -23,25 +26,29 @@ export function resolveFlattenCommands(commands: CommandRecord) {
   return commandsMap;
 }
 
-export function resolveCommand(commands: CommandRecord, name: string | string[] | SingleCommandType): Command | undefined {
-  if (name === SingleCommand) {
-    return commands[SingleCommand];
-  }
+export function resolveCommand(commands: CommandRecord, name: string | string[] | SingleCommandType): Command<string | SingleCommandType> | undefined {
+  if (name === SingleCommand) { return commands[SingleCommand]; }
   const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands);
   let current: Command | undefined;
-  let currentName: string[] | undefined;
+  let currentName: string[] | SingleCommandType | undefined;
   // Logic:
   // Imagine we have to commands: `foo` and `foo bar`
   // If the given argv starts with `foo bar`, we return `foo bar`.
   // But if the given argv starts with `foo baz`, we return `foo`.
   // Just simply compare their length, longer is better =)
   commandsMap.forEach((v, k) => {
-    if (arrayStartsWith(nameArr, k) && (!currentName || k.length > currentName.length)) {
+    if (k === SingleCommand) {
+      current = commandsMap.get(SingleCommand);
+      currentName = SingleCommand;
+      return;
+    }
+    if (arrayStartsWith(nameArr, k) && (!currentName || currentName === SingleCommand || k.length > currentName.length)) {
       current = v;
       currentName = k;
     }
   });
+
   return current;
 }
 
@@ -60,10 +67,7 @@ export function resolveSubcommandsByParent(commands: CommandRecord, parent: stri
 
 export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
 
-export function resolveParametersBeforeFlag(argv: string[], isSingleCommand: boolean) {
-  if (isSingleCommand) {
-    return [];
-  }
+export function resolveParametersBeforeFlag(argv: string[]) {
   const parameters = [];
   for (const arg of argv) {
     if (arg.startsWith("-")) {
