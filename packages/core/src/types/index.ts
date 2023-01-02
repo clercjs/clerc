@@ -70,7 +70,6 @@ type Raw<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name: N extends keyof C ? N : N | undefined
   resolved: N extends keyof C ? true : boolean
-  isSingleCommand: boolean
   raw: Raw<C, N>
   parameters: TransformParameters<C, N>
   unknownFlags: ParsedFlags["unknownFlags"]

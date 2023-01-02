@@ -5,14 +5,11 @@ import { toArray } from "@clerc/utils";
 
 import {
   CommandExistsError,
-  CommonCommandExistsError,
   DescriptionNotSetError,
   InvalidCommandNameError,
   NameNotSetError,
   NoCommandGivenError,
   NoSuchCommandError,
-  SingleCommandAliasError,
-  SingleCommandError,
   VersionNotSetError,
 } from "./errors";
 import type {
@@ -51,9 +48,6 @@ export class Clerc<C extends CommandRecord = {}> {
   #usedNames: string[] = [];
 
   private constructor() {}
-
-  get #isSingleCommand() { return this.#commands[SingleCommand] !== undefined; }
-  get #hasCommands() { return Object.keys(this.#commands).length > 0; }
 
   get _name() { return this.#name; }
   get _description() { return this.#description; }
@@ -156,22 +150,20 @@ export class Clerc<C extends CommandRecord = {}> {
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (this.#commands[name]) {
-      if (name === SingleCommand) {
-        throw new CommandExistsError("SingleCommand");
-      }
+      throw new CommandExistsError(typeof name === "symbol" ? "" : name);
     }
     if (isInvalidName(name)) {
       throw new InvalidCommandNameError(name as string);
     }
-    if (this.#isSingleCommand) {
-      throw new SingleCommandError();
-    }
-    if (name === SingleCommand && this.#hasCommands) {
-      throw new CommonCommandExistsError();
-    }
-    if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
-      throw new SingleCommandAliasError();
-    }
+    // if (this.#isSingleCommand) {
+    //   throw new SingleCommandError();
+    // }
+    // if (name === SingleCommand && this.#hasCommands) {
+    //   throw new CommonCommandExistsError();
+    // }
+    // if (name === SingleCommand && (isCommandObject ? nameOrCommand : options).alias) {
+    //   throw new SingleCommandAliasError();
+    // }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
 
     // Check if alias or name conflicts
@@ -262,9 +254,9 @@ export class Clerc<C extends CommandRecord = {}> {
     if (!this.#version) {
       throw new VersionNotSetError();
     }
-    const name = resolveParametersBeforeFlag(argv, this.#isSingleCommand);
+    const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
-    const getCommand = () => this.#isSingleCommand ? this.#commands[SingleCommand] : resolveCommand(this.#commands, name);
+    const getCommand = () => resolveCommand(this.#commands, name);
     const mapErrors = [] as (Error | undefined)[];
     const getContext = () => {
       mapErrors.length = 0;
@@ -273,7 +265,7 @@ export class Clerc<C extends CommandRecord = {}> {
       // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
       const { _: args, flags, unknownFlags } = parsed;
-      let parameters = this.#isSingleCommand || !isCommandResolved ? args : args.slice(command.name.split(" ").length);
+      let parameters = !isCommandResolved || command.name === SingleCommand ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];
       // eof handle
       const hasEof = commandParameters.indexOf("--");
@@ -306,7 +298,6 @@ export class Clerc<C extends CommandRecord = {}> {
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
         resolved: isCommandResolved as any,
-        isSingleCommand: this.#isSingleCommand,
         raw: { ...parsed, parameters, mergedFlags },
         parameters: mapping,
         flags,

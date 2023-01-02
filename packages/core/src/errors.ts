@@ -1,21 +1,6 @@
-export class SingleCommandError extends Error {
-  constructor() {
-    super("Single command mode enabled.");
-  }
-}
-export class SingleCommandAliasError extends Error {
-  constructor() {
-    super("Single command cannot have alias.");
-  }
-}
 export class CommandExistsError extends Error {
   constructor(name: string) {
     super(`Command "${name}" exists.`);
-  }
-}
-export class CommonCommandExistsError extends Error {
-  constructor() {
-    super("Common command exists.");
   }
 }
 export class NoSuchCommandError extends Error {
