@@ -12,28 +12,40 @@ import { render } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
+const NO_DESCRIPTION = "(No description)";
+const SINGLE_COMMAND = "<Single Command>";
+const NAME = "Name:";
+const VERSION = "Version:";
+const COMMANDS = "Commands:";
+const SUBCOMMAND = "Subcommand:";
+const FLAGS = "Flags:";
+const DESCRIPTION = "Description:";
+const USAGE = "Usage:";
+const EXAMPLES = "Examples:";
+const NOTES = "Notes:";
+
 const print = (s: string) => { process.stdout.write(s); };
 
 const formatCommandName = (name: string | string[] | SingleCommandType) => Array.isArray(name)
   ? name.join(" ")
   : typeof name === "string"
     ? name
-    : "<Single Command>";
+    : SINGLE_COMMAND;
 
 const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | SingleCommandType>) => {
   const items = [
     {
-      title: "Name:",
+      title: NAME,
       body: pc.red(cli._name),
     },
     {
-      title: "Version:",
+      title: VERSION,
       body: pc.yellow(cli._version),
     },
   ];
   if (subcommand) {
     items.push({
-      title: "Subcommand:",
+      title: SUBCOMMAND,
       body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
     });
   }
@@ -42,7 +54,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
     items,
   });
   sections.push({
-    title: "Description:",
+    title: DESCRIPTION,
     body: [subcommand?.description || cli._description],
   });
 };
@@ -50,7 +62,7 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
 const generateExamples = (sections: Section[], examples: [string, string][]) => {
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
-    title: "Examples:",
+    title: EXAMPLES,
     body: splitTable(...examplesFormatted),
   });
 };
@@ -60,7 +72,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
   const sections = [] as Section[];
   generateCliDetail(sections, cli);
   sections.push({
-    title: "Usage:",
+    title: USAGE,
     body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
   });
   const commands = [...(ctx.hasSingleCommand ? [cli._commands[SingleCommand]!] : []), ...Object.values(cli._commands)].map((command) => {
@@ -77,12 +89,12 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
     return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
   sections.push({
-    title: "Commands:",
+    title: COMMANDS,
     body: splitTable(...commands),
   });
   if (notes) {
     sections.push({
-      title: "Notes:",
+      title: NOTES,
       body: notes,
     });
   }
@@ -101,13 +113,16 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
   const sections = [] as Section[];
   generateCliDetail(sections, cli, subcommand);
   const parameters = subcommand.parameters?.join(" ") || undefined;
+  const commandName = ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`;
+  const parametersString = parameters ? ` ${parameters}` : "";
+  const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
-    title: "Usage:",
-    body: [pc.magenta(`$ ${cli._name}${ctx.name === SingleCommand ? "" : ` ${formatCommandName(subcommand.name)}`}${parameters ? ` ${parameters}` : ""}${subcommand.flags ? " [flags]" : ""}`)],
+    title: USAGE,
+    body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
   if (subcommand.flags) {
     sections.push({
-      title: "Flags:",
+      title: FLAGS,
       body: splitTable(
         ...Object.entries(subcommand.flags).map(([name, flag]) => {
           const flagNameWithAlias = [gracefulFlagName(name)];
@@ -115,9 +130,7 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
           const items = [pc.blue(flagNameWithAlias.join(", "))];
-          if (flag.description) {
-            items.push(DELIMITER, flag.description);
-          }
+          items.push(DELIMITER, flag.description || NO_DESCRIPTION);
           if (flag.type) {
             const type = stringifyType(flag.type);
             items.push(pc.gray(`(${type})`));
@@ -129,7 +142,7 @@ const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | SingleC
   }
   if (subcommand.notes) {
     sections.push({
-      title: "Notes:",
+      title: NOTES,
       body: subcommand.notes,
     });
   }
