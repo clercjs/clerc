@@ -16,9 +16,9 @@ export function resolveFlattenCommands(commands: CommandRecord) {
       const aliases = toArray(command.alias);
       for (const alias of aliases) {
         if (alias in commands) {
-          throw new CommandNameConflictError(commands[alias].name, command.name);
+          throw new CommandNameConflictError(commands[alias]!.name, command.name);
         }
-        commandsMap.set(alias.split(" "), { ...command, __isAlias: true });
+        commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), { ...command, __isAlias: true });
       }
     }
     commandsMap.set(command.name.split(" "), command);

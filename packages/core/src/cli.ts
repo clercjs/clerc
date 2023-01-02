@@ -144,8 +144,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | SingleCommandType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === SingleCommand);
 

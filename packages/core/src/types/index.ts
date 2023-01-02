@@ -11,7 +11,7 @@ export type Flag = FlagOptions & {
 };
 // Custom properties
 export declare interface CommandCustomProperties {}
-export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
+export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string | SingleCommandType> = MaybeArray<string | SingleCommandType>, F extends Dict<FlagOptions> = Dict<FlagOptions>> extends CommandCustomProperties {
   alias?: A
   parameters?: P
   flags?: F
