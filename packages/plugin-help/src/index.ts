@@ -201,7 +201,7 @@ export const helpPlugin = ({
         process.exit(1);
       } else if (hasHelpFlag) {
         if (ctx.raw._.length) {
-          if (ctx.alias !== SingleCommand) {
+          if (ctx.called !== SingleCommand) {
             if (ctx.name === SingleCommand) {
               print(generateHelp(ctx, notes, examples));
             } else {
