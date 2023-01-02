@@ -22,8 +22,8 @@ export const notFoundPlugin = () => definePlugin({
             }
             return;
           }
-          // Bad example :(
-          const calledCommandName = e.message.replace("No such command: ", "");
+          // Good example =]
+          const calledCommandName = e.name;
           const closestCommandName = didyoumean(calledCommandName, commandKeys);
           console.error(`Command "${pc.strikethrough(calledCommandName)}" not found.`);
           if (hasCommands && closestCommandName) {
