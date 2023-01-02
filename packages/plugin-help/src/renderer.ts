@@ -21,7 +21,7 @@ export const render = (sections: Section[]) => {
   const rendered = [] as string[];
   for (const section of sections) {
     if (section.type === "block" || !section.type) {
-      const indent = " ".repeat(4);
+      const indent = "    ";
       const formattedBody = section.body
         .map(line => indent + line);
       formattedBody.unshift("");
