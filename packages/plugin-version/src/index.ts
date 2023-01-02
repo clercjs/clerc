@@ -15,7 +15,9 @@ export const versionPlugin = ({
   setup: (cli) => {
     const gracefullyVersion = gracefulVersion(cli._version);
     if (command) {
-      cli = cli.command("version", "Show version")
+      cli = cli.command("version", "Show version", {
+        notes: ["The version string begins with a \"v\"."],
+      })
         .on("version", () => {
           process.stdout.write(gracefullyVersion);
         });
