@@ -59,7 +59,7 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   get #hasRoot() {
-    return Object.hasOwn(this._commands, Root);
+    return Object.prototype.hasOwnProperty.call(this._commands, Root);
   }
 
   get _name() { return this.#name; }
