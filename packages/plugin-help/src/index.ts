@@ -185,7 +185,7 @@ export const helpPlugin = ({
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const printHelp = (s: string) => {
-      banner && print(banner);
+      banner && print(`${banner}\n`);
       print(s);
     };
     if (command) {
@@ -214,14 +214,14 @@ export const helpPlugin = ({
     }
 
     cli.inspector((ctx, next) => {
-      const hasHelpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
-      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !hasHelpFlag) {
+      const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
+      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
         let str = "No command given.\n\n";
         str += generateHelp(ctx, notes, examples);
         str += "\n";
         printHelp(str);
         process.exit(1);
-      } else if (hasHelpFlag) {
+      } else if (helpFlag) {
         if (ctx.raw._.length) {
           if (ctx.called !== Root) {
             if (ctx.name === Root) {
