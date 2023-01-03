@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { Root } from "@clerc/core";
-import { create } from "./create";
+import { Cli } from "./create-cli";
 
 describe("cli", () => {
   it("should parse", () => {
-    create()
+    Cli()
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
@@ -25,7 +25,7 @@ describe("cli", () => {
       .parse(["foo"]);
   });
   it("should honor root", () => {
-    create()
+    Cli()
       .command(Root, "root", {
         flags: {
           foo: {
@@ -76,7 +76,7 @@ describe("cli", () => {
       .parse(["bar", "--foo", "baz", "qux"]);
   });
   it("should honor root object", () => {
-    create()
+    Cli()
       .command({
         name: Root,
         description: "foo",
@@ -129,7 +129,7 @@ describe("cli", () => {
       .parse(["bar", "--foo", "baz", "qux"]);
   });
   it("should parse parameters", () => {
-    create()
+    Cli()
       .command("foo", "foo", {
         parameters: [
           "[optional...]",
@@ -146,7 +146,7 @@ describe("cli", () => {
       .parse(["foo", "bar", "-c", "baz", "qux"]);
   });
   it("should parse boolean flag", () => {
-    create()
+    Cli()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -179,7 +179,7 @@ describe("cli", () => {
       .parse(["foo", "--foo"]);
   });
   it("should parse string flag", () => {
-    create()
+    Cli()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -197,7 +197,7 @@ describe("cli", () => {
       .parse(["foo", "--foo", "bar"]);
   });
   it("should parse number flag", () => {
-    create()
+    Cli()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -221,7 +221,7 @@ describe("cli", () => {
         [propertyName]: propertyValue || true,
       };
     }
-    create()
+    Cli()
       .command("foo", "foo", {
         flags: {
           foo: {
@@ -246,7 +246,7 @@ describe("cli", () => {
       .parse(["foo", "--foo.a=42", "--foo.b=bar"]);
   });
   it("should parse shorthand flag", () => {
-    create()
+    Cli()
       .command("foo", "foo")
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
@@ -256,7 +256,7 @@ describe("cli", () => {
       .parse(["foo", "-abcd", "bar"]);
   });
   it("should parse array flag", () => {
-    create()
+    Cli()
       .command("foo", "foo", {
         flags: {
           abc: {
@@ -275,7 +275,7 @@ describe("cli", () => {
   });
   it("should honor inspector", () => {
     let count = 0;
-    create()
+    Cli()
       .command("foo", "foo")
       .inspector(() => {})
       .on("foo", () => { count++; })
@@ -284,7 +284,7 @@ describe("cli", () => {
   });
   it("should next", () => {
     let count = 0;
-    create()
+    Cli()
       .command("foo", "foo")
       .inspector((_ctx, next) => { next(); })
       .inspector((ctx, next) => {
@@ -299,13 +299,13 @@ describe("cli", () => {
   });
   it("should have exact one command", () => {
     expect(() => {
-      create()
+      Cli()
         .command("foo", "foo")
         .command("foo", "foo");
     }).toThrowError();
   });
   it("should parse nested command", () => {
-    create()
+    Cli()
       .command("foo bar", "foo bar", {
         flags: {
           aa: {
@@ -324,7 +324,7 @@ describe("cli", () => {
       .parse(["foo", "bar", "--aa", "param"]);
   });
   it("shouldn't parse nested command when parent command is called", () => {
-    create()
+    Cli()
       .command("foo bar", "foo bar", {
         flags: {
           aa: {
@@ -351,7 +351,7 @@ describe("cli", () => {
       .parse(["foo", "--bb", "param"]);
   });
   it("shouldn't parse when command is after command", () => {
-    create()
+    Cli()
       .command("foo bar", "foo bar", {
         flags: {
           aa: {
@@ -378,7 +378,7 @@ describe("cli", () => {
       .parse(["foo", "--bb", "bar"]);
   });
   it("should parse subcommand", () => {
-    create()
+    Cli()
       .command("foo bar", "foo")
       .on("foo bar", (ctx) => {
         expect(ctx.name).toBe("foo bar");
@@ -401,7 +401,7 @@ describe("cli", () => {
   });
   it("should register command with handler", () => {
     let count = 0;
-    create()
+    Cli()
       .command({
         name: "foo",
         description: "foo",

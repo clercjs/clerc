@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { notFoundPlugin } from "@clerc/plugin-not-found";
-import { create } from "./create";
+import { Cli } from "./create-cli";
 
 describe("plugin-not-found", () => {
   const msgs: string[] = [];
@@ -13,7 +13,7 @@ describe("plugin-not-found", () => {
     msgs.length = 0;
   });
   it("should show commands", () => {
-    create()
+    Cli()
       .use(notFoundPlugin())
       .parse([]);
 
@@ -25,7 +25,7 @@ describe("plugin-not-found", () => {
     msgs.length = 0;
   });
   it("should show closest command", () => {
-    create()
+    Cli()
       .use(notFoundPlugin())
       .command("foo", "foo command")
       .parse(["fo"]);
