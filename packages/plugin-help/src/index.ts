@@ -171,14 +171,23 @@ export interface HelpPluginOptions {
    * Global examples.
    */
   examples?: [string, string][]
+  /**
+   * Banner
+   */
+  banner?: string
 }
 export const helpPlugin = ({
   command = true,
   showHelpWhenNoCommand = true,
   notes,
   examples,
+  banner,
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
+    const printHelp = (s: string) => {
+      banner && print(banner);
+      print(s);
+    };
     if (command) {
       cli = cli.command("help", "Show help", {
         parameters: [
@@ -197,9 +206,9 @@ export const helpPlugin = ({
       })
         .on("help", (ctx) => {
           if (ctx.parameters.command.length) {
-            print(generateSubcommandHelp(ctx, ctx.parameters.command));
+            printHelp(generateSubcommandHelp(ctx, ctx.parameters.command));
           } else {
-            print(generateHelp(ctx, notes, examples));
+            printHelp(generateHelp(ctx, notes, examples));
           }
         });
     }
@@ -207,22 +216,22 @@ export const helpPlugin = ({
     cli.inspector((ctx, next) => {
       const hasHelpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
       if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !hasHelpFlag) {
-        let str = "No command supplied.\n\n";
+        let str = "No command given.\n\n";
         str += generateHelp(ctx, notes, examples);
         str += "\n";
-        print(str);
+        printHelp(str);
         process.exit(1);
       } else if (hasHelpFlag) {
         if (ctx.raw._.length) {
           if (ctx.called !== Root) {
             if (ctx.name === Root) {
-              print(generateHelp(ctx, notes, examples));
+              printHelp(generateHelp(ctx, notes, examples));
             } else {
-              print(generateSubcommandHelp(ctx, ctx.raw._));
+              printHelp(generateSubcommandHelp(ctx, ctx.raw._));
             }
           }
         } else {
-          print(generateHelp(ctx, notes, examples));
+          printHelp(generateHelp(ctx, notes, examples));
         }
       } else {
         next();
