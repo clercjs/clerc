@@ -2,7 +2,7 @@
 // TODO: unit tests
 
 import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, resolveCommand } from "@clerc/core";
+import { NoSuchCommandError, Root, definePlugin, resolveCommand, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
@@ -73,7 +73,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
   generateCliDetail(sections, cli);
   sections.push({
     title: USAGE,
-    body: [pc.magenta(`$ ${cli._name} [command] [flags]`)],
+    body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
   const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
     const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
