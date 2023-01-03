@@ -37,6 +37,8 @@ export const notFoundPlugin = () => definePlugin({
           } else if (!hasCommands) {
             console.error("NOTE: You haven't register any command yet.");
           }
+          process.stderr.write("\n");
+          process.exit(2);
         }
       },
     });
