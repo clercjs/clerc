@@ -12,6 +12,7 @@ export const friendlyErrorPlugin = () => definePlugin({
           next();
         } catch (e: any) {
           kons.error(e.message);
+          process.exit(1);
         }
       },
     });
