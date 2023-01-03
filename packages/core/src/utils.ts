@@ -91,25 +91,27 @@ export const resolveArgv = (): string[] =>
       : [];
 
 export function compose(inspectors: Inspector[]) {
-  const preInspectors: InspectorFn[] = [];
-  const normalInspectors: InspectorFn[] = [];
-  const postInspectors: InspectorFn[] = [];
+  const inspectorMap = {
+    pre: [] as InspectorFn[],
+    normal: [] as InspectorFn[],
+    post: [] as InspectorFn[],
+  };
   for (const inspector of inspectors) {
     const objectInspector: InspectorObject = typeof inspector === "object"
       ? inspector
       : { fn: inspector };
-    const { enforce } = objectInspector;
-    (enforce === "pre"
-      ? preInspectors
-      : enforce === "post"
-        ? postInspectors
-        : normalInspectors).push(objectInspector.fn);
+    const { enforce, fn } = objectInspector;
+    if (enforce === "post" || enforce === "pre") {
+      inspectorMap[enforce].push(fn);
+    } else {
+      inspectorMap.normal.push(fn);
+    }
   }
 
   const mergedInspectorFns = [
-    ...preInspectors,
-    ...normalInspectors,
-    ...postInspectors,
+    ...inspectorMap.pre,
+    ...inspectorMap.normal,
+    ...inspectorMap.post,
   ];
   return (getCtx: () => InspectorContext) => {
     return dispatch(0);
