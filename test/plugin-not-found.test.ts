@@ -8,6 +8,7 @@ describe("plugin-not-found", () => {
     // eslint-disable-next-line no-console
     console.log = (s: string) => { msgs.push(s); };
     console.error = (s: string) => { msgs.push(s); };
+    process.exit = ((_code?: number) => {}) as any;
   });
   afterEach(() => {
     msgs.length = 0;
