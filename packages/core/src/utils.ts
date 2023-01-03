@@ -125,3 +125,10 @@ export function compose(inspectors: Inspector[]) {
 export const isInvalidName = (name: CommandType) => typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "));
 
 export const withBrackets = (s: string, isOptional?: boolean) => isOptional ? `[${s}]` : `<${s}>`;
+
+const ROOT = "<Root>";
+export const formatCommandName = (name: string | string[] | RootType) => Array.isArray(name)
+  ? name.join(" ")
+  : typeof name === "string"
+    ? name
+    : ROOT;

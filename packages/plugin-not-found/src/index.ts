@@ -29,7 +29,7 @@ export const notFoundPlugin = () => definePlugin({
             return;
           }
           // Good example =]
-          const calledCommandName = e.name;
+          const calledCommandName = e.commandName;
           const closestCommandName = didyoumean(calledCommandName, commandKeys);
           console.error(`Command "${pc.strikethrough(calledCommandName)}" not found.`);
           if (hasCommands && closestCommandName) {

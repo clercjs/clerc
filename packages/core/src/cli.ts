@@ -28,6 +28,7 @@ import type {
 } from "./types";
 import {
   compose,
+  formatCommandName,
   isInvalidName,
   resolveArgv,
   resolveCommand,
@@ -45,7 +46,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
-  #usedNames: (string | RootType)[] = [];
+  #usedNames = new Set<string | RootType>();
 
   private constructor(name?: string, description?: string, version?: string) {
     this.#name = name || this.#name;
@@ -54,7 +55,7 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   get #hasRootOrAlias() {
-    return this.#usedNames.includes(Root);
+    return this.#usedNames.has(Root);
   }
 
   get #hasRoot() {
@@ -161,33 +162,22 @@ export class Clerc<C extends CommandRecord = {}> {
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
-    if (this.#commands[name]) {
-      throw new CommandExistsError(typeof name === "symbol" ? "" : name);
-    }
     if (isInvalidName(name)) {
       throw new InvalidCommandNameError(name as string);
     }
-    // if (this.#isRoot) {
-    //   throw new RootError();
-    // }
-    // if (name === Root && this.#hasCommands) {
-    //   throw new CommonCommandExistsError();
-    // }
-    // if (name === Root && (isCommandObject ? nameOrCommand : options).alias) {
-    //   throw new RootAliasError();
-    // }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
 
     // Check if alias or name conflicts
     const nameList = [commandToSave.name];
     commandToSave.alias && nameList.push(...toArray(commandToSave.alias));
     for (const name of nameList) {
-      if (this.#usedNames.includes(name)) {
-        throw new CommandExistsError(name);
+      if (this.#usedNames.has(name)) {
+        throw new CommandExistsError(formatCommandName(name));
       }
     }
     this.#commands[name as keyof C] = commandToSave;
-    this.#usedNames.push(commandToSave.name, ...(toArray(commandToSave.alias) || []));
+    this.#usedNames.add(commandToSave.name);
+    (toArray(commandToSave.alias) || []).forEach(a => this.#usedNames.add(a));
 
     // Register handler
     isCommandObject && handler && this.on(nameOrCommand.name, handler as any);

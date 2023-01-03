@@ -2,7 +2,7 @@
 // TODO: unit tests
 
 import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, resolveCommand, withBrackets } from "@clerc/core";
+import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommand, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
@@ -13,7 +13,6 @@ import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 const NO_DESCRIPTION = "(No description)";
-const ROOT = "<Root>";
 const NAME = "Name:";
 const VERSION = "Version:";
 const COMMANDS = "Commands:";
@@ -25,12 +24,6 @@ const EXAMPLES = "Examples:";
 const NOTES = "Notes:";
 
 const print = (s: string) => { process.stdout.write(s); };
-
-const formatCommandName = (name: string | string[] | RootType) => Array.isArray(name)
-  ? name.join(" ")
-  : typeof name === "string"
-    ? name
-    : ROOT;
 
 const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
   const items = [

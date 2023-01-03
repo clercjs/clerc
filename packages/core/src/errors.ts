@@ -1,11 +1,11 @@
 export class CommandExistsError extends Error {
-  constructor(public name: string) {
-    super(`Command "${name}" exists.`);
+  constructor(public commandName: string) {
+    super(`Command "${commandName}" exists.`);
   }
 }
 export class NoSuchCommandError extends Error {
-  constructor(public name: string) {
-    super(`No such command: ${name}`);
+  constructor(public commandName: string) {
+    super(`No such command: ${commandName}`);
   }
 }
 export class NoCommandGivenError extends Error {
@@ -34,7 +34,7 @@ export class VersionNotSetError extends Error {
   }
 }
 export class InvalidCommandNameError extends Error {
-  constructor(public name: string) {
-    super(`Bad name format: ${name}`);
+  constructor(public commandName: string) {
+    super(`Bad name format: ${commandName}`);
   }
 }
