@@ -1,6 +1,6 @@
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
-import type { Dict, LiteralUnion, MaybeArray } from "@clerc/utils";
+import type { LiteralUnion, MaybeArray } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
 
 import {
@@ -18,7 +18,7 @@ import type {
   CommandRecord,
   CommandType,
   CommandWithHandler,
-  FlagOptions,
+  Flags,
   Handler,
   HandlerContext,
   Inspector,
@@ -155,8 +155,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
@@ -180,7 +180,7 @@ export class Clerc<C extends CommandRecord = {}> {
     (toArray(commandToSave.alias) || []).forEach(a => this.#usedNames.add(a));
 
     // Register handler
-    isCommandObject && handler && this.on(nameOrCommand.name, handler as any);
+    isCommandObject && handler && this.on(nameOrCommand.name, handler);
 
     return this as any;
   }

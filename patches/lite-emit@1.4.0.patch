@@ -1,0 +1,13 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index d732d58ec773a3c8f55650995ba9a113bc04f505..75769f276cb3537fb0e0a418e0739bd72f08a6c6 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -2,7 +2,7 @@ interface EventMap {
+     [key: string | symbol]: any[];
+ }
+ declare type Listener<A extends any[]> = (...args: A) => void;
+-declare type _WildcardListener<EM extends EventMap, K extends keyof EM = keyof EM> = Listener<K extends unknown ? [K, ...EM[K]] : [K, ...EM[K]]>;
++declare type _WildcardListener<EM extends EventMap, K extends keyof EM = keyof EM> = Listener<[K, ...EM[K]]>;
+ declare type WildcardListener<EM extends EventMap> = _WildcardListener<EM>;
+ declare type ListenerMap<EM extends EventMap> = {
+     [K in keyof EM]?: Set<Listener<EM[K]>>;

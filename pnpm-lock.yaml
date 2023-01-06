@@ -1,6 +1,9 @@
 lockfileVersion: 5.4
 
 patchedDependencies:
+  lite-emit@1.4.0:
+    hash: i7cuo6jj4wjx3jrey4xchckwrq
+    path: patches/lite-emit@1.4.0.patch
   yoga-layout-prebuilt@1.10.0:
     hash: 47eboidwschvvkf5sc53oki4ma
     path: patches/yoga-layout-prebuilt@1.10.0.patch
@@ -218,7 +221,7 @@ packages:
     dependencies:
       '@clerc/utils': 0.12.5_@clerc+core@0.12.5
       is-platform: 0.2.0
-      lite-emit: 1.4.0
+      lite-emit: 1.4.0_i7cuo6jj4wjx3jrey4xchckwrq
       type-flag: 3.0.0
     dev: true
 
@@ -2783,6 +2786,12 @@ packages:
 
   /lite-emit/1.4.0:
     resolution: {integrity: sha512-ihi/LpXXgXbEydMAyjQCsXB89AnDM88s+DF1vOIVlCGyg0IZt5IaFX0c5PtIHfjIlbD6xm34zsn/JBomffOyaw==}
+    dev: false
+
+  /lite-emit/1.4.0_i7cuo6jj4wjx3jrey4xchckwrq:
+    resolution: {integrity: sha512-ihi/LpXXgXbEydMAyjQCsXB89AnDM88s+DF1vOIVlCGyg0IZt5IaFX0c5PtIHfjIlbD6xm34zsn/JBomffOyaw==}
+    dev: true
+    patched: true
 
   /local-pkg/0.4.2:
     resolution: {integrity: sha512-mlERgSPrbxU3BP4qBqAvvwlgW4MTg78iwJdGGnv7kibKjWcJksrG3t6LB5lXI93wXRDvG4NpUgJFmTG4T6rdrg==}

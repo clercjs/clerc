@@ -1,6 +1,6 @@
-import type { Dict, MaybeArray } from "@clerc/utils";
+/* eslint-disable @so1ve/generic-spacing */
 import type { Clerc, RootType } from "./cli";
-import type { CommandOptions, CommandWithHandler, FlagOptions, Handler, Inspector, Plugin } from "./types";
+import type { Command, CommandOptions, CommandWithHandler, Handler, HandlerContext, HandlerInCommand, Inspector, Plugin } from "./types";
 
 export const definePlugin = <T extends Clerc, U extends Clerc>(p: Plugin<T, U>) => p;
 
@@ -8,4 +8,6 @@ export const defineHandler = <C extends Clerc, K extends keyof C["_commands"]>(_
 
 export const defineInspector = <C extends Clerc>(_cli: C, inspector: Inspector<C["_commands"]>) => inspector;
 
-export const defineCommand = <N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string> = MaybeArray<string>, F extends Dict<FlagOptions> = Dict<FlagOptions>>(command: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>) => command;
+export const defineCommand = <N extends string | RootType, O extends CommandOptions<[...P]>, P extends string[]>(command: Command<N, O & CommandOptions<[...P]>>, handler?: HandlerInCommand<
+  HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
+>): CommandWithHandler<N, O & CommandOptions<[...P]>> => ({ ...command, handler });
