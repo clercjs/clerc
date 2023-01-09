@@ -7,21 +7,21 @@ import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveComma
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
-import type { Section } from "./renderer";
-import { render } from "./renderer";
+import type { Render, Section } from "./renderer";
+import { renderCliffy, renderTyper } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 const NO_DESCRIPTION = "(No description)";
 const NAME = "Name:";
 const VERSION = "Version:";
-const COMMANDS = "Commands:";
-const SUBCOMMAND = "Subcommand:";
-const FLAGS = "Flags:";
-const DESCRIPTION = "Description:";
-const USAGE = "Usage:";
-const EXAMPLES = "Examples:";
-const NOTES = "Notes:";
+const COMMANDS = "Commands";
+const SUBCOMMAND = "Subcommand";
+const FLAGS = "Flags";
+const DESCRIPTION = "Description";
+const USAGE = "Usage";
+const EXAMPLES = "Examples";
+const NOTES = "Notes";
 
 const print = (s: string) => { process.stdout.write(s); };
 
@@ -60,7 +60,7 @@ const generateExamples = (sections: Section[], examples: [string, string][]) => 
   });
 };
 
-const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
+const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
   const sections = [] as Section[];
   generateCliDetail(sections, cli);
@@ -97,7 +97,7 @@ const generateHelp = (ctx: HandlerContext, notes: string[] | undefined, examples
   return render(sections);
 };
 
-const generateSubcommandHelp = (ctx: HandlerContext, command: string[] | RootType) => {
+const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: string[] | RootType) => {
   const { cli } = ctx;
   const subcommand = resolveCommand(cli._commands, command);
   if (!subcommand) {
@@ -168,6 +168,10 @@ export interface HelpPluginOptions {
    * Banner
    */
   banner?: string
+  /**
+   * Render type
+   */
+  renderer?: "cliffy" | "typer"
 }
 export const helpPlugin = ({
   command = true,
@@ -175,8 +179,10 @@ export const helpPlugin = ({
   notes,
   examples,
   banner,
+  renderer,
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
+    const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
       print(s);
@@ -199,9 +205,9 @@ export const helpPlugin = ({
       })
         .on("help", (ctx) => {
           if (ctx.parameters.command.length) {
-            printHelp(generateSubcommandHelp(ctx, ctx.parameters.command));
+            printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
           } else {
-            printHelp(generateHelp(ctx, notes, examples));
+            printHelp(generateHelp(render, ctx, notes, examples));
           }
         });
     }
@@ -210,7 +216,7 @@ export const helpPlugin = ({
       const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
       if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
         let str = "No command given.\n\n";
-        str += generateHelp(ctx, notes, examples);
+        str += generateHelp(render, ctx, notes, examples);
         str += "\n";
         printHelp(str);
         process.exit(1);
@@ -218,13 +224,13 @@ export const helpPlugin = ({
         if (ctx.raw._.length) {
           if (ctx.called !== Root) {
             if (ctx.name === Root) {
-              printHelp(generateHelp(ctx, notes, examples));
+              printHelp(generateHelp(render, ctx, notes, examples));
             } else {
-              printHelp(generateSubcommandHelp(ctx, ctx.raw._));
+              printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
             }
           }
         } else {
-          printHelp(generateHelp(ctx, notes, examples));
+          printHelp(generateHelp(render, ctx, notes, examples));
         }
       } else {
         next();
