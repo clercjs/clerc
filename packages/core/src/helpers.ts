@@ -1,4 +1,3 @@
-/* eslint-disable @so1ve/generic-spacing */
 import type { Clerc, RootType } from "./cli";
 import type { Command, CommandOptions, CommandWithHandler, Handler, HandlerContext, HandlerInCommand, Inspector, Plugin } from "./types";
 

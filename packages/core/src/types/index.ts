@@ -29,7 +29,6 @@ export type CommandAlias<N extends string | RootType = string, O extends Command
 
 export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & { handler?: HandlerInCommand<
   // @ts-expect-error Nooooooooo
-  // eslint-disable-next-line @so1ve/generic-spacing
   HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
 > };
 type StripBrackets<Parameter extends string> = (
