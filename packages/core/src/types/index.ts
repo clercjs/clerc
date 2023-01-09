@@ -67,9 +67,9 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   hasRootOrAlias: boolean
   hasRoot: boolean
   raw: { [K in keyof Raw<C[N]>]: Raw<C[N]>[K] }
-  parameters: { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
+  parameters: [{ [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }] extends [{}] ? Dict<string | string[] | undefined> : { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: TypeFlagWithDefault<C[N]>["flags"]
+  flags: [TypeFlagWithDefault<C[N]>["flags"]] extends [{}] ? Dict<any> : TypeFlagWithDefault<C[N]>["flags"]
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
