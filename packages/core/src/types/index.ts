@@ -1,4 +1,4 @@
-import type { CamelCase, Dict, Equals, MaybeArray } from "@clerc/utils";
+import type { CamelCase, Dict, Equals, LiteralUnion, MaybeArray } from "@clerc/utils";
 import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
@@ -28,7 +28,6 @@ export type CommandAlias<N extends string | RootType = string, O extends Command
 };
 
 export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & { handler?: HandlerInCommand<
-  // @ts-expect-error Nooooooooo
   HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
 > };
 type StripBrackets<Parameter extends string> = (
@@ -64,13 +63,17 @@ type Raw<C extends Command> =
     mergedFlags: TypeFlagWithDefault<C>["flags"] & TypeFlagWithDefault<C>["unknownFlags"]
   };
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
-  name?: N
+  name?: LiteralUnion<N, string>
   called?: string | RootType
   resolved: boolean
   hasRootOrAlias: boolean
   hasRoot: boolean
   raw: { [K in keyof Raw<C[N]>]: Raw<C[N]>[K] }
-  parameters: Equals<{ [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }, {}> extends true ? Dict<string | string[] | undefined> : { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
+  parameters: Equals<TransformParameters<C[N]>, {}> extends true
+    ? N extends keyof C
+      ? { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
+      : Dict<string | string[] | undefined>
+    : { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
   flags: Equals<TypeFlagWithDefault<C[N]>["flags"], {}> extends true ? Dict<any> : TypeFlagWithDefault<C[N]>["flags"]
   cli: Clerc<C>
