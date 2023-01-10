@@ -57,11 +57,12 @@ type TransformParameters<C extends Command> = {
   [Parameter in NonNullableParameters<C["parameters"]>[number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
 };
 type TypeFlagWithDefault<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
-type Raw<C extends Command> =
-  TypeFlagWithDefault<C> & {
-    parameters: string[]
-    mergedFlags: TypeFlagWithDefault<C>["flags"] & TypeFlagWithDefault<C>["unknownFlags"]
-  };
+type FallbackFlags<C extends Command> = Equals<TypeFlagWithDefault<C>["flags"], {}> extends true ? Dict<any> : TypeFlagWithDefault<C>["flags"];
+type Raw<C extends Command> = TypeFlagWithDefault<C> & {
+  flags: FallbackFlags<C>
+  parameters: string[]
+  mergedFlags: FallbackFlags<C> & TypeFlagWithDefault<C>["unknownFlags"]
+};
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: LiteralUnion<N, string>
   called?: string | RootType
@@ -75,7 +76,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
       : Dict<string | string[] | undefined>
     : { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: Equals<TypeFlagWithDefault<C[N]>["flags"], {}> extends true ? Dict<any> : TypeFlagWithDefault<C[N]>["flags"]
+  flags: FallbackFlags<C[N]>
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
