@@ -13,10 +13,10 @@ import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
 const NO_DESCRIPTION = "(No description)";
-const NAME = "Name:";
-const VERSION = "Version:";
+const NAME = "Name";
+const VERSION = "Version";
+const SUBCOMMAND = "Subcommand";
 const COMMANDS = "Commands";
-const SUBCOMMAND = "Subcommand:";
 const FLAGS = "Flags";
 const DESCRIPTION = "Description";
 const USAGE = "Usage";

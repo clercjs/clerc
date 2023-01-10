@@ -32,7 +32,7 @@ export const renderCliffy: Render = (sections: Section[]) => {
       rendered.push(table([pc.bold(`${section.title}:`)], [body]).toString());
     } else if (section.type === "inline") {
       const formattedBody = section.items
-        .map(item => [pc.bold(item.title), item.body]);
+        .map(item => [pc.bold(`${item.title}:`), item.body]);
       const tableGenerated = table(...formattedBody);
       rendered.push(tableGenerated.toString());
     }
@@ -52,7 +52,7 @@ export const renderTyper: Render = (sections: Section[]) => {
       }));
     } else if (section.type === "inline") {
       const formattedBody = section.items
-        .map(item => [pc.bold(item.title), item.body]);
+        .map(item => [pc.bold(`${item.title}:`), item.body]);
       const tableGenerated = table(...formattedBody);
       rendered.push(tableGenerated.toString());
     }

@@ -11,13 +11,11 @@ export type Primitive =
   | boolean
   | symbol
   | bigint;
-/**
-* Copied from type-fest
-*/
 export type LiteralUnion<LiteralType, BaseType extends Primitive> = LiteralType | (BaseType & Record<never, never>);
+
 export type Equals<X, Y> =
-    (<T>() => T extends X ? 1 : 2) extends
-    (<T>() => T extends Y ? 1 : 2) ? true : false;
+  (<T>() => T extends X ? 1 : 2) extends
+  (<T>() => T extends Y ? 1 : 2) ? true : false;
 export type Dict<T> = Record<string, T>;
 export type ToArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
