@@ -1,4 +1,4 @@
-import type { LiteralUnion } from "type-fest";
+import type { LiteralUnion, OmitIndexSignature } from "type-fest";
 import type { CamelCase, Dict, Equals, MaybeArray } from "@clerc/utils";
 import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
@@ -59,7 +59,7 @@ type TransformParameters<C extends Command> = {
 };
 type FallbackFlags<C extends Command> = Equals<NonNullableFlag<C>["flags"], {}> extends true ? Dict<any> : NonNullableFlag<C>["flags"];
 type NonNullableFlag<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
-type ParseFlag<C extends CommandRecord, N extends keyof C> = N extends keyof C ? NonNullableFlag<C[N]>["flags"] : FallbackFlags<C[N]>["flags"];
+type ParseFlag<C extends CommandRecord, N extends keyof C> = N extends keyof C ? OmitIndexSignature<NonNullableFlag<C[N]>["flags"]> : FallbackFlags<C[N]>["flags"];
 type ParseRaw<C extends Command> = NonNullableFlag<C> & {
   flags: FallbackFlags<C>
   parameters: string[]
