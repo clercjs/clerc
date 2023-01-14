@@ -54,6 +54,7 @@
     "@clerc/utils": "workspace:*",
     "is-platform": "^0.2.0",
     "lite-emit": "^1.4.0",
+    "type-fest": "^3.5.1",
     "type-flag": "^3.0.0"
   }
 }

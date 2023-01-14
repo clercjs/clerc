@@ -1,4 +1,5 @@
-import type { CamelCase, Dict, Equals, LiteralUnion, MaybeArray } from "@clerc/utils";
+import type { LiteralUnion } from "type-fest";
+import type { CamelCase, Dict, Equals, MaybeArray } from "@clerc/utils";
 import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
@@ -56,12 +57,13 @@ type NonNullableParameters<T extends string[] | undefined> = T extends undefined
 type TransformParameters<C extends Command> = {
   [Parameter in NonNullableParameters<C["parameters"]>[number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
 };
-type FallbackFlags<C extends Command> = Equals<ParseFlag<C>["flags"], {}> extends true ? Dict<any> : ParseFlag<C>["flags"];
-type ParseFlag<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
-type ParseRaw<C extends Command> = ParseFlag<C> & {
+type FallbackFlags<C extends Command> = Equals<NonNullableFlag<C>["flags"], {}> extends true ? Dict<any> : NonNullableFlag<C>["flags"];
+type NonNullableFlag<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
+type ParseFlag<C extends CommandRecord, N extends keyof C> = N extends keyof C ? NonNullableFlag<C[N]>["flags"] : FallbackFlags<C[N]>["flags"];
+type ParseRaw<C extends Command> = NonNullableFlag<C> & {
   flags: FallbackFlags<C>
   parameters: string[]
-  mergedFlags: FallbackFlags<C> & ParseFlag<C>["unknownFlags"]
+  mergedFlags: FallbackFlags<C> & NonNullableFlag<C>["unknownFlags"]
 };
 type ParseParameters<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
   Equals<TransformParameters<C[N]>, {}> extends true
@@ -78,7 +80,7 @@ export interface HandlerContext<C extends CommandRecord = CommandRecord, N exten
   raw: { [K in keyof ParseRaw<C[N]>]: ParseRaw<C[N]>[K] }
   parameters: { [K in keyof ParseParameters<C, N>]: ParseParameters<C, N>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: FallbackFlags<C[N]>
+  flags: { [K in keyof ParseFlag<C, N>]: ParseFlag<C, N>[K] }
   cli: Clerc<C>
 }
 export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;

@@ -1,6 +1,7 @@
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
-import type { LiteralUnion, MaybeArray } from "@clerc/utils";
+import type { LiteralUnion } from "type-fest";
+import type { MaybeArray } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
 
 import {

@@ -47,5 +47,8 @@
   },
   "peerDependencies": {
     "@clerc/core": "*"
+  },
+  "dependencies": {
+    "type-fest": "^3.5.1"
   }
 }

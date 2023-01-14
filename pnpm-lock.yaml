@@ -69,11 +69,13 @@ importers:
       '@clerc/utils': workspace:*
       is-platform: ^0.2.0
       lite-emit: ^1.4.0
+      type-fest: ^3.5.1
       type-flag: ^3.0.0
     dependencies:
       '@clerc/utils': link:../utils
       is-platform: 0.2.0
       lite-emit: 1.4.0_i7cuo6jj4wjx3jrey4xchckwrq
+      type-fest: 3.5.1
       type-flag: 3.0.0
 
   packages/plugin-completions:
@@ -168,7 +170,10 @@ importers:
       tasuku: 2.0.0
 
   packages/utils:
-    specifiers: {}
+    specifiers:
+      type-fest: ^3.5.1
+    dependencies:
+      type-fest: 3.5.1
 
 packages:
 
@@ -3894,6 +3899,11 @@ packages:
   /type-fest/2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
+    dev: false
+
+  /type-fest/3.5.1:
+    resolution: {integrity: sha512-70T99cpILFk2fzwuljwWxmazSphFrdOe3gRHbp6bqs71pxFBbJwFqnmkLO2lQL6aLHxHmYAnP/sL+AJWpT70jA==}
+    engines: {node: '>=14.16'}
     dev: false
 
   /type-flag/3.0.0:
