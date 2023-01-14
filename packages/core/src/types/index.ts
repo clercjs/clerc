@@ -56,25 +56,27 @@ type NonNullableParameters<T extends string[] | undefined> = T extends undefined
 type TransformParameters<C extends Command> = {
   [Parameter in NonNullableParameters<C["parameters"]>[number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
 };
-type TypeFlagWithDefault<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
-type FallbackFlags<C extends Command> = Equals<TypeFlagWithDefault<C>["flags"], {}> extends true ? Dict<any> : TypeFlagWithDefault<C>["flags"];
-type Raw<C extends Command> = TypeFlagWithDefault<C> & {
+type FallbackFlags<C extends Command> = Equals<ParseFlag<C>["flags"], {}> extends true ? Dict<any> : ParseFlag<C>["flags"];
+type ParseFlag<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
+type ParseRaw<C extends Command> = ParseFlag<C> & {
   flags: FallbackFlags<C>
   parameters: string[]
-  mergedFlags: FallbackFlags<C> & TypeFlagWithDefault<C>["unknownFlags"]
+  mergedFlags: FallbackFlags<C> & ParseFlag<C>["unknownFlags"]
 };
+type ParseParameters<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
+  Equals<TransformParameters<C[N]>, {}> extends true
+    ? N extends keyof C
+      ? TransformParameters<C[N]>
+      : Dict<string | string[] | undefined>
+    : TransformParameters<C[N]>;
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: LiteralUnion<N, string>
   called?: string | RootType
   resolved: boolean
   hasRootOrAlias: boolean
   hasRoot: boolean
-  raw: { [K in keyof Raw<C[N]>]: Raw<C[N]>[K] }
-  parameters: Equals<TransformParameters<C[N]>, {}> extends true
-    ? N extends keyof C
-      ? { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
-      : Dict<string | string[] | undefined>
-    : { [K in keyof TransformParameters<C[N]>]: TransformParameters<C[N]>[K] }
+  raw: { [K in keyof ParseRaw<C[N]>]: ParseRaw<C[N]>[K] }
+  parameters: { [K in keyof ParseParameters<C, N>]: ParseParameters<C, N>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
   flags: FallbackFlags<C[N]>
   cli: Clerc<C>
