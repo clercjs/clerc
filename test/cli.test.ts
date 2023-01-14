@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Root } from "@clerc/core";
+import { Root, defineCommand } from "@clerc/core";
 import { Cli } from "./create-cli";
 
 describe("cli", () => {
@@ -401,12 +401,12 @@ describe("cli", () => {
   });
   it("should register command with handler", () => {
     let count = 0;
+    const command = defineCommand({
+      name: "foo",
+      description: "foo",
+    }, () => { count++; });
     Cli()
-      .command({
-        name: "foo",
-        description: "foo",
-        handler: () => { count++; },
-      })
+      .command(command)
       .parse(["foo"]);
     expect(count).toBe(1);
   });
