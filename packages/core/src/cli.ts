@@ -170,7 +170,8 @@ export class Clerc<C extends CommandRecord = {}> {
 
     // Check if alias or name conflicts
     const nameList = [commandToSave.name];
-    commandToSave.alias && nameList.push(...toArray(commandToSave.alias));
+    const aliasList = commandToSave.alias ? toArray(commandToSave.alias) : [];
+    commandToSave.alias && nameList.push(...aliasList);
     for (const name of nameList) {
       if (this.#usedNames.has(name)) {
         throw new CommandExistsError(formatCommandName(name));
@@ -178,7 +179,7 @@ export class Clerc<C extends CommandRecord = {}> {
     }
     this.#commands[name as keyof C] = commandToSave;
     this.#usedNames.add(commandToSave.name);
-    (toArray(commandToSave.alias) || []).forEach(a => this.#usedNames.add(a));
+    aliasList.forEach(a => this.#usedNames.add(a));
 
     // Register handler
     isCommandObject && handler && this.on(nameOrCommand.name, handler);
