@@ -27,7 +27,7 @@
     "commit": "mcz"
   },
   "devDependencies": {
-    "@antfu/ni": "^0.18.8",
+    "@antfu/ni": "^0.19.0",
     "@babel/types": "^7.20.7",
     "@mini-cz/config-default": "^0.1.2",
     "@so1ve/eslint-config": "^0.39.1",

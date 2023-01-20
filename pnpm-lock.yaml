@@ -12,7 +12,7 @@ importers:
 
   .:
     specifiers:
-      '@antfu/ni': ^0.18.8
+      '@antfu/ni': ^0.19.0
       '@babel/types': ^7.20.7
       '@mini-cz/config-default': ^0.1.2
       '@so1ve/eslint-config': ^0.39.1
@@ -28,7 +28,7 @@ importers:
       vite: ^4.0.4
       vitest: ^0.26.3
     devDependencies:
-      '@antfu/ni': 0.18.8
+      '@antfu/ni': 0.19.0
       '@babel/types': 7.20.7
       '@mini-cz/config-default': 0.1.2_mini-cz@0.1.2
       '@so1ve/eslint-config': 0.39.1_7uibuqfxkfaozanbtbziikiqje
@@ -177,8 +177,8 @@ importers:
 
 packages:
 
-  /@antfu/ni/0.18.8:
-    resolution: {integrity: sha512-0m++AudwQq+wWAz/Ax7g+sh/wFW51HHQ6BtPLsuTAsFIzWB/bv/0COwZE7BRS+u0nqMb6Ks6nlk6cY1TpPDwHg==}
+  /@antfu/ni/0.19.0:
+    resolution: {integrity: sha512-33VKTuBjoW2canoVMGa4g5oGCg7KK8UVmBBmUKzvQ+Fa69kk2YI8sqt94WCpvSWmW/yD5ZXsD9G9s689b9KwwQ==}
     hasBin: true
     dev: true
 
