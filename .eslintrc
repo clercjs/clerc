@@ -1,3 +1,6 @@
 {
-  "extends": "@so1ve"
+  "extends": "@so1ve",
+  "rules": {
+    "@so1ve/no-spaces-before-paren": "off"
+  }
 }
