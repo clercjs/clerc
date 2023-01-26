@@ -49,6 +49,6 @@
     "@clerc/core": "*"
   },
   "dependencies": {
-    "type-fest": "^3.5.1"
+    "type-fest": "^3.5.3"
   }
 }
