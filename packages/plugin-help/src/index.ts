@@ -104,9 +104,12 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     throw new NoSuchCommandError(formatCommandName(command));
   }
   const sections = [] as Section[];
-  generateCliDetail(sections, cli, subcommand);
+  generateCliDetail(sections, cli, {
+    ...subcommand,
+    name: formatCommandName(command),
+  });
   const parameters = subcommand.parameters?.join(" ") || undefined;
-  const commandName = ctx.name === Root ? "" : ` ${formatCommandName(subcommand.name)}`;
+  const commandName = ` ${formatCommandName(command)}`;
   const parametersString = parameters ? ` ${parameters}` : "";
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
@@ -228,6 +231,8 @@ export const helpPlugin = ({
             } else {
               printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
             }
+          } else {
+            printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
           }
         } else {
           printHelp(generateHelp(render, ctx, notes, examples));
