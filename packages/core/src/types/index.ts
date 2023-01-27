@@ -4,6 +4,7 @@ import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 
 export type CommandType = RootType | string;
+
 export type FlagOptions = FlagSchema & {
   description?: string
 };
@@ -11,7 +12,7 @@ export type Flag = FlagOptions & {
   name: string
 };
 export type Flags = Dict<FlagOptions>;
-// Custom properties
+
 export declare interface CommandCustomProperties {}
 export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags> extends CommandCustomProperties {
   alias?: A
@@ -27,10 +28,16 @@ export type Command<N extends string | RootType = string, O extends CommandOptio
 export type CommandAlias<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   __isAlias?: true
 };
-
 export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & { handler?: HandlerInCommand<
   HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
 > };
+export type CommandRecord = Dict<Command> & { [Root]?: Command };
+
+export interface ParseOptions {
+  argv?: string[]
+  run?: boolean
+}
+
 type StripBrackets<Parameter extends string> = (
   Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
     ? (
@@ -50,7 +57,7 @@ type ParameterType<Parameter extends string> = (
         ? string | undefined
         : never
 );
-export type CommandRecord = Dict<Command> & { [Root]?: Command };
+
 export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;

@@ -25,6 +25,7 @@ import type {
   Inspector,
   InspectorContext,
   MakeEventMap,
+  ParseOptions,
   Plugin,
 } from "./types";
 import {
@@ -48,6 +49,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
   #usedNames = new Set<string | RootType>();
+  #argv: string[] | undefined;
 
   private constructor(name?: string, description?: string, version?: string) {
     this.#name = name || this.#name;
@@ -248,7 +250,25 @@ export class Clerc<C extends CommandRecord = {}> {
    *   .parse(process.argv.slice(2)) // Optional
    * ```
    */
-  parse(argv = resolveArgv()) {
+  parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
+    const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
+      ? {
+          argv: optionsOrArgv,
+          run: true,
+        }
+      : {
+          argv: resolveArgv(),
+          ...optionsOrArgv,
+        };
+    this.#argv = argv;
+    this.#validateMeta();
+    if (run) {
+      this.runMatchedCommand();
+    }
+    return this;
+  }
+
+  #validateMeta() {
     if (!this.#name) {
       throw new NameNotSetError();
     }
@@ -257,6 +277,13 @@ export class Clerc<C extends CommandRecord = {}> {
     }
     if (!this.#version) {
       throw new VersionNotSetError();
+    }
+  }
+
+  runMatchedCommand() {
+    const argv = this.#argv;
+    if (!argv) {
+      throw new Error("cli.parse() must be called.");
     }
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");

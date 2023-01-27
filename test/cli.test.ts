@@ -410,4 +410,13 @@ describe("cli", () => {
       .parse(["foo"]);
     expect(count).toBe(1);
   });
+  it("should run matched command", async () => {
+    let count = 0;
+    await Cli()
+      .command("foo", "foo")
+      .on("foo", () => { count++; })
+      .parse({ run: false, argv: ["foo"] })
+      .runMatchedCommand();
+    expect(count).toBe(1);
+  });
 });
