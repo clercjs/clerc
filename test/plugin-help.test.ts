@@ -89,5 +89,5 @@ import { describe, it } from "vitest";
 // });
 
 describe("plugin-help", () => {
-  it ("placeholder", () => {});
+  it("placeholder", () => {});
 });
