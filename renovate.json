@@ -1,3 +1,4 @@
 {
-  "extends": ["github>so1ve/renovate-config"]
+  "extends": ["github>so1ve/renovate-config"],
+  "ignoreDeps": ["rimraf"]
 }
