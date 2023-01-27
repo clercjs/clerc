@@ -96,14 +96,12 @@ importers:
     specifiers:
       '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
-      boxen: ^7.0.1
       cli-table3: ^0.6.3
       get-func-name: ^2.0.0
       picocolors: ^1.0.0
     devDependencies:
       '@clerc/core': link:../core
       '@clerc/utils': link:../utils
-      boxen: 7.0.1
       cli-table3: 0.6.3
       get-func-name: 2.0.0
       picocolors: 1.0.0
@@ -169,10 +167,8 @@ importers:
 
   packages/utils:
     specifiers:
-      '@clerc/core': workspace:*
       type-fest: ^3.5.3
     devDependencies:
-      '@clerc/core': link:../core
       type-fest: 3.5.3
 
 packages:

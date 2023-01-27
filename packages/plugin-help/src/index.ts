@@ -183,7 +183,7 @@ export const helpPlugin = ({
   notes,
   examples,
   banner,
-  renderer,
+  renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     // const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
