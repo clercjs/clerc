@@ -36,7 +36,6 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) => def
             throw new Error("Missing shell name");
           }
           if (shell in completionMap) {
-            // eslint-disable-next-line @so1ve/no-spaces-before-paren
             process.stdout.write(completionMap[shell as keyof typeof completionMap](ctx));
           } else {
             throw new Error(`No such shell: ${shell}`);
