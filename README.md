@@ -25,20 +25,19 @@ Clerc: The full-featured cli framework.
 Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
 # 💎 Features
-- Lightweight
-- Plugin system
-- Chainable APIs
-- Strongly typed
-- Parses parameters
-- Extensible with plugins
-- Converts flags to camelCase
-- Outputs description and supplied help text when `help` or `--help` (via [@clerc/plugin-help](./packages/plugin-help/))
-- Completions (via [@clerc/plugin-completions](./packages/plugin-completions/))
-- Not found info (via [@clerc/plugin-not-found](./packages/plugin-not-found/))
-- Friendly error output (via [@clerc/plugin-friendly-error](./packages/plugin-friendly-error/))
-- Strict flags checking (via [@clerc/plugin-strict-flags](./packages/plugin-strict-flags/))
-- Version (via [@clerc/plugin-version](./packages/plugin-version/))
-- Powerful toolkit (via [@clerc/toolkit](./packages/toolkit/) - Just a re-export of many useful libraries)
+- **Lightweight** - Dependencies are bundled and minified
+- **Plugin system** - Add rich features on demand.
+- **Chainable APIs** - Composable.
+- **Developer friendly** - Strongly typed, converts flags to camelCase.
+- **Parses parameters** - No need to read them by yourself.
+- **Official Plugins**
+  - Auto-generated help text (via [@clerc/plugin-help](./packages/plugin-help/))
+  - Shell completions (via [@clerc/plugin-completions](./packages/plugin-completions/))
+  - Not found info (via [@clerc/plugin-not-found](./packages/plugin-not-found/))
+  - Friendly error output (via [@clerc/plugin-friendly-error](./packages/plugin-friendly-error/))
+  - Strict flags checking (via [@clerc/plugin-strict-flags](./packages/plugin-strict-flags/))
+  - Version (via [@clerc/plugin-version](./packages/plugin-version/))
+  - Powerful toolkit (via [@clerc/toolkit](./packages/toolkit/) - Just a re-export of many useful libraries)
 
 # 📖 Documentation
 
