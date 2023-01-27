@@ -43,6 +43,26 @@ Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed bot
 
 - [Getting Started](./docs/getting-started.md)
 
+# 🤔 More...
+
+## Why using Clerc?
+
+Clerc uses [`type-flag`](https://github.com/privatenumber/type-flag) to parse arguments. It is strongly-typed, which brings you better DX. It is powerful(supports custom type) and quite small!
+
+And clerc uses [`lite-emit`](https://github.com/so1ve/lite-emit) to emit events. It is a event emitter library but with better type support.
+
+The whole bundled and minified `@clerc/core` package is only 10KB (ignored types), which is much smaller than yargs, commander, CAC and oclif :)
+
+## Why naming "Clerc"?
+
+Hiroki Osame's [`cleye`](https://github.com/privatenumber/cleye) is an awesome tool for building CLI apps. Its name sounds quite nice, so I also found an English name `Clerc` for this package =)
+
+# 💰 Sponsor
+
+Please support me on Afdian (爱发电), a Chinese sponsorship platform. Link: <https://afdian.net/@so1ve>
+
+(BTW, how to request GitHub sponsors?)
+
 ## 📝 License
 
 [MIT](./LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)
