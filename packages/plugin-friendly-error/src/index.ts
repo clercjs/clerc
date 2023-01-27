@@ -1,7 +1,7 @@
 // TODO: unit tests
 
 import { definePlugin } from "@clerc/core";
-import { kons } from "@clerc/toolkit";
+import * as kons from "kons";
 
 export const friendlyErrorPlugin = () => definePlugin({
   setup: (cli) => {

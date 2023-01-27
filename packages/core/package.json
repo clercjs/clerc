@@ -50,7 +50,7 @@
     "build": "puild",
     "watch": "puild --watch"
   },
-  "dependencies": {
+  "devDependencies": {
     "@clerc/utils": "workspace:*",
     "is-platform": "^0.2.0",
     "lite-emit": "^1.4.0",

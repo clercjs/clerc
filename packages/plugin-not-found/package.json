@@ -54,12 +54,10 @@
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
     "didyoumean2": "^5.0.0",
     "picocolors": "^1.0.0"
-  },
-  "devDependencies": {
-    "@clerc/core": "workspace:*"
   }
 }

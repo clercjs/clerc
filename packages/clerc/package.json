@@ -27,10 +27,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs"
-    },
-    "./toolkit": {
-      "types": "./dist/toolkit.d.ts",
-      "import": "./dist/toolkit.mjs"
     }
   },
   "main": "dist/index.js",
@@ -54,14 +50,13 @@
     "build": "puild",
     "watch": "puild --watch"
   },
-  "dependencies": {
+  "devDependencies": {
     "@clerc/core": "workspace:*",
     "@clerc/plugin-completions": "workspace:*",
     "@clerc/plugin-friendly-error": "workspace:*",
     "@clerc/plugin-help": "workspace:*",
     "@clerc/plugin-not-found": "workspace:*",
     "@clerc/plugin-strict-flags": "workspace:*",
-    "@clerc/plugin-version": "workspace:*",
-    "@clerc/toolkit": "workspace:*"
+    "@clerc/plugin-version": "workspace:*"
   }
 }

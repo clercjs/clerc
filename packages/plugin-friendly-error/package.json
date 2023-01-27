@@ -46,10 +46,8 @@
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "dependencies": {
-    "@clerc/toolkit": "workspace:*"
-  },
   "devDependencies": {
-    "@clerc/core": "workspace:*"
+    "@clerc/core": "workspace:*",
+    "kons": "^0.6.2"
   }
 }
