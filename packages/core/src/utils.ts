@@ -82,9 +82,11 @@ export function resolveParametersBeforeFlag(argv: string[]) {
   return parameters;
 }
 
+const isElectron = process.versions.electron && !(process as any).defaultApp;
+
 export const resolveArgv = (): string[] =>
   isNode()
-    ? process.argv.slice(process.versions.electron && !(process as any).defaultApp ? 1 : 2)
+    ? process.argv.slice(isElectron ? 1 : 2)
     : isDeno()
       // @ts-expect-error Ignore
       ? Deno.args
