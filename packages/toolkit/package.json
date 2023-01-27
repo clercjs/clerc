@@ -50,7 +50,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild",
+    "build": "puild --minify",
     "watch": "puild --watch"
   },
   "peerDependencies": {
