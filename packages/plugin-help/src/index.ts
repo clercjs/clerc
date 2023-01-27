@@ -8,7 +8,8 @@ import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Render, Section } from "./renderer";
-import { renderCliffy, renderTyper } from "./renderer";
+import { renderCliffy } from "./renderer";
+// import { renderTyper } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
@@ -174,7 +175,7 @@ export interface HelpPluginOptions {
   /**
    * Render type
    */
-  renderer?: "cliffy" | "typer"
+  renderer?: "cliffy"
 }
 export const helpPlugin = ({
   command = true,
@@ -185,7 +186,8 @@ export const helpPlugin = ({
   renderer,
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
-    const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
+    // const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
+    const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
       print(s);

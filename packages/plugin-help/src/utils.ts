@@ -1,5 +1,5 @@
 import getFuncName from "get-func-name";
-import { Table } from "@clerc/toolkit";
+import Table from "cli-table3";
 
 export const table = (...items: string[][]) => {
   const table = new Table({

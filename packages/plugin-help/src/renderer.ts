@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import boxen from "boxen";
+// import boxen from "boxen";
 
 import { table } from "./utils";
 
@@ -41,22 +41,22 @@ export const renderCliffy: Render = (sections: Section[]) => {
   return rendered.join("\n");
 };
 
-export const renderTyper: Render = (sections: Section[]) => {
-  const rendered = [] as string[];
-  for (const section of sections) {
-    if (section.type === "block" || !section.type) {
-      rendered.push(boxen(section.body.join("\n\n"), {
-        title: section.title,
-        borderStyle: "round",
-        padding: 0.5,
-      }));
-    } else if (section.type === "inline") {
-      const formattedBody = section.items
-        .map(item => [pc.bold(`${item.title}:`), item.body]);
-      const tableGenerated = table(...formattedBody);
-      rendered.push(tableGenerated.toString());
-    }
-    rendered.push("");
-  }
-  return rendered.join("\n");
-};
+// export const renderTyper: Render = (sections: Section[]) => {
+//   const rendered = [] as string[];
+//   for (const section of sections) {
+//     if (section.type === "block" || !section.type) {
+//       rendered.push(boxen(section.body.join("\n\n"), {
+//         title: section.title,
+//         borderStyle: "round",
+//         padding: 0.5,
+//       }));
+//     } else if (section.type === "inline") {
+//       const formattedBody = section.items
+//         .map(item => [pc.bold(`${item.title}:`), item.body]);
+//       const tableGenerated = table(...formattedBody);
+//       rendered.push(tableGenerated.toString());
+//     }
+//     rendered.push("");
+//   }
+//   return rendered.join("\n");
+// };
