@@ -1,4 +1,4 @@
-import { isDeno, isNode } from "is-platform";
+import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
 import { arrayStartsWith, toArray } from "@clerc/utils";
 
 import type { RootType } from "./cli";
@@ -82,12 +82,10 @@ export function resolveParametersBeforeFlag(argv: string[]) {
   return parameters;
 }
 
-const isElectron = process.versions.electron && !(process as any).defaultApp;
-
 export const resolveArgv = (): string[] =>
-  isNode()
-    ? process.argv.slice(isElectron ? 1 : 2)
-    : isDeno()
+  IS_NODE
+    ? process.argv.slice(IS_ELECTRON ? 1 : 2)
+    : IS_DENO
       // @ts-expect-error Ignore
       ? Deno.args
       : [];
