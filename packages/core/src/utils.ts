@@ -84,7 +84,7 @@ export function resolveParametersBeforeFlag(argv: string[]) {
 
 export const resolveArgv = (): string[] =>
   isNode()
-    ? process.argv.slice(2)
+    ? process.argv.slice(process.versions.electron && !(process as any).defaultApp ? 1 : 2)
     : isDeno()
       // @ts-expect-error Ignore
       ? Deno.args
