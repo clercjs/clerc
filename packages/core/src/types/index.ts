@@ -1,7 +1,8 @@
-import type { LiteralUnion, OmitIndexSignature } from "type-fest";
-import type { CamelCase, Dict, Equals, MaybeArray } from "@clerc/utils";
+import type { LiteralUnion } from "type-fest";
+import type { Dict, MaybeArray } from "@clerc/utils";
 import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
+import type { ParseFlag, ParseParameters, ParseRaw } from "./utils";
 
 export type CommandType = RootType | string;
 
@@ -38,46 +39,8 @@ export interface ParseOptions {
   run?: boolean
 }
 
-type StripBrackets<Parameter extends string> = (
-  Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
-    ? (
-        ParameterName extends `${infer SpreadName}...`
-          ? SpreadName
-          : ParameterName
-      )
-    : never
-);
-
-type ParameterType<Parameter extends string> = (
-  Parameter extends `<${infer _ParameterName}...>` | `[${infer _ParameterName}...]`
-    ? string[]
-    : Parameter extends `<${infer _ParameterName}>`
-      ? string
-      : Parameter extends `[${infer _ParameterName}]`
-        ? string | undefined
-        : never
-);
-
-export type MakeEventMap<T extends CommandRecord> = { [K in keyof T]: [InspectorContext] };
 export type PossibleInputKind = string | number | boolean | Dict<any>;
-type NonNullableParameters<T extends string[] | undefined> = T extends undefined ? [] : NonNullable<T>;
-type TransformParameters<C extends Command> = {
-  [Parameter in NonNullableParameters<C["parameters"]>[number] as CamelCase<StripBrackets<Parameter>>]: ParameterType<Parameter>;
-};
-type FallbackFlags<C extends Command> = Equals<NonNullableFlag<C>["flags"], {}> extends true ? Dict<any> : NonNullableFlag<C>["flags"];
-type NonNullableFlag<C extends Command> = TypeFlag<NonNullable<C["flags"]>>;
-type ParseFlag<C extends CommandRecord, N extends keyof C> = N extends keyof C ? OmitIndexSignature<NonNullableFlag<C[N]>["flags"]> : FallbackFlags<C[N]>["flags"];
-type ParseRaw<C extends Command> = NonNullableFlag<C> & {
-  flags: FallbackFlags<C>
-  parameters: string[]
-  mergedFlags: FallbackFlags<C> & NonNullableFlag<C>["unknownFlags"]
-};
-type ParseParameters<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> =
-  Equals<TransformParameters<C[N]>, {}> extends true
-    ? N extends keyof C
-      ? TransformParameters<C[N]>
-      : Dict<string | string[] | undefined>
-    : TransformParameters<C[N]>;
+
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
   name?: LiteralUnion<N, string>
   called?: string | RootType
@@ -102,7 +65,9 @@ export interface InspectorObject<C extends CommandRecord = CommandRecord> {
   enforce?: "pre" | "post"
   fn: InspectorFn<C>
 }
-
-export interface Plugin<T extends Clerc = Clerc, U extends Clerc = Clerc> {
-  setup: (cli: T) => U
+export interface I18N {
+  add: () => void
 }
+
+export type { MakeEventMap } from "./utils";
+export type { Plugin } from "./plugin";
