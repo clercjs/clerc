@@ -131,7 +131,8 @@ export class Clerc<C extends CommandRecord = {}> {
    * @example
    * ```ts
    * Clerc.create()
-   *  .description("test cli")
+   *   .description("test cli")
+   * ```
    */
   description(description: string) {
     this.#description = description;
@@ -145,7 +146,8 @@ export class Clerc<C extends CommandRecord = {}> {
    * @example
    * ```ts
    * Clerc.create()
-   *  .version("1.0.0")
+   *   .version("1.0.0")
+   * ```
    */
   version(version: string) {
     this.#version = version;
@@ -154,12 +156,15 @@ export class Clerc<C extends CommandRecord = {}> {
 
   /**
    * Set the Locale
+   * It's recommended to call this method once after you created the Clerc instance.
    * @param locale
    * @returns
    * @example
    * ```ts
    * Clerc.create()
-   *  .locale("en")
+   *   .locale("en")
+   *   .command(...)
+   * ```
    */
   locale(locale: string) {
     this.#locale = locale;
@@ -168,12 +173,15 @@ export class Clerc<C extends CommandRecord = {}> {
 
   /**
    * Set the default Locale
+   * It's recommended to call this method once after you created the Clerc instance.
    * @param defaultLocale
    * @returns
    * @example
    * ```ts
    * Clerc.create()
-   *  .defaultLocale("en")
+   *   .defaultLocale("en")
+   *   .command(...)
+   * ```
    */
   defaultLocale(defaultLocale: string) {
     this.#defaultLocale = defaultLocale;
@@ -334,6 +342,16 @@ export class Clerc<C extends CommandRecord = {}> {
     }
   }
 
+  /**
+   * Run matched command
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .parse({ run: false })
+   *   .runMatchedCommand()
+   * ```
+   */
   runMatchedCommand() {
     const argv = this.#argv;
     if (!argv) {
