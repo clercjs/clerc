@@ -145,3 +145,5 @@ export const formatCommandName = (name: string | string[] | RootType) => Array.i
   : typeof name === "string"
     ? name
     : ROOT;
+
+export const detectDefaultLocale = () => process.env.CLERC_LOCALE || "en";

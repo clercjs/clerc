@@ -34,6 +34,7 @@ import type {
 } from "./types";
 import {
   compose,
+  detectDefaultLocale,
   formatCommandName,
   isInvalidName,
   resolveArgv,
@@ -74,7 +75,7 @@ export class Clerc<C extends CommandRecord = {}> {
     this.#name = name || this.#name;
     this.#description = description || this.#description;
     this.#version = version || this.#version;
-    this.#locale = process.env.CLERC_LOCALE || "en";
+    this.#locale = detectDefaultLocale();
     this.#addLocales();
   }
 
