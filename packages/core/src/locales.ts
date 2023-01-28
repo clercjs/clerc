@@ -1,22 +1,24 @@
-export const locales = {
+import type { Locales } from "./types";
+
+export const locales: Locales = {
   "en": {
-    commandExists: "Command \"%s\" exists.",
-    noSuchCommand: "No such command: %s.",
-    noCommandGiven: "No command given.",
-    commandNameConflict: "Command name %s conflicts with %s. Maybe caused by alias.",
-    nameNotSet: "Name not set.",
-    descriptionNotSet: "Description not set.",
-    versionNotSet: "Version not set.",
-    badNameFormat: "Bad name format: %s.",
+    "core.commandExists": "Command \"%s\" exists.",
+    "core.noSuchCommand": "No such command: %s.",
+    "core.noCommandGiven": "No command given.",
+    "core.commandNameConflict": "Command name %s conflicts with %s. Maybe caused by alias.",
+    "core.nameNotSet": "Name not set.",
+    "core.descriptionNotSet": "Description not set.",
+    "core.versionNotSet": "Version not set.",
+    "core.badNameFormat": "Bad name format: %s.",
   },
   "zh-CN": {
-    commandExists: "命令 \"%s\" 已存在。",
-    noSuchCommand: "找不到命令: %s。",
-    noCommandGiven: "没有输入命令。",
-    commandNameConflict: "命令名称 %s 和 %s 冲突。 可能是由于别名导致的。",
-    nameNotSet: "未设置CLI名称。",
-    descriptionNotSet: "未设置CLI描述。",
-    versionNotSet: "未设置CLI版本。",
-    badNameFormat: "错误的命令名字格式: %s。",
+    "core.commandExists": "命令 \"%s\" 已存在。",
+    "core.noSuchCommand": "找不到命令: %s。",
+    "core.noCommandGiven": "没有输入命令。",
+    "core.commandNameConflict": "命令名称 %s 和 %s 冲突。 可能是由于别名导致的。",
+    "core.nameNotSet": "未设置CLI名称。",
+    "core.descriptionNotSet": "未设置CLI描述。",
+    "core.versionNotSet": "未设置CLI版本。",
+    "core.badNameFormat": "错误的命令名字格式: %s。",
   },
 };

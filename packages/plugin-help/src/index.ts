@@ -183,41 +183,42 @@ export const helpPlugin = ({
   renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
-    cli.i18n.add(locales);
+    const { add, t } = cli.i18n;
+    add(locales);
     const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
       print(s);
     };
-    if (command) {
-      cli = cli.command("help", "Show help", {
-        parameters: [
-          "[command...]",
-        ],
-        notes: [
-          "If no command is specified, show help for the CLI.",
-          "If a command is specified, show help for the command.",
-          "-h is an alias for --help.",
-        ],
-        examples: [
-          [`$ ${cli._name} help`, "Show help"],
-          [`$ ${cli._name} help <command>`, "Show help for a specific command"],
-          [`$ ${cli._name} <command> --help`, "Show help for a specific command"],
-        ],
-      })
-        .on("help", (ctx) => {
-          if (ctx.parameters.command.length) {
-            printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
-          } else {
-            printHelp(generateHelp(render, ctx, notes, examples));
-          }
-        });
-    }
 
     cli.inspector((ctx, next) => {
+      if (command) {
+        cli = cli.command("help", t("help.commandDescription")!, {
+          parameters: [
+            "[command...]",
+          ],
+          notes: [
+            t("help.notes.1")!,
+            t("help.notes.2")!,
+            t("help.notes.3")!,
+          ],
+          examples: [
+            [`$ ${cli._name} help`, t("help.examples.1")!],
+            [`$ ${cli._name} help <command>`, t("help.examples.2")!],
+            [`$ ${cli._name} <command> --help`, t("help.examples.2")!],
+          ],
+        })
+          .on("help", (ctx) => {
+            if (ctx.parameters.command.length) {
+              printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
+            } else {
+              printHelp(generateHelp(render, ctx, notes, examples));
+            }
+          });
+      }
       const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
       if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
-        let str = "No command given.\n\n";
+        let str = `${t("core.noCommandGiven")}\n\n`;
         str += generateHelp(render, ctx, notes, examples);
         str += "\n";
         printHelp(str);
