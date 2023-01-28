@@ -8,16 +8,7 @@ Clerc: The full-featured cli framework.
 
 <!-- toc -->
 * [🗒 Description](#-description)
-<!-- * [🚀 Getting Started Tutorial](#-getting-started-tutorial) -->
 * [✨ Features](#-features)
-<!-- * [📌 Requirements](#-requirements)
-* [📌 Migrating from V1](#-migrating-from-v1)
-* [🏗 Usage](#-usage)
-* [📚 Examples](#-examples)
-* [🔨 Commands](#-commands)
-* [🏭 Related Repositories](#-related-repositories)
-* [🦔 Learn More](#-learn-more)
-* [📣 Feedback](#-feedback) -->
 <!-- tocstop -->
 
 # 🗒 Description
