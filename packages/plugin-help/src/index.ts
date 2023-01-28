@@ -1,45 +1,36 @@
 
 // TODO: unit tests
 
-import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
+import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
+import { locales } from "./locales";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
-// import { renderTyper } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
-const NO_DESCRIPTION = "(No description)";
-const NAME = "Name";
-const VERSION = "Version";
-const SUBCOMMAND = "Subcommand";
-const COMMANDS = "Commands";
-const FLAGS = "Flags";
-const DESCRIPTION = "Description";
-const USAGE = "Usage";
-const EXAMPLES = "Examples";
-const NOTES = "Notes";
 
 const print = (s: string) => { process.stdout.write(s); };
 
 const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
+  const { t } = cli.i18n;
   const items = [
     {
-      title: NAME,
+      title: t("help.name")!,
       body: pc.red(cli._name),
     },
     {
-      title: VERSION,
+      title: t("help.version")!,
       body: pc.yellow(cli._version),
     },
   ];
   if (subcommand) {
     items.push({
-      title: SUBCOMMAND,
+      title: t("help.subcommand")!,
       body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
     });
   }
@@ -48,25 +39,26 @@ const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command
     items,
   });
   sections.push({
-    title: DESCRIPTION,
+    title: t("help.description")!,
     body: [subcommand?.description || cli._description],
   });
 };
 
-const generateExamples = (sections: Section[], examples: [string, string][]) => {
+const generateExamples = (sections: Section[], examples: [string, string][], t: TranslateFn) => {
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
-    title: EXAMPLES,
+    title: t("help.examples")!,
     body: splitTable(...examplesFormatted),
   });
 };
 
 const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
+  const { t } = cli.i18n;
   const sections = [] as Section[];
   generateCliDetail(sections, cli);
   sections.push({
-    title: USAGE,
+    title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
   const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
@@ -83,26 +75,27 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
     return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
   sections.push({
-    title: COMMANDS,
+    title: t("help.commands")!,
     body: splitTable(...commands),
   });
   if (notes) {
     sections.push({
-      title: NOTES,
+      title: t("help.notes")!,
       body: notes,
     });
   }
   if (examples) {
-    generateExamples(sections, examples);
+    generateExamples(sections, examples, t);
   }
   return render(sections);
 };
 
 const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: string[] | RootType) => {
   const { cli } = ctx;
-  const [subcommand] = resolveCommandStrict(cli._commands, command, cli.i18n.t);
+  const { t } = cli.i18n;
+  const [subcommand] = resolveCommandStrict(cli._commands, command, t);
   if (!subcommand) {
-    throw new NoSuchCommandError(formatCommandName(command), cli.i18n.t);
+    throw new NoSuchCommandError(formatCommandName(command), t);
   }
   const sections = [] as Section[];
   if (command === Root) {
@@ -118,12 +111,12 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   const parametersString = parameters ? ` ${parameters}` : "";
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
-    title: USAGE,
+    title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
   if (subcommand.flags) {
     sections.push({
-      title: FLAGS,
+      title: t("help.flags")!,
       body: splitTable(
         ...Object.entries(subcommand.flags).map(([name, flag]) => {
           const flagNameWithAlias = [gracefulFlagName(name)];
@@ -131,7 +124,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
           const items = [pc.blue(flagNameWithAlias.join(", "))];
-          items.push(DELIMITER, flag.description || NO_DESCRIPTION);
+          items.push(DELIMITER, flag.description || t("help.noDescription")!);
           if (flag.type) {
             const type = stringifyType(flag.type);
             items.push(pc.gray(`(${type})`));
@@ -143,12 +136,12 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   }
   if (subcommand.notes) {
     sections.push({
-      title: NOTES,
+      title: t("help.notes")!,
       body: subcommand.notes,
     });
   }
   if (subcommand.examples) {
-    generateExamples(sections, subcommand.examples);
+    generateExamples(sections, subcommand.examples, t);
   }
   return render(sections);
 };
@@ -190,7 +183,7 @@ export const helpPlugin = ({
   renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
-    // const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
+    cli.i18n.add(locales);
     const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);

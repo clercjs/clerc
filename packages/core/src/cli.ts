@@ -62,7 +62,11 @@ export class Clerc<C extends CommandRecord = {}> {
     add: (locales) => { this.#locales = defu(this.#locales, locales); },
     t: (name, ...args) => {
       const localeObject = this.#locales[this.#locale] || this.#locales.en;
-      return localeObject[name] ? format(localeObject[name], ...args) : undefined;
+      return localeObject[name]
+        ? format(localeObject[name], ...args)
+        : this.#locales.en[name]
+          ? format(this.#locales.en[name], ...args)
+          : undefined;
     },
   };
 
