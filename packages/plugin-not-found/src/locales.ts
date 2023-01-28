@@ -9,7 +9,7 @@ export const locales: Locales = {
   },
   "zh-CN": {
     "notFound.possibleCommands": "可能的命令: %s。",
-    "notFound.commandNotFound": "命令 \"%s\" 未找到。",
+    "notFound.commandNotFound": "未找到命令 \"%s\"。",
     "notFound.didyoumean": "你是不是指 \"%s\"？",
     "notFound.commandNotRegisteredNote": "提示: 你还没有注册任何命令。",
   },
