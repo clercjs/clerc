@@ -146,5 +146,6 @@ export const formatCommandName = (name: string | string[] | RootType) => Array.i
     ? name
     : ROOT;
 
-// TODO: Get default locale from system
-export const detectDefaultLocale = () => process.env.CLERC_LOCALE || "en";
+export const detectLocale = () => process.env.CLERC_LOCALE
+  ? process.env.CLERC_LOCALE
+  : Intl.DateTimeFormat().resolvedOptions().locale;
