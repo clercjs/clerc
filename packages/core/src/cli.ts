@@ -266,7 +266,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends LiteralUnion<keyof CM, string>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K>) {
+  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K>) {
     this.#commandEmitter.on(name as any, handler as any);
     return this;
   }
