@@ -223,12 +223,13 @@ export class Clerc<C extends CommandRecord = {}> {
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
+    const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (isInvalidName(name)) {
-      throw new InvalidCommandNameError(name as string, this.i18n.t);
+      throw new InvalidCommandNameError(name as string, t);
     }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
 
@@ -238,7 +239,7 @@ export class Clerc<C extends CommandRecord = {}> {
     commandToSave.alias && nameList.push(...aliasList);
     for (const name of nameList) {
       if (this.#usedNames.has(name)) {
-        throw new CommandExistsError(formatCommandName(name), this.i18n.t);
+        throw new CommandExistsError(formatCommandName(name), t);
       }
     }
     this.#commands[name as keyof C] = commandToSave;
@@ -331,14 +332,15 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   #validateMeta() {
+    const { t } = this.i18n;
     if (!this.#name) {
-      throw new NameNotSetError(this.i18n.t);
+      throw new NameNotSetError(t);
     }
     if (!this.#description) {
-      throw new DescriptionNotSetError(this.i18n.t);
+      throw new DescriptionNotSetError(t);
     }
     if (!this.#version) {
-      throw new VersionNotSetError(this.i18n.t);
+      throw new VersionNotSetError(t);
     }
   }
 
@@ -353,13 +355,14 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   runMatchedCommand() {
+    const { t } = this.i18n;
     const argv = this.#argv;
     if (!argv) {
       throw new Error("cli.parse() must be called.");
     }
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
-    const getCommand = () => resolveCommand(this.#commands, name, this.i18n.t);
+    const getCommand = () => resolveCommand(this.#commands, name, t);
     const mapErrors = [] as (Error | undefined)[];
     const getContext = () => {
       mapErrors.length = 0;
@@ -423,9 +426,9 @@ export class Clerc<C extends CommandRecord = {}> {
         }
         if (!command) {
           if (stringName) {
-            throw new NoSuchCommandError(stringName, this.i18n.t);
+            throw new NoSuchCommandError(stringName, t);
           } else {
-            throw new NoCommandGivenError(this.i18n.t);
+            throw new NoCommandGivenError(t);
           }
         }
         this.#commandEmitter.emit(command.name, handlerContext);
