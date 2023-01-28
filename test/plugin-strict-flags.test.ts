@@ -29,7 +29,7 @@ describe("plugin-strict-flags", () => {
         .command("a", "a")
         .parse(["a", "-a", "-bc", "--foo"]);
     } catch (e: any) {
-      expect(e.message).toEqual("Unexpected flags: a, b, c and foo");
+      expect(e.message).toEqual("Unexpected flags: a, b, c and foo.");
     }
     msgs.length = 0;
   });
