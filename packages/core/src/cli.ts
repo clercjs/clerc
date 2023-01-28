@@ -57,16 +57,18 @@ export class Clerc<C extends CommandRecord = {}> {
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
 
+  #defaultLocale = "en";
   #locale = "en";
   #locales: Locales = {};
   i18n: I18N = {
     add: (locales) => { this.#locales = defu(this.#locales, locales); },
     t: (name, ...args) => {
-      const localeObject = this.#locales[this.#locale] || this.#locales.en;
+      const localeObject = this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
+      const defaultLocaleObject = this.#locales[this.#defaultLocale];
       return localeObject[name]
         ? format(localeObject[name], ...args)
-        : this.#locales.en[name]
-          ? format(this.#locales.en[name], ...args)
+        : defaultLocaleObject[name]
+          ? format(defaultLocaleObject[name], ...args)
           : undefined;
     },
   };
@@ -76,7 +78,7 @@ export class Clerc<C extends CommandRecord = {}> {
     this.#description = description || this.#description;
     this.#version = version || this.#version;
     this.#locale = detectDefaultLocale();
-    this.#addLocales();
+    this.#addCoreLocales();
   }
 
   get #hasRootOrAlias() {
@@ -93,9 +95,7 @@ export class Clerc<C extends CommandRecord = {}> {
   get _inspectors() { return this.#inspectors; }
   get _commands() { return this.#commands; }
 
-  #addLocales() {
-    this.i18n.add(locales);
-  }
+  #addCoreLocales() { this.i18n.add(locales); }
 
   /**
    * Create a new cli
@@ -163,6 +163,20 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   locale(locale: string) {
     this.#locale = locale;
+    return this;
+  }
+
+  /**
+   * Set the default Locale
+   * @param defaultLocale
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *  .defaultLocale("en")
+   */
+  defaultLocale(defaultLocale: string) {
+    this.#defaultLocale = defaultLocale;
     return this;
   }
 
