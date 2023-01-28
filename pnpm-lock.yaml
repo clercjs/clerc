@@ -169,8 +169,10 @@ importers:
 
   packages/utils:
     specifiers:
+      '@clerc/core': workspace:*
       type-fest: ^3.5.3
     devDependencies:
+      '@clerc/core': link:../core
       type-fest: 3.5.3
 
 packages:

@@ -49,6 +49,7 @@
     "@clerc/core": "*"
   },
   "devDependencies": {
+    "@clerc/core": "workspace:*",
     "type-fest": "^3.5.3"
   }
 }
