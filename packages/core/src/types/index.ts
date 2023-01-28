@@ -65,9 +65,7 @@ export interface InspectorObject<C extends CommandRecord = CommandRecord> {
   enforce?: "pre" | "post"
   fn: InspectorFn<C>
 }
-export interface I18N {
-  add: () => void
-}
 
 export type { MakeEventMap } from "./utils";
 export type { Plugin } from "./plugin";
+export * from "./i18n";

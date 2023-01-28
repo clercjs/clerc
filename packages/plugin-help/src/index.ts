@@ -2,7 +2,7 @@
 // TODO: unit tests
 
 import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommand, withBrackets } from "@clerc/core";
+import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
@@ -100,17 +100,21 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
 
 const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: string[] | RootType) => {
   const { cli } = ctx;
-  const subcommand = resolveCommand(cli._commands, command);
+  const [subcommand] = resolveCommandStrict(cli._commands, command, cli.i18n.t);
   if (!subcommand) {
-    throw new NoSuchCommandError(formatCommandName(command));
+    throw new NoSuchCommandError(formatCommandName(command), cli.i18n.t);
   }
   const sections = [] as Section[];
-  generateCliDetail(sections, cli, {
-    ...subcommand,
-    name: formatCommandName(command),
-  });
+  if (command === Root) {
+    generateCliDetail(sections, cli);
+  } else {
+    generateCliDetail(sections, cli, {
+      ...subcommand,
+      name: formatCommandName(command),
+    });
+  }
   const parameters = subcommand.parameters?.join(" ") || undefined;
-  const commandName = ` ${formatCommandName(command)}`;
+  const commandName = command === Root ? "" : ` ${formatCommandName(command)}`;
   const parametersString = parameters ? ` ${parameters}` : "";
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
@@ -237,7 +241,11 @@ export const helpPlugin = ({
             printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
           }
         } else {
-          printHelp(generateHelp(render, ctx, notes, examples));
+          if (ctx.hasRootOrAlias) {
+            printHelp(generateSubcommandHelp(render, ctx, Root));
+          } else {
+            printHelp(generateHelp(render, ctx, notes, examples));
+          }
         }
       } else {
         next();

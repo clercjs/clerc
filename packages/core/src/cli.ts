@@ -1,5 +1,7 @@
+import { format } from "node:util";
 import { LiteEmit } from "lite-emit";
 import { typeFlag } from "type-flag";
+import defu from "defu";
 import type { LiteralUnion } from "type-fest";
 import type { MaybeArray } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
@@ -22,8 +24,10 @@ import type {
   Flags,
   Handler,
   HandlerContext,
+  I18N,
   Inspector,
   InspectorContext,
+  Locales,
   MakeEventMap,
   ParseOptions,
   Plugin,
@@ -37,6 +41,7 @@ import {
   resolveParametersBeforeFlag,
 } from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
+import { locales } from "./locales";
 
 export const Root = Symbol("Root");
 export type RootType = typeof Root;
@@ -51,10 +56,22 @@ export class Clerc<C extends CommandRecord = {}> {
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
 
+  #locale = "en";
+  #locales: Locales = {};
+  i18n: I18N = {
+    add: (locales) => { this.#locales = defu(this.#locales, locales); },
+    t: (name, ...args) => {
+      const localeObject = this.#locales[this.#locale] || this.#locales.en;
+      return localeObject[name] ? format(localeObject[name], ...args) : undefined;
+    },
+  };
+
   private constructor(name?: string, description?: string, version?: string) {
     this.#name = name || this.#name;
     this.#description = description || this.#description;
     this.#version = version || this.#version;
+    this.#locale = process.env.CLERC_LOCALE || "en";
+    this.#addLocales();
   }
 
   get #hasRootOrAlias() {
@@ -70,6 +87,10 @@ export class Clerc<C extends CommandRecord = {}> {
   get _version() { return this.#version; }
   get _inspectors() { return this.#inspectors; }
   get _commands() { return this.#commands; }
+
+  #addLocales() {
+    this.i18n.add(locales);
+  }
 
   /**
    * Create a new cli
@@ -127,6 +148,20 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   /**
+   * Set the Locale
+   * @param locale
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *  .locale("en")
+   */
+  locale(locale: string) {
+    this.#locale = locale;
+    return this;
+  }
+
+  /**
    * Register a command
    * @param name
    * @param description
@@ -166,7 +201,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
     if (isInvalidName(name)) {
-      throw new InvalidCommandNameError(name as string);
+      throw new InvalidCommandNameError(name as string, this.i18n.t);
     }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
 
@@ -176,7 +211,7 @@ export class Clerc<C extends CommandRecord = {}> {
     commandToSave.alias && nameList.push(...aliasList);
     for (const name of nameList) {
       if (this.#usedNames.has(name)) {
-        throw new CommandExistsError(formatCommandName(name));
+        throw new CommandExistsError(formatCommandName(name), this.i18n.t);
       }
     }
     this.#commands[name as keyof C] = commandToSave;
@@ -270,13 +305,13 @@ export class Clerc<C extends CommandRecord = {}> {
 
   #validateMeta() {
     if (!this.#name) {
-      throw new NameNotSetError();
+      throw new NameNotSetError(this.i18n.t);
     }
     if (!this.#description) {
-      throw new DescriptionNotSetError();
+      throw new DescriptionNotSetError(this.i18n.t);
     }
     if (!this.#version) {
-      throw new VersionNotSetError();
+      throw new VersionNotSetError(this.i18n.t);
     }
   }
 
@@ -287,11 +322,11 @@ export class Clerc<C extends CommandRecord = {}> {
     }
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
-    const getCommand = () => resolveCommand(this.#commands, name);
+    const getCommand = () => resolveCommand(this.#commands, name, this.i18n.t);
     const mapErrors = [] as (Error | undefined)[];
     const getContext = () => {
       mapErrors.length = 0;
-      const command = getCommand();
+      const [command, called] = getCommand();
       const isCommandResolved = !!command;
       // [...argv] is a workaround since TypeFlag modifies argv
       const parsed = typeFlag(command?.flags || {}, [...argv]);
@@ -328,7 +363,7 @@ export class Clerc<C extends CommandRecord = {}> {
       const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
         name: command?.name as any,
-        called: name.length === 0 && command?.name ? Root : stringName,
+        called: Array.isArray(called) ? called.join(" ") : called,
         resolved: isCommandResolved as any,
         hasRootOrAlias: this.#hasRootOrAlias,
         hasRoot: this.#hasRoot,
@@ -343,7 +378,7 @@ export class Clerc<C extends CommandRecord = {}> {
     const emitHandler: Inspector = {
       enforce: "post",
       fn: () => {
-        const command = getCommand();
+        const [command] = getCommand();
         const handlerContext = getContext();
         const errors = mapErrors.filter(Boolean) as Error[];
         if (errors.length > 0) {
@@ -351,9 +386,9 @@ export class Clerc<C extends CommandRecord = {}> {
         }
         if (!command) {
           if (stringName) {
-            throw new NoSuchCommandError(stringName);
+            throw new NoSuchCommandError(stringName, this.i18n.t);
           } else {
-            throw new NoCommandGivenError();
+            throw new NoCommandGivenError(this.i18n.t);
           }
         }
         this.#commandEmitter.emit(command.name, handlerContext);

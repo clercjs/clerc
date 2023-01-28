@@ -1,12 +1,12 @@
 lockfileVersion: 5.4
 
 patchedDependencies:
-  lite-emit@1.4.0:
-    hash: i7cuo6jj4wjx3jrey4xchckwrq
-    path: patches/lite-emit@1.4.0.patch
   yoga-layout-prebuilt@1.10.0:
     hash: 47eboidwschvvkf5sc53oki4ma
     path: patches/yoga-layout-prebuilt@1.10.0.patch
+  lite-emit@1.4.0:
+    hash: i7cuo6jj4wjx3jrey4xchckwrq
+    path: patches/lite-emit@1.4.0.patch
 
 importers:
 
@@ -65,12 +65,14 @@ importers:
   packages/core:
     specifiers:
       '@clerc/utils': workspace:*
+      defu: ^6.1.2
       is-platform: ^1.0.0
       lite-emit: ^1.4.0
       type-fest: ^3.5.3
       type-flag: ^3.0.0
     devDependencies:
       '@clerc/utils': link:../utils
+      defu: 6.1.2
       is-platform: 1.0.0
       lite-emit: 1.4.0_i7cuo6jj4wjx3jrey4xchckwrq
       type-fest: 3.5.3
@@ -1407,6 +1409,10 @@ packages:
     dependencies:
       has-property-descriptors: 1.0.0
       object-keys: 1.1.1
+    dev: true
+
+  /defu/6.1.2:
+    resolution: {integrity: sha512-+uO4+qr7msjNNWKYPHqN/3+Dx3NFkmIzayk2L1MyZQlvgZb/J1A0fo410dpKrN2SnqFjt8n4JL8fDJE0wIgjFQ==}
     dev: true
 
   /didyoumean2/5.0.0:
