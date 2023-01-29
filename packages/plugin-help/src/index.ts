@@ -6,11 +6,11 @@ import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveComma
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
-import { locales } from "./locales";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
+import { locales } from "./locales";
 
 const DELIMITER = pc.yellow("-");
 

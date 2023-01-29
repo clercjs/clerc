@@ -4,6 +4,8 @@
 import { definePlugin } from "@clerc/core";
 import { gracefulVersion } from "@clerc/utils";
 
+import { locales } from "./locales";
+
 interface VersionPluginOptions {
   alias?: string[]
   command?: boolean
@@ -13,10 +15,12 @@ export const versionPlugin = ({
   command = true,
 }: VersionPluginOptions = {}) => definePlugin({
   setup: (cli) => {
+    const { add, t } = cli.i18n;
+    add(locales);
     const gracefullyVersion = gracefulVersion(cli._version);
     if (command) {
-      cli = cli.command("version", "Show version", {
-        notes: ["The version string begins with a \"v\"."],
+      cli = cli.command("version", t("version.commandDescription")!, {
+        notes: [t("version.notes.1")!],
       })
         .on("version", () => {
           process.stdout.write(gracefullyVersion);

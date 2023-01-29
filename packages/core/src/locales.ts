@@ -10,6 +10,7 @@ export const locales: Locales = {
     "core.descriptionNotSet": "Description not set.",
     "core.versionNotSet": "Version not set.",
     "core.badNameFormat": "Bad name format: %s.",
+    "core.localeMustBeCalledFirst": "locale() or fallbackLocale() must be called at first.",
   },
   "zh-CN": {
     "core.commandExists": "命令 \"%s\" 已存在。",
@@ -20,5 +21,6 @@ export const locales: Locales = {
     "core.descriptionNotSet": "未设置CLI描述。",
     "core.versionNotSet": "未设置CLI版本。",
     "core.badNameFormat": "错误的命令名字格式: %s。",
+    "core.localeMustBeCalledFirst": "locale() 或 fallbackLocale() 必须在最开始调用。",
   },
 };

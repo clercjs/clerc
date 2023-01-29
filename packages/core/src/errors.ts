@@ -40,3 +40,8 @@ export class InvalidCommandNameError extends Error {
     super(t("core.badNameFormat", commandName));
   }
 }
+export class LocaleNotCalledFirstError extends Error {
+  constructor(t: TranslateFn) {
+    super(t("core.localeMustBeCalledFirst"));
+  }
+}

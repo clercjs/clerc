@@ -10,6 +10,7 @@ import {
   CommandExistsError,
   DescriptionNotSetError,
   InvalidCommandNameError,
+  LocaleNotCalledFirstError,
   NameNotSetError,
   NoCommandGivenError,
   NoSuchCommandError,
@@ -57,6 +58,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
 
+  #isOtherMethodCalled = false;
   #defaultLocale = "en";
   #locale = "en";
   #locales: Locales = {};
@@ -96,6 +98,7 @@ export class Clerc<C extends CommandRecord = {}> {
   get _commands() { return this.#commands; }
 
   #addCoreLocales() { this.i18n.add(locales); }
+  #otherMethodCaled() { this.#isOtherMethodCalled = true; }
 
   /**
    * Create a new cli
@@ -120,6 +123,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   name(name: string) {
+    this.#otherMethodCaled();
     this.#name = name;
     return this;
   }
@@ -135,6 +139,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   description(description: string) {
+    this.#otherMethodCaled();
     this.#description = description;
     return this;
   }
@@ -150,6 +155,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   version(version: string) {
+    this.#otherMethodCaled();
     this.#version = version;
     return this;
   }
@@ -167,24 +173,26 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   locale(locale: string) {
+    if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
     this.#locale = locale;
     return this;
   }
 
   /**
-   * Set the default Locale
+   * Set the fallback Locale
    * It's recommended to call this method once after you created the Clerc instance.
-   * @param defaultLocale
+   * @param fallbackLocale
    * @returns
    * @example
    * ```ts
    * Clerc.create()
-   *   .defaultLocale("en")
+   *   .fallbackLocale("en")
    *   .command(...)
    * ```
    */
-  defaultLocale(defaultLocale: string) {
-    this.#defaultLocale = defaultLocale;
+  fallbackLocale(fallbackLocale: string) {
+    if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
+    this.#defaultLocale = fallbackLocale;
     return this;
   }
 
@@ -223,6 +231,7 @@ export class Clerc<C extends CommandRecord = {}> {
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
+    this.#otherMethodCaled();
     const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
@@ -282,6 +291,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> & U {
+    this.#otherMethodCaled();
     return plugin.setup(this as any) as any;
   }
 
@@ -299,6 +309,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   inspector(inspector: Inspector) {
+    this.#otherMethodCaled();
     this.#inspectors.push(inspector);
     return this;
   }
@@ -314,6 +325,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
+    this.#otherMethodCaled();
     const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
       ? {
           argv: optionsOrArgv,
@@ -355,6 +367,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   runMatchedCommand() {
+    this.#otherMethodCaled();
     const { t } = this.i18n;
     const argv = this.#argv;
     if (!argv) {
