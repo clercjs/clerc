@@ -1,8 +1,8 @@
 # Getting Started
 
-## 📦 Installation
+## Installation
 
-> NOTE: The `clerc` packages re-exports `@clerc/core`, `@clerc/toolkit` and all plugins, so it may increase your bundle size. To reduce, please install `@clerc/core` and plugins on demand.
+> NOTE: The `clerc` packages re-exports `@clerc/core` and all plugins, so it may increase your bundle size. To reduce, please install `@clerc/core` and plugins on demand.
 
 ```bash
 $ npm install clerc -S
@@ -10,12 +10,12 @@ $ yarn add clerc
 $ pnpm add clerc
 ```
 
-## 🚀 Usage
+## Usage
 
 First, create a file called `foo-cli.mjs`:
 
 ```js
-import { Clerc, completionsPlugin, helpPlugin } from "clerc";
+import { Clerc } from "clerc";
 
 const cli = Clerc.create()
   .name("foo-cli")
@@ -35,3 +35,5 @@ $ node ./foo-cli.mjs foo
 ```
 
 This logs "It works!".
+
+Next, please read [Command Options](./command-options.md).
