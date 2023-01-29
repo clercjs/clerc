@@ -71,6 +71,6 @@
     "terminal-link": "^3.0.0"
   },
   "devDependencies": {
-    "tasuku": "2.0.0"
+    "tasuku": "2.0.1"
   }
 }
