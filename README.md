@@ -8,27 +8,18 @@ Clerc: The full-featured cli framework.
 
 <!-- toc -->
 * [🗒 Description](#-description)
-<!-- * [🚀 Getting Started Tutorial](#-getting-started-tutorial) -->
 * [✨ Features](#-features)
-<!-- * [📌 Requirements](#-requirements)
-* [📌 Migrating from V1](#-migrating-from-v1)
-* [🏗 Usage](#-usage)
-* [📚 Examples](#-examples)
-* [🔨 Commands](#-commands)
-* [🏭 Related Repositories](#-related-repositories)
-* [🦔 Learn More](#-learn-more)
-* [📣 Feedback](#-feedback) -->
 <!-- tocstop -->
 
 # 🗒 Description
 
 Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
-# 💎 Features
+# ✨ Features
 - **Lightweight** - Dependencies are bundled and minified
 - **Plugin system** - Add rich features on demand.
 - **Chainable APIs** - Composable.
-- **Developer friendly** - Strongly typed, converts flags to camelCase.
+- **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
 - **Official Plugins**
   - Auto-generated help text (via [@clerc/plugin-help](./packages/plugin-help/))

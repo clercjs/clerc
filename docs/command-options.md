@@ -66,6 +66,7 @@ Parameters can be accessed in camelCase on the `ctx.parameters` property.
 Example:
 
 ```ts
+// $ node ./foo-cli.mjs a b c d
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
@@ -80,18 +81,14 @@ const cli = Clerc.create()
     ],
   })
   .on("foo", (ctx) => {
-    console.log("It works!");
+    ctx.parameters.requiredParameter; // => "a" (string)
+    ctx.parameters.optionalParameter; // => "b" (string | undefined)
+    ctx.parameters.optionalSpread; // => ["c", "d"] (string[])
   })
   .parse();
-
-// $ my-script a b c d
-
-argv._.requiredParameter; // => "a" (string)
-argv._.optionalParameter; // => "b" (string | undefined)
-argv._.optionalSpread; // => ["c", "d"] (string[])
 ```
 
-#### End-of-flags
+### End-of-flags
 End-of-flags (`--`) (aka _end-of-options_) allows users to pass in a subset of arguments. This is useful for passing in arguments that should be parsed separately from the rest of the arguments or passing in arguments that look like flags.
 
 An example of this is [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script):
@@ -100,7 +97,7 @@ $ npm run <script> -- <script arguments>
 ```
 The `--` indicates that all arguments afterwards should be passed into the _script_ rather than _npm_.
 
-All end-of-flag arguments will be accessible from `argv._['--']`.
+All end-of-flag arguments will be accessible from `ctx.flags._['--']`.
 
 Additionally, you can specify `--` in the `parameters` array to parse end-of-flags arguments.
 
