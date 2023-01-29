@@ -1,5 +1,4 @@
 import pc from "picocolors";
-// import boxen from "boxen";
 
 import { table } from "./utils";
 

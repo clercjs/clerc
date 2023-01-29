@@ -9,7 +9,6 @@ import pc from "picocolors";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
-// import { renderTyper } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 
 const DELIMITER = pc.yellow("-");
@@ -186,7 +185,6 @@ export const helpPlugin = ({
   renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
-    // const render = renderer === "cliffy" || !renderer ? renderCliffy : renderTyper;
     const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
