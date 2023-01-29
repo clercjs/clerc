@@ -97,24 +97,31 @@ $ npm run <script> -- <script arguments>
 ```
 The `--` indicates that all arguments afterwards should be passed into the _script_ rather than _npm_.
 
-All end-of-flag arguments will be accessible from `ctx.flags._['--']`.
-
-Additionally, you can specify `--` in the `parameters` array to parse end-of-flags arguments.
+You can specify `--` in the `parameters` array to parse end-of-flags arguments.
 
 Example:
 
 ```ts
-const argv = cli({
-  name: "npm-run",
-  parameters: [
-    "<script>",
-    "--",
-    "[arguments...]",
-  ],
-});
+// $ node ./foo-cli.mjs echo -- hello world
+import { Clerc } from "clerc";
 
-// $ npm-run echo -- hello world
-
-argv._.script; // => "echo" (string)
-argv._.arguments; // => ["hello", "world] (string[])
+const cli = Clerc.create()
+  .name("foo-cli")
+  .description("A simple cli")
+  .version("1.0.0")
+  .command("echo", "Echo", {
+    parameters: [
+      "<script>",
+      "--",
+      "[arguments...]",
+    ],
+  })
+  .on("echo", (ctx) => {
+    ctx.parameters.script; // => "echo" (string)
+    ctx.parameters.arguments; // => ["hello", "world] (string[])
+  })
+  .parse();
 ```
+
+## Flags
+
