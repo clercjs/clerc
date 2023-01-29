@@ -13,7 +13,6 @@ export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<ToArray<E>
 
 export const toArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
-// eslint-disable-next-line @so1ve/space-between-generic-and-paren
 export type CamelCase<T extends string> = (T extends `${infer Prefix}-${infer Suffix}` | `${infer Prefix} ${infer Suffix}` ? `${Prefix}${Capitalize<CamelCase<Suffix>>}` : T);
 export const camelCase = <T extends string>(s: T): CamelCase<T> => s.replace(/[-_ ](\w)/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
 
