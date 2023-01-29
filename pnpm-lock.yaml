@@ -1,5 +1,13 @@
 lockfileVersion: 5.4
 
+patchedDependencies:
+  yoga-layout-prebuilt@1.10.0:
+    hash: 47eboidwschvvkf5sc53oki4ma
+    path: patches/yoga-layout-prebuilt@1.10.0.patch
+  lite-emit@1.4.0:
+    hash: i7cuo6jj4wjx3jrey4xchckwrq
+    path: patches/lite-emit@1.4.0.patch
+
 importers:
 
   .:
@@ -66,7 +74,7 @@ importers:
       '@clerc/utils': link:../utils
       defu: 6.1.2
       is-platform: 1.0.0
-      lite-emit: 1.4.0
+      lite-emit: 1.4.0_i7cuo6jj4wjx3jrey4xchckwrq
       type-fest: 3.5.3
       type-flag: 3.0.0
 
@@ -2803,9 +2811,10 @@ packages:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: true
 
-  /lite-emit/1.4.0:
+  /lite-emit/1.4.0_i7cuo6jj4wjx3jrey4xchckwrq:
     resolution: {integrity: sha512-ihi/LpXXgXbEydMAyjQCsXB89AnDM88s+DF1vOIVlCGyg0IZt5IaFX0c5PtIHfjIlbD6xm34zsn/JBomffOyaw==}
     dev: true
+    patched: true
 
   /local-pkg/0.4.2:
     resolution: {integrity: sha512-mlERgSPrbxU3BP4qBqAvvwlgW4MTg78iwJdGGnv7kibKjWcJksrG3t6LB5lXI93wXRDvG4NpUgJFmTG4T6rdrg==}
@@ -3642,7 +3651,7 @@ packages:
   /tasuku/2.0.0:
     resolution: {integrity: sha512-8y1ZtIBzMfTy0/XxRW9gfGts/CPrt7zSMQEfjWXbLdEz09EcXaAZEAFg8vNV8WAlLUQfoIfaaikRJ0YrBWkGlA==}
     dependencies:
-      yoga-layout-prebuilt: 1.10.0
+      yoga-layout-prebuilt: 1.10.0_47eboidwschvvkf5sc53oki4ma
     dev: true
 
   /terminal-columns/1.4.1:
@@ -4027,9 +4036,10 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  /yoga-layout-prebuilt/1.10.0:
+  /yoga-layout-prebuilt/1.10.0_47eboidwschvvkf5sc53oki4ma:
     resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
     engines: {node: '>=8'}
     dependencies:
       '@types/yoga-layout': 1.9.2
     dev: true
+    patched: true
