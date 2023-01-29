@@ -429,9 +429,8 @@ describe("cli", () => {
   });
   it("should translate", async () => {
     try {
-      await Cli()
+      await Cli("zh-CN")
         .command("foo", "foo")
-        .locale("zh-CN")
         .parse(["bar"]);
     } catch (e: any) {
       expect(e.message).toEqual("找不到命令: bar。");
