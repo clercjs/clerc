@@ -1,6 +1,5 @@
 
 // TODO: unit tests
-
 import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
@@ -11,6 +10,14 @@ import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
 import { splitTable, stringifyType } from "./utils";
 import { locales } from "./locales";
+
+declare module "@clerc/core" {
+  export interface CommandCustomProperties {
+    help?: {
+      render?: (sections: Section[]) => Section[]
+    }
+  }
+}
 
 const DELIMITER = pc.yellow("-");
 
@@ -143,6 +150,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
+  subcommand.help?.render?.(sections);
   return render(sections);
 };
 
