@@ -419,4 +419,21 @@ describe("cli", () => {
       .runMatchedCommand();
     expect(count).toBe(1);
   });
+  it("shouldn't run matched command", async () => {
+    let count = 0;
+    await Cli()
+      .command("foo", "foo")
+      .on("foo", () => { count++; })
+      .parse({ run: false, argv: ["foo"] });
+    expect(count).toBe(0);
+  });
+  it("should translate", async () => {
+    try {
+      await Cli("zh-CN")
+        .command("foo", "foo")
+        .parse(["bar"]);
+    } catch (e: any) {
+      expect(e.message).toEqual("找不到命令: bar。");
+    }
+  });
 });

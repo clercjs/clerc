@@ -1,50 +1,45 @@
 import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
-import { arrayStartsWith, toArray } from "@clerc/utils";
+import { arrayEquals, arrayStartsWith, toArray } from "@clerc/utils";
 
 import type { RootType } from "./cli";
 import { Root } from "./cli";
-import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject } from "./types";
+import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject, TranslateFn } from "./types";
 import { CommandNameConflictError } from "./errors";
 
-function setCommand(commandsMap: Map<string[] | RootType, CommandAlias>, commands: CommandRecord, command: Command) {
+function setCommand(commandsMap: Map<string[] | RootType, CommandAlias>, commands: CommandRecord, command: Command, t: TranslateFn) {
   if (command.alias) {
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
       if (alias in commands) {
-        throw new CommandNameConflictError(commands[alias]!.name, command.name);
+        throw new CommandNameConflictError(commands[alias]!.name, command.name, t);
       }
       commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), { ...command, __isAlias: true });
     }
   }
 }
 
-export function resolveFlattenCommands(commands: CommandRecord) {
+export function resolveFlattenCommands(commands: CommandRecord, t: TranslateFn) {
   const commandsMap = new Map<string[] | RootType, CommandAlias>();
   if (commands[Root]) {
     commandsMap.set(Root, commands[Root]);
-    setCommand(commandsMap, commands, commands[Root]);
+    setCommand(commandsMap, commands, commands[Root], t);
   }
   for (const command of Object.values(commands)) {
-    setCommand(commandsMap, commands, command);
+    setCommand(commandsMap, commands, command, t);
     commandsMap.set(command.name.split(" "), command);
   }
   return commandsMap;
 }
 
-export function resolveCommand(commands: CommandRecord, name: string | string[] | RootType): Command<string | RootType> | undefined {
-  if (name === Root) { return commands[Root]; }
+export function resolveCommand(commands: CommandRecord, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+  if (name === Root) { return [commands[Root], Root]; }
   const nameArr = toArray(name) as string[];
-  const commandsMap = resolveFlattenCommands(commands);
+  const commandsMap = resolveFlattenCommands(commands, t);
   let current: Command | undefined;
   let currentName: string[] | RootType | undefined;
-  // Logic:
-  // Imagine we have to commands: `foo` and `foo bar`
-  // If the given argv starts with `foo bar`, we return `foo bar`.
-  // But if the given argv starts with `foo baz`, we return `foo`.
-  // Just simply compare their length, longer is better =)
   commandsMap.forEach((v, k) => {
     if (k === Root) {
-      current = commandsMap.get(Root);
+      current = commands[Root];
       currentName = Root;
       return;
     }
@@ -53,7 +48,25 @@ export function resolveCommand(commands: CommandRecord, name: string | string[] 
       currentName = k;
     }
   });
-  return current;
+  return [current, currentName];
+}
+
+export function resolveCommandStrict(commands: CommandRecord, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+  if (name === Root) { return [commands[Root], Root]; }
+  const nameArr = toArray(name) as string[];
+  const commandsMap = resolveFlattenCommands(commands, t);
+  let current: Command | undefined;
+  let currentName: string[] | RootType | undefined;
+  commandsMap.forEach((v, k) => {
+    if (k === Root || currentName === Root) {
+      return;
+    }
+    if (arrayEquals(nameArr, k)) {
+      current = v;
+      currentName = k;
+    }
+  });
+  return [current, currentName];
 }
 
 export function resolveSubcommandsByParent(commands: CommandRecord, parent: string | string[], depth = Infinity) {
@@ -132,3 +145,7 @@ export const formatCommandName = (name: string | string[] | RootType) => Array.i
   : typeof name === "string"
     ? name
     : ROOT;
+
+export const detectLocale = () => process.env.CLERC_LOCALE
+  ? process.env.CLERC_LOCALE
+  : Intl.DateTimeFormat().resolvedOptions().locale;

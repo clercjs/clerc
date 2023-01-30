@@ -1,40 +1,47 @@
+import type { TranslateFn } from "./types";
+
 export class CommandExistsError extends Error {
-  constructor(public commandName: string) {
-    super(`Command "${commandName}" exists.`);
+  constructor(public commandName: string, t: TranslateFn) {
+    super(t("core.commandExists", commandName));
   }
 }
 export class NoSuchCommandError extends Error {
-  constructor(public commandName: string) {
-    super(`No such command: ${commandName}`);
+  constructor(public commandName: string, t: TranslateFn) {
+    super(t("core.noSuchCommand", commandName));
   }
 }
 export class NoCommandGivenError extends Error {
-  constructor() {
-    super("No command given.");
+  constructor(t: TranslateFn) {
+    super(t("core.noCommandGiven"));
   }
 }
 export class CommandNameConflictError extends Error {
-  constructor(public n1: string, public n2: string) {
-    super(`Command name ${n1} conflicts with ${n2}. Maybe caused by alias.`);
+  constructor(public n1: string, public n2: string, t: TranslateFn) {
+    super(t("core.commandNameConflict", n1, n2));
   }
 }
 export class NameNotSetError extends Error {
-  constructor() {
-    super("Name not set.");
+  constructor(t: TranslateFn) {
+    super(t("core.nameNotSet"));
   }
 }
 export class DescriptionNotSetError extends Error {
-  constructor() {
-    super("Description not set.");
+  constructor(t: TranslateFn) {
+    super(t("core.descriptionNotSet"));
   }
 }
 export class VersionNotSetError extends Error {
-  constructor() {
-    super("Version not set.");
+  constructor(t: TranslateFn) {
+    super(t("core.versionNotSet"));
   }
 }
 export class InvalidCommandNameError extends Error {
-  constructor(public commandName: string) {
-    super(`Bad name format: ${commandName}`);
+  constructor(public commandName: string, t: TranslateFn) {
+    super(t("core.badNameFormat", commandName));
+  }
+}
+export class LocaleNotCalledFirstError extends Error {
+  constructor(t: TranslateFn) {
+    super(t("core.localeMustBeCalledFirst"));
   }
 }

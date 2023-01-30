@@ -1,4 +1,5 @@
-import type { Command } from "@clerc/core";
+import type { Command, I18N } from "@clerc/core";
+import { locales } from "./locales";
 
 export type Equals<X, Y> =
   (<T>() => T extends X ? 1 : 2) extends
@@ -51,9 +52,10 @@ export const generateCommandRecordFromCommandArray = <C extends Command>(command
   return record;
 };
 
-export const semanticArray = (arr: string[]) => {
+export const semanticArray = (arr: string[], { add, t }: I18N) => {
+  add(locales);
   if (arr.length <= 1) {
     return arr[0];
   }
-  return `${arr.slice(0, -1).join(", ")} and ${arr[arr.length - 1]}`;
+  return t("utils.and", arr.slice(0, -1).join(", "), arr[arr.length - 1])!;
 };
