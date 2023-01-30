@@ -78,6 +78,18 @@ importers:
       type-fest: 3.5.3
       type-flag: 3.0.0
 
+  packages/flag-types:
+    specifiers:
+      '@clerc/core': workspace:*
+      '@clerc/utils': workspace:*
+      didyoumean2: ^5.0.0
+      picocolors: ^1.0.0
+    devDependencies:
+      '@clerc/core': link:../core
+      '@clerc/utils': link:../utils
+      didyoumean2: 5.0.0
+      picocolors: 1.0.0
+
   packages/plugin-completions:
     specifiers:
       '@clerc/core': workspace:*
@@ -101,6 +113,7 @@ importers:
       '@types/text-table': ^0.2.2
       get-func-name: ^2.0.0
       picocolors: ^1.0.0
+      string-width: ^5.1.2
       text-table: ^0.2.0
     devDependencies:
       '@clerc/core': link:../core
@@ -108,6 +121,7 @@ importers:
       '@types/text-table': 0.2.2
       get-func-name: 2.0.0
       picocolors: 1.0.0
+      string-width: 5.1.2
       text-table: 0.2.0
 
   packages/plugin-not-found:

@@ -1,10 +1,13 @@
 import getFuncName from "get-func-name";
 import textTable from "text-table";
+import stringWidth from "string-width";
 
-export const table = (...items: string[][]) => textTable(items);
+export const table = (...items: string[][]) => textTable(items, {
+  stringLength: stringWidth,
+});
 
 export const splitTable = (...items: string[][]) => {
-  return table(...items).toString().split("\n");
+  return table(...items).split("\n");
 };
 
 export const stringifyType = (type: any) => {
