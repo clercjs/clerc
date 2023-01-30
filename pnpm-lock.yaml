@@ -1,12 +1,12 @@
 lockfileVersion: 5.4
 
 patchedDependencies:
-  yoga-layout-prebuilt@1.10.0:
-    hash: 47eboidwschvvkf5sc53oki4ma
-    path: patches/yoga-layout-prebuilt@1.10.0.patch
   lite-emit@1.4.0:
     hash: i7cuo6jj4wjx3jrey4xchckwrq
     path: patches/lite-emit@1.4.0.patch
+  yoga-layout-prebuilt@1.10.0:
+    hash: 47eboidwschvvkf5sc53oki4ma
+    path: patches/yoga-layout-prebuilt@1.10.0.patch
 
 importers:
 
@@ -79,16 +79,7 @@ importers:
       type-flag: 3.0.0
 
   packages/flag-types:
-    specifiers:
-      '@clerc/core': workspace:*
-      '@clerc/utils': workspace:*
-      didyoumean2: ^5.0.0
-      picocolors: ^1.0.0
-    devDependencies:
-      '@clerc/core': link:../core
-      '@clerc/utils': link:../utils
-      didyoumean2: 5.0.0
-      picocolors: 1.0.0
+    specifiers: {}
 
   packages/plugin-completions:
     specifiers:

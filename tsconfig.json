@@ -39,6 +39,9 @@
       ],
       "@clerc/toolkit": [
         "./packages/toolkit/src/index.ts"
+      ],
+      "@clerc/flag-types": [
+        "./packages/flag-types/src/index.ts"
       ]
     }
   }
