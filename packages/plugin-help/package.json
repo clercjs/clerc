@@ -1,6 +1,6 @@
 {
   "name": "@clerc/plugin-help",
-  "version": "0.27.1",
+  "version": "0.28.1",
   "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
   "description": "Clerc plugin help",
   "keywords": [
@@ -57,8 +57,9 @@
   "devDependencies": {
     "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
-    "cli-table3": "^0.6.3",
+    "@types/text-table": "^0.2.2",
     "get-func-name": "^2.0.0",
-    "picocolors": "^1.0.0"
+    "picocolors": "^1.0.0",
+    "text-table": "^0.2.0"
   }
 }
