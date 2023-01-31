@@ -198,7 +198,7 @@ export class Clerc<C extends CommandRecord = {}> {
   }
 
   /**
-   * Register the error handler
+   * Register a error handler
    * @param handler
    * @returns
    * @example
