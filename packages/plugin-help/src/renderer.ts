@@ -1,6 +1,6 @@
 import pc from "picocolors";
 
-import { table } from "./utils";
+import { stringifyType, table } from "./utils";
 
 export interface BlockSection {
   type?: "block"
@@ -18,6 +18,12 @@ export interface InlineSection {
 
 export type Section = BlockSection | InlineSection;
 export type Render = (sections: Section[]) => string;
+export interface Renderers {
+  renderSections?: (sections: Section[]) => Section[]
+  renderFlagName?: (name: string) => string
+  renderType?: (type: any, hasDefault: boolean) => string
+  renderDefault?: (default_: any) => string
+}
 
 export const render: Render = (sections: Section[]) => {
   const rendered = [] as string[];
@@ -38,4 +44,11 @@ export const render: Render = (sections: Section[]) => {
     rendered.push("");
   }
   return rendered.join("\n");
+};
+
+export const defaultRenderers: Required<Renderers> = {
+  renderFlagName: n => n,
+  renderSections: s => s,
+  renderType: (type, hasDefault) => stringifyType(type, hasDefault),
+  renderDefault: default_ => JSON.stringify(default_),
 };

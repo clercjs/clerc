@@ -6,17 +6,14 @@ import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveComma
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
-import type { Render, Section } from "./renderer";
-import { render } from "./renderer";
-import { splitTable, stringifyType } from "./utils";
+import type { Render, Renderers, Section } from "./renderer";
+import { defaultRenderers, render } from "./renderer";
+import { splitTable } from "./utils";
 import { locales } from "./locales";
 
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
-    help?: {
-      renderSections?: (sections: Section[]) => Section[]
-      renderFlagName?: (name: string) => string
-    }
+    help?: Renderers
   }
 }
 
@@ -105,6 +102,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
+  const renderers = Object.assign({}, defaultRenderers, subcommand.help);
   let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
@@ -132,13 +130,11 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
           if (flag.alias) {
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
-          if (subcommand.help?.renderFlagName) {
-            flagNameWithAlias = flagNameWithAlias.map(subcommand.help.renderFlagName);
-          }
-          const items = [pc.blue(flagNameWithAlias.join(", ")), stringifyType(flag.type, hasDefault)];
+          flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
+          const items = [pc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
           items.push(DELIMITER, flag.description || t("help.noDescription")!);
           if (hasDefault) {
-            items.push(`(${t("help.default", JSON.stringify(flag.default))})`);
+            items.push(`(${t("help.default", renderers.renderDefault(flag.default))})`);
           }
           return items;
         }),
@@ -154,7 +150,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
-  sections = subcommand.help?.renderSections ? subcommand.help.renderSections(sections) : sections;
+  sections = renderers.renderSections(sections);
   return render(sections);
 };
 
