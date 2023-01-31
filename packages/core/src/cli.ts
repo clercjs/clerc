@@ -45,7 +45,7 @@ import {
 import { mapParametersToArguments, parseParameters } from "./parameters";
 import { locales } from "./locales";
 
-export const Root = Symbol("Root");
+export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
 export class Clerc<C extends CommandRecord = {}> {
