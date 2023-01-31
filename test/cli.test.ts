@@ -310,6 +310,7 @@ describe("cli", () => {
         flags: {
           aa: {
             type: Boolean,
+            description: "aa",
             default: false,
           },
         },
@@ -329,6 +330,7 @@ describe("cli", () => {
         flags: {
           aa: {
             type: Boolean,
+            description: "aa",
             default: false,
           },
         },
@@ -337,6 +339,7 @@ describe("cli", () => {
         flags: {
           bb: {
             type: Boolean,
+            description: "bb",
             default: false,
           },
         },
