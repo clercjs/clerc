@@ -14,7 +14,7 @@ import { locales } from "./locales";
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
     help?: {
-      render?: (sections: Section[]) => Section[]
+      renderSections?: (sections: Section[]) => Section[]
       renderFlagName?: (name: string) => string
     }
   }
@@ -154,7 +154,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
-  sections = subcommand.help?.render ? subcommand.help.render(sections) : sections;
+  sections = subcommand.help?.renderSections ? subcommand.help.renderSections(sections) : sections;
   return render(sections);
 };
 
