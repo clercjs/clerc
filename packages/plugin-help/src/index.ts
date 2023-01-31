@@ -15,7 +15,7 @@ declare module "@clerc/core" {
   export interface CommandCustomProperties {
     help?: {
       render?: (sections: Section[]) => Section[]
-      renderFlagName: (name: string) => string
+      renderFlagName?: (name: string) => string
     }
   }
 }
