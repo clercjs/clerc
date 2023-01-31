@@ -132,6 +132,9 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
           }
           const items = [pc.blue(flagNameWithAlias.join(", "))];
           items.push(DELIMITER, flag.description || t("help.noDescription")!);
+          if (flag.default !== undefined) {
+            items.push(`(${t("help.default", JSON.stringify(flag.default))})`);
+          }
           if (flag.type) {
             const type = stringifyType(flag.type);
             items.push(pc.gray(`(${type})`));

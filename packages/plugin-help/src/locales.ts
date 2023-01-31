@@ -18,6 +18,7 @@ export const locales: Locales = {
     "help.examples.1": "Show help",
     "help.examples.2": "Show help for a specific command",
     "help.commandDescription": "Show help",
+    "help.default": "Default: ",
   },
   "zh-CN": {
     "help.name": "名称",
@@ -36,5 +37,6 @@ export const locales: Locales = {
     "help.examples.1": "展示 CLI 的帮助信息",
     "help.examples.2": "展示指定命令的帮助信息",
     "help.commandDescription": "展示帮助信息",
+    "help.default": "默认值: %s",
   },
 };
