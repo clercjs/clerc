@@ -1,9 +1,9 @@
 import textTable from "text-table";
 
-export const table = (...items: string[][]) => textTable(items);
+export const table = (items: string[][]) => textTable(items);
 
-export const splitTable = (...items: string[][]) => {
-  return table(...items).toString().split("\n");
+export const splitTable = (items: string[][]) => {
+  return table(items).toString().split("\n");
 };
 
 const primitiveMap = new Map<any, string>([

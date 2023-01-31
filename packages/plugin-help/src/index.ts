@@ -56,7 +56,7 @@ const generateExamples = (sections: Section[], examples: [string, string][], t: 
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
     title: t("help.examples")!,
-    body: splitTable(...examplesFormatted),
+    body: splitTable(examplesFormatted),
   });
 };
 
@@ -84,7 +84,7 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
   });
   sections.push({
     title: t("help.commands")!,
-    body: splitTable(...commands),
+    body: splitTable(commands),
   });
   if (notes) {
     sections.push({
@@ -126,7 +126,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     sections.push({
       title: t("help.flags")!,
       body: splitTable(
-        ...Object.entries(subcommand.flags).map(([name, flag]) => {
+        Object.entries(subcommand.flags).map(([name, flag]) => {
           const hasDefault = flag.default !== undefined;
           let flagNameWithAlias: string[] = [gracefulFlagName(name)];
           if (flag.alias) {
