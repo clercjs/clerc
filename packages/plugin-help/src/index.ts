@@ -1,7 +1,7 @@
 
 // TODO: unit tests
 
-import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
+import type { Clerc, Command, Flags, HandlerContext, RootType, TranslateFn } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
@@ -9,7 +9,7 @@ import pc from "picocolors";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
-import { splitTable, stringifyType } from "./utils";
+import { sortName, splitTable, stringifyType } from "./utils";
 import { locales } from "./locales";
 
 const DELIMITER = pc.yellow("-");
@@ -61,23 +61,37 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
     title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
-  const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
+  const commands = [
+    ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
+    ...Object.values(cli._commands),
+  ].map((command) => {
     const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
-      .sort((a, b) => {
-        if (a === Root) { return -1; }
-        if (b === Root) { return 1; }
-        return a.length - b.length;
-      })
+      .sort(sortName)
       .map((n) => {
         return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
       })
       .join(", ");
     return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
-  sections.push({
-    title: t("help.commands")!,
-    body: splitTable(...commands),
-  });
+  if (commands.length) {
+    sections.push({
+      title: t("help.commands")!,
+      body: splitTable(...commands),
+    });
+  }
+  const flags = Object.entries(cli._flags as Flags)
+    .map(([name, flag]) => {
+      const flagNameWithAlias = [name, ...toArray(flag.alias || [])]
+        .map(gracefulFlagName)
+        .join(", ");
+      return [pc.cyan(flagNameWithAlias), DELIMITER, flag.description || t("help.noDescription")!];
+    });
+  if (flags.length) {
+    sections.push({
+      title: t("help.flags")!,
+      body: splitTable(...flags),
+    });
+  }
   if (notes) {
     sections.push({
       title: t("help.notes")!,
@@ -216,15 +230,21 @@ export const helpPlugin = ({
         });
     }
 
+    cli = cli.flag("help", {
+      alias: "h",
+      type: Boolean,
+      default: false,
+    });
+
     cli.inspector((ctx, next) => {
-      const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
-      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
+      const shouldShowHelp = ctx.flags.help;
+      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !shouldShowHelp) {
         let str = `${t("core.noCommandGiven")}\n\n`;
         str += generateHelp(render, ctx, notes, examples);
         str += "\n";
         printHelp(str);
         process.exit(1);
-      } else if (helpFlag) {
+      } else if (shouldShowHelp) {
         if (ctx.raw._.length) {
           if (ctx.called !== Root) {
             if (ctx.name === Root) {

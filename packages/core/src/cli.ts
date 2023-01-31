@@ -22,6 +22,7 @@ import type {
   CommandRecord,
   CommandType,
   CommandWithHandler,
+  FlagOptions,
   Flags,
   Handler,
   HandlerContext,
@@ -48,13 +49,14 @@ import { locales } from "./locales";
 export const Root = Symbol("Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends CommandRecord = {}> {
+export class Clerc<C extends CommandRecord = {}, GF extends Flags = {}> {
   #name = "";
   #description = "";
   #version = "";
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
+  #flags = {} as GF;
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
 
@@ -96,6 +98,7 @@ export class Clerc<C extends CommandRecord = {}> {
   get _version() { return this.#version; }
   get _inspectors() { return this.#inspectors; }
   get _commands() { return this.#commands; }
+  get _flags() { return this.#flags; }
 
   #addCoreLocales() { this.i18n.add(locales); }
   #otherMethodCaled() { this.#isOtherMethodCalled = true; }
@@ -228,8 +231,8 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
     this.#otherMethodCaled();
     const { t } = this.i18n;
@@ -261,6 +264,11 @@ export class Clerc<C extends CommandRecord = {}> {
     return this as any;
   }
 
+  flag<N extends string, O extends FlagOptions>(name: N, options: O): this & Clerc<C, GF & Record<N, O>> {
+    this.#flags[name] = options as any;
+    return this as any;
+  }
+
   /**
    * Register a handler
    * @param name
@@ -275,7 +283,7 @@ export class Clerc<C extends CommandRecord = {}> {
    *   })
    * ```
    */
-  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K>) {
+  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K, this["_flags"]>) {
     this.#commandEmitter.on(name as any, handler as any);
     return this;
   }
@@ -381,8 +389,12 @@ export class Clerc<C extends CommandRecord = {}> {
       mapErrors.length = 0;
       const [command, called] = getCommand();
       const isCommandResolved = !!command;
+      const flagsWithGlobal = {
+        ...this.#flags,
+        ...(command?.flags || {}),
+      };
       // [...argv] is a workaround since TypeFlag modifies argv
-      const parsed = typeFlag(command?.flags || {}, [...argv]);
+      const parsed = typeFlag(flagsWithGlobal, [...argv]);
       const { _: args, flags, unknownFlags } = parsed;
       let parameters = !isCommandResolved || command.name === Root ? args : args.slice(command.name.split(" ").length);
       let commandParameters = command?.parameters || [];

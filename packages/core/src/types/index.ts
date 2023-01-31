@@ -41,19 +41,19 @@ export interface ParseOptions {
 
 export type PossibleInputKind = string | number | boolean | Dict<any>;
 
-export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C> {
+export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C, GF extends Flags = {}> {
   name?: LiteralUnion<N, string>
   called?: string | RootType
   resolved: boolean
   hasRootOrAlias: boolean
   hasRoot: boolean
-  raw: { [K in keyof ParseRaw<C[N]>]: ParseRaw<C[N]>[K] }
+  raw: { [K in keyof ParseRaw<C[N], GF>]: ParseRaw<C[N], GF>[K] }
   parameters: { [K in keyof ParseParameters<C, N>]: ParseParameters<C, N>[K] }
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: { [K in keyof ParseFlag<C, N>]: ParseFlag<C, N>[K] }
+  flags: { [K in keyof ParseFlag<C, N, GF>]: ParseFlag<C, N, GF>[K] }
   cli: Clerc<C>
 }
-export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
+export type Handler<C extends CommandRecord = CommandRecord, K extends keyof C = keyof C, GF extends Flags = {}> = (ctx: HandlerContext<C, K, GF>) => void;
 export type HandlerInCommand<C extends HandlerContext> = (ctx: { [K in keyof C]: C[K] }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends CommandRecord = CommandRecord> = HandlerContext<C> & {
