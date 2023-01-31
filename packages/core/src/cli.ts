@@ -382,7 +382,6 @@ export class Clerc<C extends CommandRecord = {}> {
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
     const getCommand = () => resolveCommand(this.#commands, name, t);
-
     const getContext = (): HandlerContext => {
       const [command, called] = getCommand();
       const isCommandResolved = !!command;
