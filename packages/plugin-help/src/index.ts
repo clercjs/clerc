@@ -14,7 +14,7 @@ import { locales } from "./locales";
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
     help?: {
-      render?: (sections: Section[]) => Section[]
+      render?: (sections: Section[]) => void
     }
   }
 }
