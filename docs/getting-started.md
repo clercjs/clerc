@@ -36,4 +36,4 @@ $ node ./foo-cli.mjs foo
 
 This logs "It works!".
 
-Next, please read [Command Options](./command-options.md).
+Next, please read [Commands](./commands.md).

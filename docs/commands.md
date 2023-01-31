@@ -1,10 +1,12 @@
-# Command Options
+# Command
+
+## Options
 
 We created a command called "foo" and its description is "foo command" in [Getting Started](./getting-started.md). And we use `on()` to register a command handler. Now we are going to learn how to add options to the command.
 
 Options are passed as the third argument in `command(name, description, options?)`.
 
-## Aliases
+### Aliases
 
 You can add an alias for your command:
 
@@ -44,9 +46,9 @@ const cli = Clerc.create()
   .parse();
 ```
 
-## Parameters
+### Parameters
 
-### Common
+#### Common
 
 <!-- Copied from cleye :) -->
 
@@ -88,7 +90,7 @@ const cli = Clerc.create()
   .parse();
 ```
 
-### End-of-flags
+#### End-of-flags
 End-of-flags (`--`) (aka _end-of-options_) allows users to pass in a subset of arguments. This is useful for passing in arguments that should be parsed separately from the rest of the arguments or passing in arguments that look like flags.
 
 An example of this is [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script):
@@ -123,5 +125,66 @@ const cli = Clerc.create()
   .parse();
 ```
 
-## Flags
+### Flags
+
+_Clerc_'s flag parsing is powered by [`type-flag`](https://github.com/privatenumber/type-flag) and comes with many features:
+
+- Array & Custom types
+- Flag delimiters: `--flag value`, `--flag=value`, `--flag:value`, and `--flag.value`
+- Combined aliases: `-abcd 2` → `-a -b -c -d 2`
+- [End of flags](https://unix.stackexchange.com/a/11382): Pass in `--` to end flag parsing
+- Unknown flags: Unexpected flags stored in `unknownFlags`
+
+Read the [_type-flag_ docs](https://github.com/privatenumber/type-flag) to learn more.
+
+Flags can be specified in the `flags` object-property, where the key is the flag name, and the value is a flag type function or an object that describes the flag.
+
+The flag name is recommended to be in camelCase as it will be interpreted to parse kebab-case equivalents.
+
+The flag type function can be any function that accepts a string and returns the parsed value. Default JavaScript constructors should cover most use-cases: [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String), [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number), [Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean), etc.
+
+The flag description object can be used to store additional information about the flag, such as `alias`, `default`, and `description`. To accept multiple values for a flag, wrap the type function in an array.
+
+All of the provided information will be used to generate better help documentation.
+
+Example:
+
+```ts
+// $ node ./foo-cli.mjs test --some-boolean --some-string hello --some-number 1 -n 2
+import { Clerc } from "clerc";
+
+const cli = Clerc.create()
+  .name("foo-cli")
+  .description("A simple cli")
+  .version("1.0.0")
+  .command("test", "Test", {
+    flags: {
+      someBoolean: Boolean,
+
+      someString: {
+        type: String,
+        description: "Some string flag",
+        default: "n/a",
+      },
+
+      someNumber: {
+        // Wrap the type function in an array to allow multiple values
+        type: [Number],
+        alias: "n",
+        description: "Array of numbers. (eg. -n 1 -n 2 -n 3)",
+      },
+    },
+  })
+  .on("echo", (ctx) => {
+    ctx.parameters.script; // => "echo" (string)
+    ctx.parameters.arguments; // => ["hello", "world] (string[])
+  })
+  .parse();
+
+// $ my-script --some-boolean --some-string hello --some-number 1 -n 2
+
+argv.flags.someBoolean; // => true (boolean | undefined)
+argv.flags.someString; // => "hello" (string)
+argv.flags.someNumber; // => [1, 2] (number[])
+```
 
