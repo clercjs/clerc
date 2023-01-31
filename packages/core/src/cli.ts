@@ -264,6 +264,20 @@ export class Clerc<C extends CommandRecord = {}, GF extends Flags = {}> {
     return this as any;
   }
 
+  /**
+   * Register a global flag
+   * @param name
+   * @param options
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .flag("help", {
+   *     alias: "h",
+   *     description: "help",
+   *   })
+   * ```
+   */
   flag<N extends string, O extends FlagOptions>(name: N, options: O): this & Clerc<C, GF & Record<N, O>> {
     this.#flags[name] = options as any;
     return this as any;
