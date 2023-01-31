@@ -14,7 +14,8 @@ import { locales } from "./locales";
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
     help?: {
-      render?: (sections: Section[]) => void
+      render?: (sections: Section[]) => Section[]
+      renderFlagName: (name: string) => string
     }
   }
 }
@@ -104,7 +105,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const sections = [] as Section[];
+  let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
   } else {
@@ -126,18 +127,18 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
       title: t("help.flags")!,
       body: splitTable(
         ...Object.entries(subcommand.flags).map(([name, flag]) => {
-          const flagNameWithAlias = [gracefulFlagName(name)];
+          const hasDefault = flag.default !== undefined;
+          let flagNameWithAlias: string[] = [gracefulFlagName(name)];
           if (flag.alias) {
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
-          const items = [pc.blue(flagNameWithAlias.join(", "))];
-          items.push(DELIMITER, flag.description || t("help.noDescription")!);
-          if (flag.default !== undefined) {
-            items.push(`(${t("help.default", JSON.stringify(flag.default))})`);
+          if (subcommand.help?.renderFlagName) {
+            flagNameWithAlias = flagNameWithAlias.map(subcommand.help.renderFlagName);
           }
-          if (flag.type) {
-            const type = stringifyType(flag.type);
-            items.push(pc.gray(`(${type})`));
+          const items = [pc.blue(flagNameWithAlias.join(", ")), stringifyType(flag.type, hasDefault)];
+          items.push(DELIMITER, flag.description || t("help.noDescription")!);
+          if (hasDefault) {
+            items.push(`(${t("help.default", JSON.stringify(flag.default))})`);
           }
           return items;
         }),
@@ -153,7 +154,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
-  subcommand.help?.render?.(sections);
+  sections = subcommand.help?.render ? subcommand.help.render(sections) : sections;
   return render(sections);
 };
 
