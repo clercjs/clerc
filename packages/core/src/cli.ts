@@ -57,7 +57,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
-  #errorHandler: ((err: any) => void) | undefined;
+  #errorHandlers = [] as ((err: any) => void)[];
 
   #isOtherMethodCalled = false;
   #defaultLocale = "en";
@@ -163,7 +163,7 @@ export class Clerc<C extends CommandRecord = {}> {
 
   /**
    * Set the Locale
-   * It's recommended to call this method once after you created the Clerc instance.
+   * You must call this method once after you created the Clerc instance.
    * @param locale
    * @returns
    * @example
@@ -181,7 +181,7 @@ export class Clerc<C extends CommandRecord = {}> {
 
   /**
    * Set the fallback Locale
-   * It's recommended to call this method once after you created the Clerc instance.
+   * You must call this method once after you created the Clerc instance.
    * @param fallbackLocale
    * @returns
    * @example
@@ -197,8 +197,18 @@ export class Clerc<C extends CommandRecord = {}> {
     return this;
   }
 
+  /**
+   * Register the error handler
+   * @param handler
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .errorHandler((err) => { console.log(err); })
+   * ```
+   */
   errorHandler(handler: (err: any) => void) {
-    this.#errorHandler = handler;
+    this.#errorHandlers.push(handler);
     return this;
   }
 
@@ -414,17 +424,7 @@ export class Clerc<C extends CommandRecord = {}> {
     return context;
   }
 
-  /**
-   * Run matched command
-   * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .parse({ run: false })
-   *   .runMatchedCommand()
-   * ```
-   */
-  runMatchedCommand() {
+  #runMatchedCommand() {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const argv = this.#argv;
@@ -452,15 +452,29 @@ export class Clerc<C extends CommandRecord = {}> {
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);
+    callInspector(getContext);
+    return this;
+  }
+
+  /**
+   * Run matched command
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .parse({ run: false })
+   *   .runMatchedCommand()
+   * ```
+   */
+  runMatchedCommand() {
     try {
-      callInspector(getContext);
+      this.#runMatchedCommand();
     } catch (e) {
-      if (this.#errorHandler) {
-        this.#errorHandler(e);
+      if (this.#errorHandlers.length > 0) {
+        this.#errorHandlers.forEach(cb => cb(e));
       } else {
         throw e;
       }
     }
-    return this;
   }
 }
