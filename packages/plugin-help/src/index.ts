@@ -84,7 +84,7 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
       const flagNameWithAlias = [name, ...toArray(flag.alias || [])]
         .map(gracefulFlagName)
         .join(", ");
-      return [pc.cyan(flagNameWithAlias), DELIMITER, flag.description || t("help.noDescription")!];
+      return [pc.cyan(flagNameWithAlias), DELIMITER, flag.description];
     });
   if (flags.length) {
     sections.push({
@@ -138,7 +138,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
           const items = [pc.blue(flagNameWithAlias.join(", "))];
-          items.push(DELIMITER, flag.description || t("help.noDescription")!);
+          items.push(DELIMITER, flag.description);
           if (flag.type) {
             const type = stringifyType(flag.type);
             items.push(pc.gray(`(${type})`));

@@ -355,6 +355,7 @@ describe("cli", () => {
       .command("foo bar", "foo bar", {
         flags: {
           aa: {
+            description: "aa",
             type: Boolean,
             default: false,
           },
@@ -363,6 +364,7 @@ describe("cli", () => {
       .command("foo", "foo", {
         flags: {
           bb: {
+            description: "bb",
             type: Boolean,
             default: false,
           },
