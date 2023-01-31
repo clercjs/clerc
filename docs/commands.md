@@ -1,5 +1,7 @@
 # Command
 
+> Most content of this page is adapted from [Cleye](https://github.com/privatenumber/cleye). Thanks!
+
 ## Options
 
 We created a command called "foo" and its description is "foo command" in [Getting Started](./getting-started.md). And we use `on()` to register a command handler. Now we are going to learn how to add options to the command.
@@ -49,8 +51,6 @@ const cli = Clerc.create()
 ### Parameters
 
 #### Common
-
-<!-- Copied from cleye :) -->
 
 Parameters (aka _positional arguments_) are the names that map against argument values. Think of parameters as variable names and arguments as values associated with the variables.
 
@@ -159,7 +159,9 @@ const cli = Clerc.create()
   .version("1.0.0")
   .command("test", "Test", {
     flags: {
-      someBoolean: Boolean,
+      someBoolean: {
+        type: Boolean,
+      },
 
       someString: {
         type: String,
@@ -176,15 +178,10 @@ const cli = Clerc.create()
     },
   })
   .on("echo", (ctx) => {
-    ctx.parameters.script; // => "echo" (string)
-    ctx.parameters.arguments; // => ["hello", "world] (string[])
+    ctx.flags.someBoolean; // => true (boolean | undefined)
+    ctx.flags.someString; // => "hello" (string)
+    ctx.flags.someNumber; // => [1, 2] (number[])
   })
   .parse();
-
-// $ my-script --some-boolean --some-string hello --some-number 1 -n 2
-
-argv.flags.someBoolean; // => true (boolean | undefined)
-argv.flags.someString; // => "hello" (string)
-argv.flags.someNumber; // => [1, 2] (number[])
 ```
 
