@@ -453,7 +453,6 @@ export class Clerc<C extends CommandRecord = {}> {
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);
     callInspector(getContext);
-    return this;
   }
 
   /**
@@ -476,5 +475,6 @@ export class Clerc<C extends CommandRecord = {}> {
         throw e;
       }
     }
+    return this;
   }
 }
