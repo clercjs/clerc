@@ -28,11 +28,11 @@ export const render: Render = (sections: Section[]) => {
         .map(line => indent + line);
       formattedBody.unshift("");
       const body = formattedBody.join("\n");
-      rendered.push(table([pc.bold(`${section.title}:`)], [body]).toString());
+      rendered.push(table([[pc.bold(`${section.title}:`)], [body]]).toString());
     } else if (section.type === "inline") {
       const formattedBody = section.items
         .map(item => [pc.bold(`${item.title}:`), item.body]);
-      const tableGenerated = table(...formattedBody);
+      const tableGenerated = table(formattedBody);
       rendered.push(tableGenerated.toString());
     }
     rendered.push("");
