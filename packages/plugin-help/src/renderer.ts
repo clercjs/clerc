@@ -19,7 +19,7 @@ export interface InlineSection {
 export type Section = BlockSection | InlineSection;
 export type Render = (sections: Section[]) => string;
 
-export const renderCliffy: Render = (sections: Section[]) => {
+export const render: Render = (sections: Section[]) => {
   const rendered = [] as string[];
   for (const section of sections) {
     if (section.type === "block" || !section.type) {
