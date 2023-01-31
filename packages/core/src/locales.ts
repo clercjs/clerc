@@ -11,6 +11,7 @@ export const locales: Locales = {
     "core.versionNotSet": "Version not set.",
     "core.badNameFormat": "Bad name format: %s.",
     "core.localeMustBeCalledFirst": "locale() or fallbackLocale() must be called at first.",
+    "core.cliParseMustBeCalled": "cli.parse() must be called.",
   },
   "zh-CN": {
     "core.commandExists": "命令 \"%s\" 已存在。",
@@ -22,5 +23,6 @@ export const locales: Locales = {
     "core.versionNotSet": "未设置CLI版本。",
     "core.badNameFormat": "错误的命令名字格式: %s。",
     "core.localeMustBeCalledFirst": "locale() 或 fallbackLocale() 必须在最开始调用。",
+    "core.cliParseMustBeCalled": "cli.parse() 必须被调用。",
   },
 };
