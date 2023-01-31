@@ -206,7 +206,7 @@ export const helpPlugin = ({
     };
 
     if (command) {
-      cli = cli.command("help", t("help.commandDescription")!, {
+      cli = cli.command("help", t("help.helpDdescription")!, {
         parameters: [
           "[command...]",
         ],
@@ -230,7 +230,7 @@ export const helpPlugin = ({
         });
     }
 
-    cli = cli.flag("help", {
+    cli = cli.flag("help", t("help.helpDdescription")!, {
       alias: "h",
       type: Boolean,
       default: false,

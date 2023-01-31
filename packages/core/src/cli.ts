@@ -24,6 +24,7 @@ import type {
   CommandWithHandler,
   FlagOptions,
   Flags,
+  FlagsWithoutDescription,
   Handler,
   HandlerContext,
   I18N,
@@ -49,7 +50,7 @@ import { locales } from "./locales";
 export const Root = Symbol("Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends CommandRecord = {}, GF extends Flags = {}> {
+export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescription = {}> {
   #name = "";
   #description = "";
   #version = "";
@@ -278,8 +279,11 @@ export class Clerc<C extends CommandRecord = {}, GF extends Flags = {}> {
    *   })
    * ```
    */
-  flag<N extends string, O extends FlagOptions>(name: N, options: O): this & Clerc<C, GF & Record<N, O>> {
-    this.#flags[name] = options as any;
+  flag<N extends string, O extends Omit<FlagOptions, "description">>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
+    this.#flags[name] = {
+      description,
+      ...options,
+    } as any;
     return this as any;
   }
 

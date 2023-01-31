@@ -15,14 +15,14 @@ export const versionPlugin = ({ command = true }: VersionPluginOptions = {}) => 
     add(locales);
     const gracefullyVersion = gracefulVersion(cli._version);
     if (command) {
-      cli = cli.command("version", t("version.commandDescription")!, {
+      cli = cli.command("version", t("version.description")!, {
         notes: [t("version.notes.1")!],
       })
         .on("version", () => {
           process.stdout.write(gracefullyVersion);
         });
     }
-    cli = cli.flag("version", {
+    cli = cli.flag("version", t("version.description")!, {
       alias: "V",
       type: Boolean,
       default: false,
