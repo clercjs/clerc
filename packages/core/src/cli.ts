@@ -57,6 +57,7 @@ export class Clerc<C extends CommandRecord = {}> {
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
+  #errorHandler: ((err: any) => void) | undefined;
 
   #isOtherMethodCalled = false;
   #defaultLocale = "en";
@@ -193,6 +194,11 @@ export class Clerc<C extends CommandRecord = {}> {
   fallbackLocale(fallbackLocale: string) {
     if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
     this.#defaultLocale = fallbackLocale;
+    return this;
+  }
+
+  errorHandler(handler: (err: any) => void) {
+    this.#errorHandler = handler;
     return this;
   }
 
@@ -376,9 +382,8 @@ export class Clerc<C extends CommandRecord = {}> {
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
     const getCommand = () => resolveCommand(this.#commands, name, t);
-    const mapErrors = [] as (Error | undefined)[];
-    const getContext = () => {
-      mapErrors.length = 0;
+
+    const getContext = (): HandlerContext => {
       const [command, called] = getCommand();
       const isCommandResolved = !!command;
       // [...argv] is a workaround since TypeFlag modifies argv
@@ -396,22 +401,22 @@ export class Clerc<C extends CommandRecord = {}> {
         const eofArguments = args["--"];
         parameters = parameters.slice(0, -eofArguments.length || undefined);
 
-        mapErrors.push(mapParametersToArguments(
+        mapParametersToArguments(
           mapping,
           parseParameters(commandParameters),
           parameters,
-        ));
-        mapErrors.push(mapParametersToArguments(
+        );
+        mapParametersToArguments(
           mapping,
           parseParameters(eofParameters),
           eofArguments,
-        ));
+        );
       } else {
-        mapErrors.push(mapParametersToArguments(
+        mapParametersToArguments(
           mapping,
           parseParameters(commandParameters),
           parameters,
-        ));
+        );
       }
       const mergedFlags = { ...flags, ...unknownFlags };
       const context: InspectorContext | HandlerContext = {
@@ -433,10 +438,6 @@ export class Clerc<C extends CommandRecord = {}> {
       fn: () => {
         const [command] = getCommand();
         const handlerContext = getContext();
-        const errors = mapErrors.filter(Boolean) as Error[];
-        if (errors.length > 0) {
-          throw errors[0];
-        }
         if (!command) {
           if (stringName) {
             throw new NoSuchCommandError(stringName, t);
@@ -449,7 +450,15 @@ export class Clerc<C extends CommandRecord = {}> {
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);
-    callInspector(getContext);
+    try {
+      callInspector(getContext);
+    } catch (e) {
+      if (this.#errorHandler) {
+        this.#errorHandler(e);
+      } else {
+        throw e;
+      }
+    }
     return this;
   }
 }
