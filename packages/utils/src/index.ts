@@ -15,12 +15,12 @@ export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<ToArray<E>
 export const toArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
 export type CamelCase<T extends string> = (T extends `${infer Prefix}-${infer Suffix}` | `${infer Prefix} ${infer Suffix}` ? `${Prefix}${Capitalize<CamelCase<Suffix>>}` : T);
-export const camelCase = <T extends string>(s: T): CamelCase<T> => s.replace(/[-_ ](\w)/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
+export const camelCase = <T extends string>(s: T) => s.replace(/[-_ ](\w)/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
 
-export type KebabCase<T extends string, A extends string = ""> = T extends `${infer F}${infer R}`
-  ? KebabCase<R, `${A}${F extends Lowercase<F> ? "" : "-"}${Lowercase<F>}`>
+export type KebabCase<T extends string, A extends string = ""> = T extends `${infer Prefix}${infer Suffix}`
+  ? KebabCase<Suffix, `${A}${Prefix extends Lowercase<Prefix> ? "" : "-"}${Lowercase<Prefix>}`>
   : A;
-export const kebabCase = <T extends string>(s: T): KebabCase<T> => s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;
+export const kebabCase = <T extends string>(s: T) => s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;
 
 export const gracefulFlagName = (n: string) => n.length <= 1 ? `-${n}` : `--${kebabCase(n)}`;
 export const gracefulVersion = (v: string) =>
