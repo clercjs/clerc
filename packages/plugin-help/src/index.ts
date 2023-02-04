@@ -1,16 +1,21 @@
 
 // TODO: unit tests
-
 import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
-import type { Render, Section } from "./renderer";
-import { renderCliffy } from "./renderer";
-import { splitTable, stringifyType } from "./utils";
+import type { Render, Renderers, Section } from "./renderer";
+import { defaultRenderers, render } from "./renderer";
+import { splitTable } from "./utils";
 import { locales } from "./locales";
+
+declare module "@clerc/core" {
+  export interface CommandCustomProperties {
+    help?: Renderers
+  }
+}
 
 const DELIMITER = pc.yellow("-");
 
@@ -48,7 +53,7 @@ const generateExamples = (sections: Section[], examples: [string, string][], t: 
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
     title: t("help.examples")!,
-    body: splitTable(...examplesFormatted),
+    body: splitTable(examplesFormatted),
   });
 };
 
@@ -76,7 +81,7 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
   });
   sections.push({
     title: t("help.commands")!,
-    body: splitTable(...commands),
+    body: splitTable(commands),
   });
   if (notes) {
     sections.push({
@@ -97,7 +102,8 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const sections = [] as Section[];
+  const renderers = Object.assign({}, defaultRenderers, subcommand.help);
+  let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
   } else {
@@ -118,16 +124,17 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     sections.push({
       title: t("help.flags")!,
       body: splitTable(
-        ...Object.entries(subcommand.flags).map(([name, flag]) => {
-          const flagNameWithAlias = [gracefulFlagName(name)];
+        Object.entries(subcommand.flags).map(([name, flag]) => {
+          const hasDefault = flag.default !== undefined;
+          let flagNameWithAlias: string[] = [gracefulFlagName(name)];
           if (flag.alias) {
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
-          const items = [pc.blue(flagNameWithAlias.join(", "))];
+          flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
+          const items = [pc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
           items.push(DELIMITER, flag.description || t("help.noDescription")!);
-          if (flag.type) {
-            const type = stringifyType(flag.type);
-            items.push(pc.gray(`(${type})`));
+          if (hasDefault) {
+            items.push(`(${t("help.default", renderers.renderDefault(flag.default))})`);
           }
           return items;
         }),
@@ -143,6 +150,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
+  sections = renderers.renderSections(sections);
   return render(sections);
 };
 
@@ -169,10 +177,6 @@ export interface HelpPluginOptions {
    * Banner
    */
   banner?: string
-  /**
-   * Render type
-   */
-  renderer?: "cliffy"
 }
 export const helpPlugin = ({
   command = true,
@@ -180,12 +184,10 @@ export const helpPlugin = ({
   notes,
   examples,
   banner,
-  renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const { add, t } = cli.i18n;
     add(locales);
-    const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
       print(s);
