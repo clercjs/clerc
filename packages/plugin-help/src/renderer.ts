@@ -1,6 +1,6 @@
 import pc from "picocolors";
 
-import { table } from "./utils";
+import { stringifyType, table } from "./utils";
 
 export interface BlockSection {
   type?: "block"
@@ -18,8 +18,14 @@ export interface InlineSection {
 
 export type Section = BlockSection | InlineSection;
 export type Render = (sections: Section[]) => string;
+export interface Renderers {
+  renderSections?: (sections: Section[]) => Section[]
+  renderFlagName?: (name: string) => string
+  renderType?: (type: any, hasDefault: boolean) => string
+  renderDefault?: (default_: any) => string
+}
 
-export const renderCliffy: Render = (sections: Section[]) => {
+export const render: Render = (sections: Section[]) => {
   const rendered = [] as string[];
   for (const section of sections) {
     if (section.type === "block" || !section.type) {
@@ -28,11 +34,11 @@ export const renderCliffy: Render = (sections: Section[]) => {
         .map(line => indent + line);
       formattedBody.unshift("");
       const body = formattedBody.join("\n");
-      rendered.push(table([pc.bold(`${section.title}:`)], [body]).toString());
+      rendered.push(table([[pc.bold(`${section.title}:`)], [body]]).toString());
     } else if (section.type === "inline") {
       const formattedBody = section.items
         .map(item => [pc.bold(`${item.title}:`), item.body]);
-      const tableGenerated = table(...formattedBody);
+      const tableGenerated = table(formattedBody);
       rendered.push(tableGenerated.toString());
     }
     rendered.push("");
@@ -40,22 +46,9 @@ export const renderCliffy: Render = (sections: Section[]) => {
   return rendered.join("\n");
 };
 
-// export const renderTyper: Render = (sections: Section[]) => {
-//   const rendered = [] as string[];
-//   for (const section of sections) {
-//     if (section.type === "block" || !section.type) {
-//       rendered.push(boxen(section.body.join("\n\n"), {
-//         title: section.title,
-//         borderStyle: "round",
-//         padding: 0.5,
-//       }));
-//     } else if (section.type === "inline") {
-//       const formattedBody = section.items
-//         .map(item => [pc.bold(`${item.title}:`), item.body]);
-//       const tableGenerated = table(...formattedBody);
-//       rendered.push(tableGenerated.toString());
-//     }
-//     rendered.push("");
-//   }
-//   return rendered.join("\n");
-// };
+export const defaultRenderers: Required<Renderers> = {
+  renderFlagName: n => n,
+  renderSections: s => s,
+  renderType: (type, hasDefault) => stringifyType(type, hasDefault),
+  renderDefault: default_ => JSON.stringify(default_),
+};

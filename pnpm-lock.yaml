@@ -111,7 +111,6 @@ importers:
       '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
       '@types/text-table': ^0.2.2
-      get-func-name: ^2.0.0
       picocolors: ^1.0.0
       string-width: ^5.1.2
       text-table: ^0.2.0
@@ -119,7 +118,6 @@ importers:
       '@clerc/core': link:../core
       '@clerc/utils': link:../utils
       '@types/text-table': 0.2.2
-      get-func-name: 2.0.0
       picocolors: 1.0.0
       string-width: 5.1.2
       text-table: 0.2.0
