@@ -1,10 +1,10 @@
 import textTable from "text-table";
 import stringWidth from "string-width";
 
-export const table = (...items: string[][]) => textTable(items, { stringLength: stringWidth });
+export const table = (items: string[][]) => textTable(items, { stringLength: stringWidth });
 
-export const splitTable = (...items: string[][]) => {
-  return table(...items).split("\n");
+export const splitTable = (items: string[][]) => {
+  return table(items).split("\n");
 };
 
 const primitiveMap = new Map<any, string>([
