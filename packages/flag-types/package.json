@@ -1,0 +1,57 @@
+{
+  "name": "@clerc/flag-types",
+  "version": "0.29.0",
+  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "description": "Type-flag utility types for clerc.",
+  "keywords": [
+    "cli",
+    "clerc",
+    "clerc-plugin",
+    "arguments",
+    "argv",
+    "args",
+    "terminal"
+  ],
+  "type": "module",
+  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/flag-types#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/so1ve/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/so1ve/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "puild --minify",
+    "watch": "puild --watch"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
+  }
+}
