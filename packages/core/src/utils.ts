@@ -126,9 +126,9 @@ export function compose(inspectors: Inspector[]) {
     ...inspectorMap.normal,
     ...inspectorMap.post,
   ];
-  return async (getCtx: () => InspectorContext) => {
-    return await dispatch(0);
-    async function dispatch(i: number): Promise<void> {
+  return (getCtx: () => InspectorContext) => {
+    return dispatch(0);
+    function dispatch(i: number): void {
       const inspector = mergedInspectorFns[i];
       return inspector(getCtx(), dispatch.bind(null, i + 1));
     }
