@@ -135,7 +135,11 @@ export function compose(inspectors: Inspector[]) {
   };
 }
 
-export const isInvalidName = (name: CommandType) => typeof name === "string" && (name.startsWith(" ") || name.endsWith(" "));
+const INVALID_RE = /\s\s+/;
+export const isValidName = (name: CommandType) =>
+  name === Root
+    ? true
+    : !(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name);
 
 export const withBrackets = (s: string, isOptional?: boolean) => isOptional ? `[${s}]` : `<${s}>`;
 
