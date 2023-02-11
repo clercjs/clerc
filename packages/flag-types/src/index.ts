@@ -1,7 +1,7 @@
 type Type<T = any> = (value?: any) => T;
 
 export const OneOf = <T>(list: T[], origType: Type<T>) => {
-  const stringList = list.join(", ");
+  const stringList = list.map(s => JSON.stringify(s)).join(", ");
   const res = (value: string) => {
     if (!list.includes(origType(value))) {
       throw new Error(`Must be one of the following: ${stringList}`);
