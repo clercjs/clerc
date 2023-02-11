@@ -37,7 +37,7 @@ import {
   compose,
   detectLocale,
   formatCommandName,
-  isInvalidName,
+  isValidName,
   resolveArgv,
   resolveCommand,
   resolveParametersBeforeFlag,
@@ -247,13 +247,18 @@ export class Clerc<C extends CommandRecord = {}> {
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
+    this.#callWithErrorHandling(() => this.#command(nameOrCommand, description, options));
+    return this;
+  }
+
+  #command(nameOrCommand: any, description?: any, options: any = {}) {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
-    if (isInvalidName(name)) {
+    if (!isValidName(name)) {
       throw new InvalidCommandNameError(name as string, t);
     }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
@@ -424,6 +429,18 @@ export class Clerc<C extends CommandRecord = {}> {
     return context;
   }
 
+  #callWithErrorHandling(fn: (...args: any[]) => any) {
+    try {
+      fn();
+    } catch (e) {
+      if (this.#errorHandlers.length > 0) {
+        this.#errorHandlers.forEach(cb => cb(e));
+      } else {
+        throw e;
+      }
+    }
+  }
+
   #runMatchedCommand() {
     this.#otherMethodCaled();
     const { t } = this.i18n;
@@ -466,15 +483,7 @@ export class Clerc<C extends CommandRecord = {}> {
    * ```
    */
   runMatchedCommand() {
-    try {
-      this.#runMatchedCommand();
-    } catch (e) {
-      if (this.#errorHandlers.length > 0) {
-        this.#errorHandlers.forEach(cb => cb(e));
-      } else {
-        throw e;
-      }
-    }
+    this.#callWithErrorHandling(() => this.#runMatchedCommand());
     return this;
   }
 }
