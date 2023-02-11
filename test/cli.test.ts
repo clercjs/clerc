@@ -433,7 +433,7 @@ describe("cli", () => {
         .command("foo", "foo")
         .parse(["bar"]);
     } catch (e: any) {
-      expect(e.message).toEqual("找不到命令: bar。");
+      expect(e.message).toEqual("找不到命令: \"bar\"。");
     }
   });
 });
