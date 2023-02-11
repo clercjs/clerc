@@ -61,7 +61,7 @@
     "@types/prompts": "^2.4.2",
     "cli-progress": "^3.11.2",
     "cli-table3": "^0.6.3",
-    "execa": "^6.1.0",
+    "execa": "^7.0.0",
     "kons": "^0.6.2",
     "open": "^8.4.0",
     "ora": "^6.1.2",
