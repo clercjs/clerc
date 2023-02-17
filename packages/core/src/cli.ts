@@ -19,9 +19,9 @@ import {
 import type {
   Command,
   CommandOptions,
-  CommandRecord,
   CommandType,
   CommandWithHandler,
+  Commands,
   Flags,
   Handler,
   HandlerContext,
@@ -48,7 +48,7 @@ import { locales } from "./locales";
 export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends CommandRecord = {}> {
+export class Clerc<C extends Commands = {}> {
   #name = "";
   #description = "";
   #version = "";

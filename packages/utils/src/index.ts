@@ -44,7 +44,7 @@ export const arrayStartsWith = <T>(arr: T[], start: T[]) => {
   return arrayEquals(arr.slice(0, start.length), start);
 };
 
-export const generateCommandRecordFromCommandArray = <C extends Command>(commands: C[]) => {
+export const generateCommandsFromCommandArray = <C extends Command>(commands: C[]) => {
   const record = {} as Dict<C>;
   for (const command of commands) {
     record[command.name] = command;
