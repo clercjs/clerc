@@ -356,7 +356,7 @@ export class Clerc<C extends CommandRecord = {}> {
           argv: resolveArgv(),
           ...optionsOrArgv,
         };
-    this.#argv = argv;
+    this.#argv = [...argv];
     this.#validateMeta();
     if (run) {
       this.runMatchedCommand();
@@ -379,6 +379,7 @@ export class Clerc<C extends CommandRecord = {}> {
 
   #getContext(getCommand: () => ReturnType<typeof resolveCommand>) {
     const argv = this.#argv!;
+    const { t } = this.i18n;
     const [command, called] = getCommand();
     const isCommandResolved = !!command;
     // [...argv] is a workaround since TypeFlag modifies argv
@@ -398,19 +399,22 @@ export class Clerc<C extends CommandRecord = {}> {
 
       mapParametersToArguments(
         mapping,
-        parseParameters(commandParameters),
+        parseParameters(commandParameters, t),
         parameters,
+        t,
       );
       mapParametersToArguments(
         mapping,
-        parseParameters(eofParameters),
+        parseParameters(eofParameters, t),
         eofArguments,
+        t,
       );
     } else {
       mapParametersToArguments(
         mapping,
-        parseParameters(commandParameters),
+        parseParameters(commandParameters, t),
         parameters,
+        t,
       );
     }
     const mergedFlags = { ...flags, ...unknownFlags };
