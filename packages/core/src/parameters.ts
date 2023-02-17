@@ -2,6 +2,8 @@
 // Thanks for his awesome work!
 import { camelCase } from "@clerc/utils";
 
+import type { TranslateFn } from "./types";
+
 const { stringify } = JSON;
 
 interface ParsedParameter {
@@ -10,7 +12,7 @@ interface ParsedParameter {
   spread: boolean
 }
 
-export function parseParameters(parameters: string[]) {
+export function parseParameters(parameters: string[], t: TranslateFn) {
   const parsedParameters: ParsedParameter[] = [];
 
   let hasOptional: string | undefined;
@@ -18,7 +20,7 @@ export function parseParameters(parameters: string[]) {
 
   for (const parameter of parameters) {
     if (hasSpread) {
-      throw new Error(`Invalid parameter: Spread parameter ${stringify(hasSpread)} must be last`);
+      throw new Error (t("core.spreadParameterMustBeLast", stringify(hasSpread)));
     }
 
     const firstCharacter = parameter[0];
@@ -29,7 +31,7 @@ export function parseParameters(parameters: string[]) {
       required = true;
 
       if (hasOptional) {
-        throw new Error(`Invalid parameter: Required parameter ${stringify(parameter)} cannot come after optional parameter ${stringify(hasOptional)}`);
+        throw new Error(t("core.requiredParameterMustBeBeforeOptional", stringify(parameter), stringify(hasOptional)));
       }
     }
 
@@ -39,7 +41,7 @@ export function parseParameters(parameters: string[]) {
     }
 
     if (required === undefined) {
-      throw new Error(`Invalid parameter: ${stringify(parameter)}. Must be wrapped in <> (required parameter) or [] (optional parameter)`);
+      throw new Error(t("core.parameterMustBeWrappedInBrackets", stringify(parameter)));
     }
 
     let name = parameter.slice(1, -1);
@@ -65,12 +67,13 @@ export function mapParametersToArguments(
   mapping: Record<string, string | string[]>,
   parameters: ParsedParameter[],
   cliArguments: string[],
+  t: TranslateFn,
 ) {
   for (let i = 0; i < parameters.length; i += 1) {
     const { name, required, spread } = parameters[i];
     const camelCaseName = camelCase(name);
     if (camelCaseName in mapping) {
-      return new Error(`Invalid parameter: ${stringify(name)} is used more than once.`);
+      throw new Error(t("core.parameterIsUsedMoreThanOnce", stringify(name)));
     }
 
     const value = spread ? cliArguments.slice(i) : cliArguments[i];
@@ -83,7 +86,7 @@ export function mapParametersToArguments(
       required
       && (!value || (spread && value.length === 0))
     ) {
-      return new Error(`Error: Missing required parameter ${stringify(name)}`);
+      throw new Error(t("core.missingRequiredParameter", stringify(name)));
     }
 
     mapping[camelCaseName] = value;

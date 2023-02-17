@@ -39,7 +39,7 @@ import {
   compose,
   detectLocale,
   formatCommandName,
-  isInvalidName,
+  isValidName,
   resolveArgv,
   resolveCommand,
   resolveParametersBeforeFlag,
@@ -47,7 +47,7 @@ import {
 import { mapParametersToArguments, parseParameters } from "./parameters";
 import { locales } from "./locales";
 
-export const Root = Symbol("Root");
+export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
 export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescription = {}> {
@@ -60,6 +60,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
   #flags = {} as GF;
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
+  #errorHandlers = [] as ((err: any) => void)[];
 
   #isOtherMethodCalled = false;
   #defaultLocale = "en";
@@ -166,7 +167,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
 
   /**
    * Set the Locale
-   * It's recommended to call this method once after you created the Clerc instance.
+   * You must call this method once after you created the Clerc instance.
    * @param locale
    * @returns
    * @example
@@ -184,7 +185,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
 
   /**
    * Set the fallback Locale
-   * It's recommended to call this method once after you created the Clerc instance.
+   * You must call this method once after you created the Clerc instance.
    * @param fallbackLocale
    * @returns
    * @example
@@ -197,6 +198,21 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
   fallbackLocale(fallbackLocale: string) {
     if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
     this.#defaultLocale = fallbackLocale;
+    return this;
+  }
+
+  /**
+   * Register a error handler
+   * @param handler
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .errorHandler((err) => { console.log(err); })
+   * ```
+   */
+  errorHandler(handler: (err: any) => void) {
+    this.#errorHandlers.push(handler);
     return this;
   }
 
@@ -235,13 +251,18 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
+    this.#callWithErrorHandling(() => this.#command(nameOrCommand, description, options));
+    return this;
+  }
+
+  #command(nameOrCommand: any, description?: any, options: any = {}) {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
     const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
-    if (isInvalidName(name)) {
+    if (!isValidName(name)) {
       throw new InvalidCommandNameError(name as string, t);
     }
     const { handler = undefined, ...commandToSave } = isCommandObject ? nameOrCommand : { name, description, ...options };
@@ -361,7 +382,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
           argv: resolveArgv(),
           ...optionsOrArgv,
         };
-    this.#argv = argv;
+    this.#argv = [...argv];
     this.#validateMeta();
     if (run) {
       this.runMatchedCommand();
@@ -382,91 +403,90 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
     }
   }
 
-  /**
-   * Run matched command
-   * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .parse({ run: false })
-   *   .runMatchedCommand()
-   * ```
-   */
-  runMatchedCommand() {
+  #getContext(getCommand: () => ReturnType<typeof resolveCommand>) {
+    const argv = this.#argv!;
+    const { t } = this.i18n;
+    const [command, called] = getCommand();
+    const isCommandResolved = !!command;
+    // [...argv] is a workaround since TypeFlag modifies argv
+    const parsed = typeFlag(command?.flags || {}, [...argv]);
+    const { _: args, flags, unknownFlags } = parsed;
+    let parameters = !isCommandResolved || command.name === Root ? args : args.slice(command.name.split(" ").length);
+    let commandParameters = command?.parameters || [];
+    // eof handle
+    const hasEof = commandParameters.indexOf("--");
+    const eofParameters = commandParameters.slice(hasEof + 1) || [];
+    const mapping: Record<string, string | string[]> = Object.create(null);
+    // Support `--` eof parameters
+    if (hasEof > -1 && eofParameters.length > 0) {
+      commandParameters = commandParameters.slice(0, hasEof);
+      const eofArguments = args["--"];
+      parameters = parameters.slice(0, -eofArguments.length || undefined);
+
+      mapParametersToArguments(
+        mapping,
+        parseParameters(commandParameters, t),
+        parameters,
+        t,
+      );
+      mapParametersToArguments(
+        mapping,
+        parseParameters(eofParameters, t),
+        eofArguments,
+        t,
+      );
+    } else {
+      mapParametersToArguments(
+        mapping,
+        parseParameters(commandParameters, t),
+        parameters,
+        t,
+      );
+    }
+    const mergedFlags = { ...flags, ...unknownFlags };
+    const context: InspectorContext | HandlerContext = {
+      name: command?.name as any,
+      called: Array.isArray(called) ? called.join(" ") : called,
+      resolved: isCommandResolved as any,
+      hasRootOrAlias: this.#hasRootOrAlias,
+      hasRoot: this.#hasRoot,
+      raw: { ...parsed, parameters, mergedFlags },
+      parameters: mapping,
+      flags,
+      unknownFlags,
+      cli: this as any,
+    };
+    return context;
+  }
+
+  #callWithErrorHandling(fn: (...args: any[]) => any) {
+    try {
+      fn();
+    } catch (e) {
+      if (this.#errorHandlers.length > 0) {
+        this.#errorHandlers.forEach(cb => cb(e));
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  #runMatchedCommand() {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const argv = this.#argv;
     if (!argv) {
-      throw new Error("cli.parse() must be called.");
+      throw new Error(t("core.cliParseMustBeCalled"));
     }
     const name = resolveParametersBeforeFlag(argv);
     const stringName = name.join(" ");
     const getCommand = () => resolveCommand(this.#commands, name, t);
-    const mapErrors = [] as (Error | undefined)[];
-    const getContext = () => {
-      mapErrors.length = 0;
-      const [command, called] = getCommand();
-      const isCommandResolved = !!command;
-      const flagsWithGlobal = {
-        ...this.#flags,
-        ...(command?.flags || {}),
-      };
-      // [...argv] is a workaround since TypeFlag modifies argv
-      const parsed = typeFlag(flagsWithGlobal, [...argv]);
-      const { _: args, flags, unknownFlags } = parsed;
-      let parameters = !isCommandResolved || command.name === Root ? args : args.slice(command.name.split(" ").length);
-      let commandParameters = command?.parameters || [];
-      // eof handle
-      const hasEof = commandParameters.indexOf("--");
-      const eofParameters = commandParameters.slice(hasEof + 1) || [];
-      const mapping: Record<string, string | string[]> = Object.create(null);
-      // Support `--` eof parameters
-      if (hasEof > -1 && eofParameters.length > 0) {
-        commandParameters = commandParameters.slice(0, hasEof);
-        const eofArguments = args["--"];
-        parameters = parameters.slice(0, -eofArguments.length || undefined);
-
-        mapErrors.push(mapParametersToArguments(
-          mapping,
-          parseParameters(commandParameters),
-          parameters,
-        ));
-        mapErrors.push(mapParametersToArguments(
-          mapping,
-          parseParameters(eofParameters),
-          eofArguments,
-        ));
-      } else {
-        mapErrors.push(mapParametersToArguments(
-          mapping,
-          parseParameters(commandParameters),
-          parameters,
-        ));
-      }
-      const mergedFlags = { ...flags, ...unknownFlags };
-      const context: InspectorContext | HandlerContext = {
-        name: command?.name as any,
-        called: Array.isArray(called) ? called.join(" ") : called,
-        resolved: isCommandResolved as any,
-        hasRootOrAlias: this.#hasRootOrAlias,
-        hasRoot: this.#hasRoot,
-        raw: { ...parsed, parameters, mergedFlags },
-        parameters: mapping,
-        flags,
-        unknownFlags,
-        cli: this as any,
-      };
-      return context;
-    };
+    const getContext = () => this.#getContext(getCommand);
     const emitHandler: Inspector = {
       enforce: "post",
       fn: () => {
         const [command] = getCommand();
         const handlerContext = getContext();
-        const errors = mapErrors.filter(Boolean) as Error[];
-        if (errors.length > 0) {
-          throw errors[0];
-        }
         if (!command) {
           if (stringName) {
             throw new NoSuchCommandError(stringName, t);
@@ -480,6 +500,20 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);
     callInspector(getContext);
+  }
+
+  /**
+   * Run matched command
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .parse({ run: false })
+   *   .runMatchedCommand()
+   * ```
+   */
+  runMatchedCommand() {
+    this.#callWithErrorHandling(() => this.#runMatchedCommand());
     return this;
   }
 }

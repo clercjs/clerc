@@ -1,13 +1,15 @@
 import type { TranslateFn } from "./types";
 
+const s = JSON.stringify;
+
 export class CommandExistsError extends Error {
   constructor(public commandName: string, t: TranslateFn) {
-    super(t("core.commandExists", commandName));
+    super(t("core.commandExists", s(commandName)));
   }
 }
 export class NoSuchCommandError extends Error {
   constructor(public commandName: string, t: TranslateFn) {
-    super(t("core.noSuchCommand", commandName));
+    super(t("core.noSuchCommand", s(commandName)));
   }
 }
 export class NoCommandGivenError extends Error {
@@ -17,7 +19,7 @@ export class NoCommandGivenError extends Error {
 }
 export class CommandNameConflictError extends Error {
   constructor(public n1: string, public n2: string, t: TranslateFn) {
-    super(t("core.commandNameConflict", n1, n2));
+    super(t("core.commandNameConflict", s(n1), s(n2)));
   }
 }
 export class NameNotSetError extends Error {
@@ -37,7 +39,7 @@ export class VersionNotSetError extends Error {
 }
 export class InvalidCommandNameError extends Error {
   constructor(public commandName: string, t: TranslateFn) {
-    super(t("core.badNameFormat", commandName));
+    super(t("core.badNameFormat", s(commandName)));
   }
 }
 export class LocaleNotCalledFirstError extends Error {

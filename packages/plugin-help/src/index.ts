@@ -1,16 +1,20 @@
 
 // TODO: unit tests
-
 import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
-
 import { toArray } from "@clerc/utils";
 import pc from "picocolors";
 
-import type { Render, Section } from "./renderer";
-import { renderCliffy } from "./renderer";
+import type { Render, Renderers, Section } from "./renderer";
+import { defaultRenderers, render } from "./renderer";
 import { DELIMITER, formatFlags, generateCliDetail, generateExamples, print, sortName, splitTable } from "./utils";
 import { locales } from "./locales";
+
+declare module "@clerc/core" {
+  export interface CommandCustomProperties {
+    help?: Renderers
+  }
+}
 
 const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
@@ -36,14 +40,14 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
   if (commands.length) {
     sections.push({
       title: t("help.commands")!,
-      body: splitTable(...commands),
+      body: splitTable(commands),
     });
   }
   const globalFlags = formatFlags(cli._flags);
   if (globalFlags.length) {
     sections.push({
       title: t("help.globalFlags")!,
-      body: splitTable(...globalFlags),
+      body: splitTable(globalFlags),
     });
   }
   if (notes) {
@@ -65,7 +69,8 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const sections = [] as Section[];
+  const renderers = Object.assign({}, defaultRenderers, subcommand.help);
+  let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
   } else {
@@ -86,13 +91,13 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (globalFlags.length) {
     sections.push({
       title: t("help.globalFlags")!,
-      body: splitTable(...globalFlags),
+      body: splitTable(globalFlags),
     });
   }
   if (subcommand.flags) {
     sections.push({
       title: t("help.flags")!,
-      body: splitTable(...formatFlags(subcommand.flags)),
+      body: splitTable(formatFlags(subcommand.flags)),
     });
   }
   if (subcommand.notes) {
@@ -104,6 +109,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.examples) {
     generateExamples(sections, subcommand.examples, t);
   }
+  sections = renderers.renderSections(sections);
   return render(sections);
 };
 
@@ -130,10 +136,6 @@ export interface HelpPluginOptions {
    * Banner
    */
   banner?: string
-  /**
-   * Render type
-   */
-  renderer?: "cliffy"
 }
 export const helpPlugin = ({
   command = true,
@@ -141,12 +143,10 @@ export const helpPlugin = ({
   notes,
   examples,
   banner,
-  renderer = "cliffy",
 }: HelpPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const { add, t } = cli.i18n;
     add(locales);
-    const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
     const printHelp = (s: string) => {
       banner && print(`${banner}\n`);
       print(s);

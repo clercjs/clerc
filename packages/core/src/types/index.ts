@@ -31,17 +31,13 @@ export type Command<N extends string | RootType = string, O extends CommandOptio
 export type CommandAlias<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & {
   __isAlias?: true
 };
-export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & { handler?: HandlerInCommand<
-  HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
-> };
+export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = Command<N, O> & { handler?: HandlerInCommand<HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>> };
 export type CommandRecord = Dict<Command> & { [Root]?: Command };
 
 export interface ParseOptions {
   argv?: string[]
   run?: boolean
 }
-
-export type PossibleInputKind = string | number | boolean | Dict<any>;
 
 export interface HandlerContext<C extends CommandRecord = CommandRecord, N extends keyof C = keyof C, GF extends FlagsWithoutDescription = {}> {
   name?: LiteralUnion<N, string>

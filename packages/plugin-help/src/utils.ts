@@ -1,22 +1,28 @@
-import pc from "picocolors";
-import { Root, formatCommandName } from "@clerc/core";
+import { gracefulFlagName } from "@clerc/utils";
 import type { Clerc, Command, CommandType, Flags, RootType, TranslateFn } from "@clerc/core";
-import getFuncName from "get-func-name";
+import { Root, formatCommandName } from "@clerc/core";
 import textTable from "text-table";
 import stringWidth from "string-width";
-import { gracefulFlagName } from "@clerc/utils";
+import pc from "picocolors";
+
 import type { Section } from "./renderer";
 
-export const table = (...items: string[][]) => textTable(items, { stringLength: stringWidth });
+export const table = (items: string[][]) => textTable(items, { stringLength: stringWidth });
 
-export const splitTable = (...items: string[][]) => {
-  return table(...items).split("\n");
+export const splitTable = (items: string[][]) => {
+  return table(items).split("\n");
 };
 
-export const stringifyType = (type: any) => {
-  return Array.isArray(type)
-    ? `Array<${getFuncName(type[0])}>`
-    : getFuncName(type);
+const primitiveMap = new Map<any, string>([
+  [Boolean, ""],
+  [String, "string"],
+  [Number, "number"],
+]);
+export const stringifyType = (type: any, hasDefault = false) => {
+  const res = primitiveMap.has(type)
+    ? primitiveMap.get(type)
+    : "value";
+  return hasDefault ? `[${res}]` : `<${res}>`;
 };
 
 export const sortName = (a: CommandType, b: CommandType) => {
@@ -61,7 +67,7 @@ export const generateExamples = (sections: Section[], examples: [string, string]
   const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
   sections.push({
     title: t("help.examples")!,
-    body: splitTable(...examplesFormatted),
+    body: splitTable(examplesFormatted),
   });
 };
 
