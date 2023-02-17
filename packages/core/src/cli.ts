@@ -484,6 +484,7 @@ export class Clerc<C extends CommandRecord = {}> {
    */
   runMatchedCommand() {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
+    process.title = this.#name;
     return this;
   }
 }
