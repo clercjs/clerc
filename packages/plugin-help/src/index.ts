@@ -1,7 +1,7 @@
 
 // TODO: unit tests
 
-import type { Clerc, Command, Flags, HandlerContext, RootType, TranslateFn } from "@clerc/core";
+import type { Flags, HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
 import { gracefulFlagName, toArray } from "@clerc/utils";
@@ -9,48 +9,8 @@ import pc from "picocolors";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
-import { sortName, splitTable, stringifyType } from "./utils";
+import { DELIMITER, generateCliDetail, generateExamples, print, sortName, splitTable, stringifyType } from "./utils";
 import { locales } from "./locales";
-
-const DELIMITER = pc.yellow("-");
-
-const print = (s: string) => { process.stdout.write(s); };
-
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
-  const { t } = cli.i18n;
-  const items = [
-    {
-      title: t("help.name")!,
-      body: pc.red(cli._name),
-    },
-    {
-      title: t("help.version")!,
-      body: pc.yellow(cli._version),
-    },
-  ];
-  if (subcommand) {
-    items.push({
-      title: t("help.subcommand")!,
-      body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
-    });
-  }
-  sections.push({
-    type: "inline",
-    items,
-  });
-  sections.push({
-    title: t("help.description")!,
-    body: [subcommand?.description || cli._description],
-  });
-};
-
-const generateExamples = (sections: Section[], examples: [string, string][], t: TranslateFn) => {
-  const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
-  sections.push({
-    title: t("help.examples")!,
-    body: splitTable(...examplesFormatted),
-  });
-};
 
 const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
