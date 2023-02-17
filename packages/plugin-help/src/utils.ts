@@ -9,9 +9,7 @@ import type { Section } from "./renderer";
 
 export const table = (items: string[][]) => textTable(items, { stringLength: stringWidth });
 
-export const splitTable = (items: string[][]) => {
-  return table(items).split("\n");
-};
+export const splitTable = (items: string[][]) => table(items).split("\n");
 
 const primitiveMap = new Map<any, string>([
   [Boolean, ""],
