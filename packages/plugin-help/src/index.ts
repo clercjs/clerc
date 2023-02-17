@@ -1,15 +1,15 @@
 
 // TODO: unit tests
 
-import type { Flags, HandlerContext, RootType } from "@clerc/core";
+import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 
-import { gracefulFlagName, toArray } from "@clerc/utils";
+import { toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Render, Section } from "./renderer";
 import { renderCliffy } from "./renderer";
-import { DELIMITER, generateCliDetail, generateExamples, print, sortName, splitTable, stringifyType } from "./utils";
+import { DELIMITER, formatFlags, generateCliDetail, generateExamples, print, sortName, splitTable } from "./utils";
 import { locales } from "./locales";
 
 const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
@@ -39,17 +39,11 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
       body: splitTable(...commands),
     });
   }
-  const flags = Object.entries(cli._flags as Flags)
-    .map(([name, flag]) => {
-      const flagNameWithAlias = [name, ...toArray(flag.alias || [])]
-        .map(gracefulFlagName)
-        .join(", ");
-      return [pc.cyan(flagNameWithAlias), DELIMITER, flag.description];
-    });
-  if (flags.length) {
+  const globalFlags = formatFlags(cli._flags);
+  if (globalFlags.length) {
     sections.push({
-      title: t("help.flags")!,
-      body: splitTable(...flags),
+      title: t("help.globalFlags")!,
+      body: splitTable(...globalFlags),
     });
   }
   if (notes) {
@@ -88,24 +82,17 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
+  const globalFlags = formatFlags(cli._flags);
+  if (globalFlags.length) {
+    sections.push({
+      title: t("help.globalFlags")!,
+      body: splitTable(...globalFlags),
+    });
+  }
   if (subcommand.flags) {
     sections.push({
       title: t("help.flags")!,
-      body: splitTable(
-        ...Object.entries(subcommand.flags).map(([name, flag]) => {
-          const flagNameWithAlias = [gracefulFlagName(name)];
-          if (flag.alias) {
-            flagNameWithAlias.push(gracefulFlagName(flag.alias));
-          }
-          const items = [pc.blue(flagNameWithAlias.join(", "))];
-          items.push(DELIMITER, flag.description);
-          if (flag.type) {
-            const type = stringifyType(flag.type);
-            items.push(pc.gray(`(${type})`));
-          }
-          return items;
-        }),
-      ),
+      body: splitTable(...formatFlags(subcommand.flags)),
     });
   }
   if (subcommand.notes) {

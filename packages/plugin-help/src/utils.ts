@@ -4,7 +4,7 @@ import type { Clerc, Command, CommandType, Flags, RootType, TranslateFn } from "
 import getFuncName from "get-func-name";
 import textTable from "text-table";
 import stringWidth from "string-width";
-import { gracefulFlagName, toArray } from "@clerc/utils";
+import { gracefulFlagName } from "@clerc/utils";
 import type { Section } from "./renderer";
 
 export const table = (...items: string[][]) => textTable(items, { stringLength: stringWidth });
@@ -65,10 +65,16 @@ export const generateExamples = (sections: Section[], examples: [string, string]
   });
 };
 
-export const formatFlags = (flags: Flags) => Object.entries(flags)
-  .map(([name, flag]) => {
-    const flagNameWithAlias = [name, ...toArray(flag.alias || [])]
-      .map(gracefulFlagName)
-      .join(", ");
-    return [pc.cyan(flagNameWithAlias), DELIMITER, flag.description];
-  });
+export const formatFlags = (flags: Flags) => Object.entries(flags).map(([name, flag]) => {
+  const flagNameWithAlias = [gracefulFlagName(name)];
+  if (flag.alias) {
+    flagNameWithAlias.push(gracefulFlagName(flag.alias));
+  }
+  const items = [pc.blue(flagNameWithAlias.join(", "))];
+  items.push(DELIMITER, flag.description);
+  if (flag.type) {
+    const type = stringifyType(flag.type);
+    items.push(pc.gray(`(${type})`));
+  }
+  return items;
+});
