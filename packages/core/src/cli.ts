@@ -488,6 +488,7 @@ export class Clerc<C extends Commands = {}> {
    */
   runMatchedCommand() {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
+    process.title = this.#name;
     return this;
   }
 }
