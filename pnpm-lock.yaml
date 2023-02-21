@@ -89,10 +89,10 @@ importers:
   packages/plugin-friendly-error:
     specifiers:
       '@clerc/core': workspace:*
-      kons: ^0.6.2
+      kons: ^0.7.0
     devDependencies:
       '@clerc/core': link:../core
-      kons: 0.6.2
+      kons: 0.7.0
 
   packages/plugin-help:
     specifiers:
@@ -145,7 +145,7 @@ importers:
       cli-progress: ^3.11.2
       cli-table3: ^0.6.3
       execa: ^6.1.0
-      kons: ^0.6.2
+      kons: ^0.7.0
       open: ^8.4.0
       ora: ^6.1.2
       picocolors: ^1.0.0
@@ -159,7 +159,7 @@ importers:
       cli-progress: 3.12.0
       cli-table3: 0.6.3
       execa: 6.1.0
-      kons: 0.6.2
+      kons: 0.7.0
       open: 8.4.1
       ora: 6.1.2
       picocolors: 1.0.0
@@ -3035,8 +3035,8 @@ packages:
       picocolors: 1.0.0
     dev: true
 
-  /kons/0.6.2:
-    resolution: {integrity: sha512-6ne49lu5nUEXf++pUmxkomhj1cclaPZ78ylT3gm7W7cX83xrR/dQMoUJciYcP1+V9skhmLXF/k23cbMfALymoA==}
+  /kons/0.7.0:
+    resolution: {integrity: sha512-Im+d/pXR8+3ED6TMUxUKB0VSRf9TfOqVjqs6t29wY6zSYZlG5nnvdnhttI5cpxPhW1G28vOJQDtg3tlrkIZyVg==}
     dependencies:
       figures: 5.0.0
       picocolors: 1.0.0
