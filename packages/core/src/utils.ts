@@ -126,11 +126,19 @@ export function compose(inspectors: Inspector[]) {
     ...inspectorMap.normal,
     ...inspectorMap.post,
   ];
+
   return (getCtx: () => InspectorContext) => {
-    return dispatch(0);
+    const callbacks: (() => void)[] = [];
+    dispatch(0);
+    for (let i = callbacks.length - 1; i >= 0; i--) {
+      callbacks[i]();
+    }
     function dispatch(i: number): void {
       const inspector = mergedInspectorFns[i];
-      return inspector(getCtx(), dispatch.bind(null, i + 1));
+      const cb = inspector(getCtx(), dispatch.bind(null, i + 1));
+      if (cb) {
+        callbacks.push(cb);
+      }
     }
   };
 }

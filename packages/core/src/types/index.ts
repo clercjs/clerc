@@ -56,7 +56,7 @@ export type InspectorContext<C extends Commands = Commands> = HandlerContext<C> 
   flags: FallbackType<TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"], Dict<any>>
 };
 export type Inspector<C extends Commands = Commands> = InspectorFn<C> | InspectorObject<C>;
-export type InspectorFn<C extends Commands = Commands> = (ctx: InspectorContext<C>, next: () => void) => void;
+export type InspectorFn<C extends Commands = Commands> = (ctx: InspectorContext<C>, next: () => void) => (() => void) | void;
 export interface InspectorObject<C extends Commands = Commands> {
   enforce?: "pre" | "post"
   fn: InspectorFn<C>
