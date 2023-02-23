@@ -32,7 +32,7 @@
     "@mini-cz/config-default": "^0.2.0",
     "@so1ve/eslint-config": "^0.43.1",
     "@types/node": "^18.11.18",
-    "bumpp": "^8.2.1",
+    "bumpp": "^9.0.0",
     "eslint": "^8.33.0",
     "mini-cz": "^0.2.0",
     "pnpm": "^7.26.2",
