@@ -129,15 +129,19 @@ export function compose(inspectors: Inspector[]) {
 
   return (getCtx: () => InspectorContext) => {
     const callbacks: (() => void)[] = [];
-    dispatch(0);
-    for (let i = callbacks.length - 1; i >= 0; i--) {
-      callbacks[i]();
-    }
-    function dispatch(i: number): void {
+    let called = 0;
+    const dispatch = (i: number) => {
+      called = i;
       const inspector = mergedInspectorFns[i];
       const cb = inspector(getCtx(), dispatch.bind(null, i + 1));
       if (cb) {
         callbacks.push(cb);
+      }
+    };
+    dispatch(0);
+    if (called + 1 === mergedInspectorFns.length) {
+      for (const cb of callbacks) {
+        cb();
       }
     }
   };
