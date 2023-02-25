@@ -49,6 +49,6 @@
     "@clerc/core": "*"
   },
   "devDependencies": {
-    "type-fest": "^3.5.3"
+    "type-fest": "^3.6.0"
   }
 }

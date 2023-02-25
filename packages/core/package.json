@@ -55,7 +55,7 @@
     "defu": "^6.1.2",
     "is-platform": "^1.0.0",
     "lite-emit": "^1.4.0",
-    "type-fest": "^3.5.3",
+    "type-fest": "^3.6.0",
     "type-flag": "^3.0.0"
   }
 }

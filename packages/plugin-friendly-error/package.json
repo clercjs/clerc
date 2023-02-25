@@ -48,6 +48,6 @@
   },
   "devDependencies": {
     "@clerc/core": "workspace:*",
-    "kons": "^0.6.2"
+    "kons": "^0.7.0"
   }
 }

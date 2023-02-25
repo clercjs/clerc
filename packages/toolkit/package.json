@@ -59,11 +59,11 @@
   "dependencies": {
     "@types/cli-progress": "^3.11.0",
     "@types/prompts": "^2.4.2",
-    "cli-progress": "^3.11.2",
+    "cli-progress": "^3.12.0",
     "cli-table3": "^0.6.3",
-    "execa": "^6.1.0",
-    "kons": "^0.6.2",
-    "open": "^8.4.0",
+    "execa": "^7.0.0",
+    "kons": "^0.7.0",
+    "open": "^8.4.2",
     "ora": "^6.1.2",
     "picocolors": "^1.0.0",
     "prompts": "^2.4.2",
@@ -71,6 +71,6 @@
     "terminal-link": "^3.0.0"
   },
   "devDependencies": {
-    "tasuku": "2.0.0"
+    "tasuku": "2.0.1"
   }
 }
