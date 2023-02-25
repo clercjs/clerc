@@ -433,7 +433,7 @@ export class Clerc<C extends Commands = {}> {
     return context;
   }
 
-  #callWithErrorHandling(fn: (...args: any[]) => any) {
+  #callWithErrorHandling(fn: () => void) {
     try {
       fn();
     } catch (e) {
