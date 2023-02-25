@@ -1,4 +1,4 @@
-import type { LiteralUnion } from "type-fest";
+import type { LiteralUnion, Simplify } from "type-fest";
 import type { Dict, MaybeArray } from "@clerc/utils";
 import type { Clerc, Root, RootType } from "../cli";
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
@@ -43,10 +43,10 @@ export interface HandlerContext<C extends Commands = Commands, N extends keyof C
   resolved: boolean
   hasRootOrAlias: boolean
   hasRoot: boolean
-  raw: { [K in keyof ParseRaw<C[N]>]: ParseRaw<C[N]>[K] }
-  parameters: { [K in keyof ParseParameters<C, N>]: ParseParameters<C, N>[K] }
+  raw: Simplify<ParseRaw<C[N]>>
+  parameters: Simplify<ParseParameters<C, N>>
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: { [K in keyof ParseFlag<C, N>]: ParseFlag<C, N>[K] }
+  flags: Simplify<ParseFlag<C, N>>
   cli: Clerc<C>
 }
 export type Handler<C extends Commands = Commands, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
