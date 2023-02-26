@@ -76,7 +76,7 @@ export class Clerc<C extends Commands = {}> {
     },
   };
 
-  private constructor(name?: string, description?: string, version?: string) {
+  private constructor (name?: string, description?: string, version?: string) {
     this.#name = name || this.#name;
     this.#description = description || this.#description;
     this.#version = version || this.#version;
@@ -84,22 +84,22 @@ export class Clerc<C extends Commands = {}> {
     this.#addCoreLocales();
   }
 
-  get #hasRootOrAlias() {
+  get #hasRootOrAlias () {
     return this.#usedNames.has(Root);
   }
 
-  get #hasRoot() {
+  get #hasRoot () {
     return Object.prototype.hasOwnProperty.call(this._commands, Root);
   }
 
-  get _name() { return this.#name; }
-  get _description() { return this.#description; }
-  get _version() { return this.#version; }
-  get _inspectors() { return this.#inspectors; }
-  get _commands() { return this.#commands; }
+  get _name () { return this.#name; }
+  get _description () { return this.#description; }
+  get _version () { return this.#version; }
+  get _inspectors () { return this.#inspectors; }
+  get _commands () { return this.#commands; }
 
-  #addCoreLocales() { this.i18n.add(locales); }
-  #otherMethodCaled() { this.#isOtherMethodCalled = true; }
+  #addCoreLocales () { this.i18n.add(locales); }
+  #otherMethodCaled () { this.#isOtherMethodCalled = true; }
 
   /**
    * Create a new cli
@@ -109,7 +109,7 @@ export class Clerc<C extends Commands = {}> {
    * const cli = Clerc.create()
    * ```
    */
-  static create(name?: string, description?: string, version?: string) {
+  static create (name?: string, description?: string, version?: string) {
     return new Clerc(name, description, version);
   }
 
@@ -123,7 +123,7 @@ export class Clerc<C extends Commands = {}> {
    *   .name("test")
    * ```
    */
-  name(name: string) {
+  name (name: string) {
     this.#otherMethodCaled();
     this.#name = name;
     return this;
@@ -139,7 +139,7 @@ export class Clerc<C extends Commands = {}> {
    *   .description("test cli")
    * ```
    */
-  description(description: string) {
+  description (description: string) {
     this.#otherMethodCaled();
     this.#description = description;
     return this;
@@ -155,7 +155,7 @@ export class Clerc<C extends Commands = {}> {
    *   .version("1.0.0")
    * ```
    */
-  version(version: string) {
+  version (version: string) {
     this.#otherMethodCaled();
     this.#version = version;
     return this;
@@ -173,7 +173,7 @@ export class Clerc<C extends Commands = {}> {
    *   .command(...)
    * ```
    */
-  locale(locale: string) {
+  locale (locale: string) {
     if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
     this.#locale = locale;
     return this;
@@ -191,7 +191,7 @@ export class Clerc<C extends Commands = {}> {
    *   .command(...)
    * ```
    */
-  fallbackLocale(fallbackLocale: string) {
+  fallbackLocale (fallbackLocale: string) {
     if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
     this.#defaultLocale = fallbackLocale;
     return this;
@@ -207,7 +207,7 @@ export class Clerc<C extends Commands = {}> {
    *   .errorHandler((err) => { console.log(err); })
    * ```
    */
-  errorHandler(handler: (err: any) => void) {
+  errorHandler (handler: (err: any) => void) {
     this.#errorHandlers.push(handler);
     return this;
   }
@@ -246,12 +246,12 @@ export class Clerc<C extends Commands = {}> {
    */
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
   command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command(nameOrCommand: any, description?: any, options: any = {}) {
+  command (nameOrCommand: any, description?: any, options: any = {}) {
     this.#callWithErrorHandling(() => this.#command(nameOrCommand, description, options));
     return this;
   }
 
-  #command(nameOrCommand: any, description?: any, options: any = {}) {
+  #command (nameOrCommand: any, description?: any, options: any = {}) {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler => !(typeof nameOrCommand === "string" || nameOrCommand === Root);
@@ -329,7 +329,7 @@ export class Clerc<C extends Commands = {}> {
    *   })
    * ```
    */
-  inspector(inspector: Inspector) {
+  inspector (inspector: Inspector) {
     this.#otherMethodCaled();
     this.#inspectors.push(inspector);
     return this;
@@ -345,7 +345,7 @@ export class Clerc<C extends Commands = {}> {
    *   .parse(process.argv.slice(2)) // Optional
    * ```
    */
-  parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
+  parse (optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
     this.#otherMethodCaled();
     const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
       ? {
@@ -364,7 +364,7 @@ export class Clerc<C extends Commands = {}> {
     return this;
   }
 
-  #validateMeta() {
+  #validateMeta () {
     const { t } = this.i18n;
     if (!this.#name) {
       throw new NameNotSetError(t);
@@ -377,7 +377,7 @@ export class Clerc<C extends Commands = {}> {
     }
   }
 
-  #getContext(getCommand: () => ReturnType<typeof resolveCommand>) {
+  #getContext (getCommand: () => ReturnType<typeof resolveCommand>) {
     const argv = this.#argv!;
     const { t } = this.i18n;
     const [command, called] = getCommand();
@@ -433,7 +433,7 @@ export class Clerc<C extends Commands = {}> {
     return context;
   }
 
-  #callWithErrorHandling(fn: () => void) {
+  #callWithErrorHandling (fn: () => void) {
     try {
       fn();
     } catch (e) {
@@ -445,7 +445,7 @@ export class Clerc<C extends Commands = {}> {
     }
   }
 
-  #runMatchedCommand() {
+  #runMatchedCommand () {
     this.#otherMethodCaled();
     const { t } = this.i18n;
     const argv = this.#argv;
@@ -486,7 +486,7 @@ export class Clerc<C extends Commands = {}> {
    *   .runMatchedCommand()
    * ```
    */
-  runMatchedCommand() {
+  runMatchedCommand () {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
     process.title = this.#name;
     return this;

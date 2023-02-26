@@ -15,12 +15,12 @@ importers:
       '@antfu/ni': ^0.20.0
       '@babel/types': ^7.21.2
       '@mini-cz/config-default': ^0.4.1
-      '@so1ve/eslint-config': ^0.45.0
+      '@so1ve/eslint-config': ^0.45.2
       '@types/node': ^18.14.1
       bumpp: ^9.0.0
       eslint: ^8.34.0
       mini-cz: ^0.4.1
-      pnpm: ^7.27.1
+      pnpm: ^7.28.0
       puild: ^1.3.2
       rimraf: ^3.0.2
       tsx: ^3.12.3
@@ -31,12 +31,12 @@ importers:
       '@antfu/ni': 0.20.0
       '@babel/types': 7.21.2
       '@mini-cz/config-default': 0.4.1_mini-cz@0.4.1
-      '@so1ve/eslint-config': 0.45.0_7kw3g6rralp5ps6mg3uyzz6azm
+      '@so1ve/eslint-config': 0.45.2_7kw3g6rralp5ps6mg3uyzz6azm
       '@types/node': 18.14.1
       bumpp: 9.0.0
       eslint: 8.34.0
       mini-cz: 0.4.1
-      pnpm: 7.27.1
+      pnpm: 7.28.0
       puild: 1.3.2_typescript@4.9.5
       rimraf: 3.0.2
       tsx: 3.12.3
@@ -150,7 +150,7 @@ importers:
       ora: ^6.1.2
       picocolors: ^1.0.0
       prompts: ^2.4.2
-      tasuku: 2.0.0
+      tasuku: 2.0.1
       terminal-columns: ^1.4.1
       terminal-link: ^3.0.0
     dependencies:
@@ -167,7 +167,7 @@ importers:
       terminal-columns: 1.4.1
       terminal-link: 3.0.0
     devDependencies:
-      tasuku: 2.0.0
+      tasuku: 2.0.1
 
   packages/utils:
     specifiers:
@@ -855,14 +855,14 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /@so1ve/eslint-config-basic/0.45.0_6cfvjsbua5ptj65675bqcn6oza:
-    resolution: {integrity: sha512-oLtkuS6bqShXDExrtdTgBtgBbv/7/yXrsplFBs1vPqaDsEUKmP5zx4oIqOhJ0xnQnNrryu0CiwM/EVt9RC57HA==}
+  /@so1ve/eslint-config-basic/0.45.2_6cfvjsbua5ptj65675bqcn6oza:
+    resolution: {integrity: sha512-NHd92F6p2riYS5eoNRfzqZ2vujrrHDMDb7seliHJIlewXN8hLBop4PsvUhepMyZscNcqGsFk4UxgRwtCXEzLVA==}
     peerDependencies:
       eslint: '>=7.4.0'
     dependencies:
       '@html-eslint/eslint-plugin': 0.16.0
       '@html-eslint/parser': 0.16.0
-      '@so1ve/eslint-plugin': 0.45.0_7kw3g6rralp5ps6mg3uyzz6azm
+      '@so1ve/eslint-plugin': 0.45.2_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
       eslint-config-standard: 17.0.0_rwq7hzy2vtlwiajbw6pmw3rkzy
       eslint-define-config: 1.15.0
@@ -884,14 +884,14 @@ packages:
       - typescript
     dev: true
 
-  /@so1ve/eslint-config-ts/0.45.0_7kw3g6rralp5ps6mg3uyzz6azm:
-    resolution: {integrity: sha512-CvLzdlxT26pQDKfyKCminA5mQcxKzzt7Cg3WrC52NvdNLIK0cKKr4TvvCpywm3rOwx4PYwz7SPEgS80q4SIafA==}
+  /@so1ve/eslint-config-ts/0.45.2_7kw3g6rralp5ps6mg3uyzz6azm:
+    resolution: {integrity: sha512-tl8MIa720U+tFAQLzOpNj5JZ3+3Q6EUoLhJX1hrQ4q9JPH/M0uJvEZrD5ztRGUyQBn+pccz66lcmoV8gFhQ91w==}
     peerDependencies:
       eslint: '>=7.4.0'
       typescript: '>=3.9'
     dependencies:
-      '@so1ve/eslint-config-basic': 0.45.0_6cfvjsbua5ptj65675bqcn6oza
-      '@so1ve/eslint-plugin': 0.45.0_7kw3g6rralp5ps6mg3uyzz6azm
+      '@so1ve/eslint-config-basic': 0.45.2_6cfvjsbua5ptj65675bqcn6oza
+      '@so1ve/eslint-plugin': 0.45.2_7kw3g6rralp5ps6mg3uyzz6azm
       '@typescript-eslint/eslint-plugin': 5.52.0_6cfvjsbua5ptj65675bqcn6oza
       '@typescript-eslint/parser': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
@@ -903,12 +903,12 @@ packages:
       - supports-color
     dev: true
 
-  /@so1ve/eslint-config-vue/0.45.0_7kw3g6rralp5ps6mg3uyzz6azm:
-    resolution: {integrity: sha512-vIOgURDrrQd/Bz/K8jxq96IKS/rDy+do7T7dzjlv1tlMqReXewaINIMhJEcT2Hzey1N8T5iREqSQo92Q/lOtZQ==}
+  /@so1ve/eslint-config-vue/0.45.2_7kw3g6rralp5ps6mg3uyzz6azm:
+    resolution: {integrity: sha512-9PNpSjzRwsy2OY7uiAhI8iojW3kmaiwgAP/tO2Qu6P2WiMZAN7wujISAbJsTv7kOUkcMAE85wMenTp87bCCcUQ==}
     peerDependencies:
       eslint: '>=7.4.0'
     dependencies:
-      '@so1ve/eslint-config-ts': 0.45.0_7kw3g6rralp5ps6mg3uyzz6azm
+      '@so1ve/eslint-config-ts': 0.45.2_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
       eslint-define-config: 1.15.0
       eslint-plugin-vue: 9.9.0_eslint@8.34.0
@@ -919,12 +919,12 @@ packages:
       - typescript
     dev: true
 
-  /@so1ve/eslint-config/0.45.0_7kw3g6rralp5ps6mg3uyzz6azm:
-    resolution: {integrity: sha512-qjx49Xs+pVcHYW9kFr19JwQpPEbwi6pdcTmIzTqO6Ci0d6+8EE0RKdZR+Gub1LNRQmaCiiwoI49cZW67WH17+w==}
+  /@so1ve/eslint-config/0.45.2_7kw3g6rralp5ps6mg3uyzz6azm:
+    resolution: {integrity: sha512-pzMAhTCd5iVfMLFP4kZz4AbWWG+rgGuYQaTKe8+AfE3L4tpht3BKIsucJKWCnTpqgR1NO0OLQw11RR1AyTnvJw==}
     peerDependencies:
       eslint: '>=7.4.0'
     dependencies:
-      '@so1ve/eslint-config-vue': 0.45.0_7kw3g6rralp5ps6mg3uyzz6azm
+      '@so1ve/eslint-config-vue': 0.45.2_7kw3g6rralp5ps6mg3uyzz6azm
       '@typescript-eslint/eslint-plugin': 5.52.0_6cfvjsbua5ptj65675bqcn6oza
       '@typescript-eslint/parser': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
@@ -948,8 +948,8 @@ packages:
       - typescript
     dev: true
 
-  /@so1ve/eslint-plugin/0.45.0_7kw3g6rralp5ps6mg3uyzz6azm:
-    resolution: {integrity: sha512-6/PAtpIgpl2WBAeujBf8cIMUZB7QX9X07iRemxRzffJ1YWmFnfbqjDEJR4GgTkYwxBLe4Ys6XGmceoqLIiEi1Q==}
+  /@so1ve/eslint-plugin/0.45.2_7kw3g6rralp5ps6mg3uyzz6azm:
+    resolution: {integrity: sha512-TjR8G9+64HKAXll8c+k6XqP864iYvzlKLDKTiz29dWUC3tetYpTv2NrIdOeB/7oMh/pDDGk4rv91YSgwjduzCw==}
     dependencies:
       '@typescript-eslint/utils': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
       '@vue/reactivity': 3.2.47
@@ -3456,8 +3456,8 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /pnpm/7.27.1:
-    resolution: {integrity: sha512-IpBeZ+71slENbuOXwbV4U6yxOMfEWEvlVuT6+ChZ1D80oF0eHyN4h/hc13UrzVXpXI3bf7sPfRWGb8TYkrvJUA==}
+  /pnpm/7.28.0:
+    resolution: {integrity: sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==}
     engines: {node: '>=14.6'}
     hasBin: true
     dev: true
@@ -3891,8 +3891,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /tasuku/2.0.0:
-    resolution: {integrity: sha512-8y1ZtIBzMfTy0/XxRW9gfGts/CPrt7zSMQEfjWXbLdEz09EcXaAZEAFg8vNV8WAlLUQfoIfaaikRJ0YrBWkGlA==}
+  /tasuku/2.0.1:
+    resolution: {integrity: sha512-BXWDEJzpC1mUiOz5Csba85LS93o9a5pGKRTArLiXJZ2HGF/mXHIl+4SBF706Yxqg+GlJDQurvLxds8tC7EwyRA==}
     dependencies:
       yoga-layout-prebuilt: 1.10.0_47eboidwschvvkf5sc53oki4ma
     dev: true

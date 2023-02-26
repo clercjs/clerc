@@ -1,5 +1,3 @@
-
-// TODO: unit tests
 import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 

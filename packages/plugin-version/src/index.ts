@@ -1,6 +1,3 @@
-
-// TODO: unit tests
-
 import { definePlugin } from "@clerc/core";
 import { gracefulVersion } from "@clerc/utils";
 
