@@ -7,7 +7,7 @@ import { Root } from "./cli";
 import type { Command, CommandAlias, CommandType, Commands, Inspector, InspectorContext, InspectorFn, InspectorObject, TranslateFn } from "./types";
 import { CommandNameConflictError } from "./errors";
 
-function setCommand(commandsMap: Map<string[] | RootType, CommandAlias>, commands: Commands, command: Command, t: TranslateFn) {
+function setCommand (commandsMap: Map<string[] | RootType, CommandAlias>, commands: Commands, command: Command, t: TranslateFn) {
   if (command.alias) {
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
@@ -19,7 +19,7 @@ function setCommand(commandsMap: Map<string[] | RootType, CommandAlias>, command
   }
 }
 
-export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
+export function resolveFlattenCommands (commands: Commands, t: TranslateFn) {
   const commandsMap = new Map<string[] | RootType, CommandAlias>();
   if (commands[Root]) {
     commandsMap.set(Root, commands[Root]);
@@ -32,7 +32,7 @@ export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
   return commandsMap;
 }
 
-export function resolveCommand(commands: Commands, argv: string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+export function resolveCommand (commands: Commands, argv: string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   const commandsMap = resolveFlattenCommands(commands, t);
   for (const [name, command] of commandsMap.entries()) {
     const parsed = typeFlag(command?.flags || {}, [...argv]);
@@ -48,7 +48,7 @@ export function resolveCommand(commands: Commands, argv: string[], t: TranslateF
   return [undefined, undefined];
 }
 
-export function resolveCommandStrict(commands: Commands, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+export function resolveCommandStrict (commands: Commands, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   if (name === Root) { return [commands[Root], Root]; }
   const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands, t);
@@ -66,7 +66,7 @@ export function resolveCommandStrict(commands: Commands, name: CommandType | str
   return [current, currentName];
 }
 
-export function resolveSubcommandsByParent(commands: Commands, parent: string | string[], depth = Infinity) {
+export function resolveSubcommandsByParent (commands: Commands, parent: string | string[], depth = Infinity) {
   const parentArr = parent === ""
     ? []
     : Array.isArray(parent)
@@ -89,7 +89,7 @@ export const resolveArgv = (): string[] =>
       ? Deno.args
       : [];
 
-export function compose(inspectors: Inspector[]) {
+export function compose (inspectors: Inspector[]) {
   const inspectorMap = {
     pre: [] as InspectorFn[],
     normal: [] as InspectorFn[],
