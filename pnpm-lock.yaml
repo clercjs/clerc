@@ -150,7 +150,7 @@ importers:
       ora: ^6.1.2
       picocolors: ^1.0.0
       prompts: ^2.4.2
-      tasuku: 2.0.1
+      tasuku: 2.0.0
       terminal-columns: ^1.4.1
       terminal-link: ^3.0.0
     dependencies:
@@ -167,7 +167,7 @@ importers:
       terminal-columns: 1.4.1
       terminal-link: 3.0.0
     devDependencies:
-      tasuku: 2.0.1
+      tasuku: 2.0.0
 
   packages/utils:
     specifiers:
@@ -3891,8 +3891,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /tasuku/2.0.1:
-    resolution: {integrity: sha512-BXWDEJzpC1mUiOz5Csba85LS93o9a5pGKRTArLiXJZ2HGF/mXHIl+4SBF706Yxqg+GlJDQurvLxds8tC7EwyRA==}
+  /tasuku/2.0.0:
+    resolution: {integrity: sha512-8y1ZtIBzMfTy0/XxRW9gfGts/CPrt7zSMQEfjWXbLdEz09EcXaAZEAFg8vNV8WAlLUQfoIfaaikRJ0YrBWkGlA==}
     dependencies:
       yoga-layout-prebuilt: 1.10.0_47eboidwschvvkf5sc53oki4ma
     dev: true
