@@ -20,7 +20,7 @@ export function parseParameters (parameters: string[], t: TranslateFn) {
 
   for (const parameter of parameters) {
     if (hasSpread) {
-      throw new Error (t("core.spreadParameterMustBeLast", stringify(hasSpread)));
+      throw new Error(t("core.spreadParameterMustBeLast", stringify(hasSpread)));
     }
 
     const firstCharacter = parameter[0];
