@@ -4,38 +4,47 @@ import { gracefulVersion } from "@clerc/utils";
 import { locales } from "./locales";
 
 interface VersionPluginOptions {
-  alias?: string[]
+  /**
+   * Whether to register the help command.
+   * @default true
+   */
   command?: boolean
+  /**
+     * Whether to register the global help flag.
+     * @default true
+     */
+  flag?: boolean
 }
 export const versionPlugin = ({
-  alias = ["V"],
   command = true,
+  flag = true,
 }: VersionPluginOptions = {}) => definePlugin({
   setup: (cli) => {
     const { add, t } = cli.i18n;
     add(locales);
     const gracefullyVersion = gracefulVersion(cli._version);
     if (command) {
-      cli = cli.command("version", t("version.commandDescription")!, {
-        notes: [t("version.notes.1")!],
-      })
+      cli = cli
+        .command("version", t("version.description")!, {
+          notes: [t("version.notes.1")!],
+        })
         .on("version", () => {
           process.stdout.write(gracefullyVersion);
         });
     }
-    return cli.inspector({
-      enforce: "pre",
-      fn: (ctx, next) => {
-        let hasVersionFlag = false;
-        const versionFlags = ["version", ...alias];
-        for (const k of Object.keys(ctx.raw.mergedFlags)) {
-          if (versionFlags.includes(k)) {
-            hasVersionFlag = true;
-            break;
-          }
-        }
-        if (!hasVersionFlag) { next(); } else { process.stdout.write(gracefullyVersion); }
-      },
-    });
+    if (flag) {
+      cli = cli.flag("version", t("version.description")!, {
+        alias: "V",
+        type: Boolean,
+        default: false,
+      });
+      cli.inspector({
+        enforce: "pre",
+        fn: (ctx, next) => {
+          if (!ctx.flags.version) { next(); } else { process.stdout.write(gracefullyVersion); }
+        },
+      });
+    }
+    return cli;
   },
 });

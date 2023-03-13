@@ -1,12 +1,11 @@
-import type { Clerc, Command, HandlerContext, RootType, TranslateFn } from "@clerc/core";
+import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
-
-import { gracefulFlagName, toArray } from "@clerc/utils";
+import { toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Render, Renderers, Section } from "./renderer";
 import { defaultRenderers, render } from "./renderer";
-import { splitTable } from "./utils";
+import { DELIMITER, formatFlags, generateCliDetail, generateExamples, print, sortName, splitTable } from "./utils";
 import { locales } from "./locales";
 
 declare module "@clerc/core" {
@@ -14,46 +13,6 @@ declare module "@clerc/core" {
     help?: Renderers
   }
 }
-
-const DELIMITER = pc.yellow("-");
-
-const print = (s: string) => { process.stdout.write(s); };
-
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
-  const { t } = cli.i18n;
-  const items = [
-    {
-      title: t("help.name")!,
-      body: pc.red(cli._name),
-    },
-    {
-      title: t("help.version")!,
-      body: pc.yellow(cli._version),
-    },
-  ];
-  if (subcommand) {
-    items.push({
-      title: t("help.subcommand")!,
-      body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
-    });
-  }
-  sections.push({
-    type: "inline",
-    items,
-  });
-  sections.push({
-    title: t("help.description")!,
-    body: [subcommand?.description || cli._description],
-  });
-};
-
-const generateExamples = (sections: Section[], examples: [string, string][], t: TranslateFn) => {
-  const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
-  sections.push({
-    title: t("help.examples")!,
-    body: splitTable(examplesFormatted),
-  });
-};
 
 const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
   const { cli } = ctx;
@@ -64,23 +23,31 @@ const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | und
     title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
-  const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
+  const commands = [
+    ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
+    ...Object.values(cli._commands),
+  ].map((command) => {
     const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
-      .sort((a, b) => {
-        if (a === Root) { return -1; }
-        if (b === Root) { return 1; }
-        return a.length - b.length;
-      })
+      .sort(sortName)
       .map((n) => {
         return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
       })
       .join(", ");
     return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
-  sections.push({
-    title: t("help.commands")!,
-    body: splitTable(commands),
-  });
+  if (commands.length) {
+    sections.push({
+      title: t("help.commands")!,
+      body: splitTable(commands),
+    });
+  }
+  const globalFlags = formatFlags(cli._flags);
+  if (globalFlags.length) {
+    sections.push({
+      title: t("help.globalFlags")!,
+      body: splitTable(globalFlags),
+    });
+  }
   if (notes) {
     sections.push({
       title: t("help.notes")!,
@@ -118,25 +85,17 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     title: t("help.usage")!,
     body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
+  const globalFlags = formatFlags(cli._flags);
+  if (globalFlags.length) {
+    sections.push({
+      title: t("help.globalFlags")!,
+      body: splitTable(globalFlags),
+    });
+  }
   if (subcommand.flags) {
     sections.push({
       title: t("help.flags")!,
-      body: splitTable(
-        Object.entries(subcommand.flags).map(([name, flag]) => {
-          const hasDefault = flag.default !== undefined;
-          let flagNameWithAlias: string[] = [gracefulFlagName(name)];
-          if (flag.alias) {
-            flagNameWithAlias.push(gracefulFlagName(flag.alias));
-          }
-          flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
-          const items = [pc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
-          items.push(DELIMITER, flag.description || t("help.noDescription")!);
-          if (hasDefault) {
-            items.push(`(${t("help.default", renderers.renderDefault(flag.default))})`);
-          }
-          return items;
-        }),
-      ),
+      body: splitTable(formatFlags(subcommand.flags)),
     });
   }
   if (subcommand.notes) {
@@ -154,10 +113,15 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
 
 export interface HelpPluginOptions {
   /**
-   * Whether to registr the help command.
+   * Whether to register the help command.
    * @default true
    */
   command?: boolean
+  /**
+   * Whether to register the global help flag.
+   * @default true
+   */
+  flag?: boolean
   /**
    * Whether to show help when no command is specified.
    * @default true
@@ -172,12 +136,13 @@ export interface HelpPluginOptions {
    */
   examples?: [string, string][]
   /**
-   * Banner
+   * Banner.
    */
   banner?: string
 }
 export const helpPlugin = ({
   command = true,
+  flag = true,
   showHelpWhenNoCommand = true,
   notes,
   examples,
@@ -192,7 +157,7 @@ export const helpPlugin = ({
     };
 
     if (command) {
-      cli = cli.command("help", t("help.commandDescription")!, {
+      cli = cli.command("help", t("help.helpDdescription")!, {
         parameters: [
           "[command...]",
         ],
@@ -216,15 +181,23 @@ export const helpPlugin = ({
         });
     }
 
+    if (flag) {
+      cli = cli.flag("help", t("help.helpDdescription")!, {
+        alias: "h",
+        type: Boolean,
+        default: false,
+      });
+    }
+
     cli.inspector((ctx, next) => {
-      const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
-      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
+      const shouldShowHelp = ctx.flags.help;
+      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !shouldShowHelp) {
         let str = `${t("core.noCommandGiven")}\n\n`;
         str += generateHelp(render, ctx, notes, examples);
         str += "\n";
         printHelp(str);
         process.exit(1);
-      } else if (helpFlag) {
+      } else if (shouldShowHelp) {
         if (ctx.raw._.length) {
           if (ctx.called !== Root) {
             if (ctx.name === Root) {

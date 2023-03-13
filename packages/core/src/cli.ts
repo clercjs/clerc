@@ -22,7 +22,9 @@ import type {
   CommandType,
   CommandWithHandler,
   Commands,
+  FlagWithoutDescription,
   Flags,
+  FlagsWithoutDescription,
   Handler,
   HandlerContext,
   I18N,
@@ -48,13 +50,14 @@ import { locales } from "./locales";
 export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends Commands = {}> {
+export class Clerc<C extends Commands = {}, GF extends FlagsWithoutDescription = {}> {
   #name = "";
   #description = "";
   #version = "";
   #inspectors: Inspector[] = [];
   #commands = {} as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
+  #flags = {} as GF;
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
   #errorHandlers = [] as ((err: any) => void)[];
@@ -97,6 +100,7 @@ export class Clerc<C extends Commands = {}> {
   get _version () { return this.#version; }
   get _inspectors () { return this.#inspectors; }
   get _commands () { return this.#commands; }
+  get _flags () { return this.#flags; }
 
   #addCoreLocales () { this.i18n.add(locales); }
   #otherMethodCaled () { this.#isOtherMethodCalled = true; }
@@ -244,8 +248,8 @@ export class Clerc<C extends Commands = {}> {
    *   })
    * ```
    */
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>>;
-  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
+  command<N extends string | RootType, O extends CommandOptions<[...P], A, F>, P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags>(name: N, description: string, options?: O & CommandOptions<[...P], A, F>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command (nameOrCommand: any, description?: any, options: any = {}) {
     this.#callWithErrorHandling(() => this.#command(nameOrCommand, description, options));
     return this;
@@ -283,6 +287,28 @@ export class Clerc<C extends Commands = {}> {
   }
 
   /**
+   * Register a global flag
+   * @param name
+   * @param options
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .flag("help", {
+   *     alias: "h",
+   *     description: "help",
+   *   })
+   * ```
+   */
+  flag<N extends string, O extends FlagWithoutDescription>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
+    this.#flags[name] = {
+      description,
+      ...options,
+    } as any;
+    return this as any;
+  }
+
+  /**
    * Register a handler
    * @param name
    * @param handler
@@ -296,7 +322,7 @@ export class Clerc<C extends Commands = {}> {
    *   })
    * ```
    */
-  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K>) {
+  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(name: K, handler: Handler<CM, K, this["_flags"]>) {
     this.#commandEmitter.on(name as any, handler as any);
     return this;
   }
@@ -433,7 +459,7 @@ export class Clerc<C extends Commands = {}> {
     return context;
   }
 
-  #callWithErrorHandling (fn: () => void) {
+  #callWithErrorHandling (fn: (...args: any[]) => any) {
     try {
       fn();
     } catch (e) {
