@@ -1,5 +1,6 @@
 {
   "exclude": [
-    "rimraf"
+    "rimraf",
+    "tasuku"
   ]
 }

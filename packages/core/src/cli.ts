@@ -19,10 +19,10 @@ import {
 import type {
   Command,
   CommandOptions,
-  CommandRecord,
   CommandType,
   CommandWithHandler,
-  FlagOptions,
+  Commands,
+  FlagWithoutDescription,
   Flags,
   FlagsWithoutDescription,
   Handler,
@@ -42,7 +42,7 @@ import {
   isValidName,
   resolveArgv,
   resolveCommand,
-  resolveParametersBeforeFlag,
+  stripFlags,
 } from "./utils";
 import { mapParametersToArguments, parseParameters } from "./parameters";
 import { locales } from "./locales";
@@ -50,7 +50,7 @@ import { locales } from "./locales";
 export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescription = {}> {
+export class Clerc<C extends Commands = {}, GF extends FlagsWithoutDescription = {}> {
   #name = "";
   #description = "";
   #version = "";
@@ -300,7 +300,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
    *   })
    * ```
    */
-  flag<N extends string, O extends Omit<FlagOptions, "description">>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
+  flag<N extends string, O extends FlagWithoutDescription>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
     this.#flags[name] = {
       description,
       ...options,
@@ -478,15 +478,13 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
     if (!argv) {
       throw new Error(t("core.cliParseMustBeCalled"));
     }
-    const name = resolveParametersBeforeFlag(argv);
-    const stringName = name.join(" ");
-    const getCommand = () => resolveCommand(this.#commands, name, t);
+    const getCommand = () => resolveCommand(this.#commands, argv!, t);
     const getContext = () => this.#getContext(getCommand);
     const emitHandler: Inspector = {
       enforce: "post",
-      fn: () => {
+      fn: (ctx) => {
         const [command] = getCommand();
-        const handlerContext = getContext();
+        const stringName = stripFlags(argv).join(" ");
         if (!command) {
           if (stringName) {
             throw new NoSuchCommandError(stringName, t);
@@ -494,12 +492,12 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
             throw new NoCommandGivenError(t);
           }
         }
-        this.#commandEmitter.emit(command.name, handlerContext);
+        this.#commandEmitter.emit(command.name, ctx);
       },
     };
     const inspectors = [...this.#inspectors, emitHandler];
     const callInspector = compose(inspectors);
-    callInspector(getContext);
+    callInspector(getContext());
   }
 
   /**
@@ -514,6 +512,7 @@ export class Clerc<C extends CommandRecord = {}, GF extends FlagsWithoutDescript
    */
   runMatchedCommand () {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
+    process.title = this.#name;
     return this;
   }
 }

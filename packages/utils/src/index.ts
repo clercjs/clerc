@@ -7,15 +7,23 @@ export type Equals<X, Y> =
 export type Dict<T> = Record<string, T>;
 export type ToArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
-export type GetLength<T extends any[]> = T extends { length: infer L extends number } ? L : never;
-export type GetTail<T extends any[]> = T extends [infer _Head, ...infer Tail] ? Tail : never;
-type EnhanceSingle<T, E extends Dict<any>> = T & E;
-export type Enhance<T, E extends Dict<any> | Dict<any>[]> = GetLength<ToArray<E>> extends 0 ? T : Enhance<EnhanceSingle<T, ToArray<E>[0]>, GetTail<ToArray<E>>>;
 
 export const toArray = <T>(a: MaybeArray<T>) => Array.isArray(a) ? a : [a];
 
-export type CamelCase<T extends string> = (T extends `${infer Prefix}-${infer Suffix}` | `${infer Prefix} ${infer Suffix}` ? `${Prefix}${Capitalize<CamelCase<Suffix>>}` : T);
-export const camelCase = <T extends string>(s: T) => s.replace(/[-_ ](\w)/g, (_, c) => c.toUpperCase()) as CamelCase<T>;
+type AlphabetLowercase = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z";
+type Numeric = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+type AlphaNumeric = AlphabetLowercase | Uppercase<AlphabetLowercase> | Numeric;
+
+export type CamelCase<Word extends string> = (
+  Word extends `${infer FirstCharacter}${infer Rest}`
+    ? (
+        FirstCharacter extends AlphaNumeric
+          ? `${FirstCharacter}${CamelCase<Rest>}`
+          : Capitalize<CamelCase<Rest>>
+      )
+    : Word
+);
+export const camelCase = (word: string) => word.replace(/[\W_]([a-z\d])?/gi, (_, c) => (c ? c.toUpperCase() : ""));
 
 export type KebabCase<T extends string, A extends string = ""> = T extends `${infer Prefix}${infer Suffix}`
   ? KebabCase<Suffix, `${A}${Prefix extends Lowercase<Prefix> ? "" : "-"}${Lowercase<Prefix>}`>
@@ -44,7 +52,7 @@ export const arrayStartsWith = <T>(arr: T[], start: T[]) => {
   return arrayEquals(arr.slice(0, start.length), start);
 };
 
-export const generateCommandRecordFromCommandArray = <C extends Command>(commands: C[]) => {
+export const generateCommandsFromCommandArray = <C extends Command>(commands: C[]) => {
   const record = {} as Dict<C>;
   for (const command of commands) {
     record[command.name] = command;

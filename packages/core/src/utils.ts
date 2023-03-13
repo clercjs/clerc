@@ -1,12 +1,13 @@
-import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
 import { arrayEquals, arrayStartsWith, toArray } from "@clerc/utils";
+import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
+import { typeFlag } from "type-flag";
 
 import type { RootType } from "./cli";
 import { Root } from "./cli";
-import type { Command, CommandAlias, CommandRecord, CommandType, Inspector, InspectorContext, InspectorFn, InspectorObject, TranslateFn } from "./types";
+import type { Command, CommandAlias, CommandType, Commands, Inspector, InspectorContext, InspectorFn, InspectorObject, TranslateFn } from "./types";
 import { CommandNameConflictError } from "./errors";
 
-function setCommand (commandsMap: Map<string[] | RootType, CommandAlias>, commands: CommandRecord, command: Command, t: TranslateFn) {
+function setCommand (commandsMap: Map<string[] | RootType, CommandAlias>, commands: Commands, command: Command, t: TranslateFn) {
   if (command.alias) {
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
@@ -18,7 +19,7 @@ function setCommand (commandsMap: Map<string[] | RootType, CommandAlias>, comman
   }
 }
 
-export function resolveFlattenCommands (commands: CommandRecord, t: TranslateFn) {
+export function resolveFlattenCommands (commands: Commands, t: TranslateFn) {
   const commandsMap = new Map<string[] | RootType, CommandAlias>();
   if (commands[Root]) {
     commandsMap.set(Root, commands[Root]);
@@ -31,27 +32,23 @@ export function resolveFlattenCommands (commands: CommandRecord, t: TranslateFn)
   return commandsMap;
 }
 
-export function resolveCommand (commands: CommandRecord, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
-  if (name === Root) { return [commands[Root], Root]; }
-  const nameArr = toArray(name) as string[];
+export function resolveCommand (commands: Commands, argv: string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   const commandsMap = resolveFlattenCommands(commands, t);
-  let current: Command | undefined;
-  let currentName: string[] | RootType | undefined;
-  commandsMap.forEach((v, k) => {
-    if (k === Root) {
-      current = commands[Root];
-      currentName = Root;
-      return;
+  for (const [name, command] of commandsMap.entries()) {
+    const parsed = typeFlag(command?.flags || {}, [...argv]);
+    const { _: args } = parsed;
+    if (name === Root) { continue; }
+    if (arrayStartsWith(args, name)) {
+      return [command, name];
     }
-    if (arrayStartsWith(nameArr, k) && (!currentName || currentName === Root || k.length > currentName.length)) {
-      current = v;
-      currentName = k;
-    }
-  });
-  return [current, currentName];
+  }
+  if (commandsMap.has(Root)) {
+    return [commandsMap.get(Root)!, Root];
+  }
+  return [undefined, undefined];
 }
 
-export function resolveCommandStrict (commands: CommandRecord, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+export function resolveCommandStrict (commands: Commands, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   if (name === Root) { return [commands[Root], Root]; }
   const nameArr = toArray(name) as string[];
   const commandsMap = resolveFlattenCommands(commands, t);
@@ -69,7 +66,7 @@ export function resolveCommandStrict (commands: CommandRecord, name: CommandType
   return [current, currentName];
 }
 
-export function resolveSubcommandsByParent (commands: CommandRecord, parent: string | string[], depth = Infinity) {
+export function resolveSubcommandsByParent (commands: Commands, parent: string | string[], depth = Infinity) {
   const parentArr = parent === ""
     ? []
     : Array.isArray(parent)
@@ -82,18 +79,7 @@ export function resolveSubcommandsByParent (commands: CommandRecord, parent: str
     });
 }
 
-export const resolveRootCommands = (commands: CommandRecord) => resolveSubcommandsByParent(commands, "", 1);
-
-export function resolveParametersBeforeFlag (argv: string[]) {
-  const parameters = [];
-  for (const arg of argv) {
-    if (arg.startsWith("-")) {
-      break;
-    }
-    parameters.push(arg);
-  }
-  return parameters;
-}
+export const resolveRootCommands = (commands: Commands) => resolveSubcommandsByParent(commands, "", 1);
 
 export const resolveArgv = (): string[] =>
   IS_NODE
@@ -126,11 +112,23 @@ export function compose (inspectors: Inspector[]) {
     ...inspectorMap.normal,
     ...inspectorMap.post,
   ];
-  return (getCtx: () => InspectorContext) => {
-    return dispatch(0);
-    function dispatch (i: number): void {
+
+  return (ctx: InspectorContext) => {
+    const callbacks: (() => void)[] = [];
+    let called = 0;
+    const dispatch = (i: number) => {
+      called = i;
       const inspector = mergedInspectorFns[i];
-      return inspector(getCtx(), dispatch.bind(null, i + 1));
+      const cb = inspector(ctx, dispatch.bind(null, i + 1));
+      if (cb) {
+        callbacks.push(cb);
+      }
+    };
+    dispatch(0);
+    if (called + 1 === mergedInspectorFns.length) {
+      for (const cb of callbacks) {
+        cb();
+      }
     }
   };
 }
@@ -153,3 +151,5 @@ export const formatCommandName = (name: string | string[] | RootType) => Array.i
 export const detectLocale = () => process.env.CLERC_LOCALE
   ? process.env.CLERC_LOCALE
   : Intl.DateTimeFormat().resolvedOptions().locale;
+
+export const stripFlags = (argv: string[]) => argv.filter(arg => !arg.startsWith("-"));

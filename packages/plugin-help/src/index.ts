@@ -1,5 +1,3 @@
-
-// TODO: unit tests
 import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
 import { toArray } from "@clerc/utils";
