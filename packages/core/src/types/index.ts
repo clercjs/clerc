@@ -46,7 +46,7 @@ export interface HandlerContext<C extends Commands = Commands, N extends keyof C
   raw: Simplify<ParseRaw<C[N]>>
   parameters: Simplify<ParseParameters<C, N>>
   unknownFlags: ParsedFlags["unknownFlags"]
-  flags: Simplify<ParseFlag<C, N>>
+  flags: Simplify<ParseFlag<C, N> & Record<string, any>>
   cli: Clerc<C>
 }
 export type Handler<C extends Commands = Commands, K extends keyof C = keyof C> = (ctx: HandlerContext<C, K>) => void;
