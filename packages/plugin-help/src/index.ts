@@ -115,10 +115,15 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
 
 export interface HelpPluginOptions {
   /**
-   * Whether to registr the help command.
+   * Whether to register the help command.
    * @default true
    */
   command?: boolean
+  /**
+   * Whether to register the global help flag.
+   * @default true
+   */
+  flag?: boolean
   /**
    * Whether to show help when no command is specified.
    * @default true
@@ -133,12 +138,13 @@ export interface HelpPluginOptions {
    */
   examples?: [string, string][]
   /**
-   * Banner
+   * Banner.
    */
   banner?: string
 }
 export const helpPlugin = ({
   command = true,
+  flag = true,
   showHelpWhenNoCommand = true,
   notes,
   examples,
@@ -177,11 +183,13 @@ export const helpPlugin = ({
         });
     }
 
-    cli = cli.flag("help", t("help.helpDdescription")!, {
-      alias: "h",
-      type: Boolean,
-      default: false,
-    });
+    if (flag) {
+      cli = cli.flag("help", t("help.helpDdescription")!, {
+        alias: "h",
+        type: Boolean,
+        default: false,
+      });
+    }
 
     cli.inspector((ctx, next) => {
       const shouldShowHelp = ctx.flags.help;
