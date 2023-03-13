@@ -456,9 +456,8 @@ export class Clerc<C extends Commands = {}> {
     const getContext = () => this.#getContext(getCommand);
     const emitHandler: Inspector = {
       enforce: "post",
-      fn: () => {
+      fn: (ctx) => {
         const [command] = getCommand();
-        const handlerContext = getContext();
         const stringName = stripFlags(argv).join(" ");
         if (!command) {
           if (stringName) {
@@ -467,7 +466,7 @@ export class Clerc<C extends Commands = {}> {
             throw new NoCommandGivenError(t);
           }
         }
-        this.#commandEmitter.emit(command.name, handlerContext);
+        this.#commandEmitter.emit(command.name, ctx);
       },
     };
     const inspectors = [...this.#inspectors, emitHandler];
