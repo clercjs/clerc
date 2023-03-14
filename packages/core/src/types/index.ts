@@ -5,16 +5,15 @@ import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 import type { ParseFlag, ParseParameters, ParseRaw } from "./utils";
 
 export type CommandType = RootType | string;
-
 export type FlagOptions = FlagSchema & {
   description: string
 };
 export type Flag = FlagOptions & {
   name: string
 };
-export type FlagWithoutDescription = Omit<Flag, "description">;
+export type GlobalFlagOption = FlagSchema;
 export type Flags = Dict<FlagOptions>;
-export type FlagsWithoutDescription = Dict<FlagWithoutDescription>;
+export type GlobalFlagOptions = Dict<GlobalFlagOption>;
 
 export declare interface CommandCustomProperties {}
 export interface CommandOptions<P extends string[] = string[], A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>, F extends Flags = Flags> extends CommandCustomProperties {
@@ -39,7 +38,7 @@ export interface ParseOptions {
   run?: boolean
 }
 
-export interface HandlerContext<C extends Commands = Commands, N extends keyof C = keyof C, GF extends FlagsWithoutDescription = {}> {
+export interface HandlerContext<C extends Commands = Commands, N extends keyof C = keyof C, GF extends GlobalFlagOptions = {}> {
   name?: LiteralUnion<N, string>
   called?: string | RootType
   resolved: boolean
@@ -51,7 +50,7 @@ export interface HandlerContext<C extends Commands = Commands, N extends keyof C
   flags: Simplify<ParseFlag<C, N, GF> & Record<string, any>>
   cli: Clerc<C, GF>
 }
-export type Handler<C extends Commands = Commands, K extends keyof C = keyof C, GF extends FlagsWithoutDescription = {}> = (ctx: HandlerContext<C, K, GF>) => void;
+export type Handler<C extends Commands = Commands, K extends keyof C = keyof C, GF extends GlobalFlagOptions = {}> = (ctx: HandlerContext<C, K, GF>) => void;
 export type HandlerInCommand<C extends HandlerContext> = (ctx: { [K in keyof C]: C[K] }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
 export type InspectorContext<C extends Commands = Commands> = HandlerContext<C> & {

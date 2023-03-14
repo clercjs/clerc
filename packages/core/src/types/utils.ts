@@ -1,7 +1,7 @@
 import type { CamelCase, Dict, Equals } from "@clerc/utils";
 import type { OmitIndexSignature } from "type-fest";
 import type { TypeFlag } from "./type-flag";
-import type { Command, Commands, Flags, FlagsWithoutDescription, InspectorContext } from ".";
+import type { Command, Commands, Flags, GlobalFlagOptions, InspectorContext } from ".";
 
 type StripBrackets<Parameter extends string> = (
   Parameter extends `<${infer ParameterName}>` | `[${infer ParameterName}]`
@@ -32,8 +32,8 @@ export type MakeEventMap<T extends Commands> = { [K in keyof T]: [InspectorConte
 
 type FallbackFlags<F extends Flags | undefined> = Equals<NonNullableFlag<F>["flags"], {}> extends true ? Dict<any> : NonNullableFlag<F>["flags"];
 type NonNullableFlag<F extends Flags | undefined> = TypeFlag<NonNullable<F>>;
-export type ParseFlag<C extends Commands, N extends keyof C, GF extends FlagsWithoutDescription = {}> = N extends keyof C ? OmitIndexSignature<NonNullableFlag<C[N]["flags"] & GF>["flags"]> : FallbackFlags<C[N]["flags"] & GF>["flags"];
-export type ParseRaw<C extends Command, GF extends FlagsWithoutDescription = {}> = NonNullableFlag<C["flags"] & GF> & {
+export type ParseFlag<C extends Commands, N extends keyof C, GF extends GlobalFlagOptions = {}> = N extends keyof C ? OmitIndexSignature<NonNullableFlag<C[N]["flags"] & GF>["flags"]> : FallbackFlags<C[N]["flags"] & GF>["flags"];
+export type ParseRaw<C extends Command, GF extends GlobalFlagOptions = {}> = NonNullableFlag<C["flags"] & GF> & {
   flags: FallbackFlags<C["flags"] & GF>
   parameters: string[]
   mergedFlags: FallbackFlags<C["flags"] & GF> & NonNullableFlag<C["flags"] & GF>["unknownFlags"]

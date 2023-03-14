@@ -22,9 +22,9 @@ import type {
   CommandType,
   CommandWithHandler,
   Commands,
-  FlagWithoutDescription,
   Flags,
-  FlagsWithoutDescription,
+  GlobalFlagOption,
+  GlobalFlagOptions,
   Handler,
   HandlerContext,
   I18N,
@@ -50,7 +50,7 @@ import { locales } from "./locales";
 export const Root = Symbol.for("Clerc.Root");
 export type RootType = typeof Root;
 
-export class Clerc<C extends Commands = {}, GF extends FlagsWithoutDescription = {}> {
+export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   #name = "";
   #description = "";
   #version = "";
@@ -289,18 +289,19 @@ export class Clerc<C extends Commands = {}, GF extends FlagsWithoutDescription =
   /**
    * Register a global flag
    * @param name
+   * @param description
    * @param options
    * @returns
    * @example
    * ```ts
    * Clerc.create()
-   *   .flag("help", {
+   *   .flag("help", "help", {
    *     alias: "h",
-   *     description: "help",
+   *     type: Boolean,
    *   })
    * ```
    */
-  flag<N extends string, O extends FlagWithoutDescription>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
+  flag<N extends string, O extends GlobalFlagOption>(name: N, description: string, options: O): this & Clerc<C, GF & Record<N, O>> {
     this.#flags[name] = {
       description,
       ...options,
@@ -408,8 +409,12 @@ export class Clerc<C extends Commands = {}, GF extends FlagsWithoutDescription =
     const { t } = this.i18n;
     const [command, called] = getCommand();
     const isCommandResolved = !!command;
+    const flagsMerged = {
+      ...this.#flags,
+      ...command?.flags,
+    };
     // [...argv] is a workaround since TypeFlag modifies argv
-    const parsed = typeFlag(command?.flags || {}, [...argv]);
+    const parsed = typeFlag(flagsMerged, [...argv]);
     const { _: args, flags, unknownFlags } = parsed;
     let parameters = !isCommandResolved || command.name === Root ? args : args.slice(command.name.split(" ").length);
     let commandParameters = command?.parameters || [];

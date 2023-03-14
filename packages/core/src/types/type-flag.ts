@@ -54,7 +54,7 @@ export type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
 };
 export type FlagSchema<TF = FlagType> = (FlagSchemaBase<TF> | FlagSchemaDefault<TF>);
 export type FlagTypeOrSchema<ExtraOptions = Record<string, unknown>> = FlagType | (FlagSchema & ExtraOptions);
-type Flags<ExtraOptions = Record<string, unknown>> = Record<string, FlagTypeOrSchema<ExtraOptions>>;
+export type Flags<ExtraOptions = Record<string, unknown>> = Record<string, FlagTypeOrSchema<ExtraOptions>>;
 export type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>) ? (Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D> ? T[] | D : T[]) : (Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>> ? (Flag extends FlagSchemaDefault<TypeFunction<T>, infer D> ? T | D : T | undefined) : never));
 export interface ParsedFlags<Schemas = Record<string, unknown>> {
   flags: Schemas
@@ -72,4 +72,10 @@ export const ARGUMENT = "argument";
 export interface IgnoreFunction {
   (type: typeof ARGUMENT, argvElement: string): boolean | void
   (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue: string | undefined): boolean | void
+}
+export interface TypeFlagOptions {
+  /**
+     * Which argv elements to ignore from parsing
+     */
+  ignore?: IgnoreFunction
 }

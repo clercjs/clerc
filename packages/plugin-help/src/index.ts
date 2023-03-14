@@ -172,7 +172,7 @@ export const helpPlugin = ({
     };
 
     if (command) {
-      cli = cli.command("help", t("help.comamndDescription")!, {
+      cli = cli.command("help", t("help.commandDescription")!, {
         parameters: [
           "[command...]",
         ],

@@ -11,8 +11,8 @@ export const table = (items: string[][]) => textTable(items, { stringLength: str
 
 export const splitTable = (items: string[][]) => table(items).split("\n");
 
-const primitiveMap = new Map<any, string>([
-  [Boolean, ""],
+const primitiveMap = new Map<any, string | undefined>([
+  [Boolean, undefined],
   [String, "string"],
   [Number, "number"],
 ]);
@@ -20,7 +20,9 @@ export const stringifyType = (type: any, hasDefault = false) => {
   const res = primitiveMap.has(type)
     ? primitiveMap.get(type)
     : "value";
-  return hasDefault ? `[${res}]` : `<${res}>`;
+  return res
+    ? hasDefault ? `[${res}]` : `<${res}>`
+    : "";
 };
 
 export const sortName = (a: CommandType, b: CommandType) => {
@@ -78,7 +80,7 @@ export const formatFlags = (flags: Flags) => Object.entries(flags).map(([name, f
   items.push(DELIMITER, flag.description);
   if (flag.type) {
     const type = stringifyType(flag.type);
-    items.push(pc.gray(`(${type})`));
+    type && items.push(pc.gray(`(${type})`));
   }
   return items;
 });
