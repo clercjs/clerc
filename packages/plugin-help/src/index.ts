@@ -1,6 +1,6 @@
 import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
-import { toArray } from "@clerc/utils";
+import { gracefulFlagName, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Render, Renderers, Section } from "./renderer";
@@ -95,7 +95,22 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.flags) {
     sections.push({
       title: t("help.flags")!,
-      body: splitTable(formatFlags(subcommand.flags)),
+      body: splitTable(
+        Object.entries(subcommand.flags).map(([name, flag]) => {
+          const hasDefault = flag.default !== undefined;
+          let flagNameWithAlias: string[] = [gracefulFlagName(name)];
+          if (flag.alias) {
+            flagNameWithAlias.push(gracefulFlagName(flag.alias));
+          }
+          flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
+          const items = [pc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
+          items.push(DELIMITER, flag.description || t("help.noDescription")!);
+          if (hasDefault) {
+            items.push(`(${t("help.default", renderers.renderDefault(flag.default))})`);
+          }
+          return items;
+        }),
+      ),
     });
   }
   if (subcommand.notes) {
@@ -157,7 +172,7 @@ export const helpPlugin = ({
     };
 
     if (command) {
-      cli = cli.command("help", t("help.helpDdescription")!, {
+      cli = cli.command("help", t("help.comamndDescription")!, {
         parameters: [
           "[command...]",
         ],
@@ -182,7 +197,7 @@ export const helpPlugin = ({
     }
 
     if (flag) {
-      cli = cli.flag("help", t("help.helpDdescription")!, {
+      cli = cli.flag("help", t("help.commandDescription")!, {
         alias: "h",
         type: Boolean,
         default: false,
