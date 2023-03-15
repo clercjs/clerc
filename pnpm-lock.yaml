@@ -1,12 +1,12 @@
 lockfileVersion: 5.4
 
 patchedDependencies:
-  yoga-layout-prebuilt@1.10.0:
-    hash: 47eboidwschvvkf5sc53oki4ma
-    path: patches/yoga-layout-prebuilt@1.10.0.patch
   lite-emit@1.4.0:
     hash: i7cuo6jj4wjx3jrey4xchckwrq
     path: patches/lite-emit@1.4.0.patch
+  yoga-layout-prebuilt@1.10.0:
+    hash: 47eboidwschvvkf5sc53oki4ma
+    path: patches/yoga-layout-prebuilt@1.10.0.patch
 
 importers:
 
