@@ -1,4 +1,4 @@
-Clerc: The full-featured cli framework.
+Clerc: The full-featured cli library.
 =======================================
 
 ![clerc](https://socialify.git.ci/so1ve/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
@@ -15,7 +15,7 @@ Clerc: The full-featured cli framework.
 
 # 🗒 Description
 
-Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
+Clerc is a library for building CLI Apps in Node.js or Deno. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
 # 💎 Features
 - **Lightweight** - Dependencies are bundled and minified
