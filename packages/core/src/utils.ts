@@ -1,4 +1,4 @@
-import { arrayEquals, arrayStartsWith, toArray } from "@clerc/utils";
+import { arrayStartsWith, toArray } from "@clerc/utils";
 import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
 import { typeFlag } from "type-flag";
 
@@ -47,39 +47,6 @@ export function resolveCommand (commands: Commands, argv: string[], t: Translate
   }
   return [undefined, undefined];
 }
-
-export function resolveCommandStrict (commands: Commands, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
-  if (name === Root) { return [commands[Root], Root]; }
-  const nameArr = toArray(name) as string[];
-  const commandsMap = resolveFlattenCommands(commands, t);
-  let current: Command | undefined;
-  let currentName: string[] | RootType | undefined;
-  commandsMap.forEach((v, k) => {
-    if (k === Root || currentName === Root) {
-      return;
-    }
-    if (arrayEquals(nameArr, k)) {
-      current = v;
-      currentName = k;
-    }
-  });
-  return [current, currentName];
-}
-
-export function resolveSubcommandsByParent (commands: Commands, parent: string | string[], depth = Infinity) {
-  const parentArr = parent === ""
-    ? []
-    : Array.isArray(parent)
-      ? parent
-      : parent.split(" ");
-  return Object.values(commands)
-    .filter((c) => {
-      const commandNameArr = c.name.split(" ");
-      return arrayStartsWith(commandNameArr, parentArr) && commandNameArr.length - parentArr.length <= depth;
-    });
-}
-
-export const resolveRootCommands = (commands: Commands) => resolveSubcommandsByParent(commands, "", 1);
 
 export const resolveArgv = (): string[] =>
   IS_NODE

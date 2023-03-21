@@ -1,4 +1,5 @@
-import type { Command, I18N } from "@clerc/core";
+import type { Command, CommandType, Commands, I18N, RootType, TranslateFn } from "@clerc/core";
+import { Root, resolveFlattenCommands } from "@clerc/core";
 import { locales } from "./locales";
 
 export type Equals<X, Y> =
@@ -67,3 +68,36 @@ export const semanticArray = (arr: string[], { add, t }: I18N) => {
   }
   return t("utils.and", arr.slice(0, -1).join(", "), arr[arr.length - 1])!;
 };
+
+export function resolveCommandStrict (commands: Commands, name: CommandType | string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+  if (name === Root) { return [commands[Root], Root]; }
+  const nameArr = toArray(name) as string[];
+  const commandsMap = resolveFlattenCommands(commands, t);
+  let current: Command | undefined;
+  let currentName: string[] | RootType | undefined;
+  commandsMap.forEach((v, k) => {
+    if (k === Root || currentName === Root) {
+      return;
+    }
+    if (arrayEquals(nameArr, k)) {
+      current = v;
+      currentName = k;
+    }
+  });
+  return [current, currentName];
+}
+
+export function resolveSubcommandsByParent (commands: Commands, parent: string | string[], depth = Infinity) {
+  const parentArr = parent === ""
+    ? []
+    : Array.isArray(parent)
+      ? parent
+      : parent.split(" ");
+  return Object.values(commands)
+    .filter((c) => {
+      const commandNameArr = c.name.split(" ");
+      return arrayStartsWith(commandNameArr, parentArr) && commandNameArr.length - parentArr.length <= depth;
+    });
+}
+
+export const resolveRootCommands = (commands: Commands) => resolveSubcommandsByParent(commands, "", 1);

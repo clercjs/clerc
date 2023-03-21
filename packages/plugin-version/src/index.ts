@@ -26,7 +26,9 @@ export const versionPlugin = ({
     if (command) {
       cli = cli
         .command("version", t("version.description")!, {
-          notes: [t("version.notes.1")!],
+          help: {
+            notes: [t("version.notes.1")!],
+          },
         })
         .on("version", () => {
           process.stdout.write(gracefullyVersion);

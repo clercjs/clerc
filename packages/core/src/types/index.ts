@@ -20,8 +20,6 @@ export interface CommandOptions<P extends string[] = string[], A extends MaybeAr
   alias?: A
   parameters?: P
   flags?: F
-  examples?: [string, string][]
-  notes?: string[]
 }
 export type Command<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = O & {
   name: N

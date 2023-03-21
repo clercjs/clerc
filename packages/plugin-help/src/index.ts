@@ -1,6 +1,6 @@
 import type { HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommandStrict, withBrackets } from "@clerc/core";
-import { gracefulFlagName, toArray } from "@clerc/utils";
+import { NoSuchCommandError, Root, definePlugin, formatCommandName, withBrackets } from "@clerc/core";
+import { gracefulFlagName, resolveCommandStrict, toArray } from "@clerc/utils";
 import pc from "picocolors";
 
 import type { Render, Renderers, Section } from "./renderer";
@@ -10,7 +10,11 @@ import { locales } from "./locales";
 
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
-    help?: Renderers
+    help?: {
+      renderers?: Renderers
+      examples?: [string, string][]
+      notes?: string[]
+    }
   }
 }
 
@@ -113,14 +117,14 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
       ),
     });
   }
-  if (subcommand.notes) {
+  if (subcommand?.help?.notes) {
     sections.push({
       title: t("help.notes")!,
-      body: subcommand.notes,
+      body: subcommand.help.notes,
     });
   }
-  if (subcommand.examples) {
-    generateExamples(sections, subcommand.examples, t);
+  if (subcommand?.help?.examples) {
+    generateExamples(sections, subcommand?.help?.examples, t);
   }
   sections = renderers.renderSections(sections);
   return render(sections);
@@ -176,16 +180,18 @@ export const helpPlugin = ({
         parameters: [
           "[command...]",
         ],
-        notes: [
-          t("help.notes.1")!,
-          t("help.notes.2")!,
-          t("help.notes.3")!,
-        ],
-        examples: [
-          [`$ ${cli._name} help`, t("help.examples.1")!],
-          [`$ ${cli._name} help <command>`, t("help.examples.2")!],
-          [`$ ${cli._name} <command> --help`, t("help.examples.2")!],
-        ],
+        help: {
+          notes: [
+            t("help.notes.1")!,
+            t("help.notes.2")!,
+            t("help.notes.3")!,
+          ],
+          examples: [
+            [`$ ${cli._name} help`, t("help.examples.1")!],
+            [`$ ${cli._name} help <command>`, t("help.examples.2")!],
+            [`$ ${cli._name} <command> --help`, t("help.examples.2")!],
+          ],
+        },
       })
         .on("help", (ctx) => {
           if (ctx.parameters.command.length) {
