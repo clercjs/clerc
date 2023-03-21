@@ -19,7 +19,7 @@ importers:
       '@types/node': ^18.14.1
       bumpp: ^9.0.0
       eslint: ^8.34.0
-      mini-cz: ^0.4.1
+      mini-cz: ^0.5.0
       pnpm: ^7.28.0
       puild: ^1.3.2
       rimraf: ^3.0.2
@@ -30,12 +30,12 @@ importers:
     devDependencies:
       '@antfu/ni': 0.20.0
       '@babel/types': 7.21.3
-      '@mini-cz/config-default': 0.4.1_mini-cz@0.4.1
+      '@mini-cz/config-default': 0.4.1_mini-cz@0.5.0
       '@so1ve/eslint-config': 0.46.1_j4766f7ecgqbon3u7zlxn5zszu
       '@types/node': 18.15.3
       bumpp: 9.0.0
       eslint: 8.36.0
-      mini-cz: 0.4.1
+      mini-cz: 0.5.0
       pnpm: 7.30.0
       puild: 1.3.2_typescript@5.0.2
       rimraf: 3.0.2
@@ -547,12 +547,12 @@ packages:
       type-detect: 4.0.8
     dev: true
 
-  /@mini-cz/config-default/0.4.1_mini-cz@0.4.1:
+  /@mini-cz/config-default/0.4.1_mini-cz@0.5.0:
     resolution: {integrity: sha512-vvc2HvkDmWFkbz99NoyqnuXTYHBZexNKE+XKAT7X49cmobBbgufQvK8zufYWxTvK3d7AD0AgATqgsPSe1PBOXQ==}
     peerDependencies:
       mini-cz: '*'
     dependencies:
-      mini-cz: 0.4.1
+      mini-cz: 0.5.0
     dev: true
 
   /@nodelib/fs.scandir/2.1.5:
@@ -2964,8 +2964,8 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /mini-cz/0.4.1:
-    resolution: {integrity: sha512-BNimvFPDRMJhKhyaSyuCm1itaRONYnTKReVuVe7hn1tAHNQDVMeADCcuNa0hLs397FTG5urmFHKN+VSKj3uh1w==}
+  /mini-cz/0.5.0:
+    resolution: {integrity: sha512-JzELCCv0ncWjSDU8KropnogpkNUUZKu4Jbn6bkphEPs2CMX+vcDgAvZ7VBTHzQVo4Xcyo73veQxa81VYB8iaQQ==}
     hasBin: true
     dev: true
 
