@@ -3,26 +3,26 @@ import pc from "picocolors";
 import { stringifyType, table } from "./utils";
 
 export interface BlockSection {
-  type?: "block";
-  title: string;
-  body: string[];
+  type?: "block"
+  title: string
+  body: string[]
 }
 
 export interface InlineSection {
-  type: "inline";
+  type: "inline"
   items: {
-    title: string;
-    body: string;
-  }[];
+    title: string
+    body: string
+  }[]
 }
 
 export type Section = BlockSection | InlineSection;
 export type Render = (sections: Section[]) => string;
 export interface Renderers {
-  renderSections?: (sections: Section[]) => Section[];
-  renderFlagName?: (name: string) => string;
-  renderType?: (type: any, hasDefault: boolean) => string;
-  renderDefault?: (default_: any) => string;
+  renderSections?: (sections: Section[]) => Section[]
+  renderFlagName?: (name: string) => string
+  renderType?: (type: any, hasDefault: boolean) => string
+  renderDefault?: (default_: any) => string
 }
 
 export const render: Render = (sections: Section[]) => {

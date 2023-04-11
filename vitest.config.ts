@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-
 import type { AliasOptions } from "vite";
 import { defineConfig } from "vitest/config";
 

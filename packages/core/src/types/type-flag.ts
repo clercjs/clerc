@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-invalid-void-type */
 export const DOUBLE_DASH = "--";
 
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
@@ -12,18 +11,20 @@ export type FlagSchemaBase<TF> = {
     ```
     type: String
     ```
+
     @example Wrap in an array to accept multiple values.
     ```
     type: [Boolean]
     ```
+
     @example Custom function type that uses moment.js to parse string as date.
     ```
     type: function CustomDate(value: string) {
         return moment(value).toDate();
     }
     ```
-   */
-  type: TF;
+    */
+  type: TF
   /**
     A single-character alias for the flag.
 
@@ -31,8 +32,8 @@ export type FlagSchemaBase<TF> = {
     ```
     alias: 's'
     ```
-   */
-  alias?: string;
+    */
+  alias?: string
 } & Record<PropertyKey, unknown>;
 export type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
   /**
@@ -43,44 +44,38 @@ export type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
     ```
     default: 'hello'
     ```
+
     @example
     ```
     default: () => [1, 2, 3]
     ```
-   */
-  default: DefaultType | (() => DefaultType);
+    */
+  default: DefaultType | (() => DefaultType)
 };
-export type FlagSchema<TF = FlagType> = FlagSchemaBase<TF> | FlagSchemaDefault<TF>;
+export type FlagSchema<TF = FlagType> = (FlagSchemaBase<TF> | FlagSchemaDefault<TF>);
 export type FlagTypeOrSchema<ExtraOptions = Record<string, unknown>> = FlagType | (FlagSchema & ExtraOptions);
 export type Flags<ExtraOptions = Record<string, unknown>> = Record<string, FlagTypeOrSchema<ExtraOptions>>;
-export type InferFlagType<Flag extends FlagTypeOrSchema> = Flag extends
-  (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
-  ? (Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D> ? T[] | D : T[])
-  : (Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>
-    ? (Flag extends FlagSchemaDefault<TypeFunction<T>, infer D> ? T | D : T | undefined)
-    : never);
+export type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>) ? (Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D> ? T[] | D : T[]) : (Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>> ? (Flag extends FlagSchemaDefault<TypeFunction<T>, infer D> ? T | D : T | undefined) : never));
 export interface ParsedFlags<Schemas = Record<string, unknown>> {
-  flags: Schemas;
-  unknownFlags: Record<string, (string | boolean)[]>;
+  flags: Schemas
+  unknownFlags: Record<string, (string | boolean)[]>
   _: string[] & {
-    [DOUBLE_DASH]: string[];
-  };
-}
-export type TypeFlag<Schemas extends Flags> = ParsedFlags<
-  {
-    [flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+    [DOUBLE_DASH]: string[]
   }
->;
+}
+export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
+  [flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+}>;
 export const KNOWN_FLAG = "known-flag";
 export const UNKNOWN_FLAG = "unknown-flag";
 export const ARGUMENT = "argument";
 export interface IgnoreFunction {
-  (type: typeof ARGUMENT, argvElement: string): boolean | void;
-  (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue: string | undefined): boolean | void;
+  (type: typeof ARGUMENT, argvElement: string): boolean | void
+  (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue: string | undefined): boolean | void
 }
 export interface TypeFlagOptions {
   /**
-   * Which argv elements to ignore from parsing
-   */
-  ignore?: IgnoreFunction;
+     * Which argv elements to ignore from parsing
+     */
+  ignore?: IgnoreFunction
 }

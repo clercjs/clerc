@@ -1,9 +1,9 @@
+import { gracefulFlagName } from "@clerc/utils";
 import type { Clerc, Command, CommandType, Flags, RootType, TranslateFn } from "@clerc/core";
 import { Root, formatCommandName } from "@clerc/core";
-import { gracefulFlagName } from "@clerc/utils";
-import pc from "picocolors";
-import stringWidth from "string-width";
 import textTable from "text-table";
+import stringWidth from "string-width";
+import pc from "picocolors";
 
 import type { Section } from "./renderer";
 
@@ -33,9 +33,7 @@ export const sortName = (a: CommandType, b: CommandType) => {
 
 export const DELIMITER = pc.yellow("-");
 
-export const print = (s: string) => {
-  process.stdout.write(s);
-};
+export const print = (s: string) => { process.stdout.write(s); };
 
 export const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
   const { t } = cli.i18n;
@@ -61,7 +59,7 @@ export const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: 
   });
   sections.push({
     title: t("help.description")!,
-    body: [subcommand?.description ?? cli._description],
+    body: [subcommand?.description || cli._description],
   });
 };
 
@@ -73,17 +71,16 @@ export const generateExamples = (sections: Section[], examples: [string, string]
   });
 };
 
-export const formatFlags = (flags: Flags) =>
-  Object.entries(flags).map(([name, flag]) => {
-    const flagNameWithAlias = [gracefulFlagName(name)];
-    if (flag.alias) {
-      flagNameWithAlias.push(gracefulFlagName(flag.alias));
-    }
-    const items = [pc.blue(flagNameWithAlias.join(", "))];
-    items.push(DELIMITER, flag.description);
-    if (flag.type) {
-      const type = stringifyType(flag.type);
-      type && items.push(pc.gray(`(${type})`));
-    }
-    return items;
-  });
+export const formatFlags = (flags: Flags) => Object.entries(flags).map(([name, flag]) => {
+  const flagNameWithAlias = [gracefulFlagName(name)];
+  if (flag.alias) {
+    flagNameWithAlias.push(gracefulFlagName(flag.alias));
+  }
+  const items = [pc.blue(flagNameWithAlias.join(", "))];
+  items.push(DELIMITER, flag.description);
+  if (flag.type) {
+    const type = stringifyType(flag.type);
+    type && items.push(pc.gray(`(${type})`));
+  }
+  return items;
+});

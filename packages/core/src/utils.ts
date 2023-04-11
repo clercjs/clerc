@@ -4,25 +4,10 @@ import { typeFlag } from "type-flag";
 
 import type { RootType } from "./cli";
 import { Root } from "./cli";
+import type { Command, CommandAlias, CommandType, Commands, Inspector, InspectorContext, InspectorFn, InspectorObject, TranslateFn } from "./types";
 import { CommandNameConflictError } from "./errors";
-import type {
-  Command,
-  CommandAlias,
-  CommandType,
-  Commands,
-  Inspector,
-  InspectorContext,
-  InspectorFn,
-  InspectorObject,
-  TranslateFn,
-} from "./types";
 
-function setCommand(
-  commandsMap: Map<string[] | RootType, CommandAlias>,
-  commands: Commands,
-  command: Command,
-  t: TranslateFn,
-) {
+function setCommand (commandsMap: Map<string[] | RootType, CommandAlias>, commands: Commands, command: Command, t: TranslateFn) {
   if (command.alias) {
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
@@ -34,7 +19,7 @@ function setCommand(
   }
 }
 
-export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
+export function resolveFlattenCommands (commands: Commands, t: TranslateFn) {
   const commandsMap = new Map<string[] | RootType, CommandAlias>();
   if (commands[Root]) {
     commandsMap.set(Root, commands[Root]);
@@ -47,14 +32,10 @@ export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
   return commandsMap;
 }
 
-export function resolveCommand(
-  commands: Commands,
-  argv: string[],
-  t: TranslateFn,
-): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
+export function resolveCommand (commands: Commands, argv: string[], t: TranslateFn): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   const commandsMap = resolveFlattenCommands(commands, t);
   for (const [name, command] of commandsMap.entries()) {
-    const parsed = typeFlag(command?.flags ?? {}, [...argv]);
+    const parsed = typeFlag(command?.flags || {}, [...argv]);
     const { _: args } = parsed;
     if (name === Root) { continue; }
     if (arrayStartsWith(args, name)) {
@@ -71,11 +52,11 @@ export const resolveArgv = (): string[] =>
   IS_NODE
     ? process.argv.slice(IS_ELECTRON ? 1 : 2)
     : IS_DENO
-    // @ts-expect-error Ignore
-    ? Deno.args
-    : [];
+      // @ts-expect-error Ignore
+      ? Deno.args
+      : [];
 
-export function compose(inspectors: Inspector[]) {
+export function compose (inspectors: Inspector[]) {
   const inspectorMap = {
     pre: [] as InspectorFn[],
     normal: [] as InspectorFn[],
@@ -100,10 +81,21 @@ export function compose(inspectors: Inspector[]) {
   ];
 
   return (ctx: InspectorContext) => {
-    return dispatch(0);
-    function dispatch(i: number): void {
+    const callbacks: (() => void)[] = [];
+    let called = 0;
+    const dispatch = (i: number) => {
+      called = i;
       const inspector = mergedInspectorFns[i];
-      return inspector(ctx, dispatch.bind(null, i + 1));
+      const cb = inspector(ctx, dispatch.bind(null, i + 1));
+      if (cb) {
+        callbacks.push(cb);
+      }
+    };
+    dispatch(0);
+    if (called + 1 === mergedInspectorFns.length) {
+      for (const cb of callbacks) {
+        cb();
+      }
     }
   };
 }
@@ -112,21 +104,19 @@ const INVALID_RE = /\s\s+/;
 export const isValidName = (name: CommandType) =>
   name === Root
     ? true
-    : (!(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name));
+    : !(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name);
 
 export const withBrackets = (s: string, isOptional?: boolean) => isOptional ? `[${s}]` : `<${s}>`;
 
 const ROOT = "<Root>";
-export const formatCommandName = (name: string | string[] | RootType) =>
-  Array.isArray(name)
-    ? name.join(" ")
-    : typeof name === "string"
+export const formatCommandName = (name: string | string[] | RootType) => Array.isArray(name)
+  ? name.join(" ")
+  : typeof name === "string"
     ? name
     : ROOT;
 
-export const detectLocale = () =>
-  process.env.CLERC_LOCALE
-    ? process.env.CLERC_LOCALE
-    : Intl.DateTimeFormat().resolvedOptions().locale;
+export const detectLocale = () => process.env.CLERC_LOCALE
+  ? process.env.CLERC_LOCALE
+  : Intl.DateTimeFormat().resolvedOptions().locale;
 
 export const stripFlags = (argv: string[]) => argv.filter(arg => !arg.startsWith("-"));

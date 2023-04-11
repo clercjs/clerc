@@ -7,12 +7,12 @@ import type { TranslateFn } from "./types";
 const { stringify } = JSON;
 
 interface ParsedParameter {
-  name: string;
-  required: boolean;
-  spread: boolean;
+  name: string
+  required: boolean
+  spread: boolean
 }
 
-export function parseParameters(parameters: string[], t: TranslateFn) {
+export function parseParameters (parameters: string[], t: TranslateFn) {
   const parsedParameters: ParsedParameter[] = [];
 
   let hasOptional: string | undefined;
@@ -63,7 +63,7 @@ export function parseParameters(parameters: string[], t: TranslateFn) {
   return parsedParameters;
 }
 
-export function mapParametersToArguments(
+export function mapParametersToArguments (
   mapping: Record<string, string | string[]>,
   parameters: ParsedParameter[],
   cliArguments: string[],
