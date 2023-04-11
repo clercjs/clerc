@@ -4,6 +4,7 @@ import { typeFlag } from "type-flag";
 
 import type { RootType } from "./cli";
 import { Root } from "./cli";
+import { CommandNameConflictError } from "./errors";
 import type {
   Command,
   CommandAlias,
@@ -15,7 +16,6 @@ import type {
   InspectorObject,
   TranslateFn,
 } from "./types";
-import { CommandNameConflictError } from "./errors";
 
 function setCommand(
   commandsMap: Map<string[] | RootType, CommandAlias>,
@@ -54,7 +54,7 @@ export function resolveCommand(
 ): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   const commandsMap = resolveFlattenCommands(commands, t);
   for (const [name, command] of commandsMap.entries()) {
-    const parsed = typeFlag(command?.flags || {}, [...argv]);
+    const parsed = typeFlag(command?.flags ?? {}, [...argv]);
     const { _: args } = parsed;
     if (name === Root) { continue; }
     if (arrayStartsWith(args, name)) {
@@ -100,21 +100,10 @@ export function compose(inspectors: Inspector[]) {
   ];
 
   return (ctx: InspectorContext) => {
-    const callbacks: (() => void)[] = [];
-    let called = 0;
-    const dispatch = (i: number) => {
-      called = i;
+    return dispatch(0);
+    function dispatch(i: number): void {
       const inspector = mergedInspectorFns[i];
-      const cb = inspector(ctx, dispatch.bind(null, i + 1));
-      if (cb) {
-        callbacks.push(cb);
-      }
-    };
-    dispatch(0);
-    if (called + 1 === mergedInspectorFns.length) {
-      for (const cb of callbacks) {
-        cb();
-      }
+      return inspector(ctx, dispatch.bind(null, i + 1));
     }
   };
 }
@@ -123,7 +112,7 @@ const INVALID_RE = /\s\s+/;
 export const isValidName = (name: CommandType) =>
   name === Root
     ? true
-    : !(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name);
+    : (!(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name));
 
 export const withBrackets = (s: string, isOptional?: boolean) => isOptional ? `[${s}]` : `<${s}>`;
 
