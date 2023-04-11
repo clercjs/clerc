@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Root, defineCommand } from "@clerc/core";
+
 import { Cli } from "./create-cli";
+
+import { Root, defineCommand } from "@clerc/core";
 
 describe("cli", () => {
   it("should parse", () => {
@@ -215,7 +217,7 @@ describe("cli", () => {
       .parse(["foo", "--foo", "42"]);
   });
   it("should parse dot-nested flag", () => {
-    function Foo (value: string) {
+    function Foo(value: string) {
       const [propertyName, propertyValue] = value.split("=");
       return {
         [propertyName]: propertyValue || true,
@@ -278,7 +280,9 @@ describe("cli", () => {
     Cli()
       .command("foo", "foo")
       .inspector(() => {})
-      .on("foo", () => { count++; })
+      .on("foo", () => {
+        count++;
+      })
       .parse(["foo"]);
     expect(count).toBe(0);
   });
@@ -286,14 +290,18 @@ describe("cli", () => {
     let count = 0;
     Cli()
       .command("foo", "foo")
-      .inspector((_ctx, next) => { next(); })
+      .inspector((_ctx, next) => {
+        next();
+      })
       .inspector((ctx, next) => {
         expect(ctx.name).toBe("foo");
         expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({});
         next();
       })
-      .on("foo", () => { count++; })
+      .on("foo", () => {
+        count++;
+      })
       .parse(["foo"]);
     expect(count).toBe(1);
   });
@@ -409,7 +417,9 @@ describe("cli", () => {
     const command = defineCommand({
       name: "foo",
       description: "foo",
-    }, () => { count++; });
+    }, () => {
+      count++;
+    });
     Cli()
       .command(command)
       .parse(["foo"]);
@@ -417,24 +427,28 @@ describe("cli", () => {
   });
   it("should run matched command", async () => {
     let count = 0;
-    await Cli()
+    Cli()
       .command("foo", "foo")
-      .on("foo", () => { count++; })
+      .on("foo", () => {
+        count++;
+      })
       .parse({ run: false, argv: ["foo"] })
       .runMatchedCommand();
     expect(count).toBe(1);
   });
   it("shouldn't run matched command", async () => {
     let count = 0;
-    await Cli()
+    Cli()
       .command("foo", "foo")
-      .on("foo", () => { count++; })
+      .on("foo", () => {
+        count++;
+      })
       .parse({ run: false, argv: ["foo"] });
     expect(count).toBe(0);
   });
   it("should translate", async () => {
     try {
-      await Cli("zh-CN")
+      Cli("zh-CN")
         .command("foo", "foo")
         .parse(["bar"]);
     } catch (e: any) {

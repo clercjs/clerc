@@ -13,8 +13,10 @@ export const locales: Locales = {
     "core.localeMustBeCalledFirst": "locale() or fallbackLocale() must be called at first.",
     "core.cliParseMustBeCalled": "cli.parse() must be called.",
     "core.spreadParameterMustBeLast": "Invalid Parameter: Spread parameter %s must be last.",
-    "core.requiredParameterCannotComeAfterOptionalParameter": "Invalid Parameter: Required parameter %s cannot come after optional parameter %s.",
-    "core.parameterMustBeWrappedInBrackets": "Invalid Parameter: Parameter %s must be wrapped in <> (required parameter) or [] (optional parameter).",
+    "core.requiredParameterCannotComeAfterOptionalParameter":
+      "Invalid Parameter: Required parameter %s cannot come after optional parameter %s.",
+    "core.parameterMustBeWrappedInBrackets":
+      "Invalid Parameter: Parameter %s must be wrapped in <> (required parameter) or [] (optional parameter).",
     "core.parameterIsUsedMoreThanOnce": "Invalid Parameter: Parameter %s is used more than once.",
     "core.missingRequiredParameter": "Missing required parameter %s.",
   },
