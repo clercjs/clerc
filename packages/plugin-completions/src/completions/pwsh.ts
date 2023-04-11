@@ -2,14 +2,23 @@ import type { Command, HandlerContext } from "@clerc/core";
 import { gracefulFlagName, kebabCase } from "@clerc/utils";
 
 const NO_DESCRIPTION = "(No Description)";
-const getCompletionValue = (command: Command) => `[CompletionResult]::new('${command.name}', '${command.name}', [CompletionResultType]::ParameterValue, '${command.description}')`;
+const getCompletionValue = (command: Command) =>
+  `[CompletionResult]::new('${command.name}', '${command.name}', [CompletionResultType]::ParameterValue, '${command.description}')`;
 const getCompletionFlag = (command: Command) => {
-  return Object.entries(command.flags || {})
+  return Object.entries(command.flags ?? {})
     .map(([flagName, flag]) => {
-      const gen = [`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${kebabCase(flagName)}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`];
+      const gen = [
+        `[CompletionResult]::new('${gracefulFlagName(flagName)}', '${
+          kebabCase(flagName)
+        }', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`,
+      ];
       if (flag?.alias) {
         gen.push(
-          `[CompletionResult]::new('${gracefulFlagName(flag.alias)}', '${flag.alias}', [CompletionResultType]::ParameterName, '${command.flags![flagName].description || NO_DESCRIPTION}')`,
+          `[CompletionResult]::new('${
+            gracefulFlagName(flag.alias)
+          }', '${flag.alias}', [CompletionResultType]::ParameterName, '${
+            command.flags![flagName].description || NO_DESCRIPTION
+          }')`,
         );
       }
       return gen.join("\n            ");
@@ -46,12 +55,13 @@ Register-ArgumentCompleter -Native -CommandName '${name}' -ScriptBlock {
             break
         }
         ${
-          Object.entries(commands).map(([commandName, command]) =>
-          `'${name};${commandName.split(" ").join(";")}' {
+    Object.entries(commands).map(([commandName, command]) =>
+      `'${name};${commandName.split(" ").join(";")}' {
             ${getCompletionFlag(command)}
             break
-        }`).join("\n        ")
-        }
+        }`
+    ).join("\n        ")
+  }
     })
 
     $completions.Where{ $_.CompletionText -like "$wordToComplete*" } |

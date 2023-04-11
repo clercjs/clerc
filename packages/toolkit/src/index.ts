@@ -1,28 +1,15 @@
 // NOTE: We inline tasuku due to https://github.com/facebook/yoga/issues/1048
+import progress from "cli-progress";
+import Table from "cli-table3";
+import { execa as exec } from "execa";
 import * as kons from "kons";
 import * as konsola from "kons/consola";
-import colors from "picocolors";
-import spinner from "ora";
 import open from "open";
-import progress from "cli-progress";
-import columns from "terminal-columns";
-import link from "terminal-link";
-import Table from "cli-table3";
+import spinner from "ora";
+import colors from "picocolors";
 import prompt from "prompts";
 import task from "tasuku";
-import { execa as exec } from "execa";
+import columns from "terminal-columns";
+import link from "terminal-link";
 
-export {
-  exec,
-  prompt,
-  colors,
-  spinner,
-  open,
-  progress,
-  columns,
-  link,
-  kons,
-  konsola,
-  task,
-  Table,
-};
+export { colors, columns, exec, kons, konsola, link, open, progress, prompt, spinner, Table, task };

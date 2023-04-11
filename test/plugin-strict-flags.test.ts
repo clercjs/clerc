@@ -1,12 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
+
 import { Cli } from "./create-cli";
+
+import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
 
 describe("plugin-strict-flags", () => {
   const msgs: string[] = [];
   beforeAll(() => {
     // eslint-disable-next-line no-console
-    console.log = (s: string) => { msgs.push(s); };
+    console.log = (s: string) => {
+      msgs.push(s);
+    };
   });
   afterEach(() => {
     msgs.length = 0;

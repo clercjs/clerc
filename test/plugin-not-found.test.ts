@@ -1,13 +1,19 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { notFoundPlugin } from "@clerc/plugin-not-found";
+
 import { Cli } from "./create-cli";
+
+import { notFoundPlugin } from "@clerc/plugin-not-found";
 
 describe("plugin-not-found", () => {
   const msgs: string[] = [];
   beforeAll(() => {
     // eslint-disable-next-line no-console
-    console.log = (s: string) => { msgs.push(s); };
-    console.error = (s: string) => { msgs.push(s); };
+    console.log = (s: string) => {
+      msgs.push(s);
+    };
+    console.error = (s: string) => {
+      msgs.push(s);
+    };
     process.exit = ((_code?: number) => {}) as any;
   });
   afterEach(() => {
