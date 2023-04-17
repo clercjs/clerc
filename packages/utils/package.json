@@ -42,8 +42,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild --minify",
-    "watch": "puild --watch"
+    "build": "pkgroll --minify",
+    "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
