@@ -1,6 +1,6 @@
 {
   "name": "@clerc/plugin-not-found",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "description": "Clerc plugin not found (did you mean)",
   "keywords": [
