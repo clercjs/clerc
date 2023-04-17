@@ -58,8 +58,8 @@
     "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
     "@types/text-table": "^0.2.2",
-    "picocolors": "^1.0.0",
     "string-width": "^5.1.2",
-    "text-table": "^0.2.0"
+    "text-table": "^0.2.0",
+    "yoctocolors": "^1.0.0"
   }
 }

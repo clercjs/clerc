@@ -2,7 +2,7 @@
 import { NoCommandGivenError, NoSuchCommandError, definePlugin } from "@clerc/core";
 import { semanticArray } from "@clerc/utils";
 import didyoumean from "didyoumean2";
-import pc from "picocolors";
+import * as yc from "yoctocolors";
 
 import { locales } from "./locales";
 
@@ -30,9 +30,9 @@ export const notFoundPlugin = () =>
             // Good example =]
             const calledCommandName = e.commandName;
             const closestCommandName = didyoumean(calledCommandName, commandKeys);
-            console.error(t("notFound.commandNotFound", pc.strikethrough(calledCommandName)));
+            console.error(t("notFound.commandNotFound", yc.strikethrough(calledCommandName)));
             if (hasCommands && closestCommandName) {
-              console.error(t("notFound.didyoumean", pc.bold(closestCommandName)));
+              console.error(t("notFound.didyoumean", yc.bold(closestCommandName)));
             } else if (!hasCommands) {
               console.error(t("notFound.commandNotRegisteredNote"));
             }

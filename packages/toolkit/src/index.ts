@@ -6,7 +6,7 @@ import * as kons from "kons";
 import * as konsola from "kons/consola";
 import open from "open";
 import spinner from "ora";
-import colors from "picocolors";
+import * as colors from "yoctocolors";
 import prompt from "prompts";
 import task from "tasuku";
 import columns from "terminal-columns";

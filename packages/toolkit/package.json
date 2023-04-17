@@ -65,10 +65,10 @@
     "kons": "^0.7.0",
     "open": "^9.1.0",
     "ora": "^6.3.0",
-    "picocolors": "^1.0.0",
     "prompts": "^2.4.2",
     "terminal-columns": "^1.4.1",
-    "terminal-link": "^3.0.0"
+    "terminal-link": "^3.0.0",
+    "yoctocolors": "^1.0.0"
   },
   "devDependencies": {
     "tasuku": "2.0.0"

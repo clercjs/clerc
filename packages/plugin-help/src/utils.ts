@@ -1,7 +1,7 @@
 import type { Clerc, Command, CommandType, Flags, RootType, TranslateFn } from "@clerc/core";
 import { Root, formatCommandName } from "@clerc/core";
 import { gracefulFlagName } from "@clerc/utils";
-import pc from "picocolors";
+import * as yc from "yoctocolors";
 import stringWidth from "string-width";
 import textTable from "text-table";
 
@@ -31,7 +31,7 @@ export const sortName = (a: CommandType, b: CommandType) => {
   return a.length - b.length;
 };
 
-export const DELIMITER = pc.yellow("-");
+export const DELIMITER = yc.yellow("-");
 
 export const print = (s: string) => {
   process.stdout.write(s);
@@ -42,17 +42,17 @@ export const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: 
   const items = [
     {
       title: t("help.name")!,
-      body: pc.red(cli._name),
+      body: yc.red(cli._name),
     },
     {
       title: t("help.version")!,
-      body: pc.yellow(cli._version),
+      body: yc.yellow(cli._version),
     },
   ];
   if (subcommand) {
     items.push({
       title: t("help.subcommand")!,
-      body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
+      body: yc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
     });
   }
   sections.push({
@@ -79,11 +79,11 @@ export const formatFlags = (flags: Flags) =>
     if (flag.alias) {
       flagNameWithAlias.push(gracefulFlagName(flag.alias));
     }
-    const items = [pc.blue(flagNameWithAlias.join(", "))];
+    const items = [yc.blue(flagNameWithAlias.join(", "))];
     items.push(DELIMITER, flag.description);
     if (flag.type) {
       const type = stringifyType(flag.type);
-      type && items.push(pc.gray(`(${type})`));
+      type && items.push(yc.gray(`(${type})`));
     }
     return items;
   });

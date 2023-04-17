@@ -1,7 +1,7 @@
 import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, withBrackets } from "@clerc/core";
 import { gracefulFlagName, resolveCommandStrict, toArray } from "@clerc/utils";
-import pc from "picocolors";
+import * as yc from "yoctocolors";
 
 import { locales } from "./locales";
 import type { Render, Renderers, Section } from "./renderer";
@@ -30,7 +30,7 @@ const generateHelp = (
   generateCliDetail(sections, cli);
   sections.push({
     title: t("help.usage")!,
-    body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
+    body: [yc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
   const commands = [
     ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
@@ -42,7 +42,7 @@ const generateHelp = (
         return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
       })
       .join(", ");
-    return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
+    return [yc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
   if (commands.length) {
     sections.push({
@@ -92,7 +92,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
     title: t("help.usage")!,
-    body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
+    body: [yc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
   const globalFlags = formatFlags(cli._flags);
   if (globalFlags.length) {
@@ -112,7 +112,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
             flagNameWithAlias.push(gracefulFlagName(flag.alias));
           }
           flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
-          const items = [pc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
+          const items = [yc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
           items.push(DELIMITER, flag.description || t("help.noDescription")!);
           if (hasDefault) {
             items.push(`(${t("help.default", renderers.renderDefault(flag.default))!})`);

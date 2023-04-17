@@ -58,6 +58,6 @@
     "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
     "didyoumean2": "^5.0.0",
-    "picocolors": "^1.0.0"
+    "yoctocolors": "^1.0.0"
   }
 }

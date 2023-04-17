@@ -96,28 +96,28 @@ importers:
       '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
       '@types/text-table': ^0.2.2
-      picocolors: ^1.0.0
       string-width: ^5.1.2
       text-table: ^0.2.0
+      yoctocolors: ^1.0.0
     devDependencies:
       '@clerc/core': link:../core
       '@clerc/utils': link:../utils
       '@types/text-table': 0.2.2
-      picocolors: 1.0.0
       string-width: 5.1.2
       text-table: 0.2.0
+      yoctocolors: 1.0.0
 
   packages/plugin-not-found:
     specifiers:
       '@clerc/core': workspace:*
       '@clerc/utils': workspace:*
       didyoumean2: ^5.0.0
-      picocolors: ^1.0.0
+      yoctocolors: ^1.0.0
     devDependencies:
       '@clerc/core': link:../core
       '@clerc/utils': link:../utils
       didyoumean2: 5.0.0
-      picocolors: 1.0.0
+      yoctocolors: 1.0.0
 
   packages/plugin-strict-flags:
     specifiers:
@@ -145,11 +145,11 @@ importers:
       kons: ^0.7.0
       open: ^9.1.0
       ora: ^6.3.0
-      picocolors: ^1.0.0
       prompts: ^2.4.2
       tasuku: 2.0.0
       terminal-columns: ^1.4.1
       terminal-link: ^3.0.0
+      yoctocolors: ^1.0.0
     dependencies:
       '@types/cli-progress': 3.11.0
       '@types/prompts': 2.4.4
@@ -159,10 +159,10 @@ importers:
       kons: 0.7.0
       open: 9.1.0
       ora: 6.3.0
-      picocolors: 1.0.0
       prompts: 2.4.2
       terminal-columns: 1.4.1
       terminal-link: 3.0.0
+      yoctocolors: 1.0.0
     devDependencies:
       tasuku: 2.0.0
 
@@ -4705,6 +4705,10 @@ packages:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
     dev: true
+
+  /yoctocolors/1.0.0:
+    resolution: {integrity: sha512-qJNAmSF77lWjfRVwCZK3PcKYWrr+55RUQTiXDxXHGbxzf8WuuRgftIB3hqZ5fykjOF/MC62cazsG/2ZDBedOnQ==}
+    engines: {node: '>=14.16'}
 
   /yoga-layout-prebuilt/1.10.0_47eboidwschvvkf5sc53oki4ma:
     resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
