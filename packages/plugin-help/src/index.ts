@@ -1,6 +1,6 @@
 import type { HandlerContext, RootType } from "@clerc/core";
 import { NoSuchCommandError, Root, definePlugin, formatCommandName, withBrackets } from "@clerc/core";
-import { gracefulFlagName, resolveCommandStrict, toArray } from "@clerc/utils";
+import { resolveCommandStrict, toArray } from "@clerc/utils";
 import * as yc from "yoctocolors";
 
 import { locales } from "./locales";
@@ -23,10 +23,12 @@ const generateHelp = (
   ctx: HandlerContext,
   notes: string[] | undefined,
   examples: [string, string][] | undefined,
+  _renderers?: Renderers,
 ) => {
   const { cli } = ctx;
   const { t } = cli.i18n;
-  const sections = [] as Section[];
+  let sections = [] as Section[];
+  const renderers = Object.assign({}, defaultRenderers, _renderers);
   generateCliDetail(sections, cli);
   sections.push({
     title: t("help.usage")!,
@@ -50,7 +52,7 @@ const generateHelp = (
       body: splitTable(commands),
     });
   }
-  const globalFlags = formatFlags(cli._flags);
+  const globalFlags = formatFlags(cli._flags, t, renderers);
   if (globalFlags.length) {
     sections.push({
       title: t("help.globalFlags")!,
@@ -66,6 +68,7 @@ const generateHelp = (
   if (examples) {
     generateExamples(sections, examples, t);
   }
+  sections = renderers.renderSections(sections);
   return render(sections);
 };
 
@@ -76,7 +79,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const renderers = Object.assign({}, defaultRenderers, subcommand.help);
+  const renderers = Object.assign({}, defaultRenderers, subcommand.help?.renderers);
   let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
@@ -94,7 +97,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     title: t("help.usage")!,
     body: [yc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
   });
-  const globalFlags = formatFlags(cli._flags);
+  const globalFlags = formatFlags(cli._flags, t, renderers);
   if (globalFlags.length) {
     sections.push({
       title: t("help.globalFlags")!,
@@ -104,22 +107,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (subcommand.flags) {
     sections.push({
       title: t("help.flags")!,
-      body: splitTable(
-        Object.entries(subcommand.flags).map(([name, flag]) => {
-          const hasDefault = flag.default !== undefined;
-          let flagNameWithAlias: string[] = [gracefulFlagName(name)];
-          if (flag.alias) {
-            flagNameWithAlias.push(gracefulFlagName(flag.alias));
-          }
-          flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
-          const items = [yc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
-          items.push(DELIMITER, flag.description || t("help.noDescription")!);
-          if (hasDefault) {
-            items.push(`(${t("help.default", renderers.renderDefault(flag.default))!})`);
-          }
-          return items;
-        }),
-      ),
+      body: splitTable(formatFlags(subcommand.flags, t, renderers)),
     });
   }
   if (subcommand?.help?.notes) {
@@ -166,6 +154,10 @@ export interface HelpPluginOptions {
    * Banner.
    */
   banner?: string;
+  /**
+   * Renderers.
+   */
+  renderers?: Renderers;
 }
 export const helpPlugin = ({
   command = true,
@@ -174,6 +166,7 @@ export const helpPlugin = ({
   notes,
   examples,
   banner,
+  renderers,
 }: HelpPluginOptions = {}) =>
   definePlugin({
     setup: (cli) => {
@@ -206,7 +199,7 @@ export const helpPlugin = ({
             if (ctx.parameters.command.length) {
               printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
             } else {
-              printHelp(generateHelp(render, ctx, notes, examples));
+              printHelp(generateHelp(render, ctx, notes, examples, renderers));
             }
           });
       }
@@ -223,7 +216,7 @@ export const helpPlugin = ({
         const shouldShowHelp = ctx.flags.help;
         if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !shouldShowHelp) {
           let str = `${t("core.noCommandGiven")!}\n\n`;
-          str += generateHelp(render, ctx, notes, examples);
+          str += generateHelp(render, ctx, notes, examples, renderers);
           str += "\n";
           printHelp(str);
           process.exit(1);
@@ -231,7 +224,7 @@ export const helpPlugin = ({
           if (ctx.raw._.length) {
             if (ctx.called !== Root) {
               if (ctx.name === Root) {
-                printHelp(generateHelp(render, ctx, notes, examples));
+                printHelp(generateHelp(render, ctx, notes, examples, renderers));
               } else {
                 printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
               }
@@ -242,7 +235,7 @@ export const helpPlugin = ({
             if (ctx.hasRootOrAlias) {
               printHelp(generateSubcommandHelp(render, ctx, Root));
             } else {
-              printHelp(generateHelp(render, ctx, notes, examples));
+              printHelp(generateHelp(render, ctx, notes, examples, renderers));
             }
           }
         } else {

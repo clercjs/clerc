@@ -5,7 +5,7 @@ import * as yc from "yoctocolors";
 import stringWidth from "string-width";
 import textTable from "text-table";
 
-import type { Section } from "./renderer";
+import type { Renderers, Section } from "./renderer";
 
 export const table = (items: string[][]) => textTable(items, { stringLength: stringWidth });
 
@@ -73,17 +73,18 @@ export const generateExamples = (sections: Section[], examples: [string, string]
   });
 };
 
-export const formatFlags = (flags: Flags) =>
+export const formatFlags = (flags: Flags, t: TranslateFn, renderers: Required<Renderers>) =>
   Object.entries(flags).map(([name, flag]) => {
-    const flagNameWithAlias = [gracefulFlagName(name)];
+    const hasDefault = flag.default !== undefined;
+    let flagNameWithAlias: string[] = [gracefulFlagName(name)];
     if (flag.alias) {
       flagNameWithAlias.push(gracefulFlagName(flag.alias));
     }
-    const items = [yc.blue(flagNameWithAlias.join(", "))];
-    items.push(DELIMITER, flag.description);
-    if (flag.type) {
-      const type = stringifyType(flag.type);
-      type && items.push(yc.gray(`(${type})`));
+    flagNameWithAlias = flagNameWithAlias.map(renderers.renderFlagName);
+    const items = [yc.blue(flagNameWithAlias.join(", ")), renderers.renderType(flag.type, hasDefault)];
+    items.push(DELIMITER, flag.description || t("help.noDescription")!);
+    if (hasDefault) {
+      items.push(`(${t("help.default", renderers.renderDefault(flag.default))!})`);
     }
     return items;
   });
