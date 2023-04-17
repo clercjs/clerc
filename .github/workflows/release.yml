@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: wite
+
 jobs:
   release:
     runs-on: ubuntu-latest
