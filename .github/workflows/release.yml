@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: wite
+  contents: write
 
 jobs:
   release:
