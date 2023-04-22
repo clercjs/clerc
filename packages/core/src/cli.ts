@@ -57,9 +57,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   #description = "";
   #version = "";
   #inspectors: Inspector[] = [];
-  #commands = {} as C;
+  #commands = Object.create(null) as C;
   #commandEmitter = new LiteEmit<MakeEventMap<C>>();
-  #flags = {} as GF;
+  #flags = Object.create(null) as GF;
   #usedNames = new Set<string | RootType>();
   #argv: string[] | undefined;
   #errorHandlers = [] as ((err: any) => void)[];
@@ -67,7 +67,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   #isOtherMethodCalled = false;
   #defaultLocale = "en";
   #locale = "en";
-  #locales: Locales = {};
+  #locales: Locales = Object.create(null);
   i18n: I18N = {
     add: (locales) => {
       this.#locales = defu(this.#locales, locales);

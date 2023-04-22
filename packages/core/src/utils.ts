@@ -54,7 +54,7 @@ export function resolveCommand(
 ): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
   const commandsMap = resolveFlattenCommands(commands, t);
   for (const [name, command] of commandsMap.entries()) {
-    const parsed = typeFlag(command?.flags ?? {}, [...argv]);
+    const parsed = typeFlag(command?.flags ?? Object.create(null), [...argv]);
     const { _: args } = parsed;
     if (name === Root) { continue; }
     if (arrayStartsWith(args, name)) {

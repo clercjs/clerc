@@ -28,7 +28,7 @@ const generateHelp = (
   const { cli } = ctx;
   const { t } = cli.i18n;
   let sections = [] as Section[];
-  const renderers = Object.assign({}, defaultRenderers, _renderers);
+  const renderers = Object.assign(Object.create(null), defaultRenderers, _renderers);
   generateCliDetail(sections, cli);
   sections.push({
     title: t("help.usage")!,
@@ -79,7 +79,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const renderers = Object.assign({}, defaultRenderers, subcommand.help?.renderers);
+  const renderers = Object.assign(Object.create(null), defaultRenderers, subcommand.help?.renderers);
   let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
