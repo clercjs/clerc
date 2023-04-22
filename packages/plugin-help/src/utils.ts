@@ -52,7 +52,7 @@ export const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: 
   if (subcommand) {
     items.push({
       title: t("help.subcommand")!,
-      body: yc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
+      body: yc.green(`${cli._scriptName} ${formatCommandName(subcommand.name)}`),
     });
   }
   sections.push({

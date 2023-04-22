@@ -22,9 +22,9 @@ export class CommandNameConflictError extends Error {
     super(t("core.commandNameConflict", s(n1), s(n2)));
   }
 }
-export class NameNotSetError extends Error {
+export class ScriptNameNotSetError extends Error {
   constructor(t: TranslateFn) {
-    super(t("core.nameNotSet"));
+    super(t("core.scriptNameNotSet"));
   }
 }
 export class DescriptionNotSetError extends Error {

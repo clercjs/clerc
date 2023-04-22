@@ -26,6 +26,18 @@ describe("cli", () => {
       })
       .parse(["foo"]);
   });
+  it("should honor scriptName and name", () => {
+    const cli = Cli()
+      .name("test name")
+      .scriptName("test");
+    expect(cli._name).toEqual("test name");
+    expect(cli._scriptName).toEqual("test");
+  });
+  it("should honor return scriptName when name is not set", () => {
+    const cli = Cli();
+    expect(cli._name).toEqual("test");
+    expect(cli._scriptName).toEqual("test");
+  });
   it("should honor root", () => {
     Cli()
       .command(Root, "root", {

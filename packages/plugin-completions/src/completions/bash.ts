@@ -8,7 +8,7 @@ const generateCommandCompletion = (name: string) => `
 
 export const getBashCompletion = (ctx: HandlerContext) => {
   const { cli } = ctx;
-  const { _name: name, _commands: commands } = cli;
+  const { _scriptName: name, _commands: commands } = cli;
   return `_${name}() {
     local i cur prev opts cmds
     COMPREPLY=()

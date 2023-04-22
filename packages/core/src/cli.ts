@@ -12,9 +12,9 @@ import {
   DescriptionNotSetError,
   InvalidCommandNameError,
   LocaleNotCalledFirstError,
-  NameNotSetError,
   NoCommandGivenError,
   NoSuchCommandError,
+  ScriptNameNotSetError,
   VersionNotSetError,
 } from "./errors";
 import { locales } from "./locales";
@@ -53,6 +53,7 @@ export type RootType = typeof Root;
 
 export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   #name = "";
+  #scriptName = "";
   #description = "";
   #version = "";
   #inspectors: Inspector[] = [];
@@ -82,8 +83,8 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     },
   };
 
-  private constructor(name?: string, description?: string, version?: string) {
-    this.#name = name ?? this.#name;
+  private constructor(scriptName?: string, description?: string, version?: string) {
+    this.#scriptName = scriptName ?? this.#scriptName;
     this.#description = description ?? this.#description;
     this.#version = version ?? this.#version;
     this.#locale = detectLocale();
@@ -99,7 +100,11 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   }
 
   get _name() {
-    return this.#name;
+    return this.#name || this.#scriptName;
+  }
+
+  get _scriptName() {
+    return this.#scriptName;
   }
 
   get _description() {
@@ -126,7 +131,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     this.i18n.add(locales);
   }
 
-  #otherMethodCaled() {
+  #otherMethodCalled() {
     this.#isOtherMethodCalled = true;
   }
 
@@ -158,8 +163,25 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   name(name: string) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     this.#name = name;
+    return this;
+  }
+
+  /**
+   * Set the script name of the cli
+   *
+   * @param scriptName
+   * @returns
+   * @example
+   * ```ts
+   * Clerc.create()
+   *   .scriptName("test")
+   * ```
+   */
+  scriptName(scriptName: string) {
+    this.#otherMethodCalled();
+    this.#scriptName = scriptName;
     return this;
   }
 
@@ -175,7 +197,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   description(description: string) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     this.#description = description;
     return this;
   }
@@ -192,7 +214,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   version(version: string) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     this.#version = version;
     return this;
   }
@@ -308,7 +330,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   }
 
   #command(nameOrCommand: any, description?: any, options: any = {}) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     const { t } = this.i18n;
     const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler =>
       !(typeof nameOrCommand === "string" || nameOrCommand === Root);
@@ -404,7 +426,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> & U {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     return plugin.setup(this as any) as any;
   }
 
@@ -423,7 +445,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   inspector(inspector: Inspector) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     this.#inspectors.push(inspector);
     return this;
   }
@@ -441,7 +463,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    * ```
    */
   parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
       ? {
         argv: optionsOrArgv,
@@ -461,8 +483,8 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 
   #validateMeta() {
     const { t } = this.i18n;
-    if (!this.#name) {
-      throw new NameNotSetError(t);
+    if (!this.#scriptName) {
+      throw new ScriptNameNotSetError(t);
     }
     if (!this.#description) {
       throw new DescriptionNotSetError(t);
@@ -545,7 +567,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   }
 
   #runMatchedCommand() {
-    this.#otherMethodCaled();
+    this.#otherMethodCalled();
     const { t } = this.i18n;
     const argv = this.#argv;
     if (!argv) {
@@ -586,7 +608,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    */
   runMatchedCommand() {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
-    process.title = this.#name;
+    process.title = this.#scriptName;
     return this;
   }
 }

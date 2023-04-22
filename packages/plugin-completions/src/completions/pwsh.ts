@@ -28,7 +28,7 @@ const getCompletionFlag = (command: Command) => {
 
 export const getPwshCompletion = (ctx: HandlerContext) => {
   const { cli } = ctx;
-  const { _name: name, _commands: commands } = cli;
+  const { _scriptName: name, _commands: commands } = cli;
   return `using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 

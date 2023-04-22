@@ -29,7 +29,7 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
           ],
         })
           .on("completions", (ctx) => {
-            if (!cli._name) {
+            if (!cli._scriptName) {
               throw new Error("CLI name is not defined!");
             }
             const shell = String(ctx.parameters.shell ?? ctx.flags.shell);

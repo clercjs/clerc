@@ -32,7 +32,7 @@ const generateHelp = (
   generateCliDetail(sections, cli);
   sections.push({
     title: t("help.usage")!,
-    body: [yc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
+    body: [yc.magenta(`$ ${cli._scriptName} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
   });
   const commands = [
     ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
@@ -41,7 +41,7 @@ const generateHelp = (
     const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias ?? [])]
       .sort(sortName)
       .map((n) => {
-        return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
+        return (n === "" || typeof n === "symbol") ? `${cli._scriptName}` : `${cli._scriptName} ${n}`;
       })
       .join(", ");
     return [yc.cyan(commandNameWithAlias), DELIMITER, command.description];
@@ -95,7 +95,7 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
     title: t("help.usage")!,
-    body: [yc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
+    body: [yc.magenta(`$ ${cli._scriptName}${commandName}${parametersString}${flagsString}`)],
   });
   const globalFlags = formatFlags(cli._flags, t, renderers);
   if (globalFlags.length) {
@@ -189,9 +189,9 @@ export const helpPlugin = ({
               t("help.notes.3")!,
             ],
             examples: [
-              [`$ ${cli._name} help`, t("help.examples.1")!],
-              [`$ ${cli._name} help <command>`, t("help.examples.2")!],
-              [`$ ${cli._name} <command> --help`, t("help.examples.2")!],
+              [`$ ${cli._scriptName} help`, t("help.examples.1")!],
+              [`$ ${cli._scriptName} help <command>`, t("help.examples.2")!],
+              [`$ ${cli._scriptName} <command> --help`, t("help.examples.2")!],
             ],
           },
         })
