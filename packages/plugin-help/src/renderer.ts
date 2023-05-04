@@ -46,9 +46,11 @@ export const render: Render = (sections: Section[]) => {
   return rendered.join("\n");
 };
 
+const noop = (x: any) => x;
+
 export const defaultRenderers: Required<Renderers> = {
-  renderFlagName: n => n,
-  renderSections: s => s,
-  renderType: (type, hasDefault) => stringifyType(type, hasDefault),
-  renderDefault: default_ => JSON.stringify(default_),
+  renderFlagName: noop,
+  renderSections: noop,
+  renderType: stringifyType,
+  renderDefault: JSON.stringify,
 };
