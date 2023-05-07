@@ -30,8 +30,8 @@ jobs:
       - name: Install
         run: ni --no-frozen-lockfile
 
-      - name: Stub
-        run: nr stub
+      - name: Build
+        run: nr build
 
       - name: Lint and fix
         run: nr lint:fix
