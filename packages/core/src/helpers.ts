@@ -10,9 +10,9 @@ import type {
   Plugin,
 } from "./types";
 
-export const definePlugin = <T extends Clerc, U extends Clerc>(
+export function   definePlugin <T extends Clerc , U extends Clerc > (
   p: Plugin<T, U>,
-) => p;
+) {return p  }
 
 export const defineHandler = <C extends Clerc, K extends keyof C["_commands"]>(
   _cli: C,
