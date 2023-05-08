@@ -16,18 +16,17 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
     setup: (cli) => {
       const { command = true } = options;
       if (command) {
-        cli = cli.command("completions", "Print shell completions to stdout", {
-          flags: {
-            shell: {
-              description: "Shell type",
-              type: String,
-              default: "",
+        cli = cli
+          .command("completions", "Print shell completions to stdout", {
+            flags: {
+              shell: {
+                description: "Shell type",
+                type: String,
+                default: "",
+              },
             },
-          },
-          parameters: [
-            "[shell]",
-          ],
-        })
+            parameters: ["[shell]"],
+          })
           .on("completions", (ctx) => {
             if (!cli._scriptName) {
               throw new Error("CLI name is not defined!");
@@ -37,12 +36,15 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
               throw new Error("Missing shell name");
             }
             if (shell in completionMap) {
-              process.stdout.write(completionMap[shell as keyof typeof completionMap](ctx));
+              process.stdout.write(
+                completionMap[shell as keyof typeof completionMap](ctx),
+              );
             } else {
               throw new Error(`No such shell: ${shell}`);
             }
           });
       }
+
       return cli;
     },
   });

@@ -1,7 +1,4 @@
 {
   "extends": ["github>so1ve/renovate-config"],
-  "ignoreDeps": [
-    "rimraf",
-    "tasuku"
-  ]
+  "ignoreDeps": ["rimraf", "tasuku"]
 }

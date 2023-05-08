@@ -2,9 +2,7 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "ESNext",
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "strict": true,
@@ -13,33 +11,21 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@clerc/core": [
-        "./packages/core/src/index.ts"
-      ],
-      "@clerc/plugin-help": [
-        "./packages/plugin-help/src/index.ts"
-      ],
-      "@clerc/plugin-not-found": [
-        "./packages/plugin-not-found/src/index.ts"
-      ],
+      "@clerc/core": ["./packages/core/src/index.ts"],
+      "@clerc/plugin-help": ["./packages/plugin-help/src/index.ts"],
+      "@clerc/plugin-not-found": ["./packages/plugin-not-found/src/index.ts"],
       "@clerc/plugin-completions": [
         "./packages/plugin-completions/src/index.ts"
       ],
       "@clerc/plugin-strict-flags": [
         "./packages/plugin-strict-flags/src/index.ts"
       ],
-      "@clerc/plugin-version": [
-        "./packages/plugin-version/src/index.ts"
-      ],
+      "@clerc/plugin-version": ["./packages/plugin-version/src/index.ts"],
       "@clerc/plugin-friendly-error": [
         "./packages/plugin-friendly-error/src/index.ts"
       ],
-      "@clerc/utils": [
-        "./packages/utils/src/index.ts"
-      ],
-      "@clerc/toolkit": [
-        "./packages/toolkit/src/index.ts"
-      ]
+      "@clerc/utils": ["./packages/utils/src/index.ts"],
+      "@clerc/toolkit": ["./packages/toolkit/src/index.ts"]
     }
   }
 }

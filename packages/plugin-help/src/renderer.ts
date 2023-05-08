@@ -30,19 +30,21 @@ export const render: Render = (sections: Section[]) => {
   for (const section of sections) {
     if (section.type === "block" || !section.type) {
       const indent = "    ";
-      const formattedBody = section.body
-        .map(line => indent + line);
+      const formattedBody = section.body.map((line) => indent + line);
       formattedBody.unshift("");
       const body = formattedBody.join("\n");
       rendered.push(table([[yc.bold(`${section.title}`)], [body]]).toString());
     } else if (section.type === "inline") {
-      const formattedBody = section.items
-        .map(item => [yc.bold(`${item.title}`), item.body]);
+      const formattedBody = section.items.map((item) => [
+        yc.bold(`${item.title}`),
+        item.body,
+      ]);
       const tableGenerated = table(formattedBody);
       rendered.push(tableGenerated.toString());
     }
     rendered.push("");
   }
+
   return rendered.join("\n");
 };
 

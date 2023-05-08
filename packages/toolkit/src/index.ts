@@ -6,10 +6,23 @@ import * as kons from "kons";
 import * as konsola from "kons/consola";
 import open from "open";
 import spinner from "ora";
-import * as colors from "yoctocolors";
 import prompt from "prompts";
 import task from "tasuku";
 import columns from "terminal-columns";
 import link from "terminal-link";
+import * as colors from "yoctocolors";
 
-export { colors, columns, exec, kons, konsola, link, open, progress, prompt, spinner, Table, task };
+export {
+  colors,
+  columns,
+  exec,
+  kons,
+  konsola,
+  link,
+  open,
+  progress,
+  prompt,
+  spinner,
+  Table,
+  task,
+};

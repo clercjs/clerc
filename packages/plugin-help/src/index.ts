@@ -1,12 +1,26 @@
 import type { HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, formatCommandName, withBrackets } from "@clerc/core";
+import {
+  NoSuchCommandError,
+  Root,
+  definePlugin,
+  formatCommandName,
+  withBrackets,
+} from "@clerc/core";
 import { resolveCommandStrict, toArray } from "@clerc/utils";
 import * as yc from "yoctocolors";
 
 import { locales } from "./locales";
 import type { Render, Renderers, Section } from "./renderer";
 import { defaultRenderers, render } from "./renderer";
-import { DELIMITER, formatFlags, generateCliDetail, generateExamples, print, sortName, splitTable } from "./utils";
+import {
+  DELIMITER,
+  formatFlags,
+  generateCliDetail,
+  generateExamples,
+  print,
+  sortName,
+  splitTable,
+} from "./utils";
 
 declare module "@clerc/core" {
   export interface CommandCustomProperties {
@@ -18,42 +32,59 @@ declare module "@clerc/core" {
   }
 }
 
-const generateHelp = (
+function generateHelp(
   render: Render,
   ctx: HandlerContext,
   notes: string[] | undefined,
   examples: [string, string][] | undefined,
   _renderers?: Renderers,
-) => {
+) {
   const { cli } = ctx;
   const { t } = cli.i18n;
   let sections = [] as Section[];
-  const renderers = Object.assign(Object.create(null), defaultRenderers, _renderers);
+  const renderers = Object.assign(
+    Object.create(null),
+    defaultRenderers,
+    _renderers,
+  );
   generateCliDetail(sections, cli);
   sections.push({
     title: t("help.usage")!,
-    body: [yc.magenta(`$ ${cli._scriptName} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
+    body: [
+      yc.magenta(
+        `$ ${cli._scriptName} ${withBrackets(
+          "command",
+          ctx.hasRootOrAlias,
+        )} [flags]`,
+      ),
+    ],
   });
   const commands = [
     ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
     ...Object.values(cli._commands),
   ].map((command) => {
-    const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias ?? [])]
+    const commandNameWithAlias = [
+      typeof command.name === "symbol" ? "" : command.name,
+      ...toArray(command.alias ?? []),
+    ]
       .sort(sortName)
-      .map((n) => {
-        return (n === "" || typeof n === "symbol") ? `${cli._scriptName}` : `${cli._scriptName} ${n}`;
-      })
+      .map((n) =>
+        n === "" || typeof n === "symbol"
+          ? `${cli._scriptName}`
+          : `${cli._scriptName} ${n}`,
+      )
       .join(", ");
+
     return [yc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
-  if (commands.length) {
+  if (commands.length > 0) {
     sections.push({
       title: t("help.commands")!,
       body: splitTable(commands),
     });
   }
   const globalFlags = formatFlags(cli._flags, t, renderers);
-  if (globalFlags.length) {
+  if (globalFlags.length > 0) {
     sections.push({
       title: t("help.globalFlags")!,
       body: splitTable(globalFlags),
@@ -69,17 +100,26 @@ const generateHelp = (
     generateExamples(sections, examples, t);
   }
   sections = renderers.renderSections(sections);
-  return render(sections);
-};
 
-const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: string[] | RootType) => {
+  return render(sections);
+}
+
+function generateSubcommandHelp(
+  render: Render,
+  ctx: HandlerContext,
+  command: string[] | RootType,
+) {
   const { cli } = ctx;
   const { t } = cli.i18n;
   const [subcommand] = resolveCommandStrict(cli._commands, command, t);
   if (!subcommand) {
     throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const renderers = Object.assign(Object.create(null), defaultRenderers, subcommand.help?.renderers);
+  const renderers = Object.assign(
+    Object.create(null),
+    defaultRenderers,
+    subcommand.help?.renderers,
+  );
   let sections = [] as Section[];
   if (command === Root) {
     generateCliDetail(sections, cli);
@@ -95,10 +135,14 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
     title: t("help.usage")!,
-    body: [yc.magenta(`$ ${cli._scriptName}${commandName}${parametersString}${flagsString}`)],
+    body: [
+      yc.magenta(
+        `$ ${cli._scriptName}${commandName}${parametersString}${flagsString}`,
+      ),
+    ],
   });
   const globalFlags = formatFlags(cli._flags, t, renderers);
-  if (globalFlags.length) {
+  if (globalFlags.length > 0) {
     sections.push({
       title: t("help.globalFlags")!,
       body: splitTable(globalFlags),
@@ -120,8 +164,9 @@ const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: st
     generateExamples(sections, subcommand?.help?.examples, t);
   }
   sections = renderers.renderSections(sections);
+
   return render(sections);
-};
+}
 
 export interface HelpPluginOptions {
   /**
@@ -142,21 +187,13 @@ export interface HelpPluginOptions {
    * @default true
    */
   showHelpWhenNoCommand?: boolean;
-  /**
-   * Global notes.
-   */
+  /** Global notes. */
   notes?: string[];
-  /**
-   * Global examples.
-   */
+  /** Global examples. */
   examples?: [string, string][];
-  /**
-   * Banner.
-   */
+  /** Banner. */
   banner?: string;
-  /**
-   * Renderers.
-   */
+  /** Renderers. */
   renderers?: Renderers;
 }
 export const helpPlugin = ({
@@ -172,32 +209,36 @@ export const helpPlugin = ({
     setup: (cli) => {
       const { add, t } = cli.i18n;
       add(locales);
-      const printHelp = (s: string) => {
+      function printHelp(s: string) {
         banner && print(`${banner}\n`);
         print(s);
-      };
+      }
 
       if (command) {
-        cli = cli.command("help", t("help.commandDescription")!, {
-          parameters: [
-            "[command...]",
-          ],
-          help: {
-            notes: [
-              t("help.notes.1")!,
-              t("help.notes.2")!,
-              t("help.notes.3")!,
-            ],
-            examples: [
-              [`$ ${cli._scriptName} help`, t("help.examples.1")!],
-              [`$ ${cli._scriptName} help <command>`, t("help.examples.2")!],
-              [`$ ${cli._scriptName} <command> --help`, t("help.examples.2")!],
-            ],
-          },
-        })
+        cli = cli
+          .command("help", t("help.commandDescription")!, {
+            parameters: ["[command...]"],
+            help: {
+              notes: [
+                t("help.notes.1")!,
+                t("help.notes.2")!,
+                t("help.notes.3")!,
+              ],
+              examples: [
+                [`$ ${cli._scriptName} help`, t("help.examples.1")!],
+                [`$ ${cli._scriptName} help <command>`, t("help.examples.2")!],
+                [
+                  `$ ${cli._scriptName} <command> --help`,
+                  t("help.examples.2")!,
+                ],
+              ],
+            },
+          })
           .on("help", (ctx) => {
-            if (ctx.parameters.command.length) {
-              printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
+            if (ctx.parameters.command.length > 0) {
+              printHelp(
+                generateSubcommandHelp(render, ctx, ctx.parameters.command),
+              );
             } else {
               printHelp(generateHelp(render, ctx, notes, examples, renderers));
             }
@@ -214,22 +255,29 @@ export const helpPlugin = ({
 
       cli.inspector((ctx, next) => {
         const shouldShowHelp = ctx.flags.help;
-        if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !shouldShowHelp) {
+        if (
+          !ctx.hasRootOrAlias &&
+          ctx.raw._.length === 0 &&
+          showHelpWhenNoCommand &&
+          !shouldShowHelp
+        ) {
           let str = `${t("core.noCommandGiven")!}\n\n`;
           str += generateHelp(render, ctx, notes, examples, renderers);
           str += "\n";
           printHelp(str);
           process.exit(1);
         } else if (shouldShowHelp) {
-          if (ctx.raw._.length) {
-            if (ctx.called !== Root) {
+          if (ctx.raw._.length > 0) {
+            if (ctx.called === Root) {
+              printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+            } else {
               if (ctx.name === Root) {
-                printHelp(generateHelp(render, ctx, notes, examples, renderers));
+                printHelp(
+                  generateHelp(render, ctx, notes, examples, renderers),
+                );
               } else {
                 printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
               }
-            } else {
-              printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
             }
           } else {
             if (ctx.hasRootOrAlias) {

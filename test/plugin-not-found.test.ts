@@ -20,9 +20,7 @@ describe("plugin-not-found", () => {
     msgs.length = 0;
   });
   it("should show commands", () => {
-    Cli()
-      .use(notFoundPlugin())
-      .parse([]);
+    Cli().use(notFoundPlugin()).parse([]);
 
     expect(msgs).toMatchInlineSnapshot(`
       [
@@ -32,10 +30,7 @@ describe("plugin-not-found", () => {
     msgs.length = 0;
   });
   it("should show closest command", () => {
-    Cli()
-      .use(notFoundPlugin())
-      .command("foo", "foo command")
-      .parse(["fo"]);
+    Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
     expect(msgs).toMatchInlineSnapshot(`
       [
         "Command \\"[9mfo[29m\\" not found.",

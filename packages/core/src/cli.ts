@@ -73,8 +73,10 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
       this.#locales = defu(this.#locales, locales);
     },
     t: (name, ...args) => {
-      const localeObject = this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
+      const localeObject =
+        this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
       const defaultLocaleObject = this.#locales[this.#defaultLocale];
+
       return localeObject[name]
         ? format(localeObject[name], ...args)
         : defaultLocaleObject[name]
@@ -83,7 +85,11 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     },
   };
 
-  private constructor(scriptName?: string, description?: string, version?: string) {
+  private constructor(
+    scriptName?: string,
+    description?: string,
+    version?: string,
+  ) {
     this.#scriptName = scriptName ?? this.#scriptName;
     this.#description = description ?? this.#description;
     this.#version = version ?? this.#version;
@@ -138,14 +144,16 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   /**
    * Create a new cli
    *
+   * @example
+   *
+   * ```ts
+   * const cli = Clerc.create();
+   * ```
+   *
    * @param name
    * @param description
    * @param version
    * @returns
-   * @example
-   * ```ts
-   * const cli = Clerc.create()
-   * ```
    */
   static create(name?: string, description?: string, version?: string) {
     return new Clerc(name, description, version);
@@ -154,157 +162,181 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   /**
    * Set the name of the cli
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().name("test");
+   * ```
+   *
    * @param name
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .name("test")
-   * ```
    */
   name(name: string) {
     this.#otherMethodCalled();
     this.#name = name;
+
     return this;
   }
 
   /**
    * Set the script name of the cli
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().scriptName("test");
+   * ```
+   *
    * @param scriptName
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .scriptName("test")
-   * ```
    */
   scriptName(scriptName: string) {
     this.#otherMethodCalled();
     this.#scriptName = scriptName;
+
     return this;
   }
 
   /**
    * Set the description of the cli
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().description("test cli");
+   * ```
+   *
    * @param description
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .description("test cli")
-   * ```
    */
   description(description: string) {
     this.#otherMethodCalled();
     this.#description = description;
+
     return this;
   }
 
   /**
    * Set the version of the cli
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().version("1.0.0");
+   * ```
+   *
    * @param version
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .version("1.0.0")
-   * ```
    */
   version(version: string) {
     this.#otherMethodCalled();
     this.#version = version;
+
     return this;
   }
 
   /**
-   * Set the Locale
-   * You must call this method once after you created the Clerc instance.
+   * Set the Locale You must call this method once after you created the Clerc
+   * instance.
    *
-   * @param locale
-   * @returns
    * @example
+   *
    * ```ts
    * Clerc.create()
    *   .locale("en")
    *   .command(...)
    * ```
+   *
+   * @param locale
+   * @returns
    */
   locale(locale: string) {
-    if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
+    if (this.#isOtherMethodCalled) {
+      throw new LocaleNotCalledFirstError(this.i18n.t);
+    }
     this.#locale = locale;
+
     return this;
   }
 
   /**
-   * Set the fallback Locale
-   * You must call this method once after you created the Clerc instance.
+   * Set the fallback Locale You must call this method once after you created
+   * the Clerc instance.
    *
-   * @param fallbackLocale
-   * @returns
    * @example
+   *
    * ```ts
    * Clerc.create()
    *   .fallbackLocale("en")
    *   .command(...)
    * ```
+   *
+   * @param fallbackLocale
+   * @returns
    */
   fallbackLocale(fallbackLocale: string) {
-    if (this.#isOtherMethodCalled) { throw new LocaleNotCalledFirstError(this.i18n.t); }
+    if (this.#isOtherMethodCalled) {
+      throw new LocaleNotCalledFirstError(this.i18n.t);
+    }
     this.#defaultLocale = fallbackLocale;
+
     return this;
   }
 
   /**
    * Register a error handler
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().errorHandler((err) => {
+   *   console.log(err);
+   * });
+   * ```
+   *
    * @param handler
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .errorHandler((err) => { console.log(err); })
-   * ```
    */
   errorHandler(handler: (err: any) => void) {
     this.#errorHandlers.push(handler);
+
     return this;
   }
 
   /**
    * Register a command
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().command("test", "test command", {
+   *   alias: "t",
+   *   flags: {
+   *     foo: {
+   *       alias: "f",
+   *       description: "foo flag",
+   *     },
+   *   },
+   * });
+   * ```
+   *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().command("", "root", {
+   *   flags: {
+   *     foo: {
+   *       alias: "f",
+   *       description: "foo flag",
+   *     },
+   *   },
+   * });
+   * ```
+   *
    * @param name
    * @param description
    * @param options
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .command("test", "test command", {
-   *     alias: "t",
-   *     flags: {
-   *       foo: {
-   *         alias: "f",
-   *         description: "foo flag",
-   *       }
-   *     }
-   *   })
-   * ```
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .command("", "root", {
-   *     flags: {
-   *       foo: {
-   *         alias: "f",
-   *         description: "foo flag",
-   *       }
-   *     }
-   *   })
-   * ```
    */
   command<
     N extends string | RootType,
@@ -312,7 +344,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     P extends string[] = string[],
     A extends MaybeArray<string | RootType> = MaybeArray<string | RootType>,
     F extends Flags = Flags,
-  >(c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>): this & Clerc<C & Record<N, Command<N, O>>, GF>;
+  >(
+    c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>,
+  ): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command<
     N extends string | RootType,
     O extends CommandOptions<[...P], A, F>,
@@ -325,18 +359,25 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     options?: O & CommandOptions<[...P], A, F>,
   ): this & Clerc<C & Record<N, Command<N, O>>, GF>;
   command(nameOrCommand: any, description?: any, options: any = {}) {
-    this.#callWithErrorHandling(() => this.#command(nameOrCommand, description, options));
+    this.#callWithErrorHandling(() =>
+      this.#command(nameOrCommand, description, options),
+    );
+
     return this;
   }
 
   #command(nameOrCommand: any, description?: any, options: any = {}) {
     this.#otherMethodCalled();
     const { t } = this.i18n;
-    const checkIsCommandObject = (nameOrCommand: any): nameOrCommand is CommandWithHandler =>
+    const checkIsCommandObject = (
+      nameOrCommand: any,
+    ): nameOrCommand is CommandWithHandler =>
       !(typeof nameOrCommand === "string" || nameOrCommand === Root);
 
     const isCommandObject = checkIsCommandObject(nameOrCommand);
-    const name: CommandType = !isCommandObject ? nameOrCommand : nameOrCommand.name;
+    const name: CommandType = isCommandObject
+      ? nameOrCommand.name
+      : nameOrCommand;
     if (!isValidName(name)) {
       throw new InvalidCommandNameError(name as string, t);
     }
@@ -355,7 +396,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     }
     this.#commands[name as keyof C] = commandToSave;
     this.#usedNames.add(commandToSave.name);
-    aliasList.forEach(a => this.#usedNames.add(a));
+    for (const a of aliasList) {
+      this.#usedNames.add(a);
+    }
 
     // Register handler
     isCommandObject && handler && this.on(nameOrCommand.name, handler);
@@ -366,18 +409,19 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   /**
    * Register a global flag
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().flag("help", "help", {
+   *   alias: "h",
+   *   type: Boolean,
+   * });
+   * ```
+   *
    * @param name
    * @param description
    * @param options
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .flag("help", "help", {
-   *     alias: "h",
-   *     type: Boolean,
-   *   })
-   * ```
    */
   flag<N extends string, O extends GlobalFlagOption>(
     name: N,
@@ -388,96 +432,108 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
       description,
       ...options,
     } as any;
+
     return this as any;
   }
 
   /**
    * Register a handler
    *
-   * @param name
-   * @param handler
-   * @returns
    * @example
+   *
    * ```ts
    * Clerc.create()
    *   .command("test", "test command")
    *   .on("test", (ctx) => {
    *     console.log(ctx);
-   *   })
+   *   });
    * ```
+   *
+   * @param name
+   * @param handler
+   * @returns
    */
-  on<K extends LiteralUnion<keyof CM, string | RootType>, CM extends this["_commands"] = this["_commands"]>(
-    name: K,
-    handler: Handler<CM, K, this["_flags"]>,
-  ) {
+  on<
+    K extends LiteralUnion<keyof CM, string | RootType>,
+    CM extends this["_commands"] = this["_commands"],
+  >(name: K, handler: Handler<CM, K, this["_flags"]>) {
     this.#commandEmitter.on(name as any, handler as any);
+
     return this;
   }
 
   /**
    * Use a plugin
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().use(plugin);
+   * ```
+   *
    * @param plugin
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .use(plugin)
-   * ```
    */
-  use<T extends Clerc, U extends Clerc>(plugin: Plugin<T, U>): this & Clerc<C & U["_commands"]> & U {
+  use<T extends Clerc, U extends Clerc>(
+    plugin: Plugin<T, U>,
+  ): this & Clerc<C & U["_commands"]> & U {
     this.#otherMethodCalled();
+
     return plugin.setup(this as any) as any;
   }
 
   /**
    * Register a inspector
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().inspector((ctx, next) => {
+   *   console.log(ctx);
+   *   next();
+   * });
+   * ```
+   *
    * @param inspector
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .inspector((ctx, next) => {
-   *     console.log(ctx);
-   *     next();
-   *   })
-   * ```
    */
   inspector(inspector: Inspector) {
     this.#otherMethodCalled();
     this.#inspectors.push(inspector);
+
     return this;
   }
 
   /**
    * Parse the command line arguments
    *
+   * @example
+   *
+   * ```ts
+   * Clerc.create().parse(process.argv.slice(2)); // Optional
+   * ```
+   *
    * @param args
    * @param optionsOrArgv
    * @returns
-   * @example
-   * ```ts
-   * Clerc.create()
-   *   .parse(process.argv.slice(2)) // Optional
-   * ```
    */
   parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
     this.#otherMethodCalled();
     const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
       ? {
-        argv: optionsOrArgv,
-        run: true,
-      }
+          argv: optionsOrArgv,
+          run: true,
+        }
       : {
-        argv: resolveArgv(),
-        ...optionsOrArgv,
-      };
+          argv: resolveArgv(),
+          ...optionsOrArgv,
+        };
     this.#argv = [...argv];
     this.#validateMeta();
     if (run) {
       this.runMatchedCommand();
     }
+
     return this;
   }
 
@@ -506,7 +562,10 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
     // [...argv] is a workaround since TypeFlag modifies argv
     const parsed = typeFlag(flagsMerged, [...argv]);
     const { _: args, flags, unknownFlags } = parsed;
-    let parameters = (!isCommandResolved || command.name === Root) ? args : args.slice(command.name.split(" ").length);
+    let parameters =
+      !isCommandResolved || command.name === Root
+        ? args
+        : args.slice(command.name.split(" ").length);
     let commandParameters = command?.parameters ?? [];
     // eof handle
     const hasEof = commandParameters.indexOf("--");
@@ -551,6 +610,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
       unknownFlags,
       cli: this as any,
     };
+
     return context;
   }
 
@@ -559,7 +619,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
       fn();
     } catch (e) {
       if (this.#errorHandlers.length > 0) {
-        this.#errorHandlers.forEach(cb => cb(e));
+        for (const cb of this.#errorHandlers) {
+          cb(e);
+        }
       } else {
         throw e;
       }
@@ -581,11 +643,10 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
         const [command] = getCommand();
         const stringName = stripFlags(argv).join(" ");
         if (!command) {
-          if (stringName) {
-            throw new NoSuchCommandError(stringName, t);
-          } else {
-            throw new NoCommandGivenError(t);
-          }
+          const error = stringName
+            ? new NoSuchCommandError(stringName, t)
+            : new NoCommandGivenError(t);
+          throw error;
         }
         this.#commandEmitter.emit(command.name, ctx);
       },
@@ -598,17 +659,18 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
   /**
    * Run matched command
    *
-   * @returns
    * @example
+   *
    * ```ts
-   * Clerc.create()
-   *   .parse({ run: false })
-   *   .runMatchedCommand()
+   * Clerc.create().parse({ run: false }).runMatchedCommand();
    * ```
+   *
+   * @returns
    */
   runMatchedCommand() {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
     process.title = this.#scriptName;
+
     return this;
   }
 }

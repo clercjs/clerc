@@ -27,18 +27,27 @@ export interface CommandOptions<
   parameters?: P;
   flags?: F;
 }
-export type Command<N extends string | RootType = string, O extends CommandOptions = CommandOptions> = O & {
+export type Command<
+  N extends string | RootType = string,
+  O extends CommandOptions = CommandOptions,
+> = O & {
   name: N;
   description: string;
 };
-export type CommandAlias<N extends string | RootType = string, O extends CommandOptions = CommandOptions> =
-  & Command<N, O>
-  & {
-    __isAlias?: true;
-  };
-export type CommandWithHandler<N extends string | RootType = string, O extends CommandOptions = CommandOptions> =
-  & Command<N, O>
-  & { handler?: HandlerInCommand<HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>> };
+export type CommandAlias<
+  N extends string | RootType = string,
+  O extends CommandOptions = CommandOptions,
+> = Command<N, O> & {
+  __isAlias?: true;
+};
+export type CommandWithHandler<
+  N extends string | RootType = string,
+  O extends CommandOptions = CommandOptions,
+> = Command<N, O> & {
+  handler?: HandlerInCommand<
+    HandlerContext<Record<N, Command<N, O>> & Record<never, never>, N>
+  >;
+};
 export type Commands = Dict<Command> & { [Root]?: Command };
 
 export interface ParseOptions {
@@ -62,16 +71,29 @@ export interface HandlerContext<
   flags: Simplify<ParseFlag<C, N, GF> & Record<string, any>>;
   cli: Clerc<C, GF>;
 }
-export type Handler<C extends Commands = Commands, K extends keyof C = keyof C, GF extends GlobalFlagOptions = {}> = (
-  ctx: HandlerContext<C, K, GF>,
-) => void;
-export type HandlerInCommand<C extends HandlerContext> = (ctx: { [K in keyof C]: C[K] }) => void;
+export type Handler<
+  C extends Commands = Commands,
+  K extends keyof C = keyof C,
+  GF extends GlobalFlagOptions = {},
+> = (ctx: HandlerContext<C, K, GF>) => void;
+export type HandlerInCommand<C extends HandlerContext> = (ctx: {
+  [K in keyof C]: C[K];
+}) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
-export type InspectorContext<C extends Commands = Commands> = HandlerContext<C> & {
-  flags: FallbackType<TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"], Dict<any>>;
-};
-export type Inspector<C extends Commands = Commands> = InspectorFn<C> | InspectorObject<C>;
-export type InspectorFn<C extends Commands = Commands> = (ctx: InspectorContext<C>, next: () => void) => void;
+export type InspectorContext<C extends Commands = Commands> =
+  HandlerContext<C> & {
+    flags: FallbackType<
+      TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"],
+      Dict<any>
+    >;
+  };
+export type Inspector<C extends Commands = Commands> =
+  | InspectorFn<C>
+  | InspectorObject<C>;
+export type InspectorFn<C extends Commands = Commands> = (
+  ctx: InspectorContext<C>,
+  next: () => void,
+) => void;
 export interface InspectorObject<C extends Commands = Commands> {
   enforce?: "pre" | "post";
   fn: InspectorFn<C>;

@@ -6,9 +6,10 @@ const generateCommandCompletion = (name: string) => `
                 cmd+="__${name}"
                 ;;`;
 
-export const getBashCompletion = (ctx: HandlerContext) => {
+export function getBashCompletion(ctx: HandlerContext) {
   const { cli } = ctx;
   const { _scriptName: name, _commands: commands } = cli;
+
   return `_${name}() {
     local i cur prev opts cmds
     COMPREPLY=()
@@ -32,4 +33,4 @@ ${Object.keys(commands).map(generateCommandCompletion).join("")}
 
 complete -F _${name} -o bashdefault -o default ${name}
 `;
-};
+}

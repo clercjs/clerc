@@ -27,9 +27,16 @@ function setCommand(
     const aliases = toArray(command.alias);
     for (const alias of aliases) {
       if (alias in commands) {
-        throw new CommandNameConflictError(commands[alias]!.name, command.name, t);
+        throw new CommandNameConflictError(
+          commands[alias]!.name,
+          command.name,
+          t,
+        );
       }
-      commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), { ...command, __isAlias: true });
+      commandsMap.set(typeof alias === "symbol" ? alias : alias.split(" "), {
+        ...command,
+        __isAlias: true,
+      });
     }
   }
 }
@@ -44,6 +51,7 @@ export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
     setCommand(commandsMap, commands, command, t);
     commandsMap.set(command.name.split(" "), command);
   }
+
   return commandsMap;
 }
 
@@ -56,7 +64,9 @@ export function resolveCommand(
   for (const [name, command] of commandsMap.entries()) {
     const parsed = typeFlag(command?.flags ?? Object.create(null), [...argv]);
     const { _: args } = parsed;
-    if (name === Root) { continue; }
+    if (name === Root) {
+      continue;
+    }
     if (arrayStartsWith(args, name)) {
       return [command, name];
     }
@@ -64,6 +74,7 @@ export function resolveCommand(
   if (commandsMap.has(Root)) {
     return [commandsMap.get(Root)!, Root];
   }
+
   return [undefined, undefined];
 }
 
@@ -71,8 +82,8 @@ export const resolveArgv = (): string[] =>
   IS_NODE
     ? process.argv.slice(IS_ELECTRON ? 1 : 2)
     : IS_DENO
-    // @ts-expect-error Ignore
-    ? Deno.args
+    ? // @ts-expect-error Ignore
+      Deno.args
     : [];
 
 export function compose(inspectors: Inspector[]) {
@@ -82,9 +93,8 @@ export function compose(inspectors: Inspector[]) {
     post: [] as InspectorFn[],
   };
   for (const inspector of inspectors) {
-    const objectInspector: InspectorObject = typeof inspector === "object"
-      ? inspector
-      : { fn: inspector };
+    const objectInspector: InspectorObject =
+      typeof inspector === "object" ? inspector : { fn: inspector };
     const { enforce, fn } = objectInspector;
     if (enforce === "post" || enforce === "pre") {
       inspectorMap[enforce].push(fn);
@@ -103,6 +113,7 @@ export function compose(inspectors: Inspector[]) {
     return dispatch(0);
     function dispatch(i: number): void {
       const inspector = mergedInspectorFns[i];
+
       return inspector(ctx, dispatch.bind(null, i + 1));
     }
   };
@@ -112,21 +123,19 @@ const INVALID_RE = /\s\s+/;
 export const isValidName = (name: CommandType) =>
   name === Root
     ? true
-    : (!(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name));
+    : !(name.startsWith(" ") || name.endsWith(" ")) && !INVALID_RE.test(name);
 
-export const withBrackets = (s: string, isOptional?: boolean) => isOptional ? `[${s}]` : `<${s}>`;
+export const withBrackets = (s: string, isOptional?: boolean) =>
+  isOptional ? `[${s}]` : `<${s}>`;
 
 const ROOT = "<Root>";
 export const formatCommandName = (name: string | string[] | RootType) =>
-  Array.isArray(name)
-    ? name.join(" ")
-    : typeof name === "string"
-    ? name
-    : ROOT;
+  Array.isArray(name) ? name.join(" ") : typeof name === "string" ? name : ROOT;
 
 export const detectLocale = () =>
   process.env.CLERC_LOCALE
     ? process.env.CLERC_LOCALE
     : Intl.DateTimeFormat().resolvedOptions().locale;
 
-export const stripFlags = (argv: string[]) => argv.filter(arg => !arg.startsWith("-"));
+export const stripFlags = (argv: string[]) =>
+  argv.filter((arg) => !arg.startsWith("-"));

@@ -27,9 +27,7 @@ describe("cli", () => {
       .parse(["foo"]);
   });
   it("should honor scriptName and name", () => {
-    const cli = Cli()
-      .name("test name")
-      .scriptName("test");
+    const cli = Cli().name("test name").scriptName("test");
     expect(cli._name).toEqual("test name");
     expect(cli._scriptName).toEqual("test");
   });
@@ -48,9 +46,7 @@ describe("cli", () => {
             default: "",
           },
         },
-        parameters: [
-          "[optional...]",
-        ],
+        parameters: ["[optional...]"],
       })
       .on(Root, (ctx) => {
         expect(ctx.name).toStrictEqual(Root);
@@ -101,9 +97,7 @@ describe("cli", () => {
             default: "",
           },
         },
-        parameters: [
-          "[optional...]",
-        ],
+        parameters: ["[optional...]"],
         handler: (ctx) => {
           expect(ctx.name).toStrictEqual(Root);
           expect(ctx.raw).toMatchInlineSnapshot(`
@@ -145,17 +139,11 @@ describe("cli", () => {
   it("should parse parameters", () => {
     Cli()
       .command("foo", "foo", {
-        parameters: [
-          "[optional...]",
-        ],
+        parameters: ["[optional...]"],
       })
       .on("foo", (ctx) => {
         expect(ctx.name).toBe("foo");
-        expect(ctx.parameters.optional).toStrictEqual([
-          "bar",
-          "baz",
-          "qux",
-        ]);
+        expect(ctx.parameters.optional).toStrictEqual(["bar", "baz", "qux"]);
       })
       .parse(["foo", "bar", "-c", "baz", "qux"]);
   });
@@ -231,6 +219,7 @@ describe("cli", () => {
   it("should parse dot-nested flag", () => {
     function Foo(value: string) {
       const [propertyName, propertyValue] = value.split("=");
+
       return {
         [propertyName]: propertyValue || true,
       };
@@ -319,9 +308,7 @@ describe("cli", () => {
   });
   it("should have exact one command", () => {
     expect(() => {
-      Cli()
-        .command("foo", "foo")
-        .command("foo", "foo");
+      Cli().command("foo", "foo").command("foo", "foo");
     }).toThrowError();
   });
   it("should parse nested command", () => {
@@ -334,9 +321,7 @@ describe("cli", () => {
             default: false,
           },
         },
-        parameters: [
-          "<param>",
-        ],
+        parameters: ["<param>"],
       })
       .on("foo bar", (ctx) => {
         expect(ctx.flags.aa).toStrictEqual(true);
@@ -363,9 +348,7 @@ describe("cli", () => {
             default: false,
           },
         },
-        parameters: [
-          "<param>",
-        ],
+        parameters: ["<param>"],
       })
       .on("foo", (ctx) => {
         expect(ctx.flags.bb).toStrictEqual(true);
@@ -392,9 +375,7 @@ describe("cli", () => {
             default: false,
           },
         },
-        parameters: [
-          "<param>",
-        ],
+        parameters: ["<param>"],
       })
       .on("foo", (ctx) => {
         expect(ctx.flags.bb).toStrictEqual(true);
@@ -426,15 +407,16 @@ describe("cli", () => {
   });
   it("should register command with handler", () => {
     let count = 0;
-    const command = defineCommand({
-      name: "foo",
-      description: "foo",
-    }, () => {
-      count++;
-    });
-    Cli()
-      .command(command)
-      .parse(["foo"]);
+    const command = defineCommand(
+      {
+        name: "foo",
+        description: "foo",
+      },
+      () => {
+        count++;
+      },
+    );
+    Cli().command(command).parse(["foo"]);
     expect(count).toBe(1);
   });
   it("should run matched command", async () => {
@@ -460,11 +442,9 @@ describe("cli", () => {
   });
   it("should translate", async () => {
     try {
-      Cli("zh-CN")
-        .command("foo", "foo")
-        .parse(["bar"]);
+      Cli("zh-CN").command("foo", "foo").parse(["bar"]);
     } catch (e: any) {
-      expect(e.message).toEqual("找不到命令: \"bar\"。");
+      expect(e.message).toEqual('找不到命令: "bar"。');
     }
   });
 });

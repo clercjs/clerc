@@ -17,10 +17,7 @@ describe("plugin-strict-flags", () => {
   });
   it("shouldn't show when flags are not passed", () => {
     try {
-      Cli()
-        .use(strictFlagsPlugin())
-        .command("a", "a")
-        .parse([]);
+      Cli().use(strictFlagsPlugin()).command("a", "a").parse([]);
     } catch (e: any) {
       expect(e.message).toEqual("No command given.");
     }

@@ -20,7 +20,9 @@ export function parseParameters(parameters: string[], t: TranslateFn) {
 
   for (const parameter of parameters) {
     if (hasSpread) {
-      throw new Error(t("core.spreadParameterMustBeLast", stringify(hasSpread)));
+      throw new Error(
+        t("core.spreadParameterMustBeLast", stringify(hasSpread)),
+      );
     }
 
     const firstCharacter = parameter[0];
@@ -31,7 +33,13 @@ export function parseParameters(parameters: string[], t: TranslateFn) {
       required = true;
 
       if (hasOptional) {
-        throw new Error(t("core.requiredParameterMustBeBeforeOptional", stringify(parameter), stringify(hasOptional)));
+        throw new Error(
+          t(
+            "core.requiredParameterMustBeBeforeOptional",
+            stringify(parameter),
+            stringify(hasOptional),
+          ),
+        );
       }
     }
 
@@ -41,7 +49,9 @@ export function parseParameters(parameters: string[], t: TranslateFn) {
     }
 
     if (required === undefined) {
-      throw new Error(t("core.parameterMustBeWrappedInBrackets", stringify(parameter)));
+      throw new Error(
+        t("core.parameterMustBeWrappedInBrackets", stringify(parameter)),
+      );
     }
 
     let name = parameter.slice(1, -1);
@@ -82,10 +92,7 @@ export function mapParametersToArguments(
       i = parameters.length;
     }
 
-    if (
-      required
-      && (!value || (spread && value.length === 0))
-    ) {
+    if (required && (!value || (spread && value.length === 0))) {
       throw new Error(t("core.missingRequiredParameter", stringify(name)));
     }
 
