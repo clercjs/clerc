@@ -11,7 +11,7 @@ importers:
     specifiers:
       '@antfu/ni': ^0.21.3
       '@babel/types': ^7.21.5
-      '@mini-cz/config-default': ^0.7.0
+      '@mini-cz/config-default': ^0.8.0
       '@so1ve/eslint-config': ^0.82.0
       '@types/node': ^18.16.5
       bumpp: ^9.1.0
@@ -27,7 +27,7 @@ importers:
     devDependencies:
       '@antfu/ni': 0.21.3
       '@babel/types': 7.21.5
-      '@mini-cz/config-default': 0.7.0_mini-cz@0.8.0
+      '@mini-cz/config-default': 0.8.0_mini-cz@0.8.0
       '@so1ve/eslint-config': 0.82.0_3qfatcekpgbllh6uk5ivyhkbxq
       '@types/node': 18.16.5
       bumpp: 9.1.0
@@ -543,8 +543,8 @@ packages:
       type-detect: 4.0.8
     dev: true
 
-  /@mini-cz/config-default/0.7.0_mini-cz@0.8.0:
-    resolution: {integrity: sha512-eYubcHDePuscJcvER2+X0/KE+RQOjitxzyppMoU3z1zwEondP61moBHfJNsF6c22HfcpFD+aRKZLQ/aICOrJhw==}
+  /@mini-cz/config-default/0.8.0_mini-cz@0.8.0:
+    resolution: {integrity: sha512-qmShzxsNKOQ1GC+EONWCaBCinbZImROk1vwBfgaVDJOsEjqySy+xE18HXKVp8AKpJ1XqLfdZo+wXOaPPXGRfoA==}
     peerDependencies:
       mini-cz: '*'
     dependencies:
