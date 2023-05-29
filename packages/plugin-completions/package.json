@@ -2,6 +2,7 @@
   "name": "@clerc/plugin-completions",
   "version": "0.40.0",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc plugin completions",
   "keywords": [
     "cli",
@@ -12,7 +13,6 @@
     "args",
     "terminal"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
   "repository": {
     "type": "git",

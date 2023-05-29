@@ -119,7 +119,7 @@ export function compose(inspectors: Inspector[]) {
   };
 }
 
-const INVALID_RE = /\s\s+/;
+const INVALID_RE = /\s{2,}/;
 export const isValidName = (name: CommandType) =>
   name === Root
     ? true

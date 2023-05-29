@@ -6,6 +6,7 @@ import { notFoundPlugin } from "@clerc/plugin-not-found";
 
 describe("plugin-not-found", () => {
   const msgs: string[] = [];
+
   beforeAll(() => {
     // eslint-disable-next-line no-console
     console.log = (s: string) => {
@@ -16,9 +17,11 @@ describe("plugin-not-found", () => {
     };
     process.exit = ((_code?: number) => {}) as any;
   });
+
   afterEach(() => {
     msgs.length = 0;
   });
+
   it("should show commands", () => {
     Cli().use(notFoundPlugin()).parse([]);
 
@@ -27,10 +30,13 @@ describe("plugin-not-found", () => {
         "No command given.",
       ]
     `);
+
     msgs.length = 0;
   });
+
   it("should show closest command", () => {
     Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
+
     expect(msgs).toMatchInlineSnapshot(`
       [
         "Command \\"[9mfo[29m\\" not found.",

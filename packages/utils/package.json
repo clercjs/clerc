@@ -2,6 +2,7 @@
   "name": "@clerc/utils",
   "version": "0.40.0",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc utils",
   "keywords": [
     "cli",
@@ -14,7 +15,6 @@
     "terminal",
     "utils"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/utils#readme",
   "repository": {
     "type": "git",
