@@ -669,7 +669,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
    */
   runMatchedCommand() {
     this.#callWithErrorHandling(() => this.#runMatchedCommand());
-    process.title = this.#scriptName;
+    process.title = this.#name;
 
     return this;
   }
