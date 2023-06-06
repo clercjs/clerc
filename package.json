@@ -42,7 +42,7 @@
     "tsx": "^3.12.7",
     "typescript": "^5.0.4",
     "vite": "^4.3.5",
-    "vitest": "^0.31.0"
+    "vitest": "^0.32.0"
   },
   "pnpm": {
     "patchedDependencies": {
