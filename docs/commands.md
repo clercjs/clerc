@@ -16,7 +16,7 @@ You can add an alias for your command:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("foo-cli")
+  .scriptName("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
   .command("foo", "A foo command", {
@@ -36,7 +36,7 @@ You can add more aliases:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("foo-cli")
+  .scriptName("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
   .command("foo", "A foo command", {
@@ -72,7 +72,7 @@ Example:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("foo-cli")
+  .scriptName("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
   .command("foo", "A foo command", {
@@ -94,7 +94,7 @@ const cli = Clerc.create()
 End-of-flags (`--`) (aka _end-of-options_) allows users to pass in a subset of arguments. This is useful for passing in arguments that should be parsed separately from the rest of the arguments or passing in arguments that look like flags.
 
 An example of this is [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script):
-```sh
+```bash
 $ npm run <script> -- <script arguments>
 ```
 The `--` indicates that all arguments afterwards should be passed into the _script_ rather than _npm_.
@@ -108,15 +108,11 @@ Example:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("foo-cli")
+  .scriptName("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
   .command("echo", "Echo", {
-    parameters: [
-      "<script>",
-      "--",
-      "[arguments...]",
-    ],
+    parameters: ["<script>", "--", "[arguments...]"],
   })
   .on("echo", (ctx) => {
     ctx.parameters.script; // => "echo" (string)
@@ -150,14 +146,14 @@ All of the provided information will be used to generate better help documentati
 Example:
 
 ```ts
-// $ node ./foo-cli.mjs test --some-boolean --some-string hello --some-number 1 -n 2
+// $ node ./foo-cli.mjs echo --some-boolean --some-string hello --some-number 1 -n 2
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("foo-cli")
+  .scriptName("foo-cli")
   .description("A simple cli")
   .version("1.0.0")
-  .command("test", "Test", {
+  .command("echo", "echo", {
     flags: {
       someBoolean: {
         type: Boolean,
@@ -185,3 +181,29 @@ const cli = Clerc.create()
   .parse();
 ```
 
+## Advanced Usage
+
+To seperate handlers from the cli definition, you can use the `defineCommand` utility function.
+
+```ts
+import { Clerc, defineCommand } from "clerc";
+
+const command = defineCommand(
+  {
+    name: "test",
+    description: "test",
+    flags: {},
+    parameters: [],
+  },
+  (ctx) => {
+    // handler
+  },
+);
+
+const cli = Clerc.create()
+  .scriptName("foo-cli")
+  .description("A simple cli")
+  .version("1.0.0")
+  .command(command)
+  .parse();
+```
