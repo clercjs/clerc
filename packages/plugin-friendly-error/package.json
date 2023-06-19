@@ -1,7 +1,8 @@
 {
   "name": "@clerc/plugin-friendly-error",
-  "version": "0.28.0",
-  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "version": "0.40.0",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc plugin friendly error",
   "keywords": [
     "cli",
@@ -12,7 +13,6 @@
     "args",
     "terminal"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-friendly-error#readme",
   "repository": {
     "type": "git",
@@ -40,14 +40,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild --minify",
-    "watch": "puild --watch"
+    "build": "pkgroll --minify",
+    "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
   },
   "devDependencies": {
     "@clerc/core": "workspace:*",
-    "kons": "^0.6.2"
+    "kons": "^0.7.1"
   }
 }

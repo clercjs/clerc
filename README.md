@@ -1,5 +1,7 @@
-Clerc: The full-featured cli framework.
+Clerc: The full-featured cli library.
 =======================================
+
+![clerc](https://socialify.git.ci/so1ve/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
 
 [![Version](https://img.shields.io/npm/v/clerc.svg)](https://npmjs.org/package/clerc)
 [![CI](https://github.com/so1ve/clerc/actions/workflows/ci.yml/badge.svg)](https://github.com/so1ve/clerc/actions/workflows/ci.yml)
@@ -13,7 +15,7 @@ Clerc: The full-featured cli framework.
 
 # 🗒 Description
 
-Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
+Clerc is a library for building CLI Apps in Node.js, Deno or Bun. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
 # ✨ Features
 - **Lightweight** - Dependencies are bundled and minified
@@ -21,6 +23,7 @@ Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed bot
 - **Chainable APIs** - Composable.
 - **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
+- **I18N** - Easy to change different locales!
 - **Official Plugins**
   - Auto-generated help text (via [@clerc/plugin-help](./packages/plugin-help/))
   - Shell completions (via [@clerc/plugin-completions](./packages/plugin-completions/))
@@ -28,7 +31,7 @@ Clerc is a framework for building CLI Apps in Node.js or Deno. It's designed bot
   - Friendly error output (via [@clerc/plugin-friendly-error](./packages/plugin-friendly-error/))
   - Strict flags checking (via [@clerc/plugin-strict-flags](./packages/plugin-strict-flags/))
   - Version (via [@clerc/plugin-version](./packages/plugin-version/))
-  - Powerful toolkit (via [@clerc/toolkit](./packages/toolkit/) - Just a re-export of many useful libraries)
+- **Powerful toolkit** ([@clerc/toolkit](./packages/toolkit/) - Just a re-export of many useful libraries)
 
 # 📖 Documentation
 

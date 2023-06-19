@@ -1,7 +1,8 @@
 {
   "name": "@clerc/toolkit",
-  "version": "0.28.0",
-  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "version": "0.40.0",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc toolkit",
   "keywords": [
     "cli",
@@ -14,7 +15,6 @@
     "terminal",
     "toolkit"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
   "repository": {
     "type": "git",
@@ -50,27 +50,27 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild --minify",
-    "watch": "puild --watch"
+    "build": "pkgroll --minify",
+    "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
   },
   "dependencies": {
     "@types/cli-progress": "^3.11.0",
-    "@types/prompts": "^2.4.2",
-    "cli-progress": "^3.11.2",
+    "@types/prompts": "^2.4.4",
+    "cli-progress": "^3.12.0",
     "cli-table3": "^0.6.3",
-    "execa": "^6.1.0",
-    "kons": "^0.6.2",
-    "open": "^8.4.0",
-    "ora": "^6.1.2",
-    "picocolors": "^1.0.0",
+    "execa": "^7.1.1",
+    "kons": "^0.7.1",
+    "open": "^9.1.0",
+    "ora": "^6.3.0",
     "prompts": "^2.4.2",
     "terminal-columns": "^1.4.1",
-    "terminal-link": "^3.0.0"
+    "terminal-link": "^3.0.0",
+    "yoctocolors": "^1.0.0"
   },
   "devDependencies": {
-    "tasuku": "^2.0.0"
+    "tasuku": "2.0.0"
   }
 }

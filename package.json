@@ -1,9 +1,9 @@
 {
   "name": "@clerc/monorepo",
   "private": true,
-  "version": "0.28.0",
-  "packageManager": "pnpm@7.26.2",
-  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "version": "0.40.0",
+  "packageManager": "pnpm@7.32.5",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "description": "",
   "keywords": [],
   "homepage": "https://github.com/so1ve/clerc#readme",
@@ -17,36 +17,36 @@
   "license": "MIT",
   "scripts": {
     "build": "rimraf packages/*/dist && pnpm -r run build",
-    "watch": "pnpm -r --parallel run watch",
+    "commit": "mcz",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepublishOnly": "nr build",
     "release": "bumpp package.json packages/*/package.json --commit --push --tag && nr build && pnpm publish -r --filter ./packages/*",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "commit": "mcz"
+    "watch": "pnpm -r --parallel run watch"
   },
   "devDependencies": {
-    "@antfu/ni": "^0.19.0",
-    "@babel/types": "^7.20.7",
-    "@mini-cz/config-default": "^0.2.0",
-    "@so1ve/eslint-config": "^0.43.0",
-    "@types/node": "^18.11.18",
-    "bumpp": "^8.2.1",
-    "eslint": "^8.32.0",
-    "mini-cz": "^0.2.0",
-    "pnpm": "^7.26.2",
-    "puild": "^1.3.2",
+    "@antfu/ni": "^0.21.3",
+    "@babel/types": "^7.21.5",
+    "@mini-cz/config-default": "^0.8.0",
+    "@so1ve/eslint-config": "^0.93.4",
+    "@types/node": "^18.16.5",
+    "bumpp": "^9.1.0",
+    "eslint": "^8.40.0",
+    "mini-cz": "^0.8.0",
+    "pkgroll": "^1.10.0",
+    "pnpm": "^7.32.3",
+    "prettier": "^2.8.8",
     "rimraf": "^3.0.2",
-    "tsx": "^3.12.2",
-    "typescript": "^4.9.4",
-    "vite": "^4.0.4",
-    "vitest": "^0.28.3"
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.5",
+    "vitest": "^0.31.0"
   },
   "pnpm": {
     "patchedDependencies": {
-      "yoga-layout-prebuilt@1.10.0": "patches/yoga-layout-prebuilt@1.10.0.patch",
-      "lite-emit@1.4.0": "patches/lite-emit@1.4.0.patch"
+      "yoga-layout-prebuilt@1.10.0": "patches/yoga-layout-prebuilt@1.10.0.patch"
     }
   }
 }

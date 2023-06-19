@@ -1,7 +1,8 @@
 {
   "name": "@clerc/plugin-not-found",
-  "version": "0.28.0",
-  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "version": "0.40.0",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc plugin not found (did you mean)",
   "keywords": [
     "cli",
@@ -12,7 +13,6 @@
     "args",
     "terminal"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-not-found#readme",
   "repository": {
     "type": "git",
@@ -48,8 +48,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild --minify",
-    "watch": "puild --watch"
+    "build": "pkgroll --minify",
+    "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
@@ -58,6 +58,6 @@
     "@clerc/core": "workspace:*",
     "@clerc/utils": "workspace:*",
     "didyoumean2": "^5.0.0",
-    "picocolors": "^1.0.0"
+    "yoctocolors": "^1.0.0"
   }
 }

@@ -1,247 +1,296 @@
+import type { HandlerContext, RootType } from "@clerc/core";
+import {
+  NoSuchCommandError,
+  Root,
+  definePlugin,
+  formatCommandName,
+  withBrackets,
+} from "@clerc/core";
+import { resolveCommandStrict, toArray } from "@clerc/utils";
+import * as yc from "yoctocolors";
 
-// TODO: unit tests
+import { locales } from "./locales";
+import type { Render, Renderers, Section } from "./renderer";
+import { defaultRenderers, render } from "./renderer";
+import {
+  DELIMITER,
+  formatFlags,
+  generateCliDetail,
+  generateExamples,
+  print,
+  sortName,
+  splitTable,
+} from "./utils";
 
-import type { Clerc, Command, HandlerContext, RootType } from "@clerc/core";
-import { NoSuchCommandError, Root, definePlugin, formatCommandName, resolveCommand, withBrackets } from "@clerc/core";
-
-import { gracefulFlagName, toArray } from "@clerc/utils";
-import pc from "picocolors";
-
-import type { Render, Section } from "./renderer";
-import { renderCliffy } from "./renderer";
-import { splitTable, stringifyType } from "./utils";
-
-const DELIMITER = pc.yellow("-");
-const NO_DESCRIPTION = "(No description)";
-const NAME = "Name";
-const VERSION = "Version";
-const SUBCOMMAND = "Subcommand";
-const COMMANDS = "Commands";
-const FLAGS = "Flags";
-const DESCRIPTION = "Description";
-const USAGE = "Usage";
-const EXAMPLES = "Examples";
-const NOTES = "Notes";
-
-const print = (s: string) => { process.stdout.write(s); };
-
-const generateCliDetail = (sections: Section[], cli: Clerc, subcommand?: Command<string | RootType>) => {
-  const items = [
-    {
-      title: NAME,
-      body: pc.red(cli._name),
-    },
-    {
-      title: VERSION,
-      body: pc.yellow(cli._version),
-    },
-  ];
-  if (subcommand) {
-    items.push({
-      title: SUBCOMMAND,
-      body: pc.green(`${cli._name} ${formatCommandName(subcommand.name)}`),
-    });
+declare module "@clerc/core" {
+  export interface CommandCustomProperties {
+    help?: {
+      renderers?: Renderers;
+      examples?: [string, string][];
+      notes?: string[];
+    };
   }
-  sections.push({
-    type: "inline",
-    items,
-  });
-  sections.push({
-    title: DESCRIPTION,
-    body: [subcommand?.description || cli._description],
-  });
-};
+}
 
-const generateExamples = (sections: Section[], examples: [string, string][]) => {
-  const examplesFormatted = examples.map(([command, description]) => [command, DELIMITER, description]);
-  sections.push({
-    title: EXAMPLES,
-    body: splitTable(...examplesFormatted),
-  });
-};
-
-const generateHelp = (render: Render, ctx: HandlerContext, notes: string[] | undefined, examples: [string, string][] | undefined) => {
+function generateHelp(
+  render: Render,
+  ctx: HandlerContext,
+  notes: string[] | undefined,
+  examples: [string, string][] | undefined,
+  _renderers?: Renderers,
+) {
   const { cli } = ctx;
-  const sections = [] as Section[];
+  const { t } = cli.i18n;
+  let sections = [] as Section[];
+  const renderers = Object.assign(
+    Object.create(null),
+    defaultRenderers,
+    _renderers,
+  );
   generateCliDetail(sections, cli);
   sections.push({
-    title: USAGE,
-    body: [pc.magenta(`$ ${cli._name} ${withBrackets("command", ctx.hasRootOrAlias)} [flags]`)],
+    title: t("help.usage")!,
+    body: [
+      yc.magenta(
+        `$ ${cli._scriptName} ${withBrackets(
+          "command",
+          ctx.hasRootOrAlias,
+        )} [flags]`,
+      ),
+    ],
   });
-  const commands = [...(ctx.hasRoot ? [cli._commands[Root]!] : []), ...Object.values(cli._commands)].map((command) => {
-    const commandNameWithAlias = [typeof command.name === "symbol" ? "" : command.name, ...toArray(command.alias || [])]
-      .sort((a, b) => {
-        if (a === Root) { return -1; }
-        if (b === Root) { return 1; }
-        return a.length - b.length;
-      })
-      .map((n) => {
-        return (n === "" || typeof n === "symbol") ? `${cli._name}` : `${cli._name} ${n}`;
-      })
+  const commands = [
+    ...(ctx.hasRoot ? [cli._commands[Root]!] : []),
+    ...Object.values(cli._commands),
+  ].map((command) => {
+    const commandNameWithAlias = [
+      typeof command.name === "symbol" ? "" : command.name,
+      ...toArray(command.alias ?? []),
+    ]
+      .sort(sortName)
+      .map((n) =>
+        n === "" || typeof n === "symbol"
+          ? `${cli._scriptName}`
+          : `${cli._scriptName} ${n}`,
+      )
       .join(", ");
-    return [pc.cyan(commandNameWithAlias), DELIMITER, command.description];
+
+    return [yc.cyan(commandNameWithAlias), DELIMITER, command.description];
   });
-  sections.push({
-    title: COMMANDS,
-    body: splitTable(...commands),
-  });
+  if (commands.length > 0) {
+    sections.push({
+      title: t("help.commands")!,
+      body: splitTable(commands),
+    });
+  }
+  const globalFlags = formatFlags(cli._flags, t, renderers);
+  if (globalFlags.length > 0) {
+    sections.push({
+      title: t("help.globalFlags")!,
+      body: splitTable(globalFlags),
+    });
+  }
   if (notes) {
     sections.push({
-      title: NOTES,
+      title: t("help.notes")!,
       body: notes,
     });
   }
   if (examples) {
-    generateExamples(sections, examples);
+    generateExamples(sections, examples, t);
   }
-  return render(sections);
-};
+  sections = renderers.renderSections(sections);
 
-const generateSubcommandHelp = (render: Render, ctx: HandlerContext, command: string[] | RootType) => {
+  return render(sections);
+}
+
+function generateSubcommandHelp(
+  render: Render,
+  ctx: HandlerContext,
+  command: string[] | RootType,
+) {
   const { cli } = ctx;
-  const subcommand = resolveCommand(cli._commands, command);
+  const { t } = cli.i18n;
+  const [subcommand] = resolveCommandStrict(cli._commands, command, t);
   if (!subcommand) {
-    throw new NoSuchCommandError(formatCommandName(command));
+    throw new NoSuchCommandError(formatCommandName(command), t);
   }
-  const sections = [] as Section[];
-  generateCliDetail(sections, cli, {
-    ...subcommand,
-    name: formatCommandName(command),
-  });
-  const parameters = subcommand.parameters?.join(" ") || undefined;
-  const commandName = ` ${formatCommandName(command)}`;
+  const renderers = Object.assign(
+    Object.create(null),
+    defaultRenderers,
+    subcommand.help?.renderers,
+  );
+  let sections = [] as Section[];
+  if (command === Root) {
+    generateCliDetail(sections, cli);
+  } else {
+    generateCliDetail(sections, cli, {
+      ...subcommand,
+      name: formatCommandName(command),
+    });
+  }
+  const parameters = subcommand.parameters?.join(" ") ?? undefined;
+  const commandName = command === Root ? "" : ` ${formatCommandName(command)}`;
   const parametersString = parameters ? ` ${parameters}` : "";
   const flagsString = subcommand.flags ? " [flags]" : "";
   sections.push({
-    title: USAGE,
-    body: [pc.magenta(`$ ${cli._name}${commandName}${parametersString}${flagsString}`)],
+    title: t("help.usage")!,
+    body: [
+      yc.magenta(
+        `$ ${cli._scriptName}${commandName}${parametersString}${flagsString}`,
+      ),
+    ],
   });
+  const globalFlags = formatFlags(cli._flags, t, renderers);
+  if (globalFlags.length > 0) {
+    sections.push({
+      title: t("help.globalFlags")!,
+      body: splitTable(globalFlags),
+    });
+  }
   if (subcommand.flags) {
     sections.push({
-      title: FLAGS,
-      body: splitTable(
-        ...Object.entries(subcommand.flags).map(([name, flag]) => {
-          const flagNameWithAlias = [gracefulFlagName(name)];
-          if (flag.alias) {
-            flagNameWithAlias.push(gracefulFlagName(flag.alias));
-          }
-          const items = [pc.blue(flagNameWithAlias.join(", "))];
-          items.push(DELIMITER, flag.description || NO_DESCRIPTION);
-          if (flag.type) {
-            const type = stringifyType(flag.type);
-            items.push(pc.gray(`(${type})`));
-          }
-          return items;
-        }),
-      ),
+      title: t("help.flags")!,
+      body: splitTable(formatFlags(subcommand.flags, t, renderers)),
     });
   }
-  if (subcommand.notes) {
+  if (subcommand?.help?.notes) {
     sections.push({
-      title: NOTES,
-      body: subcommand.notes,
+      title: t("help.notes")!,
+      body: subcommand.help.notes,
     });
   }
-  if (subcommand.examples) {
-    generateExamples(sections, subcommand.examples);
+  if (subcommand?.help?.examples) {
+    generateExamples(sections, subcommand?.help?.examples, t);
   }
+  sections = renderers.renderSections(sections);
+
   return render(sections);
-};
+}
 
 export interface HelpPluginOptions {
   /**
-   * Whether to registr the help command.
+   * Whether to register the help command.
+   *
    * @default true
    */
-  command?: boolean
+  command?: boolean;
+  /**
+   * Whether to register the global help flag.
+   *
+   * @default true
+   */
+  flag?: boolean;
   /**
    * Whether to show help when no command is specified.
+   *
    * @default true
    */
-  showHelpWhenNoCommand?: boolean
-  /**
-   * Global notes.
-   */
-  notes?: string[]
-  /**
-   * Global examples.
-   */
-  examples?: [string, string][]
-  /**
-   * Banner
-   */
-  banner?: string
-  /**
-   * Render type
-   */
-  renderer?: "cliffy"
+  showHelpWhenNoCommand?: boolean;
+  /** Global notes. */
+  notes?: string[];
+  /** Global examples. */
+  examples?: [string, string][];
+  /** Banner. */
+  banner?: string;
+  /** Renderers. */
+  renderers?: Renderers;
 }
 export const helpPlugin = ({
   command = true,
+  flag = true,
   showHelpWhenNoCommand = true,
   notes,
   examples,
   banner,
-  renderer = "cliffy",
-}: HelpPluginOptions = {}) => definePlugin({
-  setup: (cli) => {
-    const render: Render = renderer === "cliffy" ? renderCliffy : () => "";
-    const printHelp = (s: string) => {
-      banner && print(`${banner}\n`);
-      print(s);
-    };
-    if (command) {
-      cli = cli.command("help", "Show help", {
-        parameters: [
-          "[command...]",
-        ],
-        notes: [
-          "If no command is specified, show help for the CLI.",
-          "If a command is specified, show help for the command.",
-          "-h is an alias for --help.",
-        ],
-        examples: [
-          [`$ ${cli._name} help`, "Show help"],
-          [`$ ${cli._name} help <command>`, "Show help for a specific command"],
-          [`$ ${cli._name} <command> --help`, "Show help for a specific command"],
-        ],
-      })
-        .on("help", (ctx) => {
-          if (ctx.parameters.command.length) {
-            printHelp(generateSubcommandHelp(render, ctx, ctx.parameters.command));
-          } else {
-            printHelp(generateHelp(render, ctx, notes, examples));
-          }
-        });
-    }
+  renderers,
+}: HelpPluginOptions = {}) =>
+  definePlugin({
+    setup: (cli) => {
+      const { add, t } = cli.i18n;
+      add(locales);
+      function printHelp(s: string) {
+        banner && print(`${banner}\n`);
+        print(s);
+      }
 
-    cli.inspector((ctx, next) => {
-      const helpFlag = ctx.raw.mergedFlags.h || ctx.raw.mergedFlags.help;
-      if (!ctx.hasRootOrAlias && !ctx.raw._.length && showHelpWhenNoCommand && !helpFlag) {
-        let str = "No command given.\n\n";
-        str += generateHelp(render, ctx, notes, examples);
-        str += "\n";
-        printHelp(str);
-        process.exit(1);
-      } else if (helpFlag) {
-        if (ctx.raw._.length) {
-          if (ctx.called !== Root) {
-            if (ctx.name === Root) {
-              printHelp(generateHelp(render, ctx, notes, examples));
+      if (command) {
+        cli = cli
+          .command("help", t("help.commandDescription")!, {
+            parameters: ["[command...]"],
+            help: {
+              notes: [
+                t("help.notes.1")!,
+                t("help.notes.2")!,
+                t("help.notes.3")!,
+              ],
+              examples: [
+                [`$ ${cli._scriptName} help`, t("help.examples.1")!],
+                [`$ ${cli._scriptName} help <command>`, t("help.examples.2")!],
+                [
+                  `$ ${cli._scriptName} <command> --help`,
+                  t("help.examples.2")!,
+                ],
+              ],
+            },
+          })
+          .on("help", (ctx) => {
+            if (ctx.parameters.command.length > 0) {
+              printHelp(
+                generateSubcommandHelp(render, ctx, ctx.parameters.command),
+              );
             } else {
+              printHelp(generateHelp(render, ctx, notes, examples, renderers));
+            }
+          });
+      }
+
+      if (flag) {
+        cli = cli.flag("help", t("help.commandDescription")!, {
+          alias: "h",
+          type: Boolean,
+          default: false,
+        });
+      }
+
+      cli.inspector((ctx, next) => {
+        const shouldShowHelp = ctx.flags.help;
+        if (
+          !ctx.hasRootOrAlias &&
+          ctx.raw._.length === 0 &&
+          showHelpWhenNoCommand &&
+          !shouldShowHelp
+        ) {
+          let str = `${t("core.noCommandGiven")!}\n\n`;
+          str += generateHelp(render, ctx, notes, examples, renderers);
+          str += "\n";
+          printHelp(str);
+          process.exit(1);
+        } else if (shouldShowHelp) {
+          if (ctx.raw._.length > 0) {
+            if (ctx.called === Root) {
               printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+            } else {
+              if (ctx.name === Root) {
+                printHelp(
+                  generateHelp(render, ctx, notes, examples, renderers),
+                );
+              } else {
+                printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+              }
             }
           } else {
-            printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+            if (ctx.hasRootOrAlias) {
+              printHelp(generateSubcommandHelp(render, ctx, Root));
+            } else {
+              printHelp(generateHelp(render, ctx, notes, examples, renderers));
+            }
           }
         } else {
-          printHelp(generateHelp(render, ctx, notes, examples));
+          next();
         }
-      } else {
-        next();
-      }
-    });
+      });
 
-    return cli;
-  },
-});
+      return cli;
+    },
+  });

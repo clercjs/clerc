@@ -1,93 +1,96 @@
 // TODO: fix tests
-import { describe, it } from "vitest";
-// import { afterEach, beforeAll, describe, expect, it } from "vitest";
-// import { helpPlugin } from "@clerc/plugin-help";
-// import { create } from "./create";
 
-// describe("plugin-help", () => {
-//   const msgs: string[] = [];
-//   beforeAll(() => {
-//     // eslint-disable-next-line no-console
-//     console.log = (s: string) => { msgs.push(s); };
-//   });
-//   afterEach(() => {
-//     msgs.length = 0;
-//   });
-//   it("should show help", () => {
-//     create()
-//       .use(helpPlugin())
-//       .parse(["help"]);
-//     expect(msgs).toMatchInlineSnapshot(`
-//         [
-//           "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
-//         [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
-//         [1mDescription:[22m
+import { Cli } from "./create-cli";
 
-//             test
+import { helpPlugin } from "@clerc/plugin-help";
 
-//         [1mUsage:[22m
+describe.skip("plugin-help", () => {
+  const msgs: string[] = [];
 
-//             $ test [command] [options]
+  beforeAll(() => {
+    // eslint-disable-next-line no-console
+    console.log = (s: string) => {
+      msgs.push(s);
+    };
+  });
 
-//         [1mCommands:[22m
+  afterEach(() => {
+    msgs.length = 0;
+  });
 
-//             [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
-//         ",
-//         ]
-//       `);
-//     msgs.length = 0;
-//   });
-//   it("should show --help", () => {
-//     create()
-//       .use(helpPlugin())
-//       .parse(["--help"]);
-//     expect(msgs).toMatchInlineSnapshot(`
-//       [
-//         "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
-//       [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+  it("should show help", () => {
+    Cli().use(helpPlugin()).parse(["help"]);
 
-//       [1mDescription:[22m
+    expect(msgs).toMatchInlineSnapshot(`
+        [
+          "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
+        [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
 
-//           test
+        [1mDescription:[22m
 
-//       [1mUsage:[22m
+            test
 
-//           $ test [command] [options]
+        [1mUsage:[22m
 
-//       [1mCommands:[22m
+            $ test [command] [options]
 
-//           [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
-//       ",
-//       ]
-//     `);
-//   });
-//   it("should show name, description and version", () => {
-//     create()
-//       .use(helpPlugin())
-//       .parse(["help"]);
-//     expect(msgs).toMatchInlineSnapshot(`
-//     [
-//       "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
-//     [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+        [1mCommands:[22m
 
-//     [1mDescription:[22m
+            [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+        ",
+        ]
+      `);
 
-//         test
+    msgs.length = 0;
+  });
 
-//     [1mUsage:[22m
+  it("should show --help", () => {
+    Cli().use(helpPlugin()).parse(["--help"]);
 
-//         $ test [command] [options]
+    expect(msgs).toMatchInlineSnapshot(`
+      [
+        "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
+      [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
 
-//     [1mCommands:[22m
+      [1mDescription:[22m
 
-//         [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
-//     ",
-//     ]
-//   `);
-//   });
-// });
+          test
 
-describe("plugin-help", () => {
-  it("placeholder", () => {});
+      [1mUsage:[22m
+
+          $ test [command] [options]
+
+      [1mCommands:[22m
+
+          [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+      ",
+      ]
+    `);
+  });
+
+  it("should show name, description and version", () => {
+    Cli().use(helpPlugin()).parse(["help"]);
+
+    expect(msgs).toMatchInlineSnapshot(`
+    [
+      "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
+    [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
+
+    [1mDescription:[22m
+
+        test
+
+    [1mUsage:[22m
+
+        $ test [command] [options]
+
+    [1mCommands:[22m
+
+        [36mhelp[39m[90m [39m[33m-[39m[90m [39mShow help
+    ",
+    ]
+  `);
+  });
 });

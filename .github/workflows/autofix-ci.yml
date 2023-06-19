@@ -1,0 +1,39 @@
+name: autofix.ci
+on:
+  push:
+    branches:
+      - main
+
+  pull_request: {}
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PNPM
+        run: corepack enable
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: pnpm
+
+      - name: Setup
+        run: npm i -g @antfu/ni
+
+      - name: Install
+        run: ni --no-frozen-lockfile
+
+      - name: Build
+        run: nr build
+
+      - name: Lint and fix
+        run: nr lint:fix
+
+      - uses: autofix-ci/action@8bc06253bec489732e5f9c52884c7cace15c0160

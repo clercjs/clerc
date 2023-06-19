@@ -1,7 +1,8 @@
 {
   "name": "@clerc/core",
-  "version": "0.28.0",
-  "author": "Ray <nn_201312@163.com> (https://github.com/so1ve)",
+  "version": "0.40.0",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
   "description": "Clerc core",
   "keywords": [
     "cli",
@@ -11,7 +12,6 @@
     "args",
     "terminal"
   ],
-  "type": "module",
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/core#readme",
   "repository": {
     "type": "git",
@@ -47,14 +47,15 @@
     "access": "public"
   },
   "scripts": {
-    "build": "puild --minify",
-    "watch": "puild --watch"
+    "build": "pkgroll --minify",
+    "watch": "pkgroll --watch"
   },
   "devDependencies": {
     "@clerc/utils": "workspace:*",
+    "defu": "^6.1.2",
     "is-platform": "^1.0.0",
-    "lite-emit": "^1.4.0",
-    "type-fest": "^3.5.3",
+    "lite-emit": "^2.1.0",
+    "type-fest": "^3.10.0",
     "type-flag": "^3.0.0"
   }
 }
