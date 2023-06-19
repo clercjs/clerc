@@ -54,8 +54,8 @@
     "@clerc/utils": "workspace:*",
     "defu": "^6.1.2",
     "is-platform": "^1.0.0",
-    "lite-emit": "^2.1.0",
-    "type-fest": "^3.10.0",
+    "lite-emit": "^2.2.0",
+    "type-fest": "^3.12.0",
     "type-flag": "^3.0.0"
   }
 }
