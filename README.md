@@ -17,11 +17,11 @@ Clerc: The full-featured cli library.
 
 Clerc is a library for building CLI Apps in Node.js, Deno or Bun. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
-# 💎 Features
+# ✨ Features
 - **Lightweight** - Dependencies are bundled and minified
 - **Plugin system** - Add rich features on demand.
 - **Chainable APIs** - Composable.
-- **Developer friendly** - Strongly typed, converts flags to camelCase.
+- **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
 - **I18N** - Easy to change different locales!
 - **Official Plugins**
@@ -35,7 +35,7 @@ Clerc is a library for building CLI Apps in Node.js, Deno or Bun. It's designed 
 
 # 📖 Documentation
 
-- [Getting Started](./docs/getting-started.md)
+- [Table of Contents](./docs/toc.md)
 
 # 🤔 More...
 

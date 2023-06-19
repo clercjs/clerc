@@ -47,10 +47,10 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "devDependencies": {
+  "dependencies": {
     "@clerc/core": "workspace:*",
     "@clerc/plugin-completions": "workspace:*",
     "@clerc/plugin-friendly-error": "workspace:*",
