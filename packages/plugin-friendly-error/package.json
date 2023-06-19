@@ -40,14 +40,13 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "devDependencies": {
-    "@clerc/core": "workspace:*",
+  "dependencies": {
     "kons": "^0.7.1"
   }
 }

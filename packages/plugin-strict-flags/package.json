@@ -48,7 +48,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
   "peerDependencies": {

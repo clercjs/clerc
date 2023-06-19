@@ -48,14 +48,13 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "devDependencies": {
-    "@clerc/core": "workspace:*",
+  "dependencies": {
     "@clerc/utils": "workspace:*",
     "didyoumean2": "^5.0.0",
     "yoctocolors": "^1.0.0"

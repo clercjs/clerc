@@ -48,14 +48,13 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
   "peerDependencies": {
     "@clerc/core": "*"
   },
-  "devDependencies": {
-    "@clerc/core": "workspace:*",
+  "dependencies": {
     "@clerc/utils": "workspace:*",
     "@types/text-table": "^0.2.2",
     "string-width": "^6.1.0",
