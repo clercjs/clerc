@@ -51,12 +51,12 @@
     "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  },
   "dependencies": {
     "@clerc/utils": "workspace:*",
     "didyoumean2": "^5.0.0",
     "yoctocolors": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }

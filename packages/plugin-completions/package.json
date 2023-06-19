@@ -51,10 +51,10 @@
     "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  },
   "dependencies": {
     "@clerc/utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }

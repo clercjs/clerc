@@ -53,9 +53,6 @@
     "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  },
   "dependencies": {
     "@types/cli-progress": "^3.11.0",
     "@types/prompts": "^2.4.4",
@@ -72,5 +69,8 @@
   },
   "devDependencies": {
     "tasuku": "2.0.0"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }

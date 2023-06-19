@@ -1,8 +1,7 @@
+import { Root, defineCommand } from "@clerc/core";
 import { describe, expect, it } from "vitest";
 
 import { Cli } from "./create-cli";
-
-import { Root, defineCommand } from "@clerc/core";
 
 describe("cli", () => {
   it("should parse", () => {

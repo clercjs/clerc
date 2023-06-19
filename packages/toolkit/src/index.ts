@@ -13,6 +13,7 @@ import link from "terminal-link";
 import * as colors from "yoctocolors";
 
 export {
+  Table,
   colors,
   columns,
   exec,
@@ -23,6 +24,5 @@ export {
   progress,
   prompt,
   spinner,
-  Table,
   task,
 };

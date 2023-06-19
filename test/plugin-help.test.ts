@@ -1,10 +1,9 @@
 // TODO: fix tests
 
+import { helpPlugin } from "@clerc/plugin-help";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { Cli } from "./create-cli";
-
-import { helpPlugin } from "@clerc/plugin-help";
 
 describe.skip("plugin-help", () => {
   const msgs: string[] = [];

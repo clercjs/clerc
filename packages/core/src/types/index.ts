@@ -2,7 +2,6 @@ import type { Dict, MaybeArray } from "@clerc/utils";
 import type { LiteralUnion, Simplify } from "type-fest";
 
 import type { Clerc, Root, RootType } from "../cli";
-
 import type { FlagSchema, ParsedFlags, TypeFlag } from "./type-flag";
 import type { ParseFlag, ParseParameters, ParseRaw } from "./utils";
 

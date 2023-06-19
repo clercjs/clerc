@@ -1,8 +1,6 @@
 import type { CamelCase, Dict, Equals } from "@clerc/utils";
 import type { OmitIndexSignature } from "type-fest";
 
-import type { TypeFlag } from "./type-flag";
-
 import type {
   Command,
   Commands,
@@ -10,6 +8,7 @@ import type {
   GlobalFlagOptions,
   InspectorContext,
 } from ".";
+import type { TypeFlag } from "./type-flag";
 
 type StripBrackets<Parameter extends string> = Parameter extends
   | `<${infer ParameterName}>`

@@ -45,10 +45,10 @@
     "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  },
   "devDependencies": {
     "type-fest": "^3.12.0"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }

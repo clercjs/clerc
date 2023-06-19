@@ -43,10 +43,10 @@
     "build": "pkgroll",
     "watch": "pkgroll --watch"
   },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  },
   "dependencies": {
     "kons": "^0.7.1"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }
