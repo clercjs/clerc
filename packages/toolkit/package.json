@@ -5,15 +5,15 @@
   "type": "module",
   "description": "Clerc toolkit",
   "keywords": [
-    "cli",
-    "clerc",
-    "clerc-toolkit",
-    "utils",
+    "args",
     "arguments",
     "argv",
-    "args",
+    "clerc",
+    "clerc-toolkit",
+    "cli",
     "terminal",
-    "toolkit"
+    "toolkit",
+    "utils"
   ],
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/toolkit#readme",
   "repository": {
