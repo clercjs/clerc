@@ -5,12 +5,12 @@
   "type": "module",
   "description": "Clerc plugin completions",
   "keywords": [
-    "cli",
-    "clerc",
-    "clerc-plugin",
+    "args",
     "arguments",
     "argv",
-    "args",
+    "clerc",
+    "clerc-plugin",
+    "cli",
     "terminal"
   ],
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",

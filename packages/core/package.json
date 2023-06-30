@@ -5,11 +5,11 @@
   "type": "module",
   "description": "Clerc core",
   "keywords": [
-    "cli",
-    "clerc",
+    "args",
     "arguments",
     "argv",
-    "args",
+    "clerc",
+    "cli",
     "terminal"
   ],
   "homepage": "https://github.com/so1ve/clerc/tree/main/packages/core#readme",
