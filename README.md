@@ -56,12 +56,6 @@ The whole bundled and minified `@clerc/core` package is only 10KB (ignored types
 
 Hiroki Osame's [`cleye`](https://github.com/privatenumber/cleye) is an awesome tool for building CLI apps. Its name sounds quite nice, so I also found an English name `Clerc` for this package =)
 
-# 💰 Sponsor
-
-Please support me on Afdian (爱发电), a Chinese sponsorship platform. Link: <https://afdian.net/@so1ve>
-
-(BTW, how to request GitHub sponsors?)
-
 ## 📝 License
 
 [MIT](./LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)
