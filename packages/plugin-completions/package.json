@@ -1,6 +1,6 @@
 {
   "name": "@clerc/plugin-completions",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
   "description": "Clerc plugin completions",
