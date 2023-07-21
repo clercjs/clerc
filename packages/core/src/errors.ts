@@ -3,12 +3,18 @@ import type { TranslateFn } from "./types";
 const s = JSON.stringify;
 
 export class CommandExistsError extends Error {
-  constructor(public commandName: string, t: TranslateFn) {
+  constructor(
+    public commandName: string,
+    t: TranslateFn,
+  ) {
     super(t("core.commandExists", s(commandName)));
   }
 }
 export class NoSuchCommandError extends Error {
-  constructor(public commandName: string, t: TranslateFn) {
+  constructor(
+    public commandName: string,
+    t: TranslateFn,
+  ) {
     super(t("core.noSuchCommand", s(commandName)));
   }
 }
@@ -18,7 +24,11 @@ export class NoCommandGivenError extends Error {
   }
 }
 export class CommandNameConflictError extends Error {
-  constructor(public n1: string, public n2: string, t: TranslateFn) {
+  constructor(
+    public n1: string,
+    public n2: string,
+    t: TranslateFn,
+  ) {
     super(t("core.commandNameConflict", s(n1), s(n2)));
   }
 }
@@ -38,7 +48,10 @@ export class VersionNotSetError extends Error {
   }
 }
 export class InvalidCommandNameError extends Error {
-  constructor(public commandName: string, t: TranslateFn) {
+  constructor(
+    public commandName: string,
+    t: TranslateFn,
+  ) {
     super(t("core.badNameFormat", s(commandName)));
   }
 }

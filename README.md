@@ -1,5 +1,4 @@
-Clerc: The full-featured cli library.
-=======================================
+# Clerc: The full-featured cli library.
 
 ![clerc](https://socialify.git.ci/so1ve/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
 
@@ -9,8 +8,9 @@ Clerc: The full-featured cli library.
 [![License](https://img.shields.io/npm/l/clerc.svg)](https://github.com/so1ve/clerc/blob/main/package.json)
 
 <!-- toc -->
-* [🗒 Description](#-description)
-* [✨ Features](#-features)
+
+- [🗒 Description](#-description)
+- [✨ Features](#-features)
 <!-- tocstop -->
 
 # 🗒 Description
@@ -18,6 +18,7 @@ Clerc: The full-featured cli library.
 Clerc is a library for building CLI Apps in Node.js, Deno or Bun. It's designed both for single-command CLIs, or for very complex CLIs that have subcommands.
 
 # ✨ Features
+
 - **Lightweight** - Dependencies are bundled and minified
 - **Plugin system** - Add rich features on demand.
 - **Chainable APIs** - Composable.

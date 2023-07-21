@@ -57,6 +57,7 @@ Parameters (aka _positional arguments_) are the names that map against argument 
 Parameters can be defined in the `parameters` array-property to make specific arguments accessible by name. This is useful for writing more readable code, enforcing validation, and generating help documentation.
 
 Parameters are defined in the following formats:
+
 - **Required parameters** are indicated by angle brackets (eg. `<parameter name>`).
 - **Optional parameters** are indicated by square brackets (eg. `[parameter name]`).
 - **Spread parameters** are indicated by `...` suffix (eg. `<parameter name...>` or `[parameter name...]`).
@@ -91,12 +92,15 @@ const cli = Clerc.create()
 ```
 
 #### End-of-flags
+
 End-of-flags (`--`) (aka _end-of-options_) allows users to pass in a subset of arguments. This is useful for passing in arguments that should be parsed separately from the rest of the arguments or passing in arguments that look like flags.
 
 An example of this is [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script):
+
 ```bash
 $ npm run <script> -- <script arguments>
 ```
+
 The `--` indicates that all arguments afterwards should be passed into the _script_ rather than _npm_.
 
 You can specify `--` in the `parameters` array to parse end-of-flags arguments.
