@@ -24,8 +24,7 @@
       "@clerc/plugin-friendly-error": [
         "./packages/plugin-friendly-error/src/index.ts"
       ],
-      "@clerc/utils": ["./packages/utils/src/index.ts"],
-      "@clerc/toolkit": ["./packages/toolkit/src/index.ts"]
+      "@clerc/utils": ["./packages/utils/src/index.ts"]
     }
   }
 }
