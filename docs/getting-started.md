@@ -18,15 +18,15 @@ First, create a file called `foo-cli.mjs`:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .name("Foo CLI") // Optional, defaults to scriptName
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0") // You can use Clerc.create(name, description, version) instead
-  .command("foo", "A foo command")
-  .on("foo", (ctx) => {
-    console.log("It works!");
-  })
-  .parse();
+	.name("Foo CLI") // Optional, defaults to scriptName
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0") // You can use Clerc.create(name, description, version) instead
+	.command("foo", "A foo command")
+	.on("foo", (ctx) => {
+		console.log("It works!");
+	})
+	.parse();
 ```
 
 Then, run it:

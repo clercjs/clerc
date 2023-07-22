@@ -6,23 +6,23 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Cli } from "./create-cli";
 
 describe.skip("plugin-help", () => {
-  const msgs: string[] = [];
+	const msgs: string[] = [];
 
-  beforeAll(() => {
-    // eslint-disable-next-line no-console
-    console.log = (s: string) => {
-      msgs.push(s);
-    };
-  });
+	beforeAll(() => {
+		// eslint-disable-next-line no-console
+		console.log = (s: string) => {
+			msgs.push(s);
+		};
+	});
 
-  afterEach(() => {
-    msgs.length = 0;
-  });
+	afterEach(() => {
+		msgs.length = 0;
+	});
 
-  it("should show help", () => {
-    Cli().use(helpPlugin()).parse(["help"]);
+	it("should show help", () => {
+		Cli().use(helpPlugin()).parse(["help"]);
 
-    expect(msgs).toMatchInlineSnapshot(`
+		expect(msgs).toMatchInlineSnapshot(`
         [
           "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
         [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
@@ -42,13 +42,13 @@ describe.skip("plugin-help", () => {
         ]
       `);
 
-    msgs.length = 0;
-  });
+		msgs.length = 0;
+	});
 
-  it("should show --help", () => {
-    Cli().use(helpPlugin()).parse(["--help"]);
+	it("should show --help", () => {
+		Cli().use(helpPlugin()).parse(["--help"]);
 
-    expect(msgs).toMatchInlineSnapshot(`
+		expect(msgs).toMatchInlineSnapshot(`
       [
         "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
       [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
@@ -67,12 +67,12 @@ describe.skip("plugin-help", () => {
       ",
       ]
     `);
-  });
+	});
 
-  it("should show name, description and version", () => {
-    Cli().use(helpPlugin()).parse(["help"]);
+	it("should show name, description and version", () => {
+		Cli().use(helpPlugin()).parse(["help"]);
 
-    expect(msgs).toMatchInlineSnapshot(`
+		expect(msgs).toMatchInlineSnapshot(`
     [
       "[1m[90mName:[39m[22m   [90m [39m[31mtest[39m
     [1m[90mVersion:[39m[22m[90m [39m[33m0.0.0[39m
@@ -91,5 +91,5 @@ describe.skip("plugin-help", () => {
     ",
     ]
   `);
-  });
+	});
 });

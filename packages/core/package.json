@@ -1,61 +1,61 @@
 {
-  "name": "@clerc/core",
-  "version": "0.41.0",
-  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-  "type": "module",
-  "description": "Clerc core",
-  "keywords": [
-    "args",
-    "arguments",
-    "argv",
-    "clerc",
-    "cli",
-    "terminal"
-  ],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/core#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/so1ve/clerc.git",
-    "directory": "/"
-  },
-  "bugs": {
-    "url": "https://github.com/so1ve/clerc/issues"
-  },
-  "license": "MIT",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/*",
-        "./dist/index.d.ts"
-      ]
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "pkgroll",
-    "watch": "pkgroll --watch"
-  },
-  "dependencies": {
-    "@clerc/utils": "workspace:*",
-    "defu": "^6.1.2",
-    "is-platform": "^1.0.0",
-    "lite-emit": "^2.2.0",
-    "type-fest": "^3.12.0",
-    "type-flag": "^3.0.0"
-  }
+	"name": "@clerc/core",
+	"version": "0.41.0",
+	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+	"type": "module",
+	"description": "Clerc core",
+	"keywords": [
+		"args",
+		"arguments",
+		"argv",
+		"clerc",
+		"cli",
+		"terminal"
+	],
+	"homepage": "https://github.com/so1ve/clerc/tree/main/packages/core#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/so1ve/clerc.git",
+		"directory": "/"
+	},
+	"bugs": {
+		"url": "https://github.com/so1ve/clerc/issues"
+	},
+	"license": "MIT",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"*": [
+				"./dist/*",
+				"./dist/index.d.ts"
+			]
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "pkgroll",
+		"watch": "pkgroll --watch"
+	},
+	"dependencies": {
+		"@clerc/utils": "workspace:*",
+		"defu": "^6.1.2",
+		"is-platform": "^1.0.0",
+		"lite-emit": "^2.2.0",
+		"type-fest": "^3.12.0",
+		"type-flag": "^3.0.0"
+	}
 }

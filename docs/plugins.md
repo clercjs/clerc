@@ -10,16 +10,16 @@ A plugin is a function that accepts a `Clerc` instance and returns a `Clerc` ins
 import { Clerc, definePlugin } from "clerc";
 
 const plugin = definePlugin({
-  setup: (cli) =>
-    cli.command("foo", "A foo command").on("foo", (ctx) => {
-      console.log("It works!");
-    }),
+	setup: (cli) =>
+		cli.command("foo", "A foo command").on("foo", (ctx) => {
+			console.log("It works!");
+		}),
 });
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .use(plugin)
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.use(plugin)
+	.parse();
 ```

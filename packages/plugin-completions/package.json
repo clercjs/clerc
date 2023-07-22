@@ -1,60 +1,60 @@
 {
-  "name": "@clerc/plugin-completions",
-  "version": "0.41.0",
-  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-  "type": "module",
-  "description": "Clerc plugin completions",
-  "keywords": [
-    "args",
-    "arguments",
-    "argv",
-    "clerc",
-    "clerc-plugin",
-    "cli",
-    "terminal"
-  ],
-  "homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/so1ve/clerc.git",
-    "directory": "/"
-  },
-  "bugs": {
-    "url": "https://github.com/so1ve/clerc/issues"
-  },
-  "license": "MIT",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/*",
-        "./dist/index.d.ts"
-      ]
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "pkgroll",
-    "watch": "pkgroll --watch"
-  },
-  "dependencies": {
-    "@clerc/utils": "workspace:*"
-  },
-  "peerDependencies": {
-    "@clerc/core": "*"
-  }
+	"name": "@clerc/plugin-completions",
+	"version": "0.41.0",
+	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+	"type": "module",
+	"description": "Clerc plugin completions",
+	"keywords": [
+		"args",
+		"arguments",
+		"argv",
+		"clerc",
+		"clerc-plugin",
+		"cli",
+		"terminal"
+	],
+	"homepage": "https://github.com/so1ve/clerc/tree/main/packages/plugin-completions#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/so1ve/clerc.git",
+		"directory": "/"
+	},
+	"bugs": {
+		"url": "https://github.com/so1ve/clerc/issues"
+	},
+	"license": "MIT",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"*": [
+				"./dist/*",
+				"./dist/index.d.ts"
+			]
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "pkgroll",
+		"watch": "pkgroll --watch"
+	},
+	"dependencies": {
+		"@clerc/utils": "workspace:*"
+	},
+	"peerDependencies": {
+		"@clerc/core": "*"
+	}
 }

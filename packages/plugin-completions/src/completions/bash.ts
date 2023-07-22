@@ -7,10 +7,10 @@ const generateCommandCompletion = (name: string) => `
                 ;;`;
 
 export function getBashCompletion(ctx: HandlerContext) {
-  const { cli } = ctx;
-  const { _scriptName: name, _commands: commands } = cli;
+	const { cli } = ctx;
+	const { _scriptName: name, _commands: commands } = cli;
 
-  return `_${name}() {
+	return `_${name}() {
     local i cur prev opts cmds
     COMPREPLY=()
     cur="\${COMP_WORDS[COMP_CWORD]}"

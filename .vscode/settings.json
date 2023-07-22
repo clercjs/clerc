@@ -1,9 +1,9 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
-  "editor.tabCompletion": "on",
-  "diffEditor.codeLens": true,
-  "testing.automaticallyOpenPeekView": "never"
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": true
+	},
+	"editor.tabCompletion": "on",
+	"diffEditor.codeLens": true,
+	"testing.automaticallyOpenPeekView": "never"
 }
