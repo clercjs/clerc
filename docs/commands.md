@@ -16,16 +16,16 @@ You can add an alias for your command:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command("foo", "A foo command", {
-    alias: "bar",
-  })
-  .on("foo", (ctx) => {
-    console.log("It works!");
-  })
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command("foo", "A foo command", {
+		alias: "bar",
+	})
+	.on("foo", (ctx) => {
+		console.log("It works!");
+	})
+	.parse();
 ```
 
 Now both `foo-cli foo` and `foo-cli bar` will log "It works!".
@@ -36,16 +36,16 @@ You can add more aliases:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command("foo", "A foo command", {
-    alias: ["bar", "baz"],
-  })
-  .on("foo", (ctx) => {
-    console.log("It works!");
-  })
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command("foo", "A foo command", {
+		alias: ["bar", "baz"],
+	})
+	.on("foo", (ctx) => {
+		console.log("It works!");
+	})
+	.parse();
 ```
 
 ### Parameters
@@ -73,22 +73,22 @@ Example:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command("foo", "A foo command", {
-    parameters: [
-      "<required parameter>",
-      "[optional parameter]",
-      "[optional spread...]",
-    ],
-  })
-  .on("foo", (ctx) => {
-    ctx.parameters.requiredParameter; // => "a" (string)
-    ctx.parameters.optionalParameter; // => "b" (string | undefined)
-    ctx.parameters.optionalSpread; // => ["c", "d"] (string[])
-  })
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command("foo", "A foo command", {
+		parameters: [
+			"<required parameter>",
+			"[optional parameter]",
+			"[optional spread...]",
+		],
+	})
+	.on("foo", (ctx) => {
+		ctx.parameters.requiredParameter; // => "a" (string)
+		ctx.parameters.optionalParameter; // => "b" (string | undefined)
+		ctx.parameters.optionalSpread; // => ["c", "d"] (string[])
+	})
+	.parse();
 ```
 
 #### End-of-flags
@@ -112,17 +112,17 @@ Example:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command("echo", "Echo", {
-    parameters: ["<script>", "--", "[arguments...]"],
-  })
-  .on("echo", (ctx) => {
-    ctx.parameters.script; // => "echo" (string)
-    ctx.parameters.arguments; // => ["hello", "world] (string[])
-  })
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command("echo", "Echo", {
+		parameters: ["<script>", "--", "[arguments...]"],
+	})
+	.on("echo", (ctx) => {
+		ctx.parameters.script; // => "echo" (string)
+		ctx.parameters.arguments; // => ["hello", "world] (string[])
+	})
+	.parse();
 ```
 
 ### Flags
@@ -154,35 +154,35 @@ Example:
 import { Clerc } from "clerc";
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command("echo", "echo", {
-    flags: {
-      someBoolean: {
-        type: Boolean,
-      },
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command("echo", "echo", {
+		flags: {
+			someBoolean: {
+				type: Boolean,
+			},
 
-      someString: {
-        type: String,
-        description: "Some string flag",
-        default: "n/a",
-      },
+			someString: {
+				type: String,
+				description: "Some string flag",
+				default: "n/a",
+			},
 
-      someNumber: {
-        // Wrap the type function in an array to allow multiple values
-        type: [Number],
-        alias: "n",
-        description: "Array of numbers. (eg. -n 1 -n 2 -n 3)",
-      },
-    },
-  })
-  .on("echo", (ctx) => {
-    ctx.flags.someBoolean; // => true (boolean | undefined)
-    ctx.flags.someString; // => "hello" (string)
-    ctx.flags.someNumber; // => [1, 2] (number[])
-  })
-  .parse();
+			someNumber: {
+				// Wrap the type function in an array to allow multiple values
+				type: [Number],
+				alias: "n",
+				description: "Array of numbers. (eg. -n 1 -n 2 -n 3)",
+			},
+		},
+	})
+	.on("echo", (ctx) => {
+		ctx.flags.someBoolean; // => true (boolean | undefined)
+		ctx.flags.someString; // => "hello" (string)
+		ctx.flags.someNumber; // => [1, 2] (number[])
+	})
+	.parse();
 ```
 
 ## Advanced Usage
@@ -193,21 +193,21 @@ To seperate handlers from the cli definition, you can use the `defineCommand` ut
 import { Clerc, defineCommand } from "clerc";
 
 const command = defineCommand(
-  {
-    name: "test",
-    description: "test",
-    flags: {},
-    parameters: [],
-  },
-  (ctx) => {
-    // handler
-  },
+	{
+		name: "test",
+		description: "test",
+		flags: {},
+		parameters: [],
+	},
+	(ctx) => {
+		// handler
+	},
 );
 
 const cli = Clerc.create()
-  .scriptName("foo-cli")
-  .description("A simple cli")
-  .version("1.0.0")
-  .command(command)
-  .parse();
+	.scriptName("foo-cli")
+	.description("A simple cli")
+	.version("1.0.0")
+	.command(command)
+	.parse();
 ```
