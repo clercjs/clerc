@@ -2,12 +2,12 @@ import type { Dict } from "@clerc/utils";
 
 export type Locales = Dict<Dict<string>>;
 
-export type TranslateFn = (
+export type TranslateFunction = (
 	name: string,
-	...args: string[]
+	...arguments_: string[]
 ) => string | undefined;
 
 export interface I18N {
 	add: (locales: Locales) => void;
-	t: TranslateFn;
+	t: TranslateFunction;
 }

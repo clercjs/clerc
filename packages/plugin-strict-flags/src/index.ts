@@ -11,9 +11,9 @@ export const strictFlagsPlugin = () =>
 			const { add, t } = cli.i18n;
 			add(locales);
 
-			return cli.inspector((ctx, next) => {
-				const keys = Object.keys(ctx.unknownFlags);
-				if (!ctx.resolved || keys.length === 0) {
+			return cli.inspector((context, next) => {
+				const keys = Object.keys(context.unknownFlags);
+				if (!context.resolved || keys.length === 0) {
 					next();
 				} else {
 					const error =

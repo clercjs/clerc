@@ -18,21 +18,24 @@ export const notFoundPlugin = () =>
 
 			return cli.inspector({
 				enforce: "pre",
-				fn: (ctx, next) => {
+				fn: (context, next) => {
 					const commandKeys = Object.keys(cli._commands);
 					const hasCommands = commandKeys.length > 0;
 					try {
 						next();
-					} catch (e: any) {
+					} catch (error: any) {
 						if (
 							!(
-								e instanceof NoSuchCommandError ||
-								e instanceof NoCommandGivenError
+								error instanceof NoSuchCommandError ||
+								error instanceof NoCommandGivenError
 							)
 						) {
-							throw e;
+							throw error;
 						}
-						if (ctx.raw._.length === 0 || e instanceof NoCommandGivenError) {
+						if (
+							context.raw._.length === 0 ||
+							error instanceof NoCommandGivenError
+						) {
 							console.error(t("core.noCommandGiven"));
 							if (hasCommands) {
 								console.error(
@@ -46,7 +49,7 @@ export const notFoundPlugin = () =>
 							return;
 						}
 						// Good example =]
-						const calledCommandName = e.commandName;
+						const calledCommandName = error.commandName;
 						const closestCommandName = didyoumean(
 							calledCommandName,
 							commandKeys,

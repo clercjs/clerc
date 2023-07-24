@@ -6,8 +6,8 @@ const generateCommandCompletion = (name: string) => `
                 cmd+="__${name}"
                 ;;`;
 
-export function getBashCompletion(ctx: HandlerContext) {
-	const { cli } = ctx;
+export function getBashCompletion(context: HandlerContext) {
+	const { cli } = context;
 	const { _scriptName: name, _commands: commands } = cli;
 
 	return `_${name}() {

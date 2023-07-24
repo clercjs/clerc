@@ -20,8 +20,8 @@ describe("plugin-strict-flags", () => {
 	it("shouldn't show when flags are not passed", () => {
 		try {
 			Cli().use(strictFlagsPlugin()).command("a", "a").parse([]);
-		} catch (e: any) {
-			expect(e.message).toBe("No command given.");
+		} catch (error: any) {
+			expect(error.message).toBe("No command given.");
 		}
 		msgs.length = 0;
 	});
@@ -32,8 +32,8 @@ describe("plugin-strict-flags", () => {
 				.use(strictFlagsPlugin())
 				.command("a", "a")
 				.parse(["a", "-a", "-bc", "--foo"]);
-		} catch (e: any) {
-			expect(e.message).toBe("Unexpected flags: a, b, c and foo.");
+		} catch (error: any) {
+			expect(error.message).toBe("Unexpected flags: a, b, c and foo.");
 		}
 		msgs.length = 0;
 	});

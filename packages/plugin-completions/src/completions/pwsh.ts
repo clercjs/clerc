@@ -28,8 +28,8 @@ const getCompletionFlag = (command: Command) =>
 		})
 		.join("\n            ");
 
-export function getPwshCompletion(ctx: HandlerContext) {
-	const { cli } = ctx;
+export function getPwshCompletion(context: HandlerContext) {
+	const { cli } = context;
 	const { _scriptName: name, _commands: commands } = cli;
 
 	return `using namespace System.Management.Automation

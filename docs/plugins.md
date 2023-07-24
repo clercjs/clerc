@@ -11,7 +11,7 @@ import { Clerc, definePlugin } from "clerc";
 
 const plugin = definePlugin({
 	setup: (cli) =>
-		cli.command("foo", "A foo command").on("foo", (ctx) => {
+		cli.command("foo", "A foo command").on("foo", (context) => {
 			console.log("It works!");
 		}),
 });

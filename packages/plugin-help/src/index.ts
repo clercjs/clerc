@@ -34,12 +34,12 @@ declare module "@clerc/core" {
 
 function generateHelp(
 	render: Render,
-	ctx: HandlerContext,
+	context: HandlerContext,
 	notes: string[] | undefined,
 	examples: [string, string][] | undefined,
 	_renderers?: Renderers,
 ) {
-	const { cli } = ctx;
+	const { cli } = context;
 	const { t } = cli.i18n;
 	let sections = [] as Section[];
 	const renderers = Object.assign(
@@ -54,13 +54,13 @@ function generateHelp(
 			yc.magenta(
 				`$ ${cli._scriptName} ${withBrackets(
 					"command",
-					ctx.hasRootOrAlias,
+					context.hasRootOrAlias,
 				)} [flags]`,
 			),
 		],
 	});
 	const commands = [
-		...(ctx.hasRoot ? [cli._commands[Root]!] : []),
+		...(context.hasRoot ? [cli._commands[Root]!] : []),
 		...Object.values(cli._commands),
 	].map((command) => {
 		const commandNameWithAlias = [
@@ -106,10 +106,10 @@ function generateHelp(
 
 function generateSubcommandHelp(
 	render: Render,
-	ctx: HandlerContext,
+	context: HandlerContext,
 	command: string[] | RootType,
 ) {
-	const { cli } = ctx;
+	const { cli } = context;
 	const { t } = cli.i18n;
 	const [subcommand] = resolveCommandStrict(cli._commands, command, t);
 	if (!subcommand) {
@@ -234,13 +234,19 @@ export const helpPlugin = ({
 							],
 						},
 					})
-					.on("help", (ctx) => {
-						if (ctx.parameters.command.length > 0) {
+					.on("help", (context) => {
+						if (context.parameters.command.length > 0) {
 							printHelp(
-								generateSubcommandHelp(render, ctx, ctx.parameters.command),
+								generateSubcommandHelp(
+									render,
+									context,
+									context.parameters.command,
+								),
 							);
 						} else {
-							printHelp(generateHelp(render, ctx, notes, examples, renderers));
+							printHelp(
+								generateHelp(render, context, notes, examples, renderers),
+							);
 						}
 					});
 			}
@@ -253,37 +259,41 @@ export const helpPlugin = ({
 				});
 			}
 
-			cli.inspector((ctx, next) => {
-				const shouldShowHelp = ctx.flags.help;
+			cli.inspector((context, next) => {
+				const shouldShowHelp = context.flags.help;
 				if (
-					!ctx.hasRootOrAlias &&
-					ctx.raw._.length === 0 &&
+					!context.hasRootOrAlias &&
+					context.raw._.length === 0 &&
 					showHelpWhenNoCommand &&
 					!shouldShowHelp
 				) {
-					let str = `${t("core.noCommandGiven")!}\n\n`;
-					str += generateHelp(render, ctx, notes, examples, renderers);
-					str += "\n";
-					printHelp(str);
+					let string_ = `${t("core.noCommandGiven")!}\n\n`;
+					string_ += generateHelp(render, context, notes, examples, renderers);
+					string_ += "\n";
+					printHelp(string_);
 					process.exit(1);
 				} else if (shouldShowHelp) {
-					if (ctx.raw._.length > 0) {
-						if (ctx.called === Root) {
-							printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+					if (context.raw._.length > 0) {
+						if (context.called === Root) {
+							printHelp(generateSubcommandHelp(render, context, context.raw._));
 						} else {
-							if (ctx.name === Root) {
+							if (context.name === Root) {
 								printHelp(
-									generateHelp(render, ctx, notes, examples, renderers),
+									generateHelp(render, context, notes, examples, renderers),
 								);
 							} else {
-								printHelp(generateSubcommandHelp(render, ctx, ctx.raw._));
+								printHelp(
+									generateSubcommandHelp(render, context, context.raw._),
+								);
 							}
 						}
 					} else {
-						if (ctx.hasRootOrAlias) {
-							printHelp(generateSubcommandHelp(render, ctx, Root));
+						if (context.hasRootOrAlias) {
+							printHelp(generateSubcommandHelp(render, context, Root));
 						} else {
-							printHelp(generateHelp(render, ctx, notes, examples, renderers));
+							printHelp(
+								generateHelp(render, context, notes, examples, renderers),
+							);
 						}
 					}
 				} else {

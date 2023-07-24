@@ -23,7 +23,7 @@ const cli = Clerc.create()
 	.description("A simple cli")
 	.version("1.0.0") // You can use Clerc.create(name, description, version) instead
 	.command("foo", "A foo command")
-	.on("foo", (ctx) => {
+	.on("foo", (context) => {
 		console.log("It works!");
 	})
 	.parse();

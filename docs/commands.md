@@ -22,7 +22,7 @@ const cli = Clerc.create()
 	.command("foo", "A foo command", {
 		alias: "bar",
 	})
-	.on("foo", (ctx) => {
+	.on("foo", (context) => {
 		console.log("It works!");
 	})
 	.parse();
@@ -42,7 +42,7 @@ const cli = Clerc.create()
 	.command("foo", "A foo command", {
 		alias: ["bar", "baz"],
 	})
-	.on("foo", (ctx) => {
+	.on("foo", (context) => {
 		console.log("It works!");
 	})
 	.parse();
@@ -83,10 +83,10 @@ const cli = Clerc.create()
 			"[optional spread...]",
 		],
 	})
-	.on("foo", (ctx) => {
-		ctx.parameters.requiredParameter; // => "a" (string)
-		ctx.parameters.optionalParameter; // => "b" (string | undefined)
-		ctx.parameters.optionalSpread; // => ["c", "d"] (string[])
+	.on("foo", (context) => {
+		context.parameters.requiredParameter; // => "a" (string)
+		context.parameters.optionalParameter; // => "b" (string | undefined)
+		context.parameters.optionalSpread; // => ["c", "d"] (string[])
 	})
 	.parse();
 ```
@@ -118,9 +118,9 @@ const cli = Clerc.create()
 	.command("echo", "Echo", {
 		parameters: ["<script>", "--", "[arguments...]"],
 	})
-	.on("echo", (ctx) => {
-		ctx.parameters.script; // => "echo" (string)
-		ctx.parameters.arguments; // => ["hello", "world] (string[])
+	.on("echo", (context) => {
+		context.parameters.script; // => "echo" (string)
+		context.parameters.arguments; // => ["hello", "world] (string[])
 	})
 	.parse();
 ```
@@ -177,10 +177,10 @@ const cli = Clerc.create()
 			},
 		},
 	})
-	.on("echo", (ctx) => {
-		ctx.flags.someBoolean; // => true (boolean | undefined)
-		ctx.flags.someString; // => "hello" (string)
-		ctx.flags.someNumber; // => [1, 2] (number[])
+	.on("echo", (context) => {
+		context.flags.someBoolean; // => true (boolean | undefined)
+		context.flags.someString; // => "hello" (string)
+		context.flags.someNumber; // => [1, 2] (number[])
 	})
 	.parse();
 ```
@@ -199,7 +199,7 @@ const command = defineCommand(
 		flags: {},
 		parameters: [],
 	},
-	(ctx) => {
+	(context) => {
 		// handler
 	},
 );

@@ -7,9 +7,9 @@ describe("cli", () => {
 	it("should parse", () => {
 		Cli()
 			.command("foo", "foo")
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.raw).toMatchInlineSnapshot(`
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.raw).toMatchInlineSnapshot(`
           {
             "_": [
               "foo",
@@ -20,8 +20,8 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toStrictEqual({});
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toStrictEqual({});
 			})
 			.parse(["foo"]);
 	});
@@ -52,9 +52,9 @@ describe("cli", () => {
 				},
 				parameters: ["[optional...]"],
 			})
-			.on(Root, (ctx) => {
-				expect(ctx.name).toStrictEqual(Root);
-				expect(ctx.raw).toMatchInlineSnapshot(`
+			.on(Root, (context) => {
+				expect(context.name).toStrictEqual(Root);
+				expect(context.raw).toMatchInlineSnapshot(`
           {
             "_": [
               "bar",
@@ -73,7 +73,7 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-				expect(ctx.parameters).toMatchInlineSnapshot(`
+				expect(context.parameters).toMatchInlineSnapshot(`
           {
             "optional": [
               "bar",
@@ -81,7 +81,7 @@ describe("cli", () => {
             ],
           }
         `);
-				expect(ctx.flags).toMatchInlineSnapshot(`
+				expect(context.flags).toMatchInlineSnapshot(`
           {
             "foo": "baz",
           }
@@ -103,9 +103,9 @@ describe("cli", () => {
 					},
 				},
 				parameters: ["[optional...]"],
-				handler: (ctx) => {
-					expect(ctx.name).toStrictEqual(Root);
-					expect(ctx.raw).toMatchInlineSnapshot(`
+				handler: (context) => {
+					expect(context.name).toStrictEqual(Root);
+					expect(context.raw).toMatchInlineSnapshot(`
             {
               "_": [
                 "bar",
@@ -124,7 +124,7 @@ describe("cli", () => {
               "unknownFlags": {},
             }
           `);
-					expect(ctx.parameters).toMatchInlineSnapshot(`
+					expect(context.parameters).toMatchInlineSnapshot(`
             {
               "optional": [
                 "bar",
@@ -132,7 +132,7 @@ describe("cli", () => {
               ],
             }
           `);
-					expect(ctx.flags).toMatchInlineSnapshot(`
+					expect(context.flags).toMatchInlineSnapshot(`
             {
               "foo": "baz",
             }
@@ -147,9 +147,13 @@ describe("cli", () => {
 			.command("foo", "foo", {
 				parameters: ["[optional...]"],
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters.optional).toStrictEqual(["bar", "baz", "qux"]);
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters.optional).toStrictEqual([
+					"bar",
+					"baz",
+					"qux",
+				]);
 			})
 			.parse(["foo", "bar", "-c", "baz", "qux"]);
 	});
@@ -165,9 +169,9 @@ describe("cli", () => {
 					},
 				},
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.raw).toMatchInlineSnapshot(`
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.raw).toMatchInlineSnapshot(`
           {
             "_": [
               "foo",
@@ -182,8 +186,8 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toStrictEqual({ foo: true });
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toStrictEqual({ foo: true });
 			})
 			.parse(["foo", "--foo"]);
 	});
@@ -199,10 +203,10 @@ describe("cli", () => {
 					},
 				},
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toStrictEqual({ foo: "bar" });
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toStrictEqual({ foo: "bar" });
 			})
 			.parse(["foo", "--foo", "bar"]);
 	});
@@ -218,10 +222,10 @@ describe("cli", () => {
 					},
 				},
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toStrictEqual({ foo: 42 });
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toStrictEqual({ foo: 42 });
 			})
 			.parse(["foo", "--foo", "42"]);
 	});
@@ -244,10 +248,10 @@ describe("cli", () => {
 					},
 				},
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags.foo).toStrictEqual([
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags.foo).toStrictEqual([
 					{
 						a: "42",
 					},
@@ -262,10 +266,10 @@ describe("cli", () => {
 	it("should parse shorthand flag", () => {
 		Cli()
 			.command("foo", "foo")
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toMatchInlineSnapshot("{}");
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toMatchInlineSnapshot("{}");
 			})
 			.parse(["foo", "-abcd", "bar"]);
 	});
@@ -281,10 +285,10 @@ describe("cli", () => {
 					},
 				},
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags.abc).toStrictEqual(["bar", "baz"]);
+			.on("foo", (context) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags.abc).toStrictEqual(["bar", "baz"]);
 			})
 			.parse(["foo", "--abc", "bar", "--abc", "baz"]);
 	});
@@ -306,13 +310,13 @@ describe("cli", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
-			.inspector((_ctx, next) => {
+			.inspector((_context, next) => {
 				next();
 			})
-			.inspector((ctx, next) => {
-				expect(ctx.name).toBe("foo");
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toStrictEqual({});
+			.inspector((context, next) => {
+				expect(context.name).toBe("foo");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toStrictEqual({});
 
 				next();
 			})
@@ -342,9 +346,9 @@ describe("cli", () => {
 				},
 				parameters: ["<param>"],
 			})
-			.on("foo bar", (ctx) => {
-				expect(ctx.flags.aa).toBeTruthy();
-				expect(ctx.parameters.param).toBe("param");
+			.on("foo bar", (context) => {
+				expect(context.flags.aa).toBeTruthy();
+				expect(context.parameters.param).toBe("param");
 			})
 			.parse(["foo", "bar", "--aa", "param"]);
 	});
@@ -370,9 +374,9 @@ describe("cli", () => {
 				},
 				parameters: ["<param>"],
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.flags.bb).toBeTruthy();
-				expect(ctx.parameters.param).toBe("param");
+			.on("foo", (context) => {
+				expect(context.flags.bb).toBeTruthy();
+				expect(context.parameters.param).toBe("param");
 			})
 			.parse(["foo", "--bb", "param"]);
 	});
@@ -398,9 +402,9 @@ describe("cli", () => {
 				},
 				parameters: ["<param>"],
 			})
-			.on("foo", (ctx) => {
-				expect(ctx.flags.bb).toBeTruthy();
-				expect(ctx.parameters.param).toBe("bar");
+			.on("foo", (context) => {
+				expect(context.flags.bb).toBeTruthy();
+				expect(context.parameters.param).toBe("bar");
 			})
 			.parse(["foo", "--bb", "bar"]);
 	});
@@ -408,9 +412,9 @@ describe("cli", () => {
 	it("should parse subcommand", () => {
 		Cli()
 			.command("foo bar", "foo")
-			.on("foo bar", (ctx) => {
-				expect(ctx.name).toBe("foo bar");
-				expect(ctx.raw).toMatchInlineSnapshot(`
+			.on("foo bar", (context) => {
+				expect(context.name).toBe("foo bar");
+				expect(context.raw).toMatchInlineSnapshot(`
           {
             "_": [
               "foo",
@@ -422,8 +426,8 @@ describe("cli", () => {
             "unknownFlags": {},
           }
         `);
-				expect(ctx.parameters).toMatchInlineSnapshot("{}");
-				expect(ctx.flags).toMatchInlineSnapshot("{}");
+				expect(context.parameters).toMatchInlineSnapshot("{}");
+				expect(context.flags).toMatchInlineSnapshot("{}");
 			})
 			.parse(["foo", "bar"]);
 	});
@@ -472,8 +476,8 @@ describe("cli", () => {
 	it("should translate", async () => {
 		try {
 			Cli("zh-CN").command("foo", "foo").parse(["bar"]);
-		} catch (e: any) {
-			expect(e.message).toBe('找不到命令: "bar"。');
+		} catch (error: any) {
+			expect(error.message).toBe('找不到命令: "bar"。');
 		}
 	});
 });

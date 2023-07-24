@@ -74,8 +74,8 @@ export type Handler<
 	C extends Commands = Commands,
 	K extends keyof C = keyof C,
 	GF extends GlobalFlagOptions = {},
-> = (ctx: HandlerContext<C, K, GF>) => void;
-export type HandlerInCommand<C extends HandlerContext> = (ctx: {
+> = (context: HandlerContext<C, K, GF>) => void;
+export type HandlerInCommand<C extends HandlerContext> = (context: {
 	[K in keyof C]: C[K];
 }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
@@ -87,15 +87,15 @@ export type InspectorContext<C extends Commands = Commands> =
 		>;
 	};
 export type Inspector<C extends Commands = Commands> =
-	| InspectorFn<C>
+	| InspectorFunction<C>
 	| InspectorObject<C>;
-export type InspectorFn<C extends Commands = Commands> = (
-	ctx: InspectorContext<C>,
+export type InspectorFunction<C extends Commands = Commands> = (
+	context: InspectorContext<C>,
 	next: () => void,
 ) => void;
 export interface InspectorObject<C extends Commands = Commands> {
 	enforce?: "pre" | "post";
-	fn: InspectorFn<C>;
+	fn: InspectorFunction<C>;
 }
 
 export * from "./i18n";

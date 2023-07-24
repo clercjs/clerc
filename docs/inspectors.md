@@ -14,10 +14,10 @@ const cli = Clerc.create()
 	.description("A simple cli")
 	.version("1.0.0")
 	.command("foo", "A foo command")
-	.inspector((ctx, next) => {
+	.inspector((context, next) => {
 		console.log("Before foo");
 		// You can inject something into the context, or modify the context
-		ctx.foo = "bar";
+		context.foo = "bar";
 		next(); // Call next to continue
 	})
 	.parse();
@@ -37,10 +37,10 @@ const cli = Clerc.create()
 	.command("foo", "A foo command")
 	.inspector({
 		enforce: "normal", // default, or 'pre', 'post'
-		fn: (ctx, next) => {
+		fn: (context, next) => {
 			console.log("Before foo");
 			// You can inject something into the context, or modify the context
-			ctx.foo = "bar";
+			context.foo = "bar";
 			next(); // Call next to continue
 		},
 	})
@@ -65,14 +65,14 @@ const cli = Clerc.create()
 	.description("A simple cli")
 	.version("1.0.0")
 	.command("foo", "A foo command")
-	.inspector((ctx, next) => {
+	.inspector((context, next) => {
 		console.log("Before foo");
 		// You can inject something into the context, or modify the context
-		ctx.foo = "bar";
+		context.foo = "bar";
 		next(); // Call next to continue
 		console.log("After foo");
 	})
-	.on("foo", (ctx) => {
+	.on("foo", (context) => {
 		console.log("It works!");
 	})
 	.parse();
