@@ -27,8 +27,8 @@
 	},
 	"devDependencies": {
 		"@antfu/ni": "^0.21.4",
-		"@so1ve/eslint-config": "^0.114.2",
-		"@so1ve/prettier-config": "^0.115.0",
+		"@so1ve/eslint-config": "^0.115.6",
+		"@so1ve/prettier-config": "^0.115.6",
 		"@types/node": "^18.16.18",
 		"bumpp": "^9.1.1",
 		"eslint": "^8.43.0",
