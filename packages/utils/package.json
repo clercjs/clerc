@@ -1,54 +1,54 @@
 {
-	"name": "@clerc/utils",
-	"version": "0.41.0",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"type": "module",
-	"description": "Clerc utils",
-	"keywords": [
-		"args",
-		"arguments",
-		"argv",
-		"clerc",
-		"clerc-utils",
-		"cli",
-		"terminal",
-		"utils",
-		"utils"
-	],
-	"homepage": "https://github.com/so1ve/clerc/tree/main/packages/utils#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/so1ve/clerc.git",
-		"directory": "/"
-	},
-	"bugs": {
-		"url": "https://github.com/so1ve/clerc/issues"
-	},
-	"license": "MIT",
-	"sideEffects": false,
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"main": "dist/index.js",
-	"module": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"files": [
-		"dist"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "pkgroll",
-		"watch": "pkgroll --watch"
-	},
-	"devDependencies": {
-		"type-fest": "^3.12.0"
-	},
-	"peerDependencies": {
-		"@clerc/core": "*"
-	}
+  "name": "@clerc/utils",
+  "version": "0.41.0",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Clerc utils",
+  "keywords": [
+    "args",
+    "arguments",
+    "argv",
+    "clerc",
+    "clerc-utils",
+    "cli",
+    "terminal",
+    "utils",
+    "utils"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/utils#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "pkgroll",
+    "watch": "pkgroll --watch"
+  },
+  "devDependencies": {
+    "type-fest": "^3.12.0"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
+  }
 }

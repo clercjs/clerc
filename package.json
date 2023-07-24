@@ -6,13 +6,13 @@
 	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
 	"description": "",
 	"keywords": [],
-	"homepage": "https://github.com/so1ve/clerc#readme",
+	"homepage": "https://github.com/clercjs/clerc#readme",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/so1ve/clerc.git"
+		"url": "git+https://github.com/clercjs/clerc.git"
 	},
 	"bugs": {
-		"url": "https://github.com/so1ve/clerc/issues"
+		"url": "https://github.com/clercjs/clerc/issues"
 	},
 	"license": "MIT",
 	"scripts": {
