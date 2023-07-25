@@ -1,6 +1,6 @@
 # Clerc: The full-featured cli library.
 
-![clerc](https://socialify.git.ci/clercjs/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
+![clerc](https://socialify.git.ci/clercjs/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&logo=https%3A%2F%2Fclerc.js.org%2Flogo.png&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
 
 [![Version](https://img.shields.io/npm/v/clerc.svg)](https://npmjs.org/package/clerc)
 [![CI](https://github.com/clercjs/clerc/actions/workflows/ci.yml/badge.svg)](https://github.com/clercjs/clerc/actions/workflows/ci.yml)
