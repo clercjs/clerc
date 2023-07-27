@@ -24,23 +24,11 @@ Clerc is a library for building CLI Apps in Node.js, Deno or Bun. It's designed 
 - **Chainable APIs** - Composable.
 - **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
-- **I18N** - Easy to change different locales!
-- **Official Plugins**
-  - Auto-generated help text (via [@clerc/plugin-help](./packages/plugin-help/))
-  - Shell completions (via [@clerc/plugin-completions](./packages/plugin-completions/))
-  - Not found info (via [@clerc/plugin-not-found](./packages/plugin-not-found/))
-  - Friendly error output (via [@clerc/plugin-friendly-error](./packages/plugin-friendly-error/))
-  - Strict flags checking (via [@clerc/plugin-strict-flags](./packages/plugin-strict-flags/))
-  - Version (via [@clerc/plugin-version](./packages/plugin-version/))
+- **I18N** - Easy to change different locales.
 
 # 📖 Documentation
 
-- [Getting Started](./docs/getting-started.md)
-- [Commands](./docs/commands.md)
-- [Context](./docs/context.md)
-- [Inspectors](./docs/inspectors.md)
-- [Plugins](./docs/plugins.md)
-- [Official Plugins](./docs/official-plugins.md)
+Please see https://clerc.js.org.
 
 # 🤔 More...
 
