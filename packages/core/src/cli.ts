@@ -62,7 +62,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	#flags = Object.create(null) as GF;
 	#usedNames = new Set<string | RootType>();
 	#argv: string[] | undefined;
-	#errorHandlers = [] as ((error: any) => void)[];
+	#errorHandlers = [] as ((err: any) => void)[];
 
 	#isOtherMethodCalled = false;
 	#defaultLocale = "en";
@@ -72,15 +72,15 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		add: (locales) => {
 			this.#locales = defu(this.#locales, locales);
 		},
-		t: (name, ...arguments_) => {
+		t: (name, ...args) => {
 			const localeObject =
 				this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
 			const defaultLocaleObject = this.#locales[this.#defaultLocale];
 
 			return localeObject[name]
-				? format(localeObject[name], ...arguments_)
+				? format(localeObject[name], ...args)
 				: defaultLocaleObject[name]
-				? format(defaultLocaleObject[name], ...arguments_)
+				? format(defaultLocaleObject[name], ...args)
 				: undefined;
 		},
 	};
@@ -297,7 +297,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param handler
 	 * @returns
 	 */
-	errorHandler(handler: (error: any) => void) {
+	errorHandler(handler: (err: any) => void) {
 		this.#errorHandlers.push(handler);
 
 		return this;
@@ -561,11 +561,11 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		};
 		// [...argv] is a workaround since TypeFlag modifies argv
 		const parsed = typeFlag(flagsMerged, [...argv]);
-		const { _: arguments_, flags, unknownFlags } = parsed;
+		const { _: args, flags, unknownFlags } = parsed;
 		let parameters =
 			!isCommandResolved || command.name === Root
-				? arguments_
-				: arguments_.slice(command.name.split(" ").length);
+				? args
+				: args.slice(command.name.split(" ").length);
 		let commandParameters = command?.parameters ?? [];
 		// eof handle
 		const hasEof = commandParameters.indexOf("--");
@@ -574,7 +574,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		// Support `--` eof parameters
 		if (hasEof > -1 && eofParameters.length > 0) {
 			commandParameters = commandParameters.slice(0, hasEof);
-			const eofArguments = arguments_["--"];
+			const eofArguments = args["--"];
 			parameters = parameters.slice(0, -eofArguments.length || undefined);
 
 			mapParametersToArguments(
@@ -614,16 +614,16 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		return context;
 	}
 
-	#callWithErrorHandling(function_: (...arguments_: any[]) => any) {
+	#callWithErrorHandling(fn: (...args: any[]) => any) {
 		try {
-			function_();
-		} catch (error) {
+			fn();
+		} catch (e) {
 			if (this.#errorHandlers.length > 0) {
-				for (const callback of this.#errorHandlers) {
-					callback(error);
+				for (const cb of this.#errorHandlers) {
+					cb(e);
 				}
 			} else {
-				throw error;
+				throw e;
 			}
 		}
 	}
@@ -639,7 +639,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		const getContext = () => this.#getContext(getCommand);
 		const emitHandler: Inspector = {
 			enforce: "post",
-			fn: (context) => {
+			fn: (ctx) => {
 				const [command] = getCommand();
 				const stringName = stripFlags(argv).join(" ");
 				if (!command) {
@@ -648,7 +648,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 						: new NoCommandGivenError(t);
 					throw error;
 				}
-				this.#commandEmitter.emit(command.name, context);
+				this.#commandEmitter.emit(command.name, ctx);
 			},
 		};
 		const inspectors = [...this.#inspectors, emitHandler];

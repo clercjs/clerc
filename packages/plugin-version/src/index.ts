@@ -45,8 +45,8 @@ export const versionPlugin = ({
 				});
 				cli.inspector({
 					enforce: "pre",
-					fn: (context, next) => {
-						if (context.flags.version) {
+					fn: (ctx, next) => {
+						if (ctx.flags.version) {
 							process.stdout.write(gracefullyVersion);
 						} else {
 							next();

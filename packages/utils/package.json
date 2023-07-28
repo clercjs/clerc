@@ -46,7 +46,7 @@
 		"watch": "pkgroll --watch"
 	},
 	"devDependencies": {
-		"type-fest": "^4.0.0"
+		"type-fest": "^3.12.0"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

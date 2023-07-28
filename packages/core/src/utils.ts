@@ -12,16 +12,16 @@ import type {
 	Commands,
 	Inspector,
 	InspectorContext,
-	InspectorFunction,
+	InspectorFn,
 	InspectorObject,
-	TranslateFunction,
+	TranslateFn,
 } from "./types";
 
 function setCommand(
 	commandsMap: Map<string[] | RootType, CommandAlias>,
 	commands: Commands,
 	command: Command,
-	t: TranslateFunction,
+	t: TranslateFn,
 ) {
 	if (command.alias) {
 		const aliases = toArray(command.alias);
@@ -41,10 +41,7 @@ function setCommand(
 	}
 }
 
-export function resolveFlattenCommands(
-	commands: Commands,
-	t: TranslateFunction,
-) {
+export function resolveFlattenCommands(commands: Commands, t: TranslateFn) {
 	const commandsMap = new Map<string[] | RootType, CommandAlias>();
 	if (commands[Root]) {
 		commandsMap.set(Root, commands[Root]);
@@ -61,16 +58,16 @@ export function resolveFlattenCommands(
 export function resolveCommand(
 	commands: Commands,
 	argv: string[],
-	t: TranslateFunction,
+	t: TranslateFn,
 ): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
 	const commandsMap = resolveFlattenCommands(commands, t);
 	for (const [name, command] of commandsMap.entries()) {
 		const parsed = typeFlag(command?.flags ?? Object.create(null), [...argv]);
-		const { _: arguments_ } = parsed;
+		const { _: args } = parsed;
 		if (name === Root) {
 			continue;
 		}
-		if (arrayStartsWith(arguments_, name)) {
+		if (arrayStartsWith(args, name)) {
 			return [command, name];
 		}
 	}
@@ -91,9 +88,9 @@ export const resolveArgv = (): string[] =>
 
 export function compose(inspectors: Inspector[]) {
 	const inspectorMap = {
-		pre: [] as InspectorFunction[],
-		normal: [] as InspectorFunction[],
-		post: [] as InspectorFunction[],
+		pre: [] as InspectorFn[],
+		normal: [] as InspectorFn[],
+		post: [] as InspectorFn[],
 	};
 	for (const inspector of inspectors) {
 		const objectInspector: InspectorObject =
@@ -106,18 +103,18 @@ export function compose(inspectors: Inspector[]) {
 		}
 	}
 
-	const mergedInspectorFunctions = [
+	const mergedInspectorFns = [
 		...inspectorMap.pre,
 		...inspectorMap.normal,
 		...inspectorMap.post,
 	];
 
-	return (context: InspectorContext) => {
+	return (ctx: InspectorContext) => {
 		return dispatch(0);
-		function dispatch(index: number): void {
-			const inspector = mergedInspectorFunctions[index];
+		function dispatch(i: number): void {
+			const inspector = mergedInspectorFns[i];
 
-			return inspector(context, dispatch.bind(null, index + 1));
+			return inspector(ctx, dispatch.bind(null, i + 1));
 		}
 	};
 }
@@ -141,4 +138,4 @@ export const detectLocale = () =>
 		: Intl.DateTimeFormat().resolvedOptions().locale;
 
 export const stripFlags = (argv: string[]) =>
-	argv.filter((argument) => !argument.startsWith("-"));
+	argv.filter((arg) => !arg.startsWith("-"));

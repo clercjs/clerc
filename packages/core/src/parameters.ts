@@ -2,7 +2,7 @@
 // Thanks for his awesome work!
 import { camelCase } from "@clerc/utils";
 
-import type { TranslateFunction } from "./types";
+import type { TranslateFn } from "./types";
 
 const { stringify } = JSON;
 
@@ -12,7 +12,7 @@ interface ParsedParameter {
 	spread: boolean;
 }
 
-export function parseParameters(parameters: string[], t: TranslateFunction) {
+export function parseParameters(parameters: string[], t: TranslateFn) {
 	const parsedParameters: ParsedParameter[] = [];
 
 	let hasOptional: string | undefined;
@@ -77,19 +77,19 @@ export function mapParametersToArguments(
 	mapping: Record<string, string | string[]>,
 	parameters: ParsedParameter[],
 	cliArguments: string[],
-	t: TranslateFunction,
+	t: TranslateFn,
 ) {
-	for (let index = 0; index < parameters.length; index += 1) {
-		const { name, required, spread } = parameters[index];
+	for (let i = 0; i < parameters.length; i += 1) {
+		const { name, required, spread } = parameters[i];
 		const camelCaseName = camelCase(name);
 		if (camelCaseName in mapping) {
 			throw new Error(t("core.parameterIsUsedMoreThanOnce", stringify(name)));
 		}
 
-		const value = spread ? cliArguments.slice(index) : cliArguments[index];
+		const value = spread ? cliArguments.slice(i) : cliArguments[i];
 
 		if (spread) {
-			index = parameters.length;
+			i = parameters.length;
 		}
 
 		if (required && (!value || (spread && value.length === 0))) {

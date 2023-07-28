@@ -6,8 +6,8 @@ import * as kons from "kons";
 export const friendlyErrorPlugin = () =>
 	definePlugin({
 		setup: (cli) =>
-			cli.errorHandler((error) => {
-				kons.error(error.message);
+			cli.errorHandler((err) => {
+				kons.error(err.message);
 				process.exit(1);
 			}),
 	});

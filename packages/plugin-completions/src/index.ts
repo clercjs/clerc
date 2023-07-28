@@ -27,19 +27,17 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
 						},
 						parameters: ["[shell]"],
 					})
-					.on("completions", (context) => {
+					.on("completions", (ctx) => {
 						if (!cli._scriptName) {
 							throw new Error("CLI name is not defined!");
 						}
-						const shell = String(
-							context.parameters.shell ?? context.flags.shell,
-						);
+						const shell = String(ctx.parameters.shell ?? ctx.flags.shell);
 						if (!shell) {
 							throw new Error("Missing shell name");
 						}
 						if (shell in completionMap) {
 							process.stdout.write(
-								completionMap[shell as keyof typeof completionMap](context),
+								completionMap[shell as keyof typeof completionMap](ctx),
 							);
 						} else {
 							throw new Error(`No such shell: ${shell}`);

@@ -4,7 +4,7 @@ import type {
 	Commands,
 	I18N,
 	RootType,
-	TranslateFunction,
+	TranslateFn,
 } from "@clerc/core";
 import { Root, resolveFlattenCommands } from "@clerc/core";
 
@@ -77,44 +77,40 @@ export const gracefulFlagName = (n: string) =>
 export const gracefulVersion = (v: string) =>
 	v.length === 0 ? "" : v.startsWith("v") ? v : `v${v}`;
 
-export function arrayEquals<T>(array1: T[], array2: T[]) {
-	if (array2.length !== array1.length) {
+export function arrayEquals<T>(arr1: T[], arr2: T[]) {
+	if (arr2.length !== arr1.length) {
 		return false;
 	}
 
-	return array1.every((item, index) => item === array2[index]);
+	return arr1.every((item, i) => item === arr2[i]);
 }
 
-export function arrayStartsWith<T>(array: T[], start: T[]) {
-	if (start.length > array.length) {
+export function arrayStartsWith<T>(arr: T[], start: T[]) {
+	if (start.length > arr.length) {
 		return false;
 	}
 
-	return arrayEquals(array.slice(0, start.length), start);
+	return arrayEquals(arr.slice(0, start.length), start);
 }
 
-export function semanticArray(array: string[], { add, t }: I18N) {
+export function semanticArray(arr: string[], { add, t }: I18N) {
 	add(locales);
-	if (array.length <= 1) {
-		return array[0];
+	if (arr.length <= 1) {
+		return arr[0];
 	}
 
-	return t(
-		"utils.and",
-		array.slice(0, -1).join(", "),
-		array[array.length - 1],
-	)!;
+	return t("utils.and", arr.slice(0, -1).join(", "), arr[arr.length - 1])!;
 }
 
 export function resolveCommandStrict(
 	commands: Commands,
 	name: CommandType | string[],
-	t: TranslateFunction,
+	t: TranslateFn,
 ): [Command<string | RootType> | undefined, string[] | RootType | undefined] {
 	if (name === Root) {
 		return [commands[Root], Root];
 	}
-	const nameArray = toArray(name);
+	const nameArr = toArray(name);
 	const commandsMap = resolveFlattenCommands(commands, t);
 	let current: Command | undefined;
 	let currentName: string[] | RootType | undefined;
@@ -122,7 +118,7 @@ export function resolveCommandStrict(
 		if (k === Root || currentName === Root) {
 			continue;
 		}
-		if (arrayEquals(nameArray, k)) {
+		if (arrayEquals(nameArr, k)) {
 			current = v;
 			currentName = k;
 		}
@@ -136,15 +132,15 @@ export function resolveSubcommandsByParent(
 	parent: string | string[],
 	depth = Infinity,
 ) {
-	const parentArray =
+	const parentArr =
 		parent === "" ? [] : Array.isArray(parent) ? parent : parent.split(" ");
 
 	return Object.values(commands).filter((c) => {
-		const commandNameArray = c.name.split(" ");
+		const commandNameArr = c.name.split(" ");
 
 		return (
-			arrayStartsWith(commandNameArray, parentArray) &&
-			commandNameArray.length - parentArray.length <= depth
+			arrayStartsWith(commandNameArr, parentArr) &&
+			commandNameArr.length - parentArr.length <= depth
 		);
 	});
 }

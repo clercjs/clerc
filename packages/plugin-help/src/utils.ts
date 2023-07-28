@@ -4,7 +4,7 @@ import type {
 	CommandType,
 	Flags,
 	RootType,
-	TranslateFunction,
+	TranslateFn,
 } from "@clerc/core";
 import { Root, formatCommandName } from "@clerc/core";
 import { gracefulFlagName } from "@clerc/utils";
@@ -25,9 +25,9 @@ const primitiveMap = new Map<any, string | undefined>([
 	[Number, "number"],
 ]);
 export function stringifyType(type: any, hasDefault = false) {
-	const result = primitiveMap.has(type) ? primitiveMap.get(type) : "value";
+	const res = primitiveMap.has(type) ? primitiveMap.get(type) : "value";
 
-	return result ? (hasDefault ? `[${result}]` : `<${result}>`) : "";
+	return res ? (hasDefault ? `[${res}]` : `<${res}>`) : "";
 }
 
 export function sortName(a: CommandType, b: CommandType) {
@@ -84,7 +84,7 @@ export function generateCliDetail(
 export function generateExamples(
 	sections: Section[],
 	examples: [string, string][],
-	t: TranslateFunction,
+	t: TranslateFn,
 ) {
 	const examplesFormatted = examples.map(([command, description]) => [
 		command,
@@ -99,7 +99,7 @@ export function generateExamples(
 
 export const formatFlags = (
 	flags: Flags,
-	t: TranslateFunction,
+	t: TranslateFn,
 	renderers: Required<Renderers>,
 ) =>
 	Object.entries(flags).map(([name, flag]) => {
