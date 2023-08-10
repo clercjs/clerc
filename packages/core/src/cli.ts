@@ -670,7 +670,6 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 			},
 		};
 		const inspectors = [...this.#inspectors, emitHandler];
-
 		const callInspector = compose(inspectors);
 		callInspector(getContext());
 	}
