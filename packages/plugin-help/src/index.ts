@@ -187,13 +187,21 @@ export interface HelpPluginOptions {
 	 * @default true
 	 */
 	showHelpWhenNoCommand?: boolean;
-	/** Global notes. */
+	/**
+	 * Global notes.
+	 */
 	notes?: string[];
-	/** Global examples. */
+	/**
+	 * Global examples.
+	 */
 	examples?: [string, string][];
-	/** Banner. */
+	/**
+	 * Banner.
+	 */
 	banner?: string;
-	/** Renderers. */
+	/**
+	 * Renderers.
+	 */
 	renderers?: Renderers;
 }
 export const helpPlugin = ({
