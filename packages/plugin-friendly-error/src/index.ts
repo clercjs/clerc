@@ -3,11 +3,17 @@
 import { definePlugin } from "@clerc/core";
 import * as kons from "kons";
 
-export const friendlyErrorPlugin = () =>
+export interface FriendlyErrorPluginOptions {
+	target?: (str: string) => void;
+}
+
+export const friendlyErrorPlugin = ({
+	target = kons.error,
+}: FriendlyErrorPluginOptions = {}) =>
 	definePlugin({
 		setup: (cli) =>
 			cli.errorHandler((err) => {
-				kons.error(err.message);
+				target(err.message);
 				process.exit(1);
 			}),
 	});

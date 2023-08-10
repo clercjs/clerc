@@ -58,12 +58,16 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	#version = "";
 	#inspectors: Inspector[] = [];
 	#commands = Object.create(null) as C;
-	#commandEmitter = new LiteEmit<MakeEventMap<C>>();
+	#commandEmitter = new LiteEmit<MakeEventMap<C>>({
+		errorHandler: (msg) => {
+			this.#handleError(new Error(msg));
+		},
+	});
+
 	#flags = Object.create(null) as GF;
 	#usedNames = new Set<string | RootType>();
 	#argv: string[] | undefined;
 	#errorHandlers = [] as ((err: any) => void)[];
-
 	#isOtherMethodCalled = false;
 	#defaultLocale = "en";
 	#locale = "en";
@@ -620,17 +624,21 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		return context;
 	}
 
+	#handleError(e: unknown) {
+		if (this.#errorHandlers.length > 0) {
+			for (const cb of this.#errorHandlers) {
+				cb(e);
+			}
+		} else {
+			throw e;
+		}
+	}
+
 	#callWithErrorHandling(fn: (...args: any[]) => any) {
 		try {
 			fn();
 		} catch (e) {
-			if (this.#errorHandlers.length > 0) {
-				for (const cb of this.#errorHandlers) {
-					cb(e);
-				}
-			} else {
-				throw e;
-			}
+			this.#handleError(e);
 		}
 	}
 
@@ -654,10 +662,15 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 						: new NoCommandGivenError(t);
 					throw error;
 				}
-				this.#commandEmitter.emit(command.name, ctx);
+				try {
+					this.#commandEmitter.emit(command.name, ctx);
+				} catch {
+					console.log(1);
+				}
 			},
 		};
 		const inspectors = [...this.#inspectors, emitHandler];
+
 		const callInspector = compose(inspectors);
 		callInspector(getContext());
 	}
