@@ -100,6 +100,8 @@ export interface IgnoreFunction {
 	): boolean | void;
 }
 export interface TypeFlagOptions {
-	/** Which argv elements to ignore from parsing */
+	/**
+	 * Which argv elements to ignore from parsing
+	 */
 	ignore?: IgnoreFunction;
 }
