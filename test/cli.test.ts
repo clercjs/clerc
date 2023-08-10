@@ -457,6 +457,18 @@ describe("cli", () => {
 		expect(count).toBe(1);
 	});
 
+	it("should resolve parameter with alias correctly", async () => {
+		Cli()
+			.command("foo", "foo", {
+				alias: "bar baz",
+				parameters: ["<param>"],
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.parameters.param).toBe("param");
+			})
+			.parse(["bar", "baz", "param"]);
+	});
+
 	it("shouldn't run matched command", async () => {
 		let count = 0;
 		Cli()

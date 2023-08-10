@@ -561,11 +561,17 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		};
 		// [...argv] is a workaround since TypeFlag modifies argv
 		const parsed = typeFlag(flagsMerged, [...argv]);
+		const parametersOffset =
+			command?.name === Root || called === Root
+				? 0
+				: called?.length
+				? called.length
+				: command?.name.split(" ").length;
 		const { _: args, flags, unknownFlags } = parsed;
 		let parameters =
 			!isCommandResolved || command.name === Root
 				? args
-				: args.slice(command.name.split(" ").length);
+				: args.slice(parametersOffset);
 		let commandParameters = command?.parameters ?? [];
 		// eof handle
 		const hasEof = commandParameters.indexOf("--");
