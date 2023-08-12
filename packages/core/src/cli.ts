@@ -662,6 +662,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 						: new NoCommandGivenError(t);
 					throw error;
 				}
+				this.#commandEmitter.emit(command.name, ctx);
 			},
 		};
 		const inspectors = [...this.#inspectors, emitHandler];
