@@ -1,20 +1,7 @@
 {
 	"name": "@clerc/monorepo",
 	"private": true,
-	"version": "0.42.2",
 	"packageManager": "pnpm@8.6.12",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"description": "",
-	"keywords": [],
-	"homepage": "https://github.com/clercjs/clerc#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/clercjs/clerc.git"
-	},
-	"bugs": {
-		"url": "https://github.com/clercjs/clerc/issues"
-	},
-	"license": "MIT",
 	"scripts": {
 		"build": "rimraf packages/*/dist && pnpm -r run build",
 		"lint": "eslint . && prettier . --check",
