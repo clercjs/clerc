@@ -15,7 +15,7 @@
 
 # 🗒 Description
 
-Clerc is a full/featured library (tool set) for building CLI Apps in Node.js, Deno or Bun. 
+Clerc is a full/featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
 
 # ✨ Features
 
