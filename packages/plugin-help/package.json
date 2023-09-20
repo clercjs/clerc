@@ -53,7 +53,7 @@
 	},
 	"dependencies": {
 		"@clerc/utils": "workspace:*",
-		"@types/text-table": "^0.2.2",
+		"@types/text-table": "^0.2.3",
 		"string-width": "^6.1.0",
 		"text-table": "^0.2.0",
 		"yoctocolors": "^1.0.0"

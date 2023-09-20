@@ -62,6 +62,13 @@ Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Cl
 
 Please see https://clerc.js.org.
 
+# 🦄 Examples
+
+Check the examples made with `Clerc.js`:
+
+- [Greeting](./examples/greeting) - The example from above
+- [Bumpp](./examples/bumpp) - Reimplementation of [`Bumpp`](https://github.com/antfu/bumpp)'s CLI
+
 # 🤔 More...
 
 ## Why using Clerc?

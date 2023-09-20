@@ -1,3 +1,11 @@
 {
-	"extends": "@so1ve"
+	"extends": "@so1ve",
+	"overrides": [
+		{
+			"files": "./examples/**",
+			"rules": {
+				"no-console": "off"
+			}
+		}
+	]
 }
