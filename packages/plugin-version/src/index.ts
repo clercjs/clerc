@@ -5,13 +5,13 @@ import { locales } from "./locales";
 
 interface VersionPluginOptions {
 	/**
-	 * Whether to register the help command.
+	 * Whether to register the version command.
 	 *
 	 * @default true
 	 */
 	command?: boolean;
 	/**
-	 * Whether to register the global help flag.
+	 * Whether to register the global version flag.
 	 *
 	 * @default true
 	 */
