@@ -13,6 +13,9 @@
 - [✨ Features](#-features)
 <!-- tocstop -->
 
+> [!NOTE]  
+> This package is ESM-only.
+
 # 🗒 Description
 
 Clerc is a full/featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
@@ -25,6 +28,35 @@ Clerc is a full/featured library (tool set) for building CLI Apps in Node.js, De
 - **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
 - **I18N** - Easy to change different locales.
+
+# 😊 The simplest CLI example
+
+Install clerc, and create a file named `cli.mjs`:
+
+```ts
+import { Clerc } from "clerc";
+
+Clerc.create(
+	"foo", // CLI Name
+	"A foo CLI", // CLI Description
+	"0.0.0", // CLI Version
+)
+	.command(
+		"bar", // Command name
+		"A bar command", // Command description
+	)
+	.on(
+		"bar",
+		(
+			_ctx, // The command context, but we haven't used it yet
+		) => {
+			console.log("Hello, world from Clerc.js!");
+		},
+	)
+	.parse(); // Parse the arguments and run!
+```
+
+Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Clerc.js!`
 
 # 📖 Documentation
 
