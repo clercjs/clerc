@@ -72,22 +72,24 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	#defaultLocale = "en";
 	#locale = "en";
 	#locales: Locales = Object.create(null);
-	i18n: I18N = {
-		add: (locales) => {
-			this.#locales = defu(this.#locales, locales);
-		},
-		t: (name, ...args) => {
-			const localeObject =
-				this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
-			const defaultLocaleObject = this.#locales[this.#defaultLocale];
+	get i18n(): I18N {
+		return {
+			add: (locales) => {
+				this.#locales = defu(this.#locales, locales);
+			},
+			t: (name, ...args) => {
+				const localeObject =
+					this.#locales[this.#locale] || this.#locales[this.#defaultLocale];
+				const defaultLocaleObject = this.#locales[this.#defaultLocale];
 
-			return localeObject[name]
-				? format(localeObject[name], ...args)
-				: defaultLocaleObject[name]
-				? format(defaultLocaleObject[name], ...args)
-				: undefined;
-		},
-	};
+				return localeObject[name]
+					? format(localeObject[name], ...args)
+					: defaultLocaleObject[name]
+					? format(defaultLocaleObject[name], ...args)
+					: undefined;
+			},
+		};
+	}
 
 	private constructor(
 		scriptName?: string,
