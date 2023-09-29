@@ -14,8 +14,8 @@
 	},
 	"devDependencies": {
 		"@antfu/ni": "^0.21.8",
-		"@so1ve/eslint-config": "^0.123.0",
-		"@so1ve/prettier-config": "^0.123.0",
+		"@so1ve/eslint-config": "^1.0.0-alpha.4",
+		"@so1ve/prettier-config": "^1.0.0-alpha.4",
 		"@types/node": "^18.17.18",
 		"bumpp": "^9.2.0",
 		"clerc": "workspace:*",
