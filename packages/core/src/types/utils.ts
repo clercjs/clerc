@@ -23,10 +23,10 @@ type ParameterType<Parameter extends string> = Parameter extends
 	| `[${infer _ParameterName}...]`
 	? string[]
 	: Parameter extends `<${infer _ParameterName}>`
-	? string
-	: Parameter extends `[${infer _ParameterName}]`
-	? string | undefined
-	: never;
+	  ? string
+	  : Parameter extends `[${infer _ParameterName}]`
+	    ? string | undefined
+	    : never;
 
 type NonNullableParameters<T extends string[] | undefined> = T extends undefined
 	? []
