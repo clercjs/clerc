@@ -82,9 +82,9 @@ export const resolveArgv = (): string[] =>
 	IS_NODE
 		? process.argv.slice(IS_ELECTRON ? 1 : 2)
 		: IS_DENO
-		? // @ts-expect-error Ignore
-		  Deno.args
-		: [];
+		  ? // @ts-expect-error Ignore
+		    Deno.args
+		  : [];
 
 export function compose(inspectors: Inspector[]) {
 	const inspectorMap = {
