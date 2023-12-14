@@ -1,24 +1,34 @@
-# Clerc: The full-featured cli library.
+![Clerc Card](.github/assets/ClercCard.png)
 
-![clerc](https://socialify.git.ci/clercjs/clerc/image?description=1&font=Source%20Code%20Pro&forks=1&issues=1&logo=https%3A%2F%2Fclerc.js.org%2Flogo.png&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark)
+<p align="center">
+	<a target="_blank" href="https://clerc.js.org" noreferrer noopener>Clerc</a> is a full-featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
+</p>
+
+<div align="center">
 
 [![Version](https://img.shields.io/npm/v/clerc.svg)](https://npmjs.org/package/clerc)
 [![CI](https://github.com/clercjs/clerc/actions/workflows/ci.yml/badge.svg)](https://github.com/clercjs/clerc/actions/workflows/ci.yml)
 [![Downloads/week](https://img.shields.io/npm/dw/clerc.svg)](https://npmjs.org/package/clerc)
 [![License](https://img.shields.io/npm/l/clerc.svg)](https://github.com/clercjs/clerc/blob/main/package.json)
 
+</div>
+
+<hr/>
+
 <!-- toc -->
 
-- [🗒 Description](#-description)
 - [✨ Features](#-features)
+- [😊 The simplest CLI example](#-the-simplest-cli-example)
+- [📖 Documentation](#-documentation)
+- [🦄 Examples](#-examples)
+- [🤔 More...](#-more)
+	- [Why using Clerc?](#why-using-clerc)
+	- [Why naming "Clerc"?](#why-naming-clerc)
+	- [📝 License](#-license)
 <!-- tocstop -->
 
 > [!NOTE]  
 > This package is ESM-only.
-
-# 🗒 Description
-
-Clerc is a full/featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
 
 # ✨ Features
 
