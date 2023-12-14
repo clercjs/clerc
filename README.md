@@ -21,10 +21,7 @@
 - [😊 The simplest CLI example](#-the-simplest-cli-example)
 - [📖 Documentation](#-documentation)
 - [🦄 Examples](#-examples)
-- [🤔 More...](#-more)
-	- [Why using Clerc?](#why-using-clerc)
-	- [Why naming "Clerc"?](#why-naming-clerc)
-	- [📝 License](#-license)
+- [🤔 More...](#-more) - [Why using Clerc?](#why-using-clerc) - [Why naming "Clerc"?](#why-naming-clerc) - [📝 License](#-license)
 <!-- tocstop -->
 
 > [!NOTE]  
