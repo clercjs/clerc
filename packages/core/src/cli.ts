@@ -2,7 +2,7 @@ import { format } from "node:util";
 
 import type { MaybeArray } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
-import defu from "defu";
+import { defu } from "defu";
 import { LiteEmit } from "lite-emit";
 import type { LiteralUnion } from "type-fest";
 import { typeFlag } from "type-flag";
@@ -72,7 +72,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	#defaultLocale = "en";
 	#locale = "en";
 	#locales: Locales = Object.create(null);
-	get i18n(): I18N {
+	public get i18n(): I18N {
 		return {
 			add: (locales) => {
 				this.#locales = defu(this.#locales, locales);
@@ -111,31 +111,31 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		return Object.prototype.hasOwnProperty.call(this._commands, Root);
 	}
 
-	get _name() {
+	public get _name() {
 		return this.#name || this.#scriptName;
 	}
 
-	get _scriptName() {
+	public get _scriptName() {
 		return this.#scriptName;
 	}
 
-	get _description() {
+	public get _description() {
 		return this.#description;
 	}
 
-	get _version() {
+	public get _version() {
 		return this.#version;
 	}
 
-	get _inspectors() {
+	public get _inspectors() {
 		return this.#inspectors;
 	}
 
-	get _commands() {
+	public get _commands() {
 		return this.#commands;
 	}
 
-	get _flags() {
+	public get _flags() {
 		return this.#flags;
 	}
 
@@ -161,7 +161,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param version
 	 * @returns
 	 */
-	static create(name?: string, description?: string, version?: string) {
+	public static create(name?: string, description?: string, version?: string) {
 		return new Clerc(name, description, version);
 	}
 
@@ -177,7 +177,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param name
 	 * @returns
 	 */
-	name(name: string) {
+	public name(name: string) {
 		this.#otherMethodCalled();
 		this.#name = name;
 
@@ -196,7 +196,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param scriptName
 	 * @returns
 	 */
-	scriptName(scriptName: string) {
+	public scriptName(scriptName: string) {
 		this.#otherMethodCalled();
 		this.#scriptName = scriptName;
 
@@ -215,7 +215,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param description
 	 * @returns
 	 */
-	description(description: string) {
+	public description(description: string) {
 		this.#otherMethodCalled();
 		this.#description = description;
 
@@ -234,7 +234,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param version
 	 * @returns
 	 */
-	version(version: string) {
+	public version(version: string) {
 		this.#otherMethodCalled();
 		this.#version = version;
 
@@ -256,7 +256,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param locale
 	 * @returns
 	 */
-	locale(locale: string) {
+	public locale(locale: string) {
 		if (this.#isOtherMethodCalled) {
 			throw new LocaleNotCalledFirstError(this.i18n.t);
 		}
@@ -280,7 +280,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param fallbackLocale
 	 * @returns
 	 */
-	fallbackLocale(fallbackLocale: string) {
+	public fallbackLocale(fallbackLocale: string) {
 		if (this.#isOtherMethodCalled) {
 			throw new LocaleNotCalledFirstError(this.i18n.t);
 		}
@@ -303,7 +303,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param handler
 	 * @returns
 	 */
-	errorHandler(handler: (err: any) => void) {
+	public errorHandler(handler: (err: any) => void) {
 		this.#errorHandlers.push(handler);
 
 		return this;
@@ -344,7 +344,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param options
 	 * @returns
 	 */
-	command<
+	public command<
 		N extends string | RootType,
 		O extends CommandOptions<[...P], A, F>,
 		P extends string[] = string[],
@@ -353,7 +353,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	>(
 		c: CommandWithHandler<N, O & CommandOptions<[...P], A, F>>,
 	): this & Clerc<C & Record<N, Command<N, O>>, GF>;
-	command<
+	public command<
 		N extends string | RootType,
 		O extends CommandOptions<[...P], A, F>,
 		P extends string[] = string[],
@@ -364,7 +364,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		description: string,
 		options?: O & CommandOptions<[...P], A, F>,
 	): this & Clerc<C & Record<N, Command<N, O>>, GF>;
-	command(nameOrCommand: any, description?: any, options: any = {}) {
+	public command(nameOrCommand: any, description?: any, options: any = {}) {
 		this.#callWithErrorHandling(() =>
 			this.#command(nameOrCommand, description, options),
 		);
@@ -429,7 +429,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param options
 	 * @returns
 	 */
-	flag<N extends string, O extends GlobalFlagOption>(
+	public flag<N extends string, O extends GlobalFlagOption>(
 		name: N,
 		description: string,
 		options: O,
@@ -459,7 +459,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param handler
 	 * @returns
 	 */
-	on<
+	public on<
 		K extends LiteralUnion<keyof CM, string | RootType>,
 		CM extends this["_commands"] = this["_commands"],
 	>(name: K, handler: Handler<CM, K, this["_flags"]>) {
@@ -480,7 +480,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param plugin
 	 * @returns
 	 */
-	use<T extends Clerc, U extends Clerc>(
+	public use<T extends Clerc, U extends Clerc>(
 		plugin: Plugin<T, U>,
 	): this & Clerc<C & U["_commands"]> & U {
 		this.#otherMethodCalled();
@@ -503,7 +503,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param inspector
 	 * @returns
 	 */
-	inspector(inspector: Inspector) {
+	public inspector(inspector: Inspector) {
 		this.#otherMethodCalled();
 		this.#inspectors.push(inspector);
 
@@ -523,7 +523,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param optionsOrArgv
 	 * @returns
 	 */
-	parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
+	public parse(optionsOrArgv: string[] | ParseOptions = resolveArgv()) {
 		this.#otherMethodCalled();
 		const { argv, run }: ParseOptions = Array.isArray(optionsOrArgv)
 			? {
@@ -683,7 +683,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 *
 	 * @returns
 	 */
-	runMatchedCommand() {
+	public runMatchedCommand() {
 		this.#callWithErrorHandling(() => this.#runMatchedCommand());
 		process.title = this.#name;
 

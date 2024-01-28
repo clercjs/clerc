@@ -1,16 +1,17 @@
 {
 	"compilerOptions": {
 		"target": "ES2018",
-		"module": "ESNext",
 		"lib": ["ESNext"],
+		"module": "ESNext",
 		"moduleResolution": "Node",
-		"esModuleInterop": true,
+		"resolveJsonModule": true,
 		"strict": true,
 		"strictNullChecks": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
+		"esModuleInterop": true,
 		"skipDefaultLibCheck": true,
+		"skipLibCheck": true,
 		"paths": {
+			"clerc": ["./packages/clerc/src/index.ts"],
 			"@clerc/core": ["./packages/core/src/index.ts"],
 			"@clerc/plugin-help": ["./packages/plugin-help/src/index.ts"],
 			"@clerc/plugin-not-found": ["./packages/plugin-not-found/src/index.ts"],

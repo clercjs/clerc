@@ -1,9 +1,4 @@
 {
 	"typescript.tsdk": "node_modules/typescript/lib",
-	"editor.codeActionsOnSave": {
-		"source.fixAll.eslint": "explicit"
-	},
-	"editor.tabCompletion": "on",
-	"diffEditor.codeLens": true,
-	"testing.automaticallyOpenPeekView": "never"
+	"eslint.experimental.useFlatConfig": true
 }
