@@ -74,10 +74,10 @@ export type InferFlagType<Flag extends FlagTypeOrSchema> = Flag extends
 		? T[] | D
 		: T[]
 	: Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>
-	  ? Flag extends FlagSchemaDefault<TypeFunction<T>, infer D>
+		? Flag extends FlagSchemaDefault<TypeFunction<T>, infer D>
 			? T | D
 			: T | undefined
-	  : never;
+		: never;
 export interface ParsedFlags<Schemas = Record<string, unknown>> {
 	flags: Schemas;
 	unknownFlags: Record<string, (string | boolean)[]>;

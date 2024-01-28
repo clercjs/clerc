@@ -10,11 +10,10 @@ import { Root, resolveFlattenCommands } from "@clerc/core";
 
 import { locales } from "./locales";
 
-export type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <
-	T,
->() => T extends Y ? 1 : 2
-	? true
-	: false;
+export type Equals<X, Y> =
+	(<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
+		? true
+		: false;
 export type Dict<T> = Record<string, T>;
 export type ToArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
@@ -67,7 +66,7 @@ export type KebabCase<
 	? KebabCase<
 			Suffix,
 			`${A}${Prefix extends Lowercase<Prefix> ? "" : "-"}${Lowercase<Prefix>}`
-	  >
+		>
 	: A;
 export const kebabCase = <T extends string>(s: T) =>
 	s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`) as KebabCase<T>;

@@ -23,10 +23,10 @@ type ParameterType<Parameter extends string> = Parameter extends
 	| `[${infer _ParameterName}...]`
 	? string[]
 	: Parameter extends `<${infer _ParameterName}>`
-	  ? string
-	  : Parameter extends `[${infer _ParameterName}]`
-	    ? string | undefined
-	    : never;
+		? string
+		: Parameter extends `[${infer _ParameterName}]`
+			? string | undefined
+			: never;
 
 type NonNullableParameters<T extends string[] | undefined> = T extends undefined
 	? []
@@ -41,12 +41,10 @@ export type MakeEventMap<T extends Commands> = {
 	[K in keyof T]: [InspectorContext];
 };
 
-type FallbackFlags<F extends Flags | undefined> = Equals<
-	NonNullableFlag<F>["flags"],
-	{}
-> extends true
-	? Dict<any>
-	: NonNullableFlag<F>["flags"];
+type FallbackFlags<F extends Flags | undefined> =
+	Equals<NonNullableFlag<F>["flags"], {}> extends true
+		? Dict<any>
+		: NonNullableFlag<F>["flags"];
 type NonNullableFlag<F extends Flags | undefined> = TypeFlag<NonNullable<F>>;
 export type ParseFlag<
 	C extends Commands,
@@ -67,8 +65,9 @@ export type ParseRaw<
 export type ParseParameters<
 	C extends Commands = Commands,
 	N extends keyof C = keyof C,
-> = Equals<TransformParameters<C[N]>, {}> extends true
-	? N extends keyof C
-		? TransformParameters<C[N]>
-		: Dict<string | string[] | undefined>
-	: TransformParameters<C[N]>;
+> =
+	Equals<TransformParameters<C[N]>, {}> extends true
+		? N extends keyof C
+			? TransformParameters<C[N]>
+			: Dict<string | string[] | undefined>
+		: TransformParameters<C[N]>;

@@ -23,13 +23,13 @@ export const strictFlagsPlugin = () =>
 										"strictFlags.unexpectedMore",
 										semanticArray(keys, cli.i18n),
 									),
-							  )
+								)
 							: new Error(
 									t(
 										"strictFlags.unexpectedSingle",
 										semanticArray(keys, cli.i18n),
 									),
-							  );
+								);
 					throw error;
 				}
 			});

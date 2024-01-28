@@ -85,8 +85,8 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 				return localeObject[name]
 					? format(localeObject[name], ...args)
 					: defaultLocaleObject[name]
-					  ? format(defaultLocaleObject[name], ...args)
-					  : undefined;
+						? format(defaultLocaleObject[name], ...args)
+						: undefined;
 			},
 		};
 	}
@@ -529,11 +529,11 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 			? {
 					argv: optionsOrArgv,
 					run: true,
-			  }
+				}
 			: {
 					argv: resolveArgv(),
 					...optionsOrArgv,
-			  };
+				};
 		this.#argv = [...argv];
 		this.#validateMeta();
 		if (run) {
@@ -571,8 +571,8 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 			command?.name === Root || called === Root
 				? 0
 				: called?.length
-				  ? called.length
-				  : command?.name.split(" ").length;
+					? called.length
+					: command?.name.split(" ").length;
 		const { _: args, flags, unknownFlags } = parsed;
 		let parameters =
 			!isCommandResolved || command.name === Root
