@@ -13,8 +13,7 @@ export type FlagSchemaBase<TF> = {
 	 * @example
 	 *
 	 * ```
-	 *     type: String
-	 *     ```
+	 * type: String;
 	 * ```
 	 *
 	 * @example Wrap in an array to accept multiple values. `type: [Boolean]`
@@ -30,8 +29,7 @@ export type FlagSchemaBase<TF> = {
 	 * @example
 	 *
 	 * ```
-	 *     alias: 's'
-	 *     ```
+	 * alias: "s";
 	 * ```
 	 */
 	alias?: string;
@@ -44,15 +42,13 @@ export type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
 	 * @example
 	 *
 	 * ```
-	 *     default: 'hello'
-	 *     ```
+	 * default: 'hello'
 	 * ```
 	 *
 	 * @example
 	 *
 	 * ```
-	 *     default: () => [1, 2, 3]
-	 *     ```
+	 * default: () => [1, 2, 3]
 	 * ```
 	 */
 	default: DefaultType | (() => DefaultType);
