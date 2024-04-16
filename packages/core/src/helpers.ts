@@ -6,7 +6,7 @@ import type {
 	Handler,
 	HandlerContext,
 	HandlerInCommand,
-	Inspector,
+	Interceptor,
 	Plugin,
 } from "./types";
 
@@ -20,10 +20,15 @@ export const defineHandler = <C extends Clerc, K extends keyof C["_commands"]>(
 	handler: Handler<C["_commands"], K>,
 ) => handler;
 
-export const defineInspector = <C extends Clerc>(
+export const defineInterceptor = <C extends Clerc>(
 	_cli: C,
-	inspector: Inspector<C["_commands"]>,
-) => inspector;
+	interceptor: Interceptor<C["_commands"]>,
+) => interceptor;
+
+/**
+ * @deprecated This is a typo. Use `defineInterceptor` instead.
+ */
+export const defineInspector = defineInterceptor;
 
 export const defineCommand = <
 	N extends string | RootType,

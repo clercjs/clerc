@@ -31,8 +31,8 @@ import type {
 	Handler,
 	HandlerContext,
 	I18N,
-	Inspector,
-	InspectorContext,
+	Interceptor,
+	InterceptorContext,
 	Locales,
 	MakeEventMap,
 	ParseOptions,
@@ -56,7 +56,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	#scriptName = "";
 	#description = "";
 	#version = "";
-	#inspectors: Inspector[] = [];
+	#interceptors: Interceptor[] = [];
 	#commands = Object.create(null) as C;
 	#commandEmitter = new LiteEmit<MakeEventMap<C>>({
 		errorHandler: (msg) => {
@@ -127,8 +127,15 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		return this.#version;
 	}
 
+	/**
+	 * @deprecated This is a typo. Use `_interceptor` instead.
+	 */
 	public get _inspectors() {
-		return this.#inspectors;
+		return this.#interceptors;
+	}
+
+	public get _interceptors() {
+		return this.#interceptors;
 	}
 
 	public get _commands() {
@@ -489,23 +496,30 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	}
 
 	/**
-	 * Register a inspector
+	 * @deprecated This is a typo. Use `intercetor()` instead.
+	 */
+	public inspector(interceptor: Interceptor) {
+		return this.interceptor(interceptor);
+	}
+
+	/**
+	 * Register a interceptor
 	 *
 	 * @example
 	 *
 	 * ```ts
-	 * Clerc.create().inspector((ctx, next) => {
+	 * Clerc.create().interceptor((ctx, next) => {
 	 * 	console.log(ctx);
 	 * 	next();
 	 * });
 	 * ```
 	 *
-	 * @param inspector
+	 * @param interceptor
 	 * @returns
 	 */
-	public inspector(inspector: Inspector) {
+	public interceptor(interceptor: Interceptor) {
 		this.#otherMethodCalled();
-		this.#inspectors.push(inspector);
+		this.#interceptors.push(interceptor);
 
 		return this;
 	}
@@ -610,7 +624,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 			);
 		}
 		const mergedFlags = { ...flags, ...unknownFlags };
-		const context: InspectorContext | HandlerContext = {
+		const context: InterceptorContext | HandlerContext = {
 			name: command?.name as any,
 			called: Array.isArray(called) ? called.join(" ") : called,
 			resolved: isCommandResolved as any,
@@ -653,7 +667,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		}
 		const getCommand = () => resolveCommand(this.#commands, argv, t);
 		const getContext = () => this.#getContext(getCommand);
-		const emitHandler: Inspector = {
+		const emitHandler: Interceptor = {
 			enforce: "post",
 			fn: (ctx) => {
 				const [command] = getCommand();
@@ -667,9 +681,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 				this.#commandEmitter.emit(command.name, ctx);
 			},
 		};
-		const inspectors = [...this.#inspectors, emitHandler];
-		const callInspector = compose(inspectors);
-		callInspector(getContext());
+		const interceptor = [...this.#interceptors, emitHandler];
+		const callInterceptor = compose(interceptor);
+		callInterceptor(getContext());
 	}
 
 	/**

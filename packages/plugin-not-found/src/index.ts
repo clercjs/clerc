@@ -16,7 +16,7 @@ export const notFoundPlugin = () =>
 			const { t, add } = cli.i18n;
 			add(locales);
 
-			return cli.inspector({
+			return cli.interceptor({
 				enforce: "pre",
 				fn: (ctx, next) => {
 					const commandKeys = Object.keys(cli._commands);

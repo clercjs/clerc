@@ -261,7 +261,7 @@ export const helpPlugin = ({
 				});
 			}
 
-			cli.inspector((ctx, next) => {
+			cli.interceptor((ctx, next) => {
 				const shouldShowHelp = ctx.flags.help;
 				if (
 					!ctx.hasRootOrAlias &&

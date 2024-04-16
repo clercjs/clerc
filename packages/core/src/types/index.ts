@@ -79,23 +79,23 @@ export type HandlerInCommand<C extends HandlerContext> = (ctx: {
 	[K in keyof C]: C[K];
 }) => void;
 export type FallbackType<T, U> = {} extends T ? U : T;
-export type InspectorContext<C extends Commands = Commands> =
+export type InterceptorContext<C extends Commands = Commands> =
 	HandlerContext<C> & {
 		flags: FallbackType<
 			TypeFlag<NonNullable<C[keyof C]["flags"]>>["flags"],
 			Dict<any>
 		>;
 	};
-export type Inspector<C extends Commands = Commands> =
-	| InspectorFn<C>
-	| InspectorObject<C>;
-export type InspectorFn<C extends Commands = Commands> = (
-	ctx: InspectorContext<C>,
+export type Interceptor<C extends Commands = Commands> =
+	| InterceptorFn<C>
+	| InterceptorObject<C>;
+export type InterceptorFn<C extends Commands = Commands> = (
+	ctx: InterceptorContext<C>,
 	next: () => void,
 ) => void;
-export interface InspectorObject<C extends Commands = Commands> {
+export interface InterceptorObject<C extends Commands = Commands> {
 	enforce?: "pre" | "post";
-	fn: InspectorFn<C>;
+	fn: InterceptorFn<C>;
 }
 
 export * from "./i18n";

@@ -7,7 +7,7 @@ import type {
 	Commands,
 	Flags,
 	GlobalFlagOptions,
-	InspectorContext,
+	InterceptorContext,
 } from ".";
 
 type StripBrackets<Parameter extends string> = Parameter extends
@@ -38,7 +38,7 @@ export type TransformParameters<C extends Command> = {
 };
 
 export type MakeEventMap<T extends Commands> = {
-	[K in keyof T]: [InspectorContext];
+	[K in keyof T]: [InterceptorContext];
 };
 
 type FallbackFlags<F extends Flags | undefined> =

@@ -43,7 +43,7 @@ export const versionPlugin = ({
 					type: Boolean,
 					default: false,
 				});
-				cli.inspector({
+				cli.interceptor({
 					enforce: "pre",
 					fn: (ctx, next) => {
 						if (ctx.flags.version) {

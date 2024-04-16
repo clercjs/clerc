@@ -10,10 +10,10 @@ import type {
 	CommandAlias,
 	CommandType,
 	Commands,
-	Inspector,
-	InspectorContext,
-	InspectorFn,
-	InspectorObject,
+	Interceptor,
+	InterceptorContext,
+	InterceptorFn,
+	InterceptorObject,
 	TranslateFn,
 } from "./types";
 
@@ -86,35 +86,35 @@ export const resolveArgv = (): string[] =>
 				Deno.args
 			: [];
 
-export function compose(inspectors: Inspector[]) {
-	const inspectorMap = {
-		pre: [] as InspectorFn[],
-		normal: [] as InspectorFn[],
-		post: [] as InspectorFn[],
+export function compose(interceptors: Interceptor[]) {
+	const interceptorMap = {
+		pre: [] as InterceptorFn[],
+		normal: [] as InterceptorFn[],
+		post: [] as InterceptorFn[],
 	};
-	for (const inspector of inspectors) {
-		const objectInspector: InspectorObject =
-			typeof inspector === "object" ? inspector : { fn: inspector };
-		const { enforce, fn } = objectInspector;
+	for (const interceptor of interceptors) {
+		const objectInterceptor: InterceptorObject =
+			typeof interceptor === "object" ? interceptor : { fn: interceptor };
+		const { enforce, fn } = objectInterceptor;
 		if (enforce === "post" || enforce === "pre") {
-			inspectorMap[enforce].push(fn);
+			interceptorMap[enforce].push(fn);
 		} else {
-			inspectorMap.normal.push(fn);
+			interceptorMap.normal.push(fn);
 		}
 	}
 
-	const mergedInspectorFns = [
-		...inspectorMap.pre,
-		...inspectorMap.normal,
-		...inspectorMap.post,
+	const mergedInterceptorFns = [
+		...interceptorMap.pre,
+		...interceptorMap.normal,
+		...interceptorMap.post,
 	];
 
-	return (ctx: InspectorContext) => {
+	return (ctx: InterceptorContext) => {
 		return dispatch(0);
 		function dispatch(i: number): void {
-			const inspector = mergedInspectorFns[i];
+			const interceptor = mergedInterceptorFns[i];
 
-			return inspector(ctx, dispatch.bind(null, i + 1));
+			return interceptor(ctx, dispatch.bind(null, i + 1));
 		}
 	};
 }

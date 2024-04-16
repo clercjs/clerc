@@ -289,11 +289,11 @@ describe("cli", () => {
 			.parse(["foo", "--abc", "bar", "--abc", "baz"]);
 	});
 
-	it("should honor inspector", () => {
+	it("should honor interceptor", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
-			.inspector(() => {})
+			.interceptor(() => {})
 			.on("foo", () => {
 				count++;
 			})
@@ -306,10 +306,10 @@ describe("cli", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
-			.inspector((_ctx, next) => {
+			.interceptor((_ctx, next) => {
 				next();
 			})
-			.inspector((ctx, next) => {
+			.interceptor((ctx, next) => {
 				expect(ctx.name).toBe("foo");
 				expect(ctx.parameters).toMatchInlineSnapshot("{}");
 				expect(ctx.flags).toStrictEqual({});
