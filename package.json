@@ -1,6 +1,7 @@
 {
 	"name": "@clerc/monorepo",
 	"private": true,
+	"version": "0.43.0",
 	"packageManager": "pnpm@8.15.4",
 	"scripts": {
 		"build": "rimraf packages/*/dist && pnpm -r run build",
@@ -26,6 +27,5 @@
 		"typescript": "^5.2.2",
 		"vite": "^4.4.9",
 		"vitest": "^0.34.4"
-	},
-	"version": "0.43.0"
+	}
 }
