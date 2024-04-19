@@ -351,6 +351,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 	 * @param options
 	 * @returns
 	 */
+	public command<C extends CommandWithHandler<any, any>[]>(c: [...C]): this; // TODO: type inference
 	public command<
 		N extends string | RootType,
 		O extends CommandOptions<[...P], A, F>,
@@ -372,9 +373,15 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		options?: O & CommandOptions<[...P], A, F>,
 	): this & Clerc<C & Record<N, Command<N, O>>, GF>;
 	public command(nameOrCommand: any, description?: any, options: any = {}) {
-		this.#callWithErrorHandling(() =>
-			this.#command(nameOrCommand, description, options),
-		);
+		this.#callWithErrorHandling(() => {
+			if (Array.isArray(nameOrCommand)) {
+				for (const command of nameOrCommand) {
+					this.#command(command);
+				}
+			} else {
+				this.#command(nameOrCommand, description, options);
+			}
+		});
 
 		return this;
 	}

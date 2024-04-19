@@ -488,4 +488,20 @@ describe("cli", () => {
 			expect(e.message).toBe('找不到命令: "bar"。');
 		}
 	});
+
+	it("should be able to define commands using an array", async () => {
+		let count = 0;
+		const command = defineCommand(
+			{
+				name: "foo",
+				description: "foo",
+			},
+			() => {
+				count++;
+			},
+		);
+		Cli().command([command]).parse(["foo"]);
+
+		expect(count).toBe(1);
+	});
 });
