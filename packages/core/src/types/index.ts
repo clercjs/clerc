@@ -90,11 +90,11 @@ export type InspectorContext<C extends Commands = Commands> =
  */
 export type Inspector<C extends Commands = Commands> = Interceptor<C>;
 /**
- * @deprecated This is a typo. Use `InspectorFn` instead.
+ * @deprecated This is a typo. Use `InterceptorFn` instead.
  */
 export type InspectorFn<C extends Commands = Commands> = InterceptorFn<C>;
 /**
- * @deprecated This is a typo. Use `InspectorObject` instead.
+ * @deprecated This is a typo. Use `InterceptorObject` instead.
  */
 export type InspectorObject<C extends Commands = Commands> =
 	InterceptorObject<C>;
