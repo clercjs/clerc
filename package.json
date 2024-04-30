@@ -2,7 +2,7 @@
 	"name": "@clerc/monorepo",
 	"private": true,
 	"version": "0.44.0",
-	"packageManager": "pnpm@8.15.7",
+	"packageManager": "pnpm@8.15.8",
 	"scripts": {
 		"build": "rimraf packages/*/dist && pnpm -r run build",
 		"lint": "eslint . && prettier . --check",
