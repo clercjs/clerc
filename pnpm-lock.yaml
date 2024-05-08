@@ -19,7 +19,7 @@ importers:
         version: 2.0.0(prettier@3.2.5)
       '@types/node':
         specifier: ^18.17.18
-        version: 18.19.32
+        version: 18.19.33
       bumpp:
         specifier: ^9.2.0
         version: 9.4.1
@@ -43,7 +43,7 @@ importers:
         version: 5.4.5
       vite:
         specifier: ^4.4.9
-        version: 4.5.3(@types/node@18.19.32)
+        version: 4.5.3(@types/node@18.19.33)
       vitest:
         specifier: ^0.34.4
         version: 0.34.6
@@ -919,7 +919,7 @@ packages:
   /@types/concat-stream@2.0.2:
     resolution: {integrity: sha512-hgEx+hdJnfCHa62l6SNHNoe/cRge2HoUZe9KEDwOs2TvyocLTlTuw0rUMiii99kG2avc+BubhNpZ+cu05Gl8oQ==}
     dependencies:
-      '@types/node': 18.19.32
+      '@types/node': 18.19.33
     dev: true
 
   /@types/debug@4.1.12:
@@ -973,8 +973,8 @@ packages:
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
     dev: true
 
-  /@types/node@18.19.32:
-    resolution: {integrity: sha512-2bkg93YBSDKk8DLmmHnmj/Rwr18TLx7/n+I23BigFwgexUJoMHZOd8X1OFxuF/W3NN0S2W2E5sVabI5CPinNvA==}
+  /@types/node@18.19.33:
+    resolution: {integrity: sha512-NR9+KrpSajr2qBVp/Yt5TU/rp+b5Mayi3+OlMlcg2cVCfRmcG5PWZ7S4+MG9PZ5gWBoc9Pd0BKSRViuBCRPu0A==}
     dependencies:
       undici-types: 5.26.5
     dev: true
@@ -1332,7 +1332,7 @@ packages:
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.4
-      semver: 7.6.0
+      semver: 7.6.1
       ts-api-utils: 1.3.0(typescript@5.4.5)
       typescript: 5.4.5
     transitivePeerDependencies:
@@ -5425,6 +5425,12 @@ packages:
       lru-cache: 6.0.0
     dev: true
 
+  /semver@7.6.1:
+    resolution: {integrity: sha512-f/vbBsu+fOiYt+lmwZV0rVwJScl46HppnOA1ZvIuBWKOTlllpyJ3bfVax76/OrhCH38dyxoDIA8K7uB963IYgA==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dev: true
+
   /set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -5989,7 +5995,7 @@ packages:
       '@types/concat-stream': 2.0.2
       '@types/debug': 4.1.12
       '@types/is-empty': 1.2.3
-      '@types/node': 18.19.32
+      '@types/node': 18.19.33
       '@types/unist': 2.0.10
       concat-stream: 2.0.0
       debug: 4.3.4
@@ -6168,7 +6174,7 @@ packages:
       vfile-message: 3.1.4
     dev: true
 
-  /vite-node@0.34.6(@types/node@18.19.32):
+  /vite-node@0.34.6(@types/node@18.19.33):
     resolution: {integrity: sha512-nlBMJ9x6n7/Amaz6F3zJ97EBwR2FkzhBRxF5e+jE6LA3yi6Wtc2lyTij1OnDMIr34v5g/tVQtsVAzhT0jc5ygA==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -6178,7 +6184,7 @@ packages:
       mlly: 1.6.1
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.5.3(@types/node@18.19.32)
+      vite: 4.5.3(@types/node@18.19.33)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -6190,7 +6196,7 @@ packages:
       - terser
     dev: true
 
-  /vite@4.5.3(@types/node@18.19.32):
+  /vite@4.5.3(@types/node@18.19.33):
     resolution: {integrity: sha512-kQL23kMeX92v3ph7IauVkXkikdDRsYMGTVl5KY2E9OY4ONLvkHf04MDTbnfo6NKxZiDLWzVpP5oTa8hQD8U3dg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -6218,7 +6224,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 18.19.32
+      '@types/node': 18.19.33
       esbuild: 0.18.20
       postcss: 8.4.38
       rollup: 3.29.4
@@ -6259,7 +6265,7 @@ packages:
     dependencies:
       '@types/chai': 4.3.10
       '@types/chai-subset': 1.3.5
-      '@types/node': 18.19.32
+      '@types/node': 18.19.33
       '@vitest/expect': 0.34.6
       '@vitest/runner': 0.34.6
       '@vitest/snapshot': 0.34.6
@@ -6278,8 +6284,8 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.7.0
-      vite: 4.5.3(@types/node@18.19.32)
-      vite-node: 0.34.6(@types/node@18.19.32)
+      vite: 4.5.3(@types/node@18.19.33)
+      vite-node: 0.34.6(@types/node@18.19.33)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
