@@ -22,7 +22,7 @@ importers:
         version: 18.19.64
       bumpp:
         specifier: ^9.2.0
-        version: 9.8.0
+        version: 9.8.1
       clerc:
         specifier: workspace:*
         version: link:packages/clerc
@@ -1792,8 +1792,8 @@ packages:
       semver: 7.6.3
     dev: true
 
-  /bumpp@9.8.0:
-    resolution: {integrity: sha512-RKHjvOpN6RGhh7LNXGQCRRTPJ99PvVJRcX7EvKKpgj+3nKV8DWDM+8O1TMK0UvcGWhE74PRrQpISqFTcq8wPSg==}
+  /bumpp@9.8.1:
+    resolution: {integrity: sha512-25W55DZI/rq6FboM0Q5y8eHbUk9eNn9oZ4bg/I5kiWn8/rdZCw6iqML076akQiUOQGhrm6QDvSSn4PgQ48bS4A==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
