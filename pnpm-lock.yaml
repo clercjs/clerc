@@ -88,7 +88,7 @@ importers:
         version: 2.3.0
       type-fest:
         specifier: ^4.3.1
-        version: 4.27.0
+        version: 4.27.1
       type-flag:
         specifier: ^3.0.0
         version: 3.0.0
@@ -173,7 +173,7 @@ importers:
     devDependencies:
       type-fest:
         specifier: ^4.3.1
-        version: 4.27.0
+        version: 4.27.1
 
 packages:
 
@@ -6024,8 +6024,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /type-fest@4.27.0:
-    resolution: {integrity: sha512-3IMSWgP7C5KSQqmo1wjhKrwsvXAtF33jO3QY+Uy++ia7hqvgSK6iXbbg5PbDBc1P2ZbNEDgejOrN4YooXvhwCw==}
+  /type-fest@4.27.1:
+    resolution: {integrity: sha512-3Ta7CyV6daqpwuGJMJKABaUChZZejpzysZkQg1//bLRg2wKQ4duwsg3MMIsHuElq58iDqizg4DBUmK8H8wExJg==}
     engines: {node: '>=16'}
 
   /type-flag@3.0.0:
