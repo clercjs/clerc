@@ -22,7 +22,7 @@ importers:
         version: 18.19.74
       bumpp:
         specifier: ^9.2.0
-        version: 9.10.2
+        version: 9.11.1
       clerc:
         specifier: workspace:*
         version: link:packages/clerc
@@ -1767,8 +1767,8 @@ packages:
       semver: 7.6.3
     dev: true
 
-  /bumpp@9.10.2:
-    resolution: {integrity: sha512-QX1JdswFLLVgrA+I/t+926/jsuJ92BTKKxGvMYC6fg+1lFpCl9RbILQJg0thc5UirIjQ6/jY1Sj+b4tz3evA5g==}
+  /bumpp@9.11.1:
+    resolution: {integrity: sha512-jBHlab9NnRwrpHsockb5E+MBo0os2yS6S7i3cnN8hB6EkTardKQotmd0CFdOc8pubLz2fxj2AD6RGtrySVG6Mw==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
@@ -1780,6 +1780,7 @@ packages:
       package-manager-detector: 0.2.8
       prompts: 2.4.2
       semver: 7.6.3
+      tiny-conventional-commits-parser: 0.0.1
       tinyexec: 0.3.2
       tinyglobby: 0.2.10
     transitivePeerDependencies:
@@ -3381,8 +3382,9 @@ packages:
     resolution: {integrity: sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==}
     dev: true
 
-  /for-each@0.3.3:
-    resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
+  /for-each@0.3.4:
+    resolution: {integrity: sha512-kKaIINnFpzW6ffJNDjjyjrk21BkDx38c0xa/klsT8VzLCaMEefv4ZTacrcVR4DmgTeBra++jMDAfS/tS799YDw==}
+    engines: {node: '>= 0.4'}
     dependencies:
       is-callable: 1.2.7
     dev: true
@@ -5995,6 +5997,10 @@ packages:
   /text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
 
+  /tiny-conventional-commits-parser@0.0.1:
+    resolution: {integrity: sha512-N5+AZWdBeHNSgTIaxvx0+9mFrnW4H1BbjQ84H7i3TuWSkno8Hju886hLaHZhE/hYEKrfrfl/uHurqpZJHDuYGQ==}
+    dev: true
+
   /tinybench@2.5.1:
     resolution: {integrity: sha512-65NKvSuAVDP/n4CqH+a9w2kTlLReS9vhsAP06MWx+/89nMinJyB2icyl58RIcqCmIggpojIGeuJGhjU1aGMBSg==}
     dev: true
@@ -6173,7 +6179,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.8
-      for-each: 0.3.3
+      for-each: 0.3.4
       gopd: 1.2.0
       has-proto: 1.2.0
       is-typed-array: 1.1.15
@@ -6185,7 +6191,7 @@ packages:
     dependencies:
       available-typed-arrays: 1.0.7
       call-bind: 1.0.8
-      for-each: 0.3.3
+      for-each: 0.3.4
       gopd: 1.2.0
       has-proto: 1.2.0
       is-typed-array: 1.1.15
@@ -6197,7 +6203,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.8
-      for-each: 0.3.3
+      for-each: 0.3.4
       gopd: 1.2.0
       is-typed-array: 1.1.15
       possible-typed-array-names: 1.0.0
@@ -6642,7 +6648,7 @@ packages:
       available-typed-arrays: 1.0.7
       call-bind: 1.0.8
       call-bound: 1.0.3
-      for-each: 0.3.3
+      for-each: 0.3.4
       gopd: 1.2.0
       has-tostringtag: 1.0.2
     dev: true
