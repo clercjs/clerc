@@ -14,7 +14,7 @@
 		"watch": "pnpm -r --parallel run watch"
 	},
 	"devDependencies": {
-		"@antfu/ni": "^0.21.8",
+		"@antfu/ni": "^0.23.0",
 		"@so1ve/eslint-config": "^2.0.0",
 		"@so1ve/prettier-config": "^2.0.0",
 		"@types/node": "^18.17.18",
