@@ -25,13 +25,10 @@
 	"license": "MIT",
 	"sideEffects": false,
 	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
+		".": "./dist/index.js"
 	},
-	"main": "dist/index.js",
-	"module": "dist/index.js",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
 	"types": "dist/index.d.ts",
 	"typesVersions": {
 		"*": {
@@ -48,13 +45,13 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "pkgroll",
-		"watch": "pkgroll --watch"
+		"build": "tsdown",
+		"watch": "tsdown --watch"
 	},
 	"dependencies": {
 		"@clerc/utils": "workspace:*",
-		"didyoumean2": "^6.0.1",
-		"yoctocolors": "^1.0.0"
+		"didyoumean2": "^7.0.4",
+		"yoctocolors": "^2.1.1"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

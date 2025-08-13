@@ -118,6 +118,6 @@ export interface InterceptorObject<C extends Commands = Commands> {
 	fn: InterceptorFn<C>;
 }
 
-export * from "./i18n";
+export type * from "./i18n";
 export type { Plugin } from "./plugin";
 export type { MakeEventMap } from "./utils";

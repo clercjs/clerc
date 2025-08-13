@@ -24,13 +24,10 @@
 	"license": "MIT",
 	"sideEffects": false,
 	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
+		".": "./dist/index.js"
 	},
-	"main": "dist/index.js",
-	"module": "dist/index.js",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
 	"types": "dist/index.d.ts",
 	"typesVersions": {
 		"*": {
@@ -47,15 +44,15 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "pkgroll",
-		"watch": "pkgroll --watch"
+		"build": "tsdown",
+		"watch": "tsdown --watch"
 	},
 	"dependencies": {
 		"@clerc/utils": "workspace:*",
-		"defu": "^6.1.2",
+		"defu": "^6.1.4",
 		"is-platform": "^1.0.0",
 		"lite-emit": "^2.3.0",
-		"type-fest": "^4.3.1",
+		"type-fest": "^4.41.0",
 		"type-flag": "^3.0.0"
 	}
 }
