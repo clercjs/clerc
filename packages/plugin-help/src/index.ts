@@ -218,7 +218,9 @@ export const helpPlugin = ({
 			const { add, t } = cli.i18n;
 			add(locales);
 			function printHelp(s: string) {
-				banner && print(`${banner}\n`);
+				if (banner) {
+					print(`${banner}\n`);
+				}
 				print(s);
 			}
 

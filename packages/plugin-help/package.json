@@ -51,9 +51,9 @@
 	"dependencies": {
 		"@clerc/utils": "workspace:*",
 		"@types/text-table": "^0.2.5",
-		"string-width": "^7.2.0",
+		"string-width": "^8.1.0",
 		"text-table": "^0.2.0",
-		"yoctocolors": "^2.1.1"
+		"yoctocolors": "^2.1.2"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

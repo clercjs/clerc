@@ -51,7 +51,7 @@
 	"dependencies": {
 		"@clerc/utils": "workspace:*",
 		"didyoumean2": "^7.0.4",
-		"yoctocolors": "^2.1.1"
+		"yoctocolors": "^2.1.2"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

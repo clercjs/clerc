@@ -133,9 +133,7 @@ export const formatCommandName = (name: string | string[] | RootType) =>
 	Array.isArray(name) ? name.join(" ") : typeof name === "string" ? name : ROOT;
 
 export const detectLocale = () =>
-	process.env.CLERC_LOCALE
-		? process.env.CLERC_LOCALE
-		: Intl.DateTimeFormat().resolvedOptions().locale;
+	process.env.CLERC_LOCALE ?? Intl.DateTimeFormat().resolvedOptions().locale;
 
 export const stripFlags = (argv: string[]) =>
 	argv.filter((arg) => !arg.startsWith("-"));

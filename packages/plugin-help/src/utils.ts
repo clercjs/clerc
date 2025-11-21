@@ -21,8 +21,8 @@ export const splitTable = (items: string[][]) => table(items).split("\n");
 
 const primitiveMap = new Map<any, string | undefined>([
 	[Boolean, undefined],
-	[String, "string"],
 	[Number, "number"],
+	[String, "string"],
 ]);
 export function stringifyType(type: any, hasDefault = false) {
 	const res = primitiveMap.has(type) ? primitiveMap.get(type) : "value";
@@ -112,8 +112,9 @@ export const formatFlags = (
 		const items = [
 			yc.blue(flagNameWithAlias.join(", ")),
 			renderers.renderType(flag.type, hasDefault),
+			DELIMITER,
+			flag.description || t("help.noDescription")!,
 		];
-		items.push(DELIMITER, flag.description || t("help.noDescription")!);
 		if (hasDefault) {
 			items.push(
 				`(${t("help.default", renderers.renderDefault(flag.default))!})`,

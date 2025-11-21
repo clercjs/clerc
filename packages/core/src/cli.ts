@@ -408,7 +408,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		// Check if alias or name conflicts
 		const nameList = [commandToSave.name];
 		const aliasList = commandToSave.alias ? toArray(commandToSave.alias) : [];
-		commandToSave.alias && nameList.push(...aliasList);
+		if (commandToSave.alias) {
+			nameList.push(...aliasList);
+		}
 		for (const name of nameList) {
 			if (this.#usedNames.has(name)) {
 				throw new CommandExistsError(formatCommandName(name), t);
@@ -421,7 +423,9 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		}
 
 		// Register handler
-		isCommandObject && handler && this.on(nameOrCommand.name, handler);
+		if (isCommandObject && handler) {
+			this.on(nameOrCommand.name, handler);
+		}
 
 		return this as any;
 	}
@@ -591,9 +595,7 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 		const parametersOffset =
 			command?.name === Root || called === Root
 				? 0
-				: called?.length
-					? called.length
-					: command?.name.split(" ").length;
+				: (called?.length ?? command?.name.split(" ").length);
 		const { _: args, flags, unknownFlags } = parsed;
 		let parameters =
 			!isCommandResolved || command.name === Root
