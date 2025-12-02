@@ -1,7 +1,6 @@
 import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
-
 import { Cli } from "@clerc/test-utils";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 describe("plugin-strict-flags", () => {
 	const msgs: string[] = [];

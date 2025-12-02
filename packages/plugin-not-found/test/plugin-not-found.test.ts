@@ -1,7 +1,6 @@
 import { notFoundPlugin } from "@clerc/plugin-not-found";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
-
 import { Cli } from "@clerc/test-utils";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 describe("plugin-not-found", () => {
 	const msgs: string[] = [];
