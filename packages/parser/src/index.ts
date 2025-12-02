@@ -5,6 +5,7 @@ import type {
 	ParsedResult,
 	ParserOptions,
 } from "./types";
+import { appendValue } from "./utils";
 
 const toCamelCase = (str: string) =>
 	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
@@ -17,18 +18,11 @@ const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
 		? { type: config }
 		: config;
 
-export function parse<T extends Record<string, FlagOptionsValue>>(
-	args: string[],
-	options: ParserOptions = {},
-): ParsedResult<InferFlags<T>> {
-	const { flags: flagsConfig = {} } = options;
-	const result: ParsedResult<any> = {
-		_: [],
-		flags: {},
-		raw: args,
-		unknown: {},
-	};
-
+export function createParser<T extends Record<string, FlagOptionsValue>>(
+	options: ParserOptions<T> = {},
+) {
+	const { flags: flagsConfig = {} as Record<string, FlagOptionsValue> } =
+		options;
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
 
@@ -65,157 +59,160 @@ export function parse<T extends Record<string, FlagOptionsValue>>(
 		};
 	}
 
-	for (let i = 0; i < args.length; i++) {
-		const arg = args[i];
-		if (arg === "--") {
-			result._.push(...args.slice(i + 1));
-			break;
-		}
+	function parse(args: string[]): ParsedResult<InferFlags<T>> {
+		const result: ParsedResult<any> = {
+			_: [],
+			flags: {},
+			raw: args,
+			unknown: {},
+		};
 
-		if (arg.startsWith("--")) {
-			const eqIdx = arg.indexOf("=");
-			const hasEq = eqIdx !== -1;
-			const rawName = hasEq ? arg.slice(2, eqIdx) : arg.slice(2);
-			const val = hasEq ? arg.slice(eqIdx + 1) : undefined;
-
-			let resolved = resolve(rawName);
-			let isNegated = false;
-
-			if (!resolved) {
-				let positiveName = "";
-				if (rawName.startsWith("no-")) {
-					positiveName = rawName.slice(3);
-				} else if (
-					rawName.startsWith("no") &&
-					rawName.length > 2 &&
-					/[A-Z]/.test(rawName[2])
-				) {
-					positiveName = rawName[2].toLowerCase() + rawName.slice(3);
-				}
-
-				if (positiveName) {
-					const res = resolve(positiveName);
-					if (
-						res?.config.type === Boolean &&
-						(res.config as any).negatable !== false
-					) {
-						resolved = res;
-						isNegated = true;
-					}
-				}
+		for (let i = 0; i < args.length; i++) {
+			const arg = args[i];
+			if (arg === "--") {
+				result._.push(...args.slice(i + 1));
+				break;
 			}
 
-			if (!resolved) {
-				const key = toCamelCase(rawName);
-				if (hasEq) {
-					result.unknown[key] = val!;
-				} else {
-					const next = args[i + 1];
-					if (next && !isFlag(next)) {
-						result.unknown[key] = next;
-						i++;
-					} else {
-						result.unknown[key] = true;
-					}
-				}
-				continue;
-			}
+			if (arg.startsWith("--")) {
+				const eqIdx = arg.indexOf("=");
+				const hasEq = eqIdx !== -1;
+				const rawName = hasEq ? arg.slice(2, eqIdx) : arg.slice(2);
+				const val = hasEq ? arg.slice(eqIdx + 1) : undefined;
 
-			const { key, config, path } = resolved;
-
-			if (path) {
-				if (config.type === Object) {
-					result.flags[key] ??= {};
-					const value = hasEq
-						? val!
-						: args[i + 1] && !isFlag(args[i + 1])
-							? args[++i]
-							: "";
-					result.flags[key][path] = value;
-				} else {
-					result.unknown[rawName] = hasEq ? val! : true;
-				}
-			} else {
-				if (config.type === Boolean) {
-					const value = hasEq ? val !== "false" : true;
-					result.flags[key] = isNegated ? !value : value;
-				} else {
-					const next = args[i + 1];
-					const value = hasEq ? val! : next && !isFlag(next) ? args[++i] : "";
-					appendValue(result.flags, key, value, config);
-				}
-			}
-		} else if (isFlag(arg)) {
-			const chars = arg.slice(1);
-			for (let j = 0; j < chars.length; j++) {
-				const char = chars[j];
-				const resolved = resolve(char);
+				let resolved = resolve(rawName);
+				let isNegated = false;
 
 				if (!resolved) {
-					result.unknown[char] = true;
-					continue;
-				}
+					let positiveName = "";
+					if (rawName.startsWith("no-")) {
+						positiveName = rawName.slice(3);
+					} else if (
+						rawName.startsWith("no") &&
+						rawName.length > 2 &&
+						/[A-Z]/.test(rawName[2])
+					) {
+						positiveName = rawName[2].toLowerCase() + rawName.slice(3);
+					}
 
-				const { key, config } = resolved;
-				if (config.type === Boolean) {
-					result.flags[key] = true;
-				} else {
-					if (j + 1 < chars.length) {
-						appendValue(result.flags, key, chars.slice(j + 1), config);
-						j = chars.length;
-					} else {
-						const next = args[i + 1];
-						if (next && !isFlag(next)) {
-							appendValue(result.flags, key, args[++i], config);
-						} else {
-							appendValue(result.flags, key, "", config);
+					if (positiveName) {
+						const res = resolve(positiveName);
+						if (
+							res?.config.type === Boolean &&
+							(res.config as any).negatable !== false
+						) {
+							resolved = res;
+							isNegated = true;
 						}
 					}
 				}
-			}
-		} else {
-			result._.push(arg);
-		}
-	}
 
-	for (const [key, config] of configs.entries()) {
-		const val = result.flags[key];
-		if (val === undefined) {
-			if (config.default !== undefined) {
-				result.flags[key] = config.default;
-			}
-		} else {
-			if (config.type === Boolean) {
-				continue;
-			}
-			if (config.type === Object) {
-				continue;
-			}
+				if (!resolved) {
+					const key = toCamelCase(rawName);
+					if (hasEq) {
+						result.unknown[key] = val!;
+					} else {
+						const next = args[i + 1];
+						if (next && !isFlag(next)) {
+							result.unknown[key] = next;
+							i++;
+						} else {
+							result.unknown[key] = true;
+						}
+					}
+					continue;
+				}
 
-			const type = Array.isArray(config.type) ? config.type[0] : config.type;
-			const convert = (v: any) => type(v);
+				const { key, config, path } = resolved;
 
-			if (Array.isArray(config.type)) {
-				const arr = Array.isArray(val) ? val : [val];
-				result.flags[key] = arr.map(convert);
+				if (path) {
+					if (config.type === Object) {
+						result.flags[key] ??= {};
+						const value = hasEq
+							? val!
+							: args[i + 1] && !isFlag(args[i + 1])
+								? args[++i]
+								: "";
+						result.flags[key][path] = value;
+					} else {
+						result.unknown[rawName] = hasEq ? val! : true;
+					}
+				} else {
+					if (config.type === Boolean) {
+						const value = hasEq ? val !== "false" : true;
+						result.flags[key] = isNegated ? !value : value;
+					} else {
+						const next = args[i + 1];
+						const value = hasEq ? val! : next && !isFlag(next) ? args[++i] : "";
+						appendValue(result.flags, key, value, config);
+					}
+				}
+			} else if (isFlag(arg)) {
+				const chars = arg.slice(1);
+				for (let j = 0; j < chars.length; j++) {
+					const char = chars[j];
+					const resolved = resolve(char);
+
+					if (!resolved) {
+						result.unknown[char] = true;
+						continue;
+					}
+
+					const { key, config } = resolved;
+					if (config.type === Boolean) {
+						result.flags[key] = true;
+					} else {
+						if (j + 1 < chars.length) {
+							appendValue(result.flags, key, chars.slice(j + 1), config);
+							j = chars.length;
+						} else {
+							const next = args[i + 1];
+							if (next && !isFlag(next)) {
+								appendValue(result.flags, key, args[++i], config);
+							} else {
+								appendValue(result.flags, key, "", config);
+							}
+						}
+					}
+				}
 			} else {
-				result.flags[key] = convert(val);
+				result._.push(arg);
 			}
 		}
+
+		for (const [key, config] of configs.entries()) {
+			const val = result.flags[key];
+			if (val === undefined) {
+				if (config.default !== undefined) {
+					result.flags[key] = config.default;
+				}
+			} else {
+				if (config.type === Boolean) {
+					continue;
+				}
+				if (config.type === Object) {
+					continue;
+				}
+
+				const type = Array.isArray(config.type) ? config.type[0] : config.type;
+				const convert = (v: any) => type(v);
+
+				if (Array.isArray(config.type)) {
+					const arr = Array.isArray(val) ? val : [val];
+					result.flags[key] = arr.map(convert);
+				} else {
+					result.flags[key] = convert(val);
+				}
+			}
+		}
+
+		return result;
 	}
 
-	return result;
+	return { parse };
 }
 
-function appendValue(
-	flags: any,
-	key: string,
-	value: string,
-	config: FlagOptions,
-) {
-	if (Array.isArray(config.type)) {
-		(flags[key] ??= []).push(value);
-	} else {
-		flags[key] = value;
-	}
-}
+export const parse = <T extends Record<string, FlagOptionsValue>>(
+	args: string[],
+	options: ParserOptions<T> = {},
+) => createParser(options).parse(args);

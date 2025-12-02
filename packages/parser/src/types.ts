@@ -67,13 +67,15 @@ export type FlagOptionsValue = FlagOptions | FlagType<any> | [FlagType<any>];
 /**
  * Configuration options for the parser.
  */
-export interface ParserOptions {
+export interface ParserOptions<
+	T extends Record<string, FlagOptionsValue> = {},
+> {
 	/**
 	 * Detailed configuration for flags.
 	 * Supports the full object syntax or a type constructor as a shorthand.
 	 * The key is the flag name (e.g., "file" for "--file").
 	 */
-	flags?: Record<string, FlagOptionsValue>;
+	flags?: T;
 }
 
 /**
