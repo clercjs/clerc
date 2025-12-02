@@ -1,46 +1,53 @@
 {
-  "name": "@clerc/parser",
-  "version": "0.0.0",
-  "description": "Parser for clerc.",
-  "author": "Ray <i@mk1.io>",
-  "license": "MIT",
-  "homepage": "https://github.com/clerc/clerc/tree/main/packages/parser#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/clerc/clerc.git",
-    "directory": "packages/parser"
-  },
-  "bugs": {
-    "url": "https://github.com/clerc/clerc/issues"
-  },
-  "keywords": [
-    "cli",
-    "parser",
-    "command",
-    "framework"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
-    }
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "prepublishOnly": "pnpm build"
-  },
-  "dependencies": {
-    "minimist": "^1.2.7"
-  },
-  "devDependencies": {
-    "@types/minimist": "^1.2.2"
-  }
+	"name": "@clerc/parser",
+	"version": "0.44.0",
+	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+	"type": "module",
+	"description": "Clerc parser",
+	"keywords": [
+		"args",
+		"arguments",
+		"argv",
+		"clerc",
+		"cli",
+		"getopt",
+		"parser",
+		"terminal",
+		"utils"
+	],
+	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/parser#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/clercjs/clerc.git",
+		"directory": "/"
+	},
+	"bugs": {
+		"url": "https://github.com/clercjs/clerc/issues"
+	},
+	"license": "MIT",
+	"sideEffects": false,
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "dist/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"*": [
+				"./dist/*",
+				"./dist/index.d.ts"
+			]
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"watch": "tsdown --watch"
+	}
 }
