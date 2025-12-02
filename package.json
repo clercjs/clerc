@@ -2,7 +2,7 @@
 	"name": "@clerc/monorepo",
 	"private": true,
 	"version": "0.44.0",
-	"packageManager": "pnpm@10.23.0",
+	"packageManager": "pnpm@10.24.0",
 	"scripts": {
 		"build": "pnpm -r run build",
 		"lint": "eslint . && prettier . --check",
@@ -14,18 +14,18 @@
 		"watch": "pnpm -r --parallel run watch"
 	},
 	"devDependencies": {
-		"@antfu/ni": "^27.0.1",
-		"@so1ve/eslint-config": "^3.14.0",
-		"@so1ve/prettier-config": "^3.14.0",
+		"@antfu/ni": "^28.0.0",
+		"@so1ve/eslint-config": "^3.17.0",
+		"@so1ve/prettier-config": "^3.17.0",
 		"@types/node": "^24.10.1",
 		"@typescript/native-preview": "7.0.0-dev.20250812.1",
-		"bumpp": "^10.3.1",
+		"bumpp": "^10.3.2",
 		"clerc": "workspace:*",
 		"eslint": "^9.39.1",
-		"prettier": "^3.6.2",
-		"tsdown": "^0.16.6",
+		"prettier": "^3.7.3",
+		"tsdown": "^0.16.8",
 		"typescript": "^5.9.3",
-		"vite": "^7.2.4",
-		"vitest": "^4.0.12"
+		"vite": "^7.2.6",
+		"vitest": "^4.0.15"
 	}
 }
