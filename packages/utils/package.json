@@ -12,7 +12,6 @@
 		"clerc-utils",
 		"cli",
 		"terminal",
-		"utils",
 		"utils"
 	],
 	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/utils#readme",
