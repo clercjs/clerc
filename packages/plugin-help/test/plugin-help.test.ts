@@ -1,9 +1,8 @@
 // TODO: fix tests
 
 import { helpPlugin } from "@clerc/plugin-help";
+import { Cli } from "@clerc/test-utils";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-
-import { Cli } from "./create-cli";
 
 const NEWLINE_RE = /\r?\n/g;
 

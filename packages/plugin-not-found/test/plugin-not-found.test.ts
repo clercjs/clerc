@@ -1,7 +1,7 @@
 import { notFoundPlugin } from "@clerc/plugin-not-found";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { Cli } from "./create-cli";
+import { Cli } from "@clerc/test-utils";
 
 describe("plugin-not-found", () => {
 	const msgs: string[] = [];
@@ -37,10 +37,10 @@ describe("plugin-not-found", () => {
 		Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
 
 		expect(msgs).toMatchInlineSnapshot(`
-      [
-        "Command \\"[9mfo[29m\\" not found.",
-        "Did you mean \\"[1mfoo[22m\\"?",
-      ]
-    `);
+			[
+			  "Command "[9mfo[29m" not found.",
+			  "Did you mean "[1mfoo[22m"?",
+			]
+		`);
 	});
 });

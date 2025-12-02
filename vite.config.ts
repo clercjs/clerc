@@ -8,6 +8,8 @@ const r = (p: string) => resolve(__dirname, p);
 export const alias: AliasOptions = {
 	"@clerc/core": r("./packages/core/src"),
 	"@clerc/utils": r("./packages/utils/src"),
+	"@clerc/test-utils": r("./packages/test-utils/src"),
+	"@clerc/parser": r("./packages/parser/src"),
 	"@clerc/plugin-help": r("./packages/plugin-help/src"),
 	"@clerc/plugin-version": r("./packages/plugin-version/src"),
 	"@clerc/plugin-friendly-error": r("./packages/plugin-friendly-error/src"),
@@ -17,6 +19,9 @@ export const alias: AliasOptions = {
 };
 
 export default defineConfig({
+	test: {
+		projects: ["packages/*"],
+	},
 	resolve: {
 		alias,
 	},

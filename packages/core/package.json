@@ -48,6 +48,7 @@
 		"watch": "tsdown --watch"
 	},
 	"dependencies": {
+		"@clerc/parser": "workspace:^",
 		"@clerc/utils": "workspace:*",
 		"defu": "^6.1.4",
 		"is-platform": "^1.0.0",

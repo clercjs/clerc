@@ -15,6 +15,7 @@
 	},
 	"devDependencies": {
 		"@antfu/ni": "^28.0.0",
+		"@clerc/test-utils": "workspace:*",
 		"@so1ve/eslint-config": "^3.17.0",
 		"@so1ve/prettier-config": "^3.17.0",
 		"@types/node": "^24.10.1",

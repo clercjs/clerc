@@ -11,6 +11,9 @@ importers:
       '@antfu/ni':
         specifier: ^28.0.0
         version: 28.0.0
+      '@clerc/test-utils':
+        specifier: workspace:*
+        version: link:packages/test-utils
       '@so1ve/eslint-config':
         specifier: ^3.17.0
         version: 3.17.0(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(jiti@2.6.1)(prettier@3.7.3)(typescript@5.9.3)(vitest@4.0.15(@types/node@24.10.1)(jiti@2.6.1)(yaml@2.8.1))
@@ -74,6 +77,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@clerc/parser':
+        specifier: workspace:^
+        version: link:../parser
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
@@ -92,6 +98,16 @@ importers:
       type-flag:
         specifier: ^4.0.3
         version: 4.0.3
+
+  packages/parser:
+    dependencies:
+      minimist:
+        specifier: ^1.2.7
+        version: 1.2.8
+    devDependencies:
+      '@types/minimist':
+        specifier: ^1.2.2
+        version: 1.2.5
 
   packages/plugin-completions:
     dependencies:
@@ -164,6 +180,12 @@ importers:
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+
+  packages/test-utils:
+    dependencies:
+      '@clerc/core':
+        specifier: '*'
+        version: 0.44.0
 
   packages/utils:
     dependencies:
@@ -818,6 +840,9 @@ packages:
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
+
+  '@types/minimist@1.2.5':
+    resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -2324,6 +2349,9 @@ packages:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
     engines: {node: '>=16 || 14 >=14.17'}
 
+  minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+
   minipass@7.1.2:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
     engines: {node: '>=16 || 14 >=14.17'}
@@ -3779,6 +3807,8 @@ snapshots:
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
+
+  '@types/minimist@1.2.5': {}
 
   '@types/ms@2.1.0': {}
 
@@ -5520,6 +5550,8 @@ snapshots:
   minimatch@9.0.5:
     dependencies:
       brace-expansion: 2.0.2
+
+  minimist@1.2.8: {}
 
   minipass@7.1.2: {}
 

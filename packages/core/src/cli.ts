@@ -1,11 +1,11 @@
 import { format } from "node:util";
 
+import { createParser } from "@clerc/parser";
 import type { MaybeArray } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
 import { defu } from "defu";
 import { LiteEmit } from "lite-emit";
 import type { LiteralUnion } from "type-fest";
-import { typeFlag } from "type-flag";
 
 import {
 	CommandExistsError,
@@ -591,7 +591,8 @@ export class Clerc<C extends Commands = {}, GF extends GlobalFlagOptions = {}> {
 			...command?.flags,
 		};
 		// [...argv] is a workaround since TypeFlag modifies argv
-		const parsed = typeFlag(flagsMerged, [...argv]);
+		const parser = createParser({ flags: flagsMerged as any });
+		const parsed = parser.parse([...argv]);
 		const parametersOffset =
 			command?.name === Root || called === Root
 				? 0

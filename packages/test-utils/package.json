@@ -1,0 +1,25 @@
+{
+	"name": "@clerc/test-utils",
+	"private": true,
+	"version": "0.44.0",
+	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+	"type": "module",
+	"description": "Clerc test utils",
+	"keywords": [],
+	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/test-utils#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/clercjs/clerc.git",
+		"directory": "/"
+	},
+	"bugs": {
+		"url": "https://github.com/clercjs/clerc/issues"
+	},
+	"license": "MIT",
+	"sideEffects": false,
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
+	"peerDependencies": {
+		"@clerc/core": "*"
+	}
+}

@@ -1,0 +1,46 @@
+{
+  "name": "@clerc/parser",
+  "version": "0.0.0",
+  "description": "Parser for clerc.",
+  "author": "Ray <i@mk1.io>",
+  "license": "MIT",
+  "homepage": "https://github.com/clerc/clerc/tree/main/packages/parser#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clerc/clerc.git",
+    "directory": "packages/parser"
+  },
+  "bugs": {
+    "url": "https://github.com/clerc/clerc/issues"
+  },
+  "keywords": [
+    "cli",
+    "parser",
+    "command",
+    "framework"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "minimist": "^1.2.7"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.2"
+  }
+}

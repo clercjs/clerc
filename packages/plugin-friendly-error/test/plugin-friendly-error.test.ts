@@ -1,7 +1,6 @@
 import { friendlyErrorPlugin } from "@clerc/plugin-friendly-error";
+import { Cli } from "@clerc/test-utils";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-
-import { Cli } from "./create-cli";
 
 describe("plugin-friendly-error", () => {
 	const msgs: string[] = [];
@@ -25,7 +24,7 @@ describe("plugin-friendly-error", () => {
 
 		expect(msgs).toMatchInlineSnapshot(`
 			[
-			  "No such command: \\"foo\\".",
+			  "No such command: "foo".",
 			]
 		`);
 
