@@ -86,7 +86,9 @@ export type RawInputType = string | boolean;
  */
 export interface ParsedResult<TFlags extends Record<string, any>> {
 	/** Positional arguments or commands. */
-	_: string[];
+	parameters: string[];
+	/** Arguments after the `--` delimiter. */
+	doubleDash: string[];
 	/**
 	 * The parsed flags.
 	 * This is a strongly-typed object whose structure is inferred from the `flags` configuration in ParserOptions.

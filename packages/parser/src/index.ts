@@ -61,7 +61,8 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 
 	function parse(args: string[]): ParsedResult<InferFlags<T>> {
 		const result: ParsedResult<any> = {
-			_: [],
+			parameters: [],
+			doubleDash: [],
 			flags: {},
 			raw: args,
 			unknown: {},
@@ -70,7 +71,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
 			if (arg === "--") {
-				result._.push(...args.slice(i + 1));
+				result.doubleDash.push(...args.slice(i + 1));
 				break;
 			}
 
@@ -176,7 +177,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					}
 				}
 			} else {
-				result._.push(arg);
+				result.parameters.push(arg);
 			}
 		}
 

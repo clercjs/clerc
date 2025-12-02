@@ -4,7 +4,7 @@ import { parse } from "../src";
 
 describe("parser", () => {
 	it("should parse basic flags", () => {
-		const { flags, _, unknown } = parse(
+		const { flags, parameters, unknown } = parse(
 			["--bool", "--str", "baz", "--num", "123", "--arr", "a", "--arr", "b"],
 			{
 				flags: {
@@ -23,7 +23,7 @@ describe("parser", () => {
 			arr: ["a", "b"],
 		});
 		expect(unknown).toEqual({});
-		expect(_).toEqual([]);
+		expect(parameters).toEqual([]);
 	});
 
 	it("should parse aliases and short flags", () => {
@@ -72,7 +72,7 @@ describe("parser", () => {
 	});
 
 	it("should separate unknown flags and positional arguments", () => {
-		const { flags, _, unknown } = parse(
+		const { flags, parameters, doubleDash, unknown } = parse(
 			["--foo", "arg1", "--bar", "baz", "--", "--qux"],
 			{
 				flags: {
@@ -83,7 +83,8 @@ describe("parser", () => {
 
 		expect(flags).toEqual({ foo: true });
 		expect(unknown).toEqual({ bar: "baz" });
-		expect(_).toEqual(["arg1", "--qux"]);
+		expect(parameters).toEqual(["arg1"]);
+		expect(doubleDash).toEqual(["--qux"]);
 	});
 
 	it("should handle defaults", () => {
