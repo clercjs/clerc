@@ -78,6 +78,8 @@ export interface ParserOptions<
 	flags?: T;
 }
 
+export type RawInputType = string | boolean;
+
 /**
  * The parsed result.
  * @template TFlags The specific flags type inferred from ParserOptions.
@@ -93,7 +95,7 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 	/** The raw command-line arguments. */
 	raw: string[];
 	/** Unknown flags encountered during parsing. */
-	unknown: Record<string, string | boolean>;
+	unknown: Record<string, RawInputType>;
 }
 
 /**
@@ -116,7 +118,7 @@ export type InferFlags<T extends Record<string, FlagOptionsValue>> = {
 		: T[K] extends BooleanConstructor[] | { type: BooleanConstructor[] }
 			? never
 			: T[K] extends ObjectConstructor | { type: ObjectConstructor }
-				? Record<string, any>
+				? Record<string, RawInputType>
 				: T[K] extends [infer U] | { type: [infer U] }
 					? GetValueType<U>[]
 					: T[K] extends infer U | { type: infer U }
