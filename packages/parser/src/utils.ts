@@ -1,4 +1,8 @@
-import type { FlagOptions } from "./types";
+import { InvalidSchemaError } from "./errors";
+import type { FlagOptions, FlagOptionsValue, FlagsConfigSchema } from "./types";
+
+export const isArrayOfType = (arr: any, type: any): boolean =>
+	Array.isArray(arr) && arr[0] === type;
 
 export function setValueByType(
 	flags: any,
@@ -8,7 +12,11 @@ export function setValueByType(
 ) {
 	const { type } = config;
 	if (Array.isArray(type)) {
-		(flags[key] ??= []).push(type[0](value));
+		if (isArrayOfType(type, Boolean)) {
+			flags[key] = (flags[key] ?? 0) + 1;
+		} else {
+			(flags[key] ??= []).push(type[0](value));
+		}
 	} else {
 		flags[key] = type(value);
 	}
@@ -36,3 +44,36 @@ export const toCamelCase = (str: string) =>
 	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 export const isNumber = (str: string) => !Number.isNaN(Number(str));
 export const isFlag = (str: string) => str.startsWith("-") && !isNumber(str);
+
+const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
+	typeof config === "function" || Array.isArray(config)
+		? { type: config }
+		: config;
+
+export function buildConfigsAndAliases(flags: FlagsConfigSchema) {
+	const configs = new Map<string, FlagOptions>();
+	const aliases = new Map<string, string>();
+
+	for (const [name, config] of Object.entries(flags)) {
+		const normalized = normalizeConfig(config);
+		if (Array.isArray(normalized.type) && normalized.type.length > 1) {
+			throw new InvalidSchemaError(
+				`Flag "${name}" has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
+			);
+		}
+
+		configs.set(name, normalized);
+		aliases.set(name, name);
+		aliases.set(toCamelCase(name), name);
+		if (normalized.alias) {
+			const list = Array.isArray(normalized.alias)
+				? normalized.alias
+				: [normalized.alias];
+			for (const a of list) {
+				aliases.set(a, name);
+			}
+		}
+	}
+
+	return { configs, aliases };
+}

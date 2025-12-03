@@ -60,22 +60,22 @@ export interface ObjectFlagOptions extends BaseFlagOptions<
 /**
  * A union type representing all possible flag configurations.
  */
-export type FlagOptions =
+export type FlagOptions<T = any> =
 	| BooleanFlagOptions
 	| ObjectFlagOptions
-	| GeneralFlagOptions<any>;
+	| GeneralFlagOptions<T>;
 
 /**
  * The value type for each property in the `flags` object, which can be a full configuration object or a shorthand syntax.
  */
-export type FlagOptionsValue = FlagOptions | FlagType<any>;
+export type FlagOptionsValue<T = any> = FlagOptions | FlagType<T>;
+
+export type FlagsConfigSchema = Record<string, FlagOptionsValue>;
 
 /**
  * Configuration options for the parser.
  */
-export interface ParserOptions<
-	T extends Record<string, FlagOptionsValue> = {},
-> {
+export interface ParserOptions<T extends FlagsConfigSchema = {}> {
 	/**
 	 * Detailed configuration for flags.
 	 * Supports the full object syntax or a type constructor as a shorthand.
@@ -116,11 +116,11 @@ type GetValueType<T> = T extends FlagTypeFunction<infer U> ? U : any;
  */
 export type FlagTypeSpec<T> = T | { type: T };
 
-type _InferFlags<T extends Record<string, FlagOptionsValue>> = {
+type _InferFlags<T extends FlagsConfigSchema> = {
 	[K in keyof T]: T[K] extends FlagTypeSpec<BooleanConstructor>
 		? boolean
-		: T[K] extends FlagTypeSpec<BooleanConstructor[]>
-			? never
+		: T[K] extends FlagTypeSpec<[BooleanConstructor]>
+			? number
 			: T[K] extends FlagTypeSpec<ObjectConstructor>
 				? Record<string, RawInputType>
 				: T[K] extends FlagTypeSpec<[infer U]>
@@ -137,6 +137,4 @@ type _InferFlags<T extends Record<string, FlagOptionsValue>> = {
  * based on the provided `flags` configuration object T.
  * @template T The type of the flags configuration object.
  */
-export type InferFlags<T extends Record<string, FlagOptionsValue>> = Prettify<
-	_InferFlags<T>
->;
+export type InferFlags<T extends FlagsConfigSchema> = Prettify<_InferFlags<T>>;

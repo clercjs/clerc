@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parse } from "../src";
+import { InvalidSchemaError, parse } from "../src";
 
 describe("parser", () => {
 	it("should parse basic flags", () => {
@@ -51,6 +51,17 @@ describe("parser", () => {
 		});
 
 		expect(flags).toEqual({ foo: true, bar: "baz", num: 123 });
+	});
+
+	it("should parse counter flags", () => {
+		const { flags } = parse(["--verbose", "--verbose", "-v"], {
+			flags: {
+				verbose: { type: [Boolean], alias: "v" },
+				foo: [Boolean],
+			},
+		});
+
+		expect(flags).toEqual({ verbose: 3, foo: 0 });
 	});
 
 	it("should handle merged short flags", () => {
@@ -216,7 +227,18 @@ describe("parser", () => {
 		});
 	});
 
-	it("edge cases", () => {
+	it("should throw on invalid schema", () => {
+		expect(() =>
+			parse([], {
+				flags: {
+					// @ts-expect-error Testing invalid schema
+					invalid: { type: [String, Number] },
+				},
+			}),
+		).toThrow(InvalidSchemaError);
+	});
+
+	it("should handle edge cases", () => {
 		const { flags, unknown, parameters } = parse(
 			[
 				"--num=-1",

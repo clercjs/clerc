@@ -10,7 +10,7 @@ describe("parser types", () => {
 				string: { type: String },
 				number: { type: Number },
 				stringWithDefault: { type: String, default: "foo" },
-				never: { type: [Boolean] },
+				counter: { type: [Boolean] },
 				arrayString: { type: [String] },
 				object: { type: Object },
 				booleanShorthand: Boolean,
@@ -23,7 +23,7 @@ describe("parser types", () => {
 			string: string | undefined;
 			number: number | undefined;
 			stringWithDefault: string;
-			never: never;
+			counter: number;
 			arrayString: string[];
 			object: Record<string, string | boolean>;
 			booleanShorthand: boolean;
