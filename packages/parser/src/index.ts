@@ -181,6 +181,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			}
 		}
 
+		// Apply type conversions
 		for (const [key, config] of configs.entries()) {
 			const val = result.flags[key];
 			if (val === undefined) {
@@ -196,13 +197,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				}
 
 				const type = Array.isArray(config.type) ? config.type[0] : config.type;
-				const convert = (v: any) => type(v);
 
 				if (Array.isArray(config.type)) {
 					const arr = Array.isArray(val) ? val : [val];
-					result.flags[key] = arr.map(convert);
+					result.flags[key] = arr.map(type);
 				} else {
-					result.flags[key] = convert(val);
+					result.flags[key] = type(val);
 				}
 			}
 		}
