@@ -61,10 +61,19 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			}
 
 			if (arg.startsWith("--")) {
+				// Support both --name=value and --name:value forms. The ':' form
+				// is useful when the value itself contains '=' (e.g. --define:K=V).
 				const eqIdx = arg.indexOf("=");
-				const hasEq = eqIdx !== -1;
-				const rawName = hasEq ? arg.slice(2, eqIdx) : arg.slice(2);
-				const val = hasEq ? arg.slice(eqIdx + 1) : undefined;
+				const colonIdx = arg.indexOf(":");
+				const sepIdx =
+					colonIdx === -1
+						? eqIdx
+						: eqIdx === -1
+							? colonIdx
+							: Math.min(colonIdx, eqIdx);
+				const hasSep = sepIdx !== -1;
+				const rawName = hasSep ? arg.slice(2, sepIdx) : arg.slice(2);
+				const val = hasSep ? arg.slice(sepIdx + 1) : undefined;
 
 				let resolved = resolve(rawName);
 				let isNegated = false;
@@ -95,7 +104,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 
 				if (!resolved) {
 					const key = toCamelCase(rawName);
-					if (hasEq) {
+					if (hasSep) {
 						result.unknown[key] = val!;
 					} else {
 						const next = args[i + 1];
@@ -114,7 +123,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				if (path) {
 					if (config.type === Object) {
 						result.flags[key] ??= {};
-						const value = hasEq
+						const value = hasSep
 							? val!
 							: args[i + 1] && !isArgFlag(args[i + 1])
 								? args[++i]
@@ -123,11 +132,11 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					}
 				} else {
 					if (config.type === Boolean) {
-						const value = hasEq ? val !== "false" : true;
+						const value = hasSep ? val !== "false" : true;
 						result.flags[key] = isNegated ? !value : value;
 					} else {
 						const next = args[i + 1];
-						const value = hasEq
+						const value = hasSep
 							? val!
 							: next && !isArgFlag(next)
 								? args[++i]

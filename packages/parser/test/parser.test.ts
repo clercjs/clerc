@@ -213,6 +213,33 @@ describe("parser", () => {
 		expect(unknown).toEqual({ "unknown.foo": true });
 	});
 
+	it("should support colon-separated long flags", () => {
+		const result1 = parse(["--define:K=V"], {
+			flags: {
+				define: { type: String },
+			},
+		});
+
+		expect(result1.flags).toEqual({ define: "K=V" });
+
+		const result2 = parse(["--flag:false", "--flag2:true"], {
+			flags: {
+				flag: { type: Boolean },
+				flag2: { type: Boolean },
+			},
+		});
+
+		expect(result2.flags).toEqual({ flag: false, flag2: true });
+
+		const result3 = parse(["--config.port:8080"], {
+			flags: {
+				config: { type: Object },
+			},
+		});
+
+		expect(result3.flags).toEqual({ config: { port: "8080" } });
+	});
+
 	it("should initialize arrays, objects and booleans with default values", () => {
 		const { flags } = parse([], {
 			flags: {
