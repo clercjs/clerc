@@ -49,5 +49,12 @@
 	"scripts": {
 		"build": "tsdown",
 		"watch": "tsdown --watch"
+	},
+	"devDependencies": {
+		"@types/minimist": "^1.2.5",
+		"@types/yargs-parser": "^21.0.3",
+		"minimist": "^1.2.8",
+		"mri": "^1.2.0",
+		"yargs-parser": "^22.0.0"
 	}
 }

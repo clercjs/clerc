@@ -4,6 +4,7 @@
 	"version": "0.44.0",
 	"packageManager": "pnpm@10.24.0",
 	"scripts": {
+		"bench": "vitest bench",
 		"build": "pnpm -r run build",
 		"lint": "eslint . && prettier . --check",
 		"lint:fix": "eslint . --fix && prettier . --write",
