@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { InvalidSchemaError, parse } from "../src";
+import { InvalidSchemaError, PARAMETER_TYPE, parse } from "../src";
 
 describe("parser", () => {
 	it("should parse basic flags", () => {
@@ -342,5 +342,57 @@ describe("parser", () => {
 		});
 		expect(unknown).toEqual({});
 		expect(parameters).toEqual(["-5", "---three"]);
+	});
+
+	it("should support ignore callback to stop parsing", () => {
+		// Stop parsing after first argument
+		const result1 = parse(["--my-flag", "./file.js", "--my-flag"], {
+			flags: {
+				myFlag: [Boolean],
+			},
+			ignore: (type) => type === PARAMETER_TYPE,
+		});
+
+		expect(result1.flags).toEqual({ myFlag: 1 });
+		expect(result1.parameters).toEqual([]);
+		expect(result1.ignored).toEqual(["./file.js", "--my-flag"]);
+
+		// Stop parsing at a specific flag
+		const result2 = parse(
+			["--flag1", "value1", "--stop", "--flag2", "value2"],
+			{
+				flags: {
+					flag1: String,
+					flag2: String,
+				},
+				ignore: (type, arg) => arg === "--stop",
+			},
+		);
+
+		expect(result2.flags).toEqual({ flag1: "value1", flag2: undefined });
+		expect(result2.ignored).toEqual(["--stop", "--flag2", "value2"]);
+
+		// Stop parsing after N flags
+		let flagCount = 0;
+		const result3 = parse(["--a", "--b", "--c", "--d"], {
+			flags: {
+				a: Boolean,
+				b: Boolean,
+				c: Boolean,
+				d: Boolean,
+			},
+			ignore: (type) => {
+				if (type === "flag") {
+					flagCount++;
+
+					return flagCount > 2;
+				}
+
+				return false;
+			},
+		});
+
+		expect(result3.flags).toEqual({ a: true, b: true, c: false, d: false });
+		expect(result3.ignored).toEqual(["--c", "--d"]);
 	});
 });

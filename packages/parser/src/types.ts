@@ -1,3 +1,5 @@
+import type { FLAG, PARAMETER } from "./iterator";
+
 type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
@@ -75,6 +77,18 @@ export type FlagOptionsValue<T = any> = FlagOptions | FlagType<T>;
 export type FlagsConfigSchema = Record<string, FlagOptionsValue>;
 
 /**
+ * A callback function to conditionally stop parsing.
+ * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
+ * @param type - The type of the current argument: 'flag' for flags, 'parameter' for positional arguments
+ * @param arg - The current argument being processed
+ * @returns true to stop parsing, false to continue
+ */
+export type IgnoreFunction = (
+	type: typeof FLAG | typeof PARAMETER,
+	arg: string,
+) => boolean;
+
+/**
  * Configuration options for the parser.
  */
 export interface ParserOptions<T extends FlagsConfigSchema = {}> {
@@ -90,6 +104,12 @@ export interface ParserOptions<T extends FlagsConfigSchema = {}> {
 	 * @default ['=', ':']
 	 */
 	delimiters?: string[];
+
+	/**
+	 * A callback function to conditionally stop parsing.
+	 * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
+	 */
+	ignore?: IgnoreFunction;
 }
 
 export type RawInputType = string | boolean;
@@ -112,6 +132,8 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 	raw: string[];
 	/** Unknown flags encountered during parsing. */
 	unknown: Record<string, RawInputType>;
+	/** Arguments that were not parsed due to ignore callback. */
+	ignored: string[];
 }
 
 /**

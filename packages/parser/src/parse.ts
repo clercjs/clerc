@@ -1,4 +1,5 @@
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
+import { iterateArgs } from "./iterator";
 import type {
 	FlagOptionsValue,
 	InferFlags,
@@ -20,7 +21,11 @@ const DOUBLE_DASH = "--";
 export function createParser<T extends Record<string, FlagOptionsValue>>(
 	options: ParserOptions<T> = {},
 ) {
-	const { flags: flagsConfig = {}, delimiters } = resolveParserOptions(options);
+	const {
+		flags: flagsConfig = {},
+		delimiters,
+		ignore,
+	} = resolveParserOptions(options);
 	const { configs, aliases } = buildConfigsAndAliases(flagsConfig);
 
 	function resolve(name: string) {
@@ -63,18 +68,30 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			flags: {},
 			raw: args,
 			unknown: {},
+			ignored: [],
 		};
 
-		for (let i = 0; i < args.length; i++) {
-			const arg = args[i];
+		iterateArgs(args, result, shouldProcessAsFlag, ignore, (iterator) => {
+			const arg = iterator.current;
+
 			if (arg === DOUBLE_DASH) {
-				result.doubleDash.push(...args.slice(i + 1));
-				break;
+				result.doubleDash.push(...args.slice(iterator.index + 1));
+				iterator.exit();
+
+				return;
+			}
+
+			if (iterator.check(arg)) {
+				result.ignored.push(arg);
+				iterator.exit();
+
+				return;
 			}
 
 			if (!shouldProcessAsFlag(arg)) {
 				result.parameters.push(arg);
-				continue;
+
+				return;
 			}
 
 			const isAlias = !arg.startsWith(DOUBLE_DASH);
@@ -103,9 +120,9 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 							j = chars.length;
 						} else {
 							// -ab foo, we are on "b"
-							const next = args[i + 1];
+							const next = iterator.eat();
 							if (next && !shouldProcessAsFlag(next)) {
-								setValueByType(result.flags, key, args[++i], config);
+								setValueByType(result.flags, key, next, config);
 							}
 							// else {
 							// 	setValueByType(result.flags, key, "", config);
@@ -150,16 +167,14 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					const key = toCamelCase(rawName);
 					if (hasSep) {
 						result.unknown[key] = rawValue!;
+					} else if (iterator.hasNext && !shouldProcessAsFlag(iterator.next)) {
+						const value = iterator.eat();
+						result.unknown[key] = value ?? true;
 					} else {
-						const next = args[i + 1];
-						if (next && !shouldProcessAsFlag(next)) {
-							result.unknown[key] = next;
-							i++;
-						} else {
-							result.unknown[key] = true;
-						}
+						result.unknown[key] = true;
 					}
-					continue;
+
+					return;
 				}
 
 				const { key, config, path } = resolved;
@@ -169,8 +184,8 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.flags[key] ??= {};
 						const value = hasSep
 							? rawValue!
-							: args[i + 1] && !shouldProcessAsFlag(args[i + 1])
-								? args[++i]
+							: iterator.hasNext && !shouldProcessAsFlag(iterator.next)
+								? (iterator.eat() ?? "")
 								: "";
 						setDotValues(result.flags[key], path, value);
 					}
@@ -179,17 +194,16 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						const value = hasSep ? rawValue !== "false" : true;
 						result.flags[key] = isNegated ? !value : value;
 					} else {
-						const next = args[i + 1];
 						const value = hasSep
 							? rawValue!
-							: next && !shouldProcessAsFlag(next)
-								? args[++i]
+							: iterator.hasNext && !shouldProcessAsFlag(iterator.next)
+								? (iterator.eat() ?? "")
 								: "";
 						setValueByType(result.flags, key, value, config);
 					}
 				}
 			}
-		}
+		});
 
 		// Apply defaults
 		for (const [key, config] of configs.entries()) {
