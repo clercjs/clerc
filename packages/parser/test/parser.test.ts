@@ -265,6 +265,38 @@ describe("parser", () => {
 				},
 			}),
 		).toThrow(InvalidSchemaError);
+
+		expect(() =>
+			parse([], {
+				flags: {
+					" space": { type: String },
+				},
+			}),
+		).toThrow(InvalidSchemaError);
+
+		expect(() =>
+			parse([], {
+				flags: {
+					":colon": { type: String },
+				},
+			}),
+		).toThrow(InvalidSchemaError);
+
+		expect(() =>
+			parse([], {
+				flags: {
+					".dot": { type: String },
+				},
+			}),
+		).toThrow(InvalidSchemaError);
+
+		expect(() =>
+			parse([], {
+				flags: {
+					"=eq": { type: String },
+				},
+			}),
+		).toThrow(InvalidSchemaError);
 	});
 
 	it("should handle edge cases", () => {

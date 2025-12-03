@@ -50,17 +50,29 @@ const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
 		? { type: config }
 		: config;
 
+const RESERVED_CHARACTERS_PATTERN = /[\s.:=]/;
+
+function validateFlagOptions(name: string, options: FlagOptions) {
+	const prefix = `Flag "${name}"`;
+	if (Array.isArray(options.type) && options.type.length > 1) {
+		throw new InvalidSchemaError(
+			`${prefix} has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
+		);
+	}
+	if (RESERVED_CHARACTERS_PATTERN.test(name)) {
+		throw new InvalidSchemaError(
+			`${prefix} contains reserved characters (spaces, dots, colons, equals signs).`,
+		);
+	}
+}
+
 export function buildConfigsAndAliases(flags: FlagsConfigSchema) {
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
 
 	for (const [name, config] of Object.entries(flags)) {
 		const normalized = normalizeConfig(config);
-		if (Array.isArray(normalized.type) && normalized.type.length > 1) {
-			throw new InvalidSchemaError(
-				`Flag "${name}" has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
-			);
-		}
+		validateFlagOptions(name, normalized);
 
 		configs.set(name, normalized);
 		aliases.set(name, name);
