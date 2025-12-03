@@ -17,6 +17,7 @@ describe("parser", () => {
 				"b",
 				"--unknown=11",
 				"-u",
+				"foo",
 			],
 			{
 				flags: {
@@ -38,7 +39,7 @@ describe("parser", () => {
 			u: true,
 			unknown: "11",
 		});
-		expect(parameters).toEqual([]);
+		expect(parameters).toEqual(["foo"]);
 	});
 
 	it("should parse aliases and short flags", () => {
