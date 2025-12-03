@@ -126,30 +126,26 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				let resolved = resolve(rawName);
 				let isNegated = false;
 
-				if (!resolved) {
-					let positiveName = "";
-					if (rawName.startsWith("no-")) {
-						positiveName = rawName.slice(3);
-					} else if (
-						rawName.startsWith("no") &&
-						rawName.length > 2 &&
-						/[A-Z]/.test(rawName[2])
-					) {
-						positiveName = rawName[2].toLowerCase() + rawName.slice(3);
-					}
+				// Try to resolve negated boolean flags: --no-foo or --noFoo
+				if (!resolved && rawName.startsWith("no")) {
+					const positiveName =
+						rawName[2] === "-"
+							? rawName.slice(3) // --no-foo -> foo
+							: rawName.length > 2 && /[A-Z]/.test(rawName[2])
+								? rawName[2].toLowerCase() + rawName.slice(3) // --noFoo -> foo
+								: "";
 
 					if (positiveName) {
-						const res = resolve(positiveName);
+						const positiveResolved = resolve(positiveName);
 						if (
-							res?.config.type === Boolean &&
-							(res.config as any).negatable !== false
+							positiveResolved?.config.type === Boolean &&
+							(positiveResolved.config as any).negatable !== false
 						) {
-							resolved = res;
+							resolved = positiveResolved;
 							isNegated = true;
 						}
 					}
 				}
-
 				if (!resolved) {
 					const key = toCamelCase(rawName);
 					if (hasSep) {
