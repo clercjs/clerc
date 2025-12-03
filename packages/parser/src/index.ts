@@ -5,7 +5,7 @@ import type {
 	ParsedResult,
 	ParserOptions,
 } from "./types";
-import { appendValue } from "./utils";
+import { setDotValues, setValueByType } from "./utils";
 
 const toCamelCase = (str: string) =>
 	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
@@ -134,7 +134,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 							: args[i + 1] && !isFlag(args[i + 1])
 								? args[++i]
 								: "";
-						result.flags[key][path] = value;
+						setDotValues(result.flags[key], path, value);
 					} else {
 						result.unknown[rawName] = hasEq ? val! : true;
 					}
@@ -145,10 +145,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					} else {
 						const next = args[i + 1];
 						const value = hasEq ? val! : next && !isFlag(next) ? args[++i] : "";
-						appendValue(result.flags, key, value, config);
+						setValueByType(result.flags, key, value, config);
 					}
 				}
-			} else if (isFlag(arg)) {
+			}
+			// -abcdef
+			else if (isFlag(arg)) {
 				const chars = arg.slice(1);
 				for (let j = 0; j < chars.length; j++) {
 					const char = chars[j];
@@ -164,14 +166,16 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.flags[key] = true;
 					} else {
 						if (j + 1 < chars.length) {
-							appendValue(result.flags, key, chars.slice(j + 1), config);
+							// -abval, b's type is not Boolean
+							// set b to 'val'
+							setValueByType(result.flags, key, chars.slice(j + 1), config);
 							j = chars.length;
 						} else {
 							const next = args[i + 1];
 							if (next && !isFlag(next)) {
-								appendValue(result.flags, key, args[++i], config);
+								setValueByType(result.flags, key, args[++i], config);
 							} else {
-								appendValue(result.flags, key, "", config);
+								setValueByType(result.flags, key, "", config);
 							}
 						}
 					}
@@ -181,7 +185,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			}
 		}
 
-		// Apply type conversions
+		// Apply defaults
 		for (const [key, config] of configs.entries()) {
 			const val = result.flags[key];
 			if (val === undefined) {
@@ -197,22 +201,6 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				// Initialize negatable booleans to false if not provided
 				else if (config.type === Boolean) {
 					result.flags[key] = false;
-				}
-			} else {
-				if (config.type === Boolean) {
-					continue;
-				}
-				if (config.type === Object) {
-					continue;
-				}
-
-				const type = Array.isArray(config.type) ? config.type[0] : config.type;
-
-				if (Array.isArray(config.type)) {
-					const arr = Array.isArray(val) ? val : [val];
-					result.flags[key] = arr.map(type);
-				} else {
-					result.flags[key] = type(val);
 				}
 			}
 		}

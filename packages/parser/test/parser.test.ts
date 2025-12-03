@@ -153,16 +153,33 @@ describe("parser", () => {
 	});
 
 	it("should handle dot-nested options", () => {
-		const { flags } = parse(["--env.SECRET", "bar", "--config.port", "8080"], {
-			flags: {
-				env: { type: Object },
-				config: { type: Object },
+		const { flags } = parse(
+			[
+				"--env.SECRET",
+				"bar",
+				"--config.port",
+				"8080",
+				"--config.enabled",
+				"--config.not=false",
+				"--config.foo.bar",
+				"baz",
+			],
+			{
+				flags: {
+					env: { type: Object },
+					config: { type: Object },
+				},
 			},
-		});
+		);
 
 		expect(flags).toEqual({
 			env: { SECRET: "bar" },
-			config: { port: "8080" },
+			config: {
+				port: "8080",
+				enabled: true,
+				not: false,
+				foo: { bar: "baz" },
+			},
 		});
 	});
 
