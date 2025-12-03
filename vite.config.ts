@@ -21,6 +21,10 @@ export const alias: AliasOptions = {
 export default defineConfig({
 	test: {
 		projects: ["packages/*"],
+		coverage: {
+			enabled: true,
+			provider: "istanbul",
+		},
 	},
 	resolve: {
 		alias,

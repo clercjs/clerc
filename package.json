@@ -10,6 +10,7 @@
 		"prepublishOnly": "nr build",
 		"release": "bumpp package.json packages/*/package.json --commit --push --tag && nr build && pnpm publish -r --filter ./packages/*",
 		"test": "vitest",
+		"test:ui": "vitest --ui",
 		"typecheck": "tsgo --noEmit",
 		"watch": "pnpm -r --parallel run watch"
 	},
@@ -20,6 +21,8 @@
 		"@so1ve/prettier-config": "^3.17.0",
 		"@types/node": "^24.10.1",
 		"@typescript/native-preview": "7.0.0-dev.20250812.1",
+		"@vitest/coverage-istanbul": "^4.0.15",
+		"@vitest/ui": "^4.0.15",
 		"bumpp": "^10.3.2",
 		"clerc": "workspace:*",
 		"eslint": "^9.39.1",

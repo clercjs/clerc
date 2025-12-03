@@ -5,7 +5,19 @@ import { parse } from "../src";
 describe("parser", () => {
 	it("should parse basic flags", () => {
 		const { flags, parameters, unknown } = parse(
-			["--bool", "--str", "baz", "--num", "123", "--arr", "a", "--arr", "b"],
+			[
+				"--bool",
+				"--str",
+				"baz",
+				"--num",
+				"123",
+				"--arr",
+				"a",
+				"--arr",
+				"b",
+				"--unknown=11",
+				"-u",
+			],
 			{
 				flags: {
 					bool: { type: Boolean },
@@ -22,7 +34,10 @@ describe("parser", () => {
 			num: 123,
 			arr: ["a", "b"],
 		});
-		expect(unknown).toEqual({});
+		expect(unknown).toEqual({
+			u: true,
+			unknown: "11",
+		});
 		expect(parameters).toEqual([]);
 	});
 
@@ -153,7 +168,7 @@ describe("parser", () => {
 	});
 
 	it("should handle dot-nested options", () => {
-		const { flags } = parse(
+		const { flags, unknown } = parse(
 			[
 				"--env.SECRET",
 				"bar",
@@ -163,6 +178,7 @@ describe("parser", () => {
 				"--config.not=false",
 				"--config.foo.bar",
 				"baz",
+				"--unknown.foo",
 			],
 			{
 				flags: {
@@ -181,6 +197,7 @@ describe("parser", () => {
 				foo: { bar: "baz" },
 			},
 		});
+		expect(unknown).toEqual({ "unknown.foo": true });
 	});
 
 	it("should initialize arrays, objects and booleans with default values", () => {

@@ -135,8 +135,6 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 								? args[++i]
 								: "";
 						setDotValues(result.flags[key], path, value);
-					} else {
-						result.unknown[rawName] = hasEq ? val! : true;
 					}
 				} else {
 					if (config.type === Boolean) {
@@ -178,9 +176,10 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 							const next = args[i + 1];
 							if (next && !isArgFlag(next)) {
 								setValueByType(result.flags, key, args[++i], config);
-							} else {
-								setValueByType(result.flags, key, "", config);
 							}
+							// else {
+							// 	setValueByType(result.flags, key, "", config);
+							// }
 						}
 					}
 				}
