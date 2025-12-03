@@ -145,20 +145,20 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 
 				// Try to resolve negated boolean flags: --no-foo or --noFoo
 				if (!resolved && rawName.startsWith("no")) {
-					const positiveName =
+					const possibleName =
 						rawName[2] === "-"
 							? rawName.slice(3) // --no-foo -> foo
 							: rawName.length > 2 && /[A-Z]/.test(rawName[2])
 								? rawName[2].toLowerCase() + rawName.slice(3) // --noFoo -> foo
 								: "";
 
-					if (positiveName) {
-						const positiveResolved = resolve(positiveName);
+					if (possibleName) {
+						const possibleResolved = resolve(possibleName);
 						if (
-							positiveResolved?.config.type === Boolean &&
-							(positiveResolved.config as any).negatable !== false
+							possibleResolved?.config.type === Boolean &&
+							(possibleResolved.config as any).negatable !== false
 						) {
-							resolved = positiveResolved;
+							resolved = possibleResolved;
 							isNegated = true;
 						}
 					}
