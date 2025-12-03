@@ -165,4 +165,18 @@ describe("parser", () => {
 			config: { port: "8080" },
 		});
 	});
+
+	it("should initialize arrays and objects with default values", () => {
+		const { flags } = parse([], {
+			flags: {
+				list: { type: [String] },
+				settings: { type: Object },
+			},
+		});
+
+		expect(flags).toEqual({
+			list: [],
+			settings: {},
+		});
+	});
 });

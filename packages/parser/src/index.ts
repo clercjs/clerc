@@ -188,6 +188,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				if (config.default !== undefined) {
 					result.flags[key] = config.default;
 				}
+				// Make sure arrays and objects are always initialized with default values
+				else if (Array.isArray(config.type)) {
+					result.flags[key] = [];
+				} else if (config.type === Object) {
+					result.flags[key] = {};
+				}
 			} else {
 				if (config.type === Boolean) {
 					continue;
