@@ -53,6 +53,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 		};
 	}
 
+	const isArgFlag = (arg: string) =>
+		isFlag(arg) ||
+		(arg.startsWith("-") &&
+			!arg.startsWith("--") &&
+			(resolve(arg.slice(1)) ?? resolve(arg.slice(1, 2))));
+
 	function parse(args: string[]): ParsedResult<InferFlags<T>> {
 		const result: ParsedResult<any> = {
 			parameters: [],
@@ -108,7 +114,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.unknown[key] = val!;
 					} else {
 						const next = args[i + 1];
-						if (next && !isFlag(next)) {
+						if (next && !isArgFlag(next)) {
 							result.unknown[key] = next;
 							i++;
 						} else {
@@ -125,7 +131,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.flags[key] ??= {};
 						const value = hasEq
 							? val!
-							: args[i + 1] && !isFlag(args[i + 1])
+							: args[i + 1] && !isArgFlag(args[i + 1])
 								? args[++i]
 								: "";
 						setDotValues(result.flags[key], path, value);
@@ -138,13 +144,17 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.flags[key] = isNegated ? !value : value;
 					} else {
 						const next = args[i + 1];
-						const value = hasEq ? val! : next && !isFlag(next) ? args[++i] : "";
+						const value = hasEq
+							? val!
+							: next && !isArgFlag(next)
+								? args[++i]
+								: "";
 						setValueByType(result.flags, key, value, config);
 					}
 				}
 			}
 			// -abcdef
-			else if (isFlag(arg)) {
+			else if (isArgFlag(arg)) {
 				const chars = arg.slice(1);
 				for (let j = 0; j < chars.length; j++) {
 					const char = chars[j];
@@ -166,7 +176,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 							j = chars.length;
 						} else {
 							const next = args[i + 1];
-							if (next && !isFlag(next)) {
+							if (next && !isArgFlag(next)) {
 								setValueByType(result.flags, key, args[++i], config);
 							} else {
 								setValueByType(result.flags, key, "", config);

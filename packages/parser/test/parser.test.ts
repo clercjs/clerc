@@ -198,4 +198,48 @@ describe("parser", () => {
 			flag: false,
 		});
 	});
+
+	it("edge cases", () => {
+		const { flags, unknown, parameters } = parse(
+			[
+				"--num=-1",
+				"--should-not-be",
+				"-1",
+				"-2",
+				"-34",
+				"-5",
+				"--eq=",
+				"---three",
+			],
+			{
+				flags: {
+					num: Number,
+					shouldNotBe: Boolean,
+					eq: String,
+					1: Boolean,
+					alias2: {
+						type: Boolean,
+						alias: "2",
+					},
+					3: Boolean,
+					4: Boolean,
+				},
+			},
+		);
+
+		expect(flags).toEqual({
+			num: -1,
+			shouldNotBe: true,
+			eq: "",
+			1: true,
+			alias2: true,
+			3: true,
+			4: true,
+		});
+		expect(unknown).toEqual({
+			// -three converted to camelCase
+			Three: true,
+		});
+		expect(parameters).toEqual(["-5"]);
+	});
 });
