@@ -23,6 +23,9 @@ importers:
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1
+      '@types/nopt':
+        specifier: ^3.0.32
+        version: 3.0.32
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20250812.1
         version: 7.0.0-dev.20250812.1
@@ -41,12 +44,18 @@ importers:
       eslint:
         specifier: ^9.39.1
         version: 9.39.1(jiti@2.6.1)
+      nopt:
+        specifier: ^9.0.0
+        version: 9.0.0
       prettier:
         specifier: ^3.7.3
         version: 3.7.3
       tsdown:
         specifier: ^0.16.8
         version: 0.16.8(@typescript/native-preview@7.0.0-dev.20250812.1)(synckit@0.11.11)(typescript@5.9.3)
+      type-flag:
+        specifier: ^4.0.3
+        version: 4.0.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -919,6 +928,9 @@ packages:
   '@types/node@24.10.1':
     resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
+  '@types/nopt@3.0.32':
+    resolution: {integrity: sha512-UP8QR0GaR8AE3l4wDmyCx4lEkX5o/1YVeDBqb1UqmfHefZqFNedQLTsobfzw56CvlXVVbt6kAwJJbN1yDTp16Q==}
+
   '@types/parse-author@2.0.3':
     resolution: {integrity: sha512-pgRW2K/GVQoogylrGJXDl7PBLW9A6T4OOc9Hy9MLT5f7vgufK2GQ8FcfAbjFHR5HjcN9ByzuCczAORk49REqoA==}
 
@@ -1230,6 +1242,10 @@ packages:
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  abbrev@4.0.0:
+    resolution: {integrity: sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA==}
+    engines: {node: ^20.17.0 || >=22.9.0}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2528,6 +2544,11 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     hasBin: true
 
+  nopt@9.0.0:
+    resolution: {integrity: sha512-Zhq3a+yFKrYwSBluL4H9XP3m3y5uvQkB/09CwDruCiRmR/UJYnn9W4R48ry0uGC70aeTPKLynBtscP9efFFcPw==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+    hasBin: true
+
   normalize-package-data@6.0.2:
     resolution: {integrity: sha512-V6gygoYb/5EmNI+MEGrWkC+e6+Rr7mTmfHrxDbLzxQogBkgzo76rkok0Am6thgSF7Mv2nLOajAJj5vDJZEFn7g==}
     engines: {node: ^16.14.0 || >=18.0.0}
@@ -3062,6 +3083,9 @@ packages:
 
   type-flag@3.0.0:
     resolution: {integrity: sha512-3YaYwMseXCAhBB14RXW5cRQfJQlEknS6i4C8fCfeUdS3ihG9EdccdR9kt3vP73ZdeTGmPb4bZtkDn5XMIn1DLA==}
+
+  type-flag@4.0.3:
+    resolution: {integrity: sha512-YA09cL07U7hSV+/doSfKl+RkIZ2olCnevZsVgAuyBUG3h2ROf9Oh2vmbq5Rf26aA9/qu9RtStuc7ap5PC6k/vw==}
 
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
@@ -4054,6 +4078,8 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
+  '@types/nopt@3.0.32': {}
+
   '@types/parse-author@2.0.3': {}
 
   '@types/parse-json@4.0.2': {}
@@ -4388,6 +4414,8 @@ snapshots:
       tinyrainbow: 3.0.3
 
   abbrev@2.0.0: {}
+
+  abbrev@4.0.0: {}
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -5907,6 +5935,10 @@ snapshots:
     dependencies:
       abbrev: 2.0.0
 
+  nopt@9.0.0:
+    dependencies:
+      abbrev: 4.0.0
+
   normalize-package-data@6.0.2:
     dependencies:
       hosted-git-info: 7.0.2
@@ -6466,6 +6498,8 @@ snapshots:
       tagged-tag: 1.0.0
 
   type-flag@3.0.0: {}
+
+  type-flag@4.0.3: {}
 
   typedarray@0.0.6: {}
 

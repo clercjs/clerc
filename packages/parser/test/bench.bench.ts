@@ -1,5 +1,9 @@
+import { parseArgs } from "node:util";
+
 import minimist from "minimist";
 import mri from "mri";
+import nopt from "nopt";
+import { typeFlag } from "type-flag";
 import { bench, describe } from "vitest";
 import yargs from "yargs-parser";
 
@@ -18,6 +22,18 @@ describe("sort", () => {
 
 	bench("yargs-parser", () => {
 		yargs(args);
+	});
+
+	bench("nopt", () => {
+		nopt(args);
+	});
+
+	bench("type-flag", () => {
+		typeFlag({}, args);
+	});
+
+	bench("node:util parseArgs", () => {
+		parseArgs({ args });
 	});
 
 	bench("@clerc/parser", () => {
