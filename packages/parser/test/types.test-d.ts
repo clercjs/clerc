@@ -9,6 +9,7 @@ describe("parser types", () => {
 				boolean: { type: Boolean },
 				string: { type: String },
 				number: { type: Number },
+				stringWithDefault: { type: String, default: "foo" },
 				never: { type: [Boolean] },
 				arrayString: { type: [String] },
 				object: { type: Object },
@@ -19,13 +20,14 @@ describe("parser types", () => {
 		});
 		expectTypeOf(result.flags).toEqualTypeOf<{
 			boolean: boolean;
-			string: string;
-			number: number;
+			string: string | undefined;
+			number: number | undefined;
+			stringWithDefault: string;
 			never: never;
 			arrayString: string[];
 			object: Record<string, string | boolean>;
 			booleanShorthand: boolean;
-			stringShorthand: string;
+			stringShorthand: string | undefined;
 			arrayNumberShorthand: number[];
 		}>();
 	});

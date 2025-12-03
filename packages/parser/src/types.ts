@@ -126,7 +126,9 @@ type _InferFlags<T extends Record<string, FlagOptionsValue>> = {
 				: T[K] extends FlagTypeSpec<[infer U]>
 					? GetValueType<U>[]
 					: T[K] extends FlagTypeSpec<infer U>
-						? GetValueType<U>
+						? T[K] extends { default: any }
+							? GetValueType<U>
+							: GetValueType<U> | undefined
 						: any;
 };
 
