@@ -141,6 +141,17 @@ describe("parser", () => {
 		expect(result2.unknown).toEqual({ noFoo: true });
 	});
 
+	it("should handle boolean props with non-false values", () => {
+		const result = parse(["--flag1=1", "--no-flag2=asdf"], {
+			flags: {
+				flag1: { type: Boolean },
+				flag2: { type: Boolean },
+			},
+		});
+
+		expect(result.flags).toEqual({ flag1: true, flag2: false });
+	});
+
 	it("should handle dot-nested options", () => {
 		const { flags } = parse(["--env.SECRET", "bar", "--config.port", "8080"], {
 			flags: {
