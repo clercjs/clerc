@@ -71,7 +71,6 @@ describe("bench", () => {
 	bench("@clerc/parser", () => {
 		parse(args, {
 			flags: {
-				b: Boolean,
 				bool: Boolean,
 				meep: Boolean,
 				multi: String,
