@@ -22,7 +22,6 @@ export default defineConfig({
 	test: {
 		projects: ["packages/*"],
 		coverage: {
-			enabled: true,
 			provider: "istanbul",
 		},
 	},
