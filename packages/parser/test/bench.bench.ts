@@ -9,11 +9,14 @@ import yargs from "yargs-parser";
 
 import { parse } from "../src";
 
-const args = ["-b", "--bool", "--no-meep", "--multi=baz"];
+const args = ["--bool", "--no-meep", "--multi=baz"];
 
-describe("sort", () => {
+describe("bench", () => {
 	bench("minimist", () => {
-		minimist(args);
+		minimist(args, {
+			boolean: ["bool", "meep"],
+			string: ["multi"],
+		});
 	});
 
 	bench("mri", () => {
@@ -25,18 +28,54 @@ describe("sort", () => {
 	});
 
 	bench("nopt", () => {
-		nopt(args);
+		nopt(
+			{
+				bool: Boolean,
+				noMeep: Boolean,
+				multi: String,
+			},
+			{},
+			args,
+		);
 	});
 
 	bench("type-flag", () => {
-		typeFlag({}, args);
+		typeFlag(
+			{
+				bool: Boolean,
+				noMeep: Boolean,
+				multi: String,
+			},
+			args,
+		);
 	});
 
 	bench("node:util parseArgs", () => {
-		parseArgs({ args });
+		parseArgs({
+			args,
+			allowNegative: true,
+			options: {
+				bool: {
+					type: "boolean",
+				},
+				meep: {
+					type: "boolean",
+				},
+				multi: {
+					type: "string",
+				},
+			},
+		});
 	});
 
 	bench("@clerc/parser", () => {
-		parse(args);
+		parse(args, {
+			flags: {
+				b: Boolean,
+				bool: Boolean,
+				meep: Boolean,
+				multi: String,
+			},
+		});
 	});
 });
