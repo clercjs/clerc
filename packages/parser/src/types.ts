@@ -107,22 +107,23 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 /**
  * Extracts the final return value type from a FlagType (e.g., String, Number, or a custom function).
  */
-type GetValueType<T> = T extends (value: string) => infer R
-	? R
-	: T extends new (...args: any[]) => infer R
-		? R
-		: any;
+type GetValueType<T> = T extends FlagType<infer U> ? U : any;
+
+/**
+ * A utility type that represents the shape of a flag type specification.
+ */
+export type FlagTypeSpec<T> = T | { type: T };
 
 type _InferFlags<T extends Record<string, FlagOptionsValue>> = {
-	[K in keyof T]: T[K] extends BooleanConstructor | { type: BooleanConstructor }
+	[K in keyof T]: T[K] extends FlagTypeSpec<BooleanConstructor>
 		? boolean
-		: T[K] extends BooleanConstructor[] | { type: BooleanConstructor[] }
+		: T[K] extends FlagTypeSpec<BooleanConstructor[]>
 			? never
-			: T[K] extends ObjectConstructor | { type: ObjectConstructor }
+			: T[K] extends FlagTypeSpec<ObjectConstructor>
 				? Record<string, RawInputType>
-				: T[K] extends [infer U] | { type: [infer U] }
+				: T[K] extends FlagTypeSpec<[infer U]>
 					? GetValueType<U>[]
-					: T[K] extends infer U | { type: infer U }
+					: T[K] extends FlagTypeSpec<infer U>
 						? GetValueType<U>
 						: any;
 };
