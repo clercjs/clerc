@@ -30,7 +30,9 @@ export interface BooleanFlagOptions extends BaseFlagOptions<boolean> {
  * Defines how a string input is converted to the target type T.
  * @template T The target type.
  */
-export type FlagType<T> = (value: string) => T;
+export type FlagTypeFunction<T> = (value: string) => T;
+
+export type FlagType<T> = FlagTypeFunction<T> | [FlagTypeFunction<T>];
 
 /**
  * Options for a general-purpose flag.
@@ -42,7 +44,7 @@ export interface GeneralFlagOptions<T> extends BaseFlagOptions<T | T[]> {
 	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
 	 * e.g., String, Number, [String], (val) => val.split(',')
 	 */
-	type: FlagType<T> | [FlagType<T>];
+	type: FlagType<T>;
 }
 
 /**
@@ -66,7 +68,7 @@ export type FlagOptions =
 /**
  * The value type for each property in the `flags` object, which can be a full configuration object or a shorthand syntax.
  */
-export type FlagOptionsValue = FlagOptions | FlagType<any> | [FlagType<any>];
+export type FlagOptionsValue = FlagOptions | FlagType<any>;
 
 /**
  * Configuration options for the parser.
@@ -107,7 +109,7 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 /**
  * Extracts the final return value type from a FlagType (e.g., String, Number, or a custom function).
  */
-type GetValueType<T> = T extends FlagType<infer U> ? U : any;
+type GetValueType<T> = T extends FlagTypeFunction<infer U> ? U : any;
 
 /**
  * A utility type that represents the shape of a flag type specification.
