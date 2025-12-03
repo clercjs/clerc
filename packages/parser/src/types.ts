@@ -1,3 +1,7 @@
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
 /**
  * Base options for a flag.
  * @template T The type of the parsed value.
@@ -109,12 +113,7 @@ type GetValueType<T> = T extends (value: string) => infer R
 		? R
 		: any;
 
-/**
- * An advanced utility type that infers the exact type of the `flags` object in the parsed result,
- * based on the provided `flags` configuration object T.
- * @template T The type of the flags configuration object.
- */
-export type InferFlags<T extends Record<string, FlagOptionsValue>> = {
+type _InferFlags<T extends Record<string, FlagOptionsValue>> = {
 	[K in keyof T]: T[K] extends BooleanConstructor | { type: BooleanConstructor }
 		? boolean
 		: T[K] extends BooleanConstructor[] | { type: BooleanConstructor[] }
@@ -127,3 +126,12 @@ export type InferFlags<T extends Record<string, FlagOptionsValue>> = {
 						? GetValueType<U>
 						: any;
 };
+
+/**
+ * An advanced utility type that infers the exact type of the `flags` object in the parsed result,
+ * based on the provided `flags` configuration object T.
+ * @template T The type of the flags configuration object.
+ */
+export type InferFlags<T extends Record<string, FlagOptionsValue>> = Prettify<
+	_InferFlags<T>
+>;
