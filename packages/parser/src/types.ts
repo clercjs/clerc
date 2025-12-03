@@ -2,6 +2,8 @@ type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 
+export type FlagDefaultValue<T> = T | (() => T);
+
 /**
  * Base options for a flag.
  * @template T The type of the parsed value.
@@ -10,7 +12,7 @@ export interface BaseFlagOptions<T> {
 	/** Aliases for the flag. */
 	alias?: string | string[];
 	/** The default value of the flag. */
-	default?: T;
+	default?: FlagDefaultValue<T>;
 }
 
 /**

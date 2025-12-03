@@ -178,7 +178,10 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			const val = result.flags[key];
 			if (val === undefined) {
 				if (config.default !== undefined) {
-					result.flags[key] = config.default;
+					result.flags[key] =
+						typeof config.default === "function"
+							? config.default()
+							: config.default;
 				}
 				// Make sure arrays and objects are always initialized with default values
 				else if (Array.isArray(config.type)) {

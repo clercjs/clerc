@@ -120,6 +120,7 @@ describe("parser", () => {
 				bool: { type: Boolean, default: true },
 				num: { type: Number, default: 123 },
 				arr: { type: [String], default: ["a", "b"] },
+				function: { type: String, default: () => "computed" },
 			},
 		});
 
@@ -128,6 +129,7 @@ describe("parser", () => {
 			bool: true,
 			num: 123,
 			arr: ["a", "b"],
+			function: "computed",
 		});
 	});
 
