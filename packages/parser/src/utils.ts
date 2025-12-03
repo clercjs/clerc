@@ -1,5 +1,4 @@
-import { InvalidSchemaError } from "./errors";
-import type { FlagOptions, FlagOptionsValue, FlagsConfigSchema } from "./types";
+import type { FlagOptions } from "./types";
 
 export const isArrayOfType = (arr: any, type: any): boolean =>
 	Array.isArray(arr) && arr[0] === type;
@@ -45,47 +44,21 @@ export const toCamelCase = (str: string) =>
 export const isNumber = (str: string) => !Number.isNaN(Number(str));
 export const isFlag = (str: string) => str.startsWith("-") && !isNumber(str);
 
-const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
-	typeof config === "function" || Array.isArray(config)
-		? { type: config }
-		: config;
-
-const RESERVED_CHARACTERS_PATTERN = /[\s.:=]/;
-
-function validateFlagOptions(name: string, options: FlagOptions) {
-	const prefix = `Flag "${name}"`;
-	if (Array.isArray(options.type) && options.type.length > 1) {
-		throw new InvalidSchemaError(
-			`${prefix} has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
-		);
-	}
-	if (RESERVED_CHARACTERS_PATTERN.test(name)) {
-		throw new InvalidSchemaError(
-			`${prefix} contains reserved characters (spaces, dots, colons, equals signs).`,
-		);
-	}
-}
-
-export function buildConfigsAndAliases(flags: FlagsConfigSchema) {
-	const configs = new Map<string, FlagOptions>();
-	const aliases = new Map<string, string>();
-
-	for (const [name, config] of Object.entries(flags)) {
-		const normalized = normalizeConfig(config);
-		validateFlagOptions(name, normalized);
-
-		configs.set(name, normalized);
-		aliases.set(name, name);
-		aliases.set(toCamelCase(name), name);
-		if (normalized.alias) {
-			const list = Array.isArray(normalized.alias)
-				? normalized.alias
-				: [normalized.alias];
-			for (const a of list) {
-				aliases.set(a, name);
-			}
+export function splitNameAndValue(arg: string, delimiters: string[]) {
+	let sepIdx = -1;
+	let usedDelimiter = "";
+	for (const delimiter of delimiters) {
+		const idx = arg.indexOf(delimiter);
+		if (idx !== -1 && (sepIdx === -1 || idx < sepIdx)) {
+			sepIdx = idx;
+			usedDelimiter = delimiter;
 		}
 	}
+	const hasSep = sepIdx !== -1;
+	const rawName = hasSep ? arg.slice(2, sepIdx) : arg.slice(2);
+	const rawValue = hasSep
+		? arg.slice(sepIdx + usedDelimiter.length)
+		: undefined;
 
-	return { configs, aliases };
+	return { rawName, rawValue, hasSep };
 }

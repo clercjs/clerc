@@ -1,3 +1,4 @@
+import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import type {
 	FlagOptionsValue,
 	InferFlags,
@@ -5,19 +6,18 @@ import type {
 	ParserOptions,
 } from "./types";
 import {
-	buildConfigsAndAliases,
 	isArrayOfType,
 	isFlag,
 	setDotValues,
 	setValueByType,
+	splitNameAndValue,
 	toCamelCase,
 } from "./utils";
 
 export function createParser<T extends Record<string, FlagOptionsValue>>(
 	options: ParserOptions<T> = {},
 ) {
-	const { flags: flagsConfig = {} as Record<string, FlagOptionsValue> } =
-		options;
+	const { flags: flagsConfig = {}, delimiters } = resolveParserOptions(options);
 	const { configs, aliases } = buildConfigsAndAliases(flagsConfig);
 
 	function resolve(name: string) {
@@ -63,17 +63,10 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			if (arg.startsWith("--")) {
 				// Support both --name=value and --name:value forms. The ':' form
 				// is useful when the value itself contains '=' (e.g. --define:K=V).
-				const eqIdx = arg.indexOf("=");
-				const colonIdx = arg.indexOf(":");
-				const sepIdx =
-					colonIdx === -1
-						? eqIdx
-						: eqIdx === -1
-							? colonIdx
-							: Math.min(colonIdx, eqIdx);
-				const hasSep = sepIdx !== -1;
-				const rawName = hasSep ? arg.slice(2, sepIdx) : arg.slice(2);
-				const val = hasSep ? arg.slice(sepIdx + 1) : undefined;
+				const { rawName, rawValue, hasSep } = splitNameAndValue(
+					arg,
+					delimiters,
+				);
 
 				let resolved = resolve(rawName);
 				let isNegated = false;
@@ -105,7 +98,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				if (!resolved) {
 					const key = toCamelCase(rawName);
 					if (hasSep) {
-						result.unknown[key] = val!;
+						result.unknown[key] = rawValue!;
 					} else {
 						const next = args[i + 1];
 						if (next && !isArgFlag(next)) {
@@ -124,7 +117,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					if (config.type === Object) {
 						result.flags[key] ??= {};
 						const value = hasSep
-							? val!
+							? rawValue!
 							: args[i + 1] && !isArgFlag(args[i + 1])
 								? args[++i]
 								: "";
@@ -132,12 +125,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 					}
 				} else {
 					if (config.type === Boolean) {
-						const value = hasSep ? val !== "false" : true;
+						const value = hasSep ? rawValue !== "false" : true;
 						result.flags[key] = isNegated ? !value : value;
 					} else {
 						const next = args[i + 1];
 						const value = hasSep
-							? val!
+							? rawValue!
 							: next && !isArgFlag(next)
 								? args[++i]
 								: "";

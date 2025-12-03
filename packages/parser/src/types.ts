@@ -84,6 +84,12 @@ export interface ParserOptions<T extends FlagsConfigSchema = {}> {
 	 * The key is the flag name (e.g., "file" for "--file").
 	 */
 	flags?: T;
+
+	/**
+	 * Delimiters to split flag names and values.
+	 * @default ['=', ':']
+	 */
+	delimiters?: string[];
 }
 
 export type RawInputType = string | boolean;
@@ -140,3 +146,7 @@ type _InferFlags<T extends FlagsConfigSchema> = {
  * @template T The type of the flags configuration object.
  */
 export type InferFlags<T extends FlagsConfigSchema> = Prettify<_InferFlags<T>>;
+
+export type PartialRequired<T, K extends keyof T> = T & {
+	[P in K]-?: T[P];
+};
