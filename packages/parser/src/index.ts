@@ -5,13 +5,7 @@ import type {
 	ParsedResult,
 	ParserOptions,
 } from "./types";
-import { setDotValues, setValueByType } from "./utils";
-
-const toCamelCase = (str: string) =>
-	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-
-const isNumber = (str: string) => !Number.isNaN(Number(str));
-const isFlag = (str: string) => str.startsWith("-") && !isNumber(str);
+import { isFlag, setDotValues, setValueByType, toCamelCase } from "./utils";
 
 const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
 	typeof config === "function" || Array.isArray(config)

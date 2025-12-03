@@ -31,3 +31,8 @@ export function setDotValues(obj: any, path: string, value: any) {
 		current[lastKey] = value;
 	}
 }
+
+export const toCamelCase = (str: string) =>
+	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+export const isNumber = (str: string) => !Number.isNaN(Number(str));
+export const isFlag = (str: string) => str.startsWith("-") && !isNumber(str);
