@@ -7,12 +7,15 @@ import type {
 } from "./types";
 import {
 	isArrayOfType,
-	isFlag,
 	setDotValues,
 	setValueByType,
 	splitNameAndValue,
 	toCamelCase,
 } from "./utils";
+
+const FLAG_ALPHA_PATTERN = /^-{1,2}[a-z]/i;
+const FLAG_NUMBER_PATTERN = /^-{1,2}\d/;
+const DOUBLE_DASH = "--";
 
 export function createParser<T extends Record<string, FlagOptionsValue>>(
 	options: ParserOptions<T> = {},
@@ -38,11 +41,20 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 		};
 	}
 
-	const isArgFlag = (arg: string) =>
-		isFlag(arg) ||
-		(arg.startsWith("-") &&
-			!arg.startsWith("--") &&
-			(resolve(arg.slice(1)) ?? resolve(arg.slice(1, 2))));
+	function shouldProcessAsFlag(arg: string) {
+		if (FLAG_ALPHA_PATTERN.test(arg)) {
+			return true;
+		}
+
+		if (FLAG_NUMBER_PATTERN.test(arg)) {
+			const isAlias = !arg.startsWith(DOUBLE_DASH);
+			const name = isAlias ? arg.slice(1, 2) : arg.slice(2);
+
+			return !!resolve(name);
+		}
+
+		return false;
+	}
 
 	function parse(args: string[]): ParsedResult<InferFlags<T>> {
 		const result: ParsedResult<any> = {
@@ -55,16 +67,59 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (arg === "--") {
+			if (arg === DOUBLE_DASH) {
 				result.doubleDash.push(...args.slice(i + 1));
 				break;
 			}
 
-			if (arg.startsWith("--")) {
+			if (!shouldProcessAsFlag(arg)) {
+				result.parameters.push(arg);
+				continue;
+			}
+
+			const isAlias = !arg.startsWith(DOUBLE_DASH);
+			const chars = arg.slice(isAlias ? 1 : 2);
+
+			// -abc
+			if (isAlias) {
+				for (let j = 0; j < chars.length; j++) {
+					const char = chars[j];
+					const resolved = resolve(char);
+
+					if (!resolved) {
+						result.unknown[char] = true;
+						continue;
+					}
+
+					const { key, config } = resolved;
+
+					if (config.type === Boolean || isArrayOfType(config.type, Boolean)) {
+						setValueByType(result.flags, key, "true", config);
+					} else {
+						if (j + 1 < chars.length) {
+							// -abval, b's type is not Boolean
+							// set b to 'val'
+							setValueByType(result.flags, key, chars.slice(j + 1), config);
+							j = chars.length;
+						} else {
+							// -ab foo, we are on "b"
+							const next = args[i + 1];
+							if (next && !shouldProcessAsFlag(next)) {
+								setValueByType(result.flags, key, args[++i], config);
+							}
+							// else {
+							// 	setValueByType(result.flags, key, "", config);
+							// }
+						}
+					}
+				}
+			}
+			// --flag
+			else {
 				// Support both --name=value and --name:value forms. The ':' form
 				// is useful when the value itself contains '=' (e.g. --define:K=V).
 				const { rawName, rawValue, hasSep } = splitNameAndValue(
-					arg,
+					chars,
 					delimiters,
 				);
 
@@ -101,7 +156,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.unknown[key] = rawValue!;
 					} else {
 						const next = args[i + 1];
-						if (next && !isArgFlag(next)) {
+						if (next && !shouldProcessAsFlag(next)) {
 							result.unknown[key] = next;
 							i++;
 						} else {
@@ -118,7 +173,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						result.flags[key] ??= {};
 						const value = hasSep
 							? rawValue!
-							: args[i + 1] && !isArgFlag(args[i + 1])
+							: args[i + 1] && !shouldProcessAsFlag(args[i + 1])
 								? args[++i]
 								: "";
 						setDotValues(result.flags[key], path, value);
@@ -131,47 +186,12 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 						const next = args[i + 1];
 						const value = hasSep
 							? rawValue!
-							: next && !isArgFlag(next)
+							: next && !shouldProcessAsFlag(next)
 								? args[++i]
 								: "";
 						setValueByType(result.flags, key, value, config);
 					}
 				}
-			}
-			// -abcdef
-			else if (isArgFlag(arg)) {
-				const chars = arg.slice(1);
-				for (let j = 0; j < chars.length; j++) {
-					const char = chars[j];
-					const resolved = resolve(char);
-
-					if (!resolved) {
-						result.unknown[char] = true;
-						continue;
-					}
-
-					const { key, config } = resolved;
-					if (config.type === Boolean || isArrayOfType(config.type, Boolean)) {
-						setValueByType(result.flags, key, "true", config);
-					} else {
-						if (j + 1 < chars.length) {
-							// -abval, b's type is not Boolean
-							// set b to 'val'
-							setValueByType(result.flags, key, chars.slice(j + 1), config);
-							j = chars.length;
-						} else {
-							const next = args[i + 1];
-							if (next && !isArgFlag(next)) {
-								setValueByType(result.flags, key, args[++i], config);
-							}
-							// else {
-							// 	setValueByType(result.flags, key, "", config);
-							// }
-						}
-					}
-				}
-			} else {
-				result.parameters.push(arg);
 			}
 		}
 

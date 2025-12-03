@@ -311,6 +311,7 @@ describe("parser", () => {
 				"-5",
 				"--eq=",
 				"---three",
+				"--not-given",
 			],
 			{
 				flags: {
@@ -324,6 +325,7 @@ describe("parser", () => {
 					},
 					3: Boolean,
 					4: Boolean,
+					notGiven: String,
 				},
 			},
 		);
@@ -336,11 +338,9 @@ describe("parser", () => {
 			alias2: true,
 			3: true,
 			4: true,
+			notGiven: "",
 		});
-		expect(unknown).toEqual({
-			// -three converted to camelCase
-			Three: true,
-		});
-		expect(parameters).toEqual(["-5"]);
+		expect(unknown).toEqual({});
+		expect(parameters).toEqual(["-5", "---three"]);
 	});
 });

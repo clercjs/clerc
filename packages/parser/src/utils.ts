@@ -41,8 +41,6 @@ export function setDotValues(obj: any, path: string, value: any) {
 
 export const toCamelCase = (str: string) =>
 	str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-export const isNumber = (str: string) => !Number.isNaN(Number(str));
-export const isFlag = (str: string) => str.startsWith("-") && !isNumber(str);
 
 export function splitNameAndValue(arg: string, delimiters: string[]) {
 	let sepIdx = -1;
@@ -55,7 +53,7 @@ export function splitNameAndValue(arg: string, delimiters: string[]) {
 		}
 	}
 	const hasSep = sepIdx !== -1;
-	const rawName = hasSep ? arg.slice(2, sepIdx) : arg.slice(2);
+	const rawName = hasSep ? arg.slice(0, sepIdx) : arg;
 	const rawValue = hasSep
 		? arg.slice(sepIdx + usedDelimiter.length)
 		: undefined;
