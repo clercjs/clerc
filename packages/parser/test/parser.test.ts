@@ -137,7 +137,7 @@ describe("parser", () => {
 			},
 		});
 
-		expect(result2.flags).toEqual({});
+		expect(result2.flags).toEqual({ foo: false });
 		expect(result2.unknown).toEqual({ noFoo: true });
 	});
 
@@ -166,17 +166,19 @@ describe("parser", () => {
 		});
 	});
 
-	it("should initialize arrays and objects with default values", () => {
+	it("should initialize arrays, objects and booleans with default values", () => {
 		const { flags } = parse([], {
 			flags: {
 				list: { type: [String] },
 				settings: { type: Object },
+				flag: { type: Boolean },
 			},
 		});
 
 		expect(flags).toEqual({
 			list: [],
 			settings: {},
+			flag: false,
 		});
 	});
 });

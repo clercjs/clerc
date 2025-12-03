@@ -194,6 +194,10 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 				} else if (config.type === Object) {
 					result.flags[key] = {};
 				}
+				// Initialize negatable booleans to false if not provided
+				else if (config.type === Boolean) {
+					result.flags[key] = false;
+				}
 			} else {
 				if (config.type === Boolean) {
 					continue;
