@@ -31,4 +31,36 @@ describe("parser types", () => {
 			arrayNumberShorthand: number[];
 		}>();
 	});
+
+	it("should have negatable only for boolean flags", () => {
+		parse([], {
+			flags: {
+				boolWithNegatable: { type: Boolean, negatable: true },
+				boolWithoutNegatable: { type: Boolean },
+				// @ts-expect-error negatable is not allowed for non-boolean flags
+				stringWithNegatable: { type: String, negatable: true },
+				// @ts-expect-error negatable is not allowed for non-boolean flags
+				numberWithNegatable: { type: Number, negatable: false },
+			},
+		});
+	});
+
+	it("should infer default values", () => {
+		const result = parse([], {
+			flags: {
+				boolWithDefault: { type: Boolean, default: true },
+				stringWithDefault: { type: String, default: "foo" },
+				numberWithDefault: { type: Number, default: 42 },
+				arrayStringWithDefault: { type: [String], default: ["a", "b"] },
+				weirdType: { type: String, default: 123 }, // should be string | number
+			},
+		});
+		expectTypeOf(result.flags).toEqualTypeOf<{
+			boolWithDefault: boolean;
+			stringWithDefault: string;
+			numberWithDefault: number;
+			arrayStringWithDefault: string[];
+			weirdType: string | number;
+		}>();
+	});
 });
