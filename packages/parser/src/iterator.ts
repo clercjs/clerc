@@ -10,7 +10,7 @@ export interface ArgsIterator {
 	readonly next: string;
 	check: (arg: string) => boolean;
 	eat: () => string | undefined;
-	exit: () => void;
+	exit: (push?: boolean) => void;
 }
 
 export function iterateArgs(
@@ -36,7 +36,7 @@ export function iterateArgs(
 		get next() {
 			return args[index + 1];
 		},
-		check(arg: string) {
+		check: (arg: string) => {
 			if (ignore) {
 				const argType = shouldProcessAsFlag(arg) ? FLAG : PARAMETER;
 
@@ -45,23 +45,25 @@ export function iterateArgs(
 
 			return false;
 		},
-		eat(): string | undefined {
-			if (!this.hasNext) {
+		eat: (): string | undefined => {
+			if (!iterator.hasNext) {
 				return undefined;
 			}
 			const nextArg = args[index + 1];
 
-			if (this.check(nextArg)) {
-				this.exit();
+			if (iterator.check(nextArg)) {
+				iterator.exit();
 
 				return undefined;
 			}
 
 			return args[++index];
 		},
-		exit() {
+		exit: (push = true) => {
 			if (!stopped) {
-				result.ignored.push(...args.slice(index + 1));
+				if (push) {
+					result.ignored.push(...args.slice(index + 1));
+				}
 				stopped = true;
 			}
 		},

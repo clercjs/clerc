@@ -99,7 +99,7 @@ describe("parser", () => {
 	});
 
 	it("should separate unknown flags and positional arguments", () => {
-		const { flags, parameters, doubleDash, unknown } = parse(
+		const { flags, parameters, doubleDash, unknown, ignored } = parse(
 			["--foo", "arg1", "--bar", "baz", "--", "--qux"],
 			{
 				flags: {
@@ -112,6 +112,7 @@ describe("parser", () => {
 		expect(unknown).toEqual({ bar: "baz" });
 		expect(parameters).toEqual(["arg1"]);
 		expect(doubleDash).toEqual(["--qux"]);
+		expect(ignored).toEqual([]);
 	});
 
 	it("should handle defaults", () => {

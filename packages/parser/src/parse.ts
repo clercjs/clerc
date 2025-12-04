@@ -71,139 +71,149 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 			ignored: [],
 		};
 
-		iterateArgs(args, result, shouldProcessAsFlag, ignore, (iterator) => {
-			const arg = iterator.current;
-
-			if (arg === DOUBLE_DASH) {
-				result.doubleDash.push(...args.slice(iterator.index + 1));
-				iterator.exit();
-
-				return;
-			}
-
-			if (iterator.check(arg)) {
-				result.ignored.push(arg);
-				iterator.exit();
-
-				return;
-			}
-
-			if (!shouldProcessAsFlag(arg)) {
-				result.parameters.push(arg);
-
-				return;
-			}
-
-			const isAlias = !arg.startsWith(DOUBLE_DASH);
-			const chars = arg.slice(isAlias ? 1 : 2);
-
-			// -abc
-			if (isAlias) {
-				for (let j = 0; j < chars.length; j++) {
-					const char = chars[j];
-					const resolved = resolve(char);
-
-					if (!resolved) {
-						result.unknown[char] = true;
-						continue;
-					}
-
-					const { key, config } = resolved;
-
-					if (config.type === Boolean || isArrayOfType(config.type, Boolean)) {
-						setValueByType(result.flags, key, "true", config);
-					} else {
-						if (j + 1 < chars.length) {
-							// -abval, b's type is not Boolean
-							// set b to 'val'
-							setValueByType(result.flags, key, chars.slice(j + 1), config);
-							j = chars.length;
-						} else {
-							// -ab foo, we are on "b"
-							const next = iterator.eat();
-							if (next && !shouldProcessAsFlag(next)) {
-								setValueByType(result.flags, key, next, config);
-							}
-							// else {
-							// 	setValueByType(result.flags, key, "", config);
-							// }
-						}
-					}
-				}
-			}
-			// --flag
-			else {
-				// Support both --name=value and --name:value forms. The ':' form
-				// is useful when the value itself contains '=' (e.g. --define:K=V).
-				const { rawName, rawValue, hasSep } = splitNameAndValue(
-					chars,
-					delimiters,
-				);
-
-				let resolved = resolve(rawName);
-				let isNegated = false;
-
-				// Try to resolve negated boolean flags: --no-foo or --noFoo
-				if (!resolved && rawName.startsWith("no")) {
-					const possibleName =
-						rawName[2] === "-"
-							? rawName.slice(3) // --no-foo -> foo
-							: rawName.length > 2 && /[A-Z]/.test(rawName[2])
-								? rawName[2].toLowerCase() + rawName.slice(3) // --noFoo -> foo
-								: "";
-
-					if (possibleName) {
-						const possibleResolved = resolve(possibleName);
-						if (
-							possibleResolved?.config.type === Boolean &&
-							(possibleResolved.config as any).negatable !== false
-						) {
-							resolved = possibleResolved;
-							isNegated = true;
-						}
-					}
-				}
-				if (!resolved) {
-					const key = toCamelCase(rawName);
-					if (hasSep) {
-						result.unknown[key] = rawValue!;
-					} else if (iterator.hasNext && !shouldProcessAsFlag(iterator.next)) {
-						const value = iterator.eat();
-						result.unknown[key] = value ?? true;
-					} else {
-						result.unknown[key] = true;
-					}
+		iterateArgs(
+			args,
+			result,
+			shouldProcessAsFlag,
+			ignore,
+			(
+				// @keep-sorted
+				{ check, current, eat, exit, hasNext, index, next },
+			) => {
+				if (current === DOUBLE_DASH) {
+					result.doubleDash.push(...args.slice(index + 1));
+					exit(false);
 
 					return;
 				}
 
-				const { key, config, path } = resolved;
+				if (check(current)) {
+					result.ignored.push(current);
+					exit();
 
-				if (path) {
-					if (config.type === Object) {
-						result.flags[key] ??= {};
-						const value = hasSep
-							? rawValue!
-							: iterator.hasNext && !shouldProcessAsFlag(iterator.next)
-								? (iterator.eat() ?? "")
-								: "";
-						setDotValues(result.flags[key], path, value);
-					}
-				} else {
-					if (config.type === Boolean) {
-						const value = hasSep ? rawValue !== "false" : true;
-						result.flags[key] = isNegated ? !value : value;
-					} else {
-						const value = hasSep
-							? rawValue!
-							: iterator.hasNext && !shouldProcessAsFlag(iterator.next)
-								? (iterator.eat() ?? "")
-								: "";
-						setValueByType(result.flags, key, value, config);
+					return;
+				}
+
+				if (!shouldProcessAsFlag(current)) {
+					result.parameters.push(current);
+
+					return;
+				}
+
+				const isAlias = !current.startsWith(DOUBLE_DASH);
+				const chars = current.slice(isAlias ? 1 : 2);
+
+				// -abc
+				if (isAlias) {
+					for (let j = 0; j < chars.length; j++) {
+						const char = chars[j];
+						const resolved = resolve(char);
+
+						if (!resolved) {
+							result.unknown[char] = true;
+							continue;
+						}
+
+						const { key, config } = resolved;
+
+						if (
+							config.type === Boolean ||
+							isArrayOfType(config.type, Boolean)
+						) {
+							setValueByType(result.flags, key, "true", config);
+						} else {
+							if (j + 1 < chars.length) {
+								// -abval, b's type is not Boolean
+								// set b to 'val'
+								setValueByType(result.flags, key, chars.slice(j + 1), config);
+								j = chars.length;
+							} else {
+								// -ab foo, we are on "b"
+								const next = eat();
+								if (next && !shouldProcessAsFlag(next)) {
+									setValueByType(result.flags, key, next, config);
+								}
+								// else {
+								// 	setValueByType(result.flags, key, "", config);
+								// }
+							}
+						}
 					}
 				}
-			}
-		});
+				// --flag
+				else {
+					// Support both --name=value and --name:value forms. The ':' form
+					// is useful when the value itself contains '=' (e.g. --define:K=V).
+					const { rawName, rawValue, hasSep } = splitNameAndValue(
+						chars,
+						delimiters,
+					);
+
+					let resolved = resolve(rawName);
+					let isNegated = false;
+
+					// Try to resolve negated boolean flags: --no-foo or --noFoo
+					if (!resolved && rawName.startsWith("no")) {
+						const possibleName =
+							rawName[2] === "-"
+								? rawName.slice(3) // --no-foo -> foo
+								: rawName.length > 2 && /[A-Z]/.test(rawName[2])
+									? rawName[2].toLowerCase() + rawName.slice(3) // --noFoo -> foo
+									: "";
+
+						if (possibleName) {
+							const possibleResolved = resolve(possibleName);
+							if (
+								possibleResolved?.config.type === Boolean &&
+								(possibleResolved.config as any).negatable !== false
+							) {
+								resolved = possibleResolved;
+								isNegated = true;
+							}
+						}
+					}
+					if (!resolved) {
+						const key = toCamelCase(rawName);
+						if (hasSep) {
+							result.unknown[key] = rawValue!;
+						} else if (hasNext && !shouldProcessAsFlag(next)) {
+							const value = eat();
+							result.unknown[key] = value ?? true;
+						} else {
+							result.unknown[key] = true;
+						}
+
+						return;
+					}
+
+					const { key, config, path } = resolved;
+
+					if (path) {
+						if (config.type === Object) {
+							result.flags[key] ??= {};
+							const value = hasSep
+								? rawValue!
+								: hasNext && !shouldProcessAsFlag(next)
+									? (eat() ?? "")
+									: "";
+							setDotValues(result.flags[key], path, value);
+						}
+					} else {
+						if (config.type === Boolean) {
+							const value = hasSep ? rawValue !== "false" : true;
+							result.flags[key] = isNegated ? !value : value;
+						} else {
+							const value = hasSep
+								? rawValue!
+								: hasNext && !shouldProcessAsFlag(next)
+									? (eat() ?? "")
+									: "";
+							setValueByType(result.flags, key, value, config);
+						}
+					}
+				}
+			},
+		);
 
 		// Apply defaults
 		for (const [key, config] of configs.entries()) {
