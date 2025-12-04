@@ -1,5 +1,8 @@
 import type { FlagOptions } from "./types";
 
+export const strictIsArray = <T>(arr: any): arr is readonly T[] =>
+	Array.isArray(arr);
+
 export const isArrayOfType = (arr: any, type: any): boolean =>
 	Array.isArray(arr) && arr[0] === type;
 
@@ -10,7 +13,7 @@ export function setValueByType(
 	config: FlagOptions,
 ) {
 	const { type } = config;
-	if (Array.isArray(type)) {
+	if (strictIsArray(type)) {
 		if (isArrayOfType(type, Boolean)) {
 			flags[key] = (flags[key] ?? 0) + 1;
 		} else {

@@ -1,84 +1,24 @@
+import type { ExclusifyUnion } from "type-fest";
+
 import type { FLAG, PARAMETER } from "./iterator";
 
 type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 
-export type FlagDefaultValue<T> = T | (() => T);
-
-/**
- * Base options for a flag.
- * @template T The type of the parsed value.
- */
-export interface BaseFlagOptions<T> {
-	/** Aliases for the flag. */
-	alias?: string | string[];
-	/** The default value of the flag. */
-	default?: FlagDefaultValue<T>;
-}
-
-/**
- * Specific options for a boolean flag.
- */
-export interface BooleanFlagOptions extends BaseFlagOptions<boolean> {
-	/** The type must be the Boolean constructor. */
-	type: BooleanConstructor;
-	/**
-	 * Whether to enable the `--no-<flag>` syntax to set the value to false.
-	 * @default true
-	 */
-	negatable?: boolean;
-}
+export type FlagDefaultValue<T = unknown> = T | (() => T);
 
 /**
  * Defines how a string input is converted to the target type T.
+ *
  * @template T The target type.
  */
-export type FlagTypeFunction<T> = (value: string) => T;
-
-export type FlagType<T> = FlagTypeFunction<T> | [FlagTypeFunction<T>];
-
-/**
- * Options for a general-purpose flag.
- * @template T The type of the parsed value (or the element type if it's an array).
- */
-export interface GeneralFlagOptions<T> extends BaseFlagOptions<T | T[]> {
-	/**
-	 * The type constructor or a function to convert the string value.
-	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
-	 * e.g., String, Number, [String], (val) => val.split(',')
-	 */
-	type: FlagType<T>;
-}
-
-/**
- * Specific options for an object flag to support dot-notation.
- */
-export interface ObjectFlagOptions extends BaseFlagOptions<
-	Record<string, any>
-> {
-	/** The type must be the Object constructor. */
-	type: ObjectConstructor;
-}
-
-/**
- * A union type representing all possible flag configurations.
- */
-export type FlagOptions<T = any> =
-	| BooleanFlagOptions
-	| ObjectFlagOptions
-	| GeneralFlagOptions<T>;
-
-/**
- * The value type for each property in the `flags` object, which can be a full configuration object or a shorthand syntax.
- */
-export type FlagOptionsValue<T = any> = FlagOptions | FlagType<T>;
-
-export type FlagsConfigSchema = Record<string, FlagOptionsValue>;
+export type FlagTypeFunction<T = unknown> = (value: string) => T;
 
 /**
  * A callback function to conditionally stop parsing.
  * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
+ *
  * @param type - The type of the current argument: 'flag' for flags, 'parameter' for positional arguments
  * @param arg - The current argument being processed
  * @returns true to stop parsing, false to continue
@@ -88,10 +28,40 @@ export type IgnoreFunction = (
 	arg: string,
 ) => boolean;
 
+export type FlagType<T = unknown> =
+	| FlagTypeFunction<T>
+	| readonly [FlagTypeFunction<T>];
+
+export interface BaseFlagOptions<T extends FlagType = FlagType> {
+	/**
+	 * The type constructor or a function to convert the string value.
+	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
+	 * e.g., String, Number, [String], (val) => val.split(',')
+	 */
+	type: T;
+	/** Aliases for the flag. */
+	alias?: string | string[];
+	/** The default value of the flag. */
+	default?: unknown;
+}
+export interface BooleanFlagOptions extends BaseFlagOptions<BooleanConstructor> {
+	/**
+	 * Whether to enable the `--no-<flag>` syntax to set the value to false.
+	 * Only useful for boolean flags.
+	 * When set on a non-boolean flag, a type error will be shown.
+	 *
+	 * @default true
+	 */
+	negatable?: boolean;
+}
+export type FlagOptions = ExclusifyUnion<BaseFlagOptions | BooleanFlagOptions>;
+export type FlagDefinitionValue = FlagOptions | FlagType;
+export type FlagsDefinition = Record<string, FlagDefinitionValue>;
+
 /**
  * Configuration options for the parser.
  */
-export interface ParserOptions<T extends FlagsConfigSchema = {}> {
+export interface ParserOptions<T extends FlagsDefinition = {}> {
 	/**
 	 * Detailed configuration for flags.
 	 * Supports the full object syntax or a type constructor as a shorthand.
@@ -101,6 +71,7 @@ export interface ParserOptions<T extends FlagsConfigSchema = {}> {
 
 	/**
 	 * Delimiters to split flag names and values.
+	 *
 	 * @default ['=', ':']
 	 */
 	delimiters?: string[];
@@ -136,38 +107,40 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 	ignored: string[];
 }
 
-/**
- * Extracts the final return value type from a FlagType (e.g., String, Number, or a custom function).
- */
-type GetValueType<T> = T extends FlagTypeFunction<infer U> ? U : any;
+type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
+	default: FlagDefaultValue<infer DefaultType>;
+}
+	? DefaultType
+	: Fallback;
 
-/**
- * A utility type that represents the shape of a flag type specification.
- */
-export type FlagTypeSpec<T> = T | { type: T };
-
-type _InferFlags<T extends FlagsConfigSchema> = {
-	[K in keyof T]: T[K] extends FlagTypeSpec<BooleanConstructor>
-		? boolean
-		: T[K] extends FlagTypeSpec<[BooleanConstructor]>
-			? number
-			: T[K] extends FlagTypeSpec<ObjectConstructor>
-				? Record<string, RawInputType>
-				: T[K] extends FlagTypeSpec<[infer U]>
-					? GetValueType<U>[]
-					: T[K] extends FlagTypeSpec<infer U>
-						? T[K] extends { default: any }
-							? GetValueType<U>
-							: GetValueType<U> | undefined
-						: any;
+type _InferFlags<T extends FlagsDefinition> = {
+	[K in keyof T]: T[K] extends
+		| readonly [BooleanConstructor]
+		| { type: readonly [BooleanConstructor] }
+		? number
+		: T[K] extends ObjectConstructor | { type: ObjectConstructor }
+			? Record<string, RawInputType>
+			: T[K] extends
+						| readonly [FlagType<infer U>]
+						| { type: readonly [FlagType<infer U>] }
+				? U[] | InferFlagDefault<T[K], never>
+				: T[K] extends FlagType<infer U> | { type: FlagType<infer U> }
+					?
+							| U
+							| InferFlagDefault<
+									T[K],
+									[U] extends [boolean] ? never : undefined
+							  >
+					: never;
 };
 
 /**
  * An advanced utility type that infers the exact type of the `flags` object in the parsed result,
  * based on the provided `flags` configuration object T.
+ *
  * @template T The type of the flags configuration object.
  */
-export type InferFlags<T extends FlagsConfigSchema> = Prettify<_InferFlags<T>>;
+export type InferFlags<T extends FlagsDefinition> = Prettify<_InferFlags<T>>;
 
 export type PartialRequired<T, K extends keyof T> = T & {
 	[P in K]-?: T[P];

@@ -1,7 +1,7 @@
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import { iterateArgs } from "./iterator";
 import type {
-	FlagOptionsValue,
+	FlagsDefinition,
 	InferFlags,
 	ParsedResult,
 	ParserOptions,
@@ -18,7 +18,7 @@ const FLAG_ALPHA_PATTERN = /^-{1,2}[a-z]/i;
 const FLAG_NUMBER_PATTERN = /^-{1,2}\d/;
 const DOUBLE_DASH = "--";
 
-export function createParser<T extends Record<string, FlagOptionsValue>>(
+export function createParser<T extends FlagsDefinition>(
 	options: ParserOptions<T> = {},
 ) {
 	const {
@@ -244,7 +244,7 @@ export function createParser<T extends Record<string, FlagOptionsValue>>(
 	return { parse };
 }
 
-export const parse = <T extends Record<string, FlagOptionsValue>>(
+export const parse = <T extends FlagsDefinition>(
 	args: string[],
 	options: ParserOptions<T> = {},
 ) => createParser(options).parse(args);

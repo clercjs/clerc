@@ -1,12 +1,12 @@
 import { InvalidSchemaError } from "./errors";
 import type {
+	FlagDefinitionValue,
 	FlagOptions,
-	FlagOptionsValue,
-	FlagsConfigSchema,
+	FlagsDefinition,
 	ParserOptions,
 	PartialRequired,
 } from "./types";
-import { toCamelCase } from "./utils";
+import { strictIsArray, toCamelCase } from "./utils";
 
 const defaultParserOptions = {
 	delimiters: ["=", ":"],
@@ -19,8 +19,8 @@ export const resolveParserOptions = (
 	...options,
 });
 
-const normalizeConfig = (config: FlagOptionsValue): FlagOptions =>
-	typeof config === "function" || Array.isArray(config)
+const normalizeConfig = (config: FlagDefinitionValue): FlagOptions =>
+	typeof config === "function" || strictIsArray(config)
 		? { type: config }
 		: config;
 
@@ -40,7 +40,7 @@ function validateFlagOptions(name: string, options: FlagOptions) {
 	}
 }
 
-export function buildConfigsAndAliases(flags: FlagsConfigSchema) {
+export function buildConfigsAndAliases(flags: FlagsDefinition) {
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
 
