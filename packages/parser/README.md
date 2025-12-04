@@ -149,6 +149,13 @@ const { flags: withValue } = parse(["-ab", "val"], {
 		b: String,
 	},
 });
+// or -abval, b is not boolean
+const { flags: withValue } = parse(["-abval"], {
+	flags: {
+		a: Boolean,
+		b: String,
+	},
+});
 // withValue: { a: true, b: "val" }
 ```
 
