@@ -315,16 +315,6 @@ const { flags, parameters, ignored } = parse(
 
 Arguments after `--` are not parsed as flags and are collected in the `doubleDash` array.
 
-````typescript
-const { flags, doubleDash } = parse(["--foo", "--", "--bar"], {
-	flags: {
-		foo: Boolean,
-		bar: Boolean,
-
-### Double Dash (`--`)
-
-Arguments after `--` are not parsed as flags and are collected in the `doubleDash` array.
-
 ```typescript
 const { flags, doubleDash } = parse(["--foo", "--", "--bar"], {
 	flags: {
@@ -334,4 +324,4 @@ const { flags, doubleDash } = parse(["--foo", "--", "--bar"], {
 });
 // flags: { foo: true, bar: false }
 // doubleDash: ["--bar"]
-````
+```
