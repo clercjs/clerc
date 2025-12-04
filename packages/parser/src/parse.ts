@@ -8,14 +8,14 @@ import type {
 } from "./types";
 import {
 	isArrayOfType,
+	isDigit,
+	isLetter,
 	setDotValues,
 	setValueByType,
 	splitNameAndValue,
 	toCamelCase,
 } from "./utils";
 
-const FLAG_ALPHA_PATTERN = /^-{1,2}[a-z]/i;
-const FLAG_NUMBER_PATTERN = /^-{1,2}\d/;
 const DOUBLE_DASH = "--";
 
 export function createParser<T extends FlagsDefinition>(
@@ -50,11 +50,11 @@ export function createParser<T extends FlagsDefinition>(
 	}
 
 	function shouldProcessAsFlag(arg: string) {
-		// Check first character for quick rejection
+		// Check first character for quick rejection (45 is '-')
 		const firstChar = arg.charCodeAt(0);
 		if (firstChar !== 45) {
 			return false;
-		} // 45 is '-'
+		}
 
 		const len = arg.length;
 		if (len < 2) {
@@ -62,16 +62,14 @@ export function createParser<T extends FlagsDefinition>(
 		}
 
 		const secondChar = arg.charCodeAt(1);
-		// Check if it's a letter (a-z, A-Z)
-		if (
-			(secondChar >= 65 && secondChar <= 90) ||
-			(secondChar >= 97 && secondChar <= 122)
-		) {
+
+		// Check if it's a letter
+		if (isLetter(secondChar)) {
 			return true;
 		}
 
-		// Check if it's a digit (0-9)
-		if (secondChar >= 48 && secondChar <= 57) {
+		// Check if it's a digit
+		if (isDigit(secondChar)) {
 			const isAlias = secondChar !== 45; // not '--'
 			const name = isAlias ? arg[1] : arg.slice(2);
 
@@ -82,10 +80,7 @@ export function createParser<T extends FlagsDefinition>(
 		if (secondChar === 45 && len > 2) {
 			const thirdChar = arg.charCodeAt(2);
 
-			return (
-				(thirdChar >= 65 && thirdChar <= 90) ||
-				(thirdChar >= 97 && thirdChar <= 122)
-			);
+			return isLetter(thirdChar);
 		}
 
 		return false;

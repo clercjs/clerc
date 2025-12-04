@@ -6,6 +6,18 @@ export const strictIsArray = <T>(arr: any): arr is readonly T[] =>
 export const isArrayOfType = (arr: any, type: any): boolean =>
 	Array.isArray(arr) && arr[0] === type;
 
+/**
+ * Check if it's a letter (a-z: 97-122, A-Z: 65-90)
+ */
+export const isLetter = (charCode: number): boolean =>
+	(charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122);
+
+/**
+ * Check if it's a digit (0-9: 48-57)
+ */
+export const isDigit = (charCode: number): boolean =>
+	charCode >= 48 && charCode <= 57;
+
 export function setValueByType(
 	flags: any,
 	key: string,
