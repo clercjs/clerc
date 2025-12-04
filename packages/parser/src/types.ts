@@ -85,6 +85,9 @@ export interface ParserOptions<T extends FlagsDefinition = {}> {
 }
 
 export type RawInputType = string | boolean;
+export interface ObjectInputType {
+	[key: string]: RawInputType | ObjectInputType;
+}
 
 /**
  * The parsed result.
@@ -120,7 +123,7 @@ type _InferFlags<T extends FlagsDefinition> = {
 		| { type: readonly [BooleanConstructor] }
 		? number
 		: T[K] extends ObjectConstructor | { type: ObjectConstructor }
-			? Record<string, RawInputType>
+			? ObjectInputType
 			: T[K] extends
 						| readonly [FlagType<infer U>]
 						| { type: readonly [FlagType<infer U>] }

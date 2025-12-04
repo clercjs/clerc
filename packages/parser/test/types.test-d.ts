@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 
+import type { ObjectInputType } from "../src";
 import { parse } from "../src";
 
 describe("parser types", () => {
@@ -25,7 +26,7 @@ describe("parser types", () => {
 			stringWithDefault: string;
 			counter: number;
 			arrayString: string[];
-			object: Record<string, string | boolean>;
+			object: ObjectInputType;
 			booleanShorthand: boolean;
 			stringShorthand: string | undefined;
 			arrayNumberShorthand: number[];
