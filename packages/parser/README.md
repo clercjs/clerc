@@ -209,7 +209,7 @@ const { flags } = parse(["--port", "8080"], {
 				if (Number.isNaN(parsed)) {
 					throw new TypeError("Port must be a number!");
 				}
-				if (parsed < 1 || parsed > 65535) {
+				if (parsed < 1 || parsed > 65_535) {
 					throw new Error("Port must be between 1 and 65535!");
 				}
 
