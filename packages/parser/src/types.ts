@@ -1,5 +1,3 @@
-import type { ExclusifyUnion } from "type-fest";
-
 import type { FLAG, PARAMETER } from "./iterator";
 
 type Prettify<T> = {
@@ -44,17 +42,20 @@ export interface BaseFlagOptions<T extends FlagType = FlagType> {
 	/** The default value of the flag. */
 	default?: unknown;
 }
-export interface BooleanFlagOptions extends BaseFlagOptions<BooleanConstructor> {
-	/**
-	 * Whether to enable the `--no-<flag>` syntax to set the value to false.
-	 * Only useful for boolean flags.
-	 * When set on a non-boolean flag, a type error will be shown.
-	 *
-	 * @default true
-	 */
-	negatable?: boolean;
-}
-export type FlagOptions = ExclusifyUnion<BaseFlagOptions | BooleanFlagOptions>;
+export type FlagOptions =
+	| (BaseFlagOptions<BooleanConstructor> & {
+			/**
+			 * Whether to enable the `--no-<flag>` syntax to set the value to false.
+			 * Only useful for boolean flags.
+			 * When set on a non-boolean flag, a type error will be shown.
+			 *
+			 * @default true
+			 */
+			negatable?: boolean;
+	  })
+	| (BaseFlagOptions & {
+			negatable?: never;
+	  });
 export type FlagDefinitionValue = FlagOptions | FlagType;
 export type FlagsDefinition = Record<string, FlagDefinitionValue>;
 
