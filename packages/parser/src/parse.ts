@@ -32,9 +32,12 @@ export function createParser<T extends FlagsDefinition>(
 		const dotIdx = name.indexOf(".");
 		const rootName = dotIdx === -1 ? name : name.slice(0, dotIdx);
 
-		const key = aliases.get(rootName) ?? aliases.get(toCamelCase(rootName));
+		let key = aliases.get(rootName);
 		if (!key) {
-			return undefined;
+			key = aliases.get(toCamelCase(rootName));
+			if (!key) {
+				return undefined;
+			}
 		}
 
 		const config = configs.get(key)!;
@@ -47,15 +50,42 @@ export function createParser<T extends FlagsDefinition>(
 	}
 
 	function shouldProcessAsFlag(arg: string) {
-		if (FLAG_ALPHA_PATTERN.test(arg)) {
+		// Check first character for quick rejection
+		const firstChar = arg.charCodeAt(0);
+		if (firstChar !== 45) {
+			return false;
+		} // 45 is '-'
+
+		const len = arg.length;
+		if (len < 2) {
+			return false;
+		}
+
+		const secondChar = arg.charCodeAt(1);
+		// Check if it's a letter (a-z, A-Z)
+		if (
+			(secondChar >= 65 && secondChar <= 90) ||
+			(secondChar >= 97 && secondChar <= 122)
+		) {
 			return true;
 		}
 
-		if (FLAG_NUMBER_PATTERN.test(arg)) {
-			const isAlias = !arg.startsWith(DOUBLE_DASH);
-			const name = isAlias ? arg.slice(1, 2) : arg.slice(2);
+		// Check if it's a digit (0-9)
+		if (secondChar >= 48 && secondChar <= 57) {
+			const isAlias = secondChar !== 45; // not '--'
+			const name = isAlias ? arg[1] : arg.slice(2);
 
 			return !!resolve(name);
+		}
+
+		// Check for double dash
+		if (secondChar === 45 && len > 2) {
+			const thirdChar = arg.charCodeAt(2);
+
+			return (
+				(thirdChar >= 65 && thirdChar <= 90) ||
+				(thirdChar >= 97 && thirdChar <= 122)
+			);
 		}
 
 		return false;
@@ -105,7 +135,8 @@ export function createParser<T extends FlagsDefinition>(
 
 				// -abc
 				if (isAlias) {
-					for (let j = 0; j < chars.length; j++) {
+					const charsLen = chars.length;
+					for (let j = 0; j < charsLen; j++) {
 						const char = chars[j];
 						const resolved = resolve(char);
 
@@ -115,27 +146,22 @@ export function createParser<T extends FlagsDefinition>(
 						}
 
 						const { key, config } = resolved;
+						const configType = config.type;
 
-						if (
-							config.type === Boolean ||
-							isArrayOfType(config.type, Boolean)
-						) {
+						if (configType === Boolean || isArrayOfType(configType, Boolean)) {
 							setValueByType(result.flags, key, "true", config);
 						} else {
-							if (j + 1 < chars.length) {
+							if (j + 1 < charsLen) {
 								// -abval, b's type is not Boolean
 								// set b to 'val'
 								setValueByType(result.flags, key, chars.slice(j + 1), config);
-								j = chars.length;
+								break;
 							} else {
 								// -ab foo, we are on "b"
-								const next = eat();
-								if (next && !shouldProcessAsFlag(next)) {
-									setValueByType(result.flags, key, next, config);
+								const nextValue = eat();
+								if (nextValue && !shouldProcessAsFlag(nextValue)) {
+									setValueByType(result.flags, key, nextValue, config);
 								}
-								// else {
-								// 	setValueByType(result.flags, key, "", config);
-								// }
 							}
 						}
 					}

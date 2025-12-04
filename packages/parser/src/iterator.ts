@@ -4,10 +4,10 @@ export const FLAG = "flag";
 export const PARAMETER = "parameter";
 
 export interface ArgsIterator {
-	readonly current: string;
-	readonly index: number;
-	readonly hasNext: boolean;
-	readonly next: string;
+	current: string;
+	index: number;
+	hasNext: boolean;
+	next: string;
 	check: (arg: string) => boolean;
 	eat: () => string | undefined;
 	exit: (push?: boolean) => void;
@@ -22,20 +22,13 @@ export function iterateArgs(
 ): void {
 	let index = 0;
 	let stopped = false;
+	const argsLength = args.length;
 
 	const iterator: ArgsIterator = {
-		get current() {
-			return args[index];
-		},
-		get index() {
-			return index;
-		},
-		get hasNext() {
-			return index + 1 < args.length;
-		},
-		get next() {
-			return args[index + 1];
-		},
+		current: "",
+		index: 0,
+		hasNext: false,
+		next: "",
 		check: (arg: string) => {
 			if (ignore) {
 				const argType = shouldProcessAsFlag(arg) ? FLAG : PARAMETER;
@@ -46,7 +39,7 @@ export function iterateArgs(
 			return false;
 		},
 		eat: (): string | undefined => {
-			if (!iterator.hasNext) {
+			if (index + 1 >= argsLength) {
 				return undefined;
 			}
 			const nextArg = args[index + 1];
@@ -57,7 +50,10 @@ export function iterateArgs(
 				return undefined;
 			}
 
-			return args[++index];
+			index++;
+			next();
+
+			return args[index];
 		},
 		exit: (push = true) => {
 			if (!stopped) {
@@ -69,10 +65,19 @@ export function iterateArgs(
 		},
 	};
 
-	for (index = 0; index < args.length; index++) {
+	function next() {
+		iterator.current = args[index];
+		iterator.index = index;
+		iterator.hasNext = index + 1 < argsLength;
+		iterator.next = iterator.hasNext ? args[index + 1] : "";
+	}
+
+	for (index = 0; index < argsLength; index++) {
 		if (stopped) {
 			break;
 		}
+
+		next();
 
 		callback(iterator);
 	}
