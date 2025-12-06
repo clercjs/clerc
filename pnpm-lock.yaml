@@ -23,9 +23,6 @@ importers:
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1
-      '@types/nopt':
-        specifier: ^3.0.32
-        version: 3.0.32
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20250812.1
         version: 7.0.0-dev.20250812.1
@@ -38,24 +35,15 @@ importers:
       bumpp:
         specifier: ^10.3.2
         version: 10.3.2(magicast@0.5.1)
-      clerc:
-        specifier: workspace:*
-        version: link:packages/clerc
       eslint:
         specifier: ^9.39.1
         version: 9.39.1(jiti@2.6.1)
-      nopt:
-        specifier: ^9.0.0
-        version: 9.0.0
       prettier:
         specifier: ^3.7.3
         version: 3.7.3
       tsdown:
         specifier: ^0.16.8
         version: 0.16.8(@typescript/native-preview@7.0.0-dev.20250812.1)(synckit@0.11.11)(typescript@5.9.3)
-      type-flag:
-        specifier: ^4.0.3
-        version: 4.0.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -116,6 +104,9 @@ importers:
       '@types/minimist':
         specifier: ^1.2.5
         version: 1.2.5
+      '@types/nopt':
+        specifier: ^3.0.32
+        version: 3.0.32
       '@types/yargs-parser':
         specifier: ^21.0.3
         version: 21.0.3
@@ -125,6 +116,12 @@ importers:
       mri:
         specifier: ^1.2.0
         version: 1.2.0
+      nopt:
+        specifier: ^9.0.0
+        version: 9.0.0
+      type-flag:
+        specifier: ^4.0.3
+        version: 4.0.3
       yargs-parser:
         specifier: ^22.0.0
         version: 22.0.0
