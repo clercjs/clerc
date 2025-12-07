@@ -1,3 +1,4 @@
+import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
 import { gracefulVersion } from "@clerc/utils";
 
@@ -20,7 +21,7 @@ interface VersionPluginOptions {
 export const versionPlugin = ({
 	command = true,
 	flag = true,
-}: VersionPluginOptions = {}) =>
+}: VersionPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
 			const { add, t } = cli.i18n;

@@ -93,8 +93,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       lite-emit:
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^3.1.0
+        version: 3.1.0
       type-fest:
         specifier: ^5.3.0
         version: 5.3.0
@@ -2322,6 +2322,9 @@ packages:
 
   lite-emit@2.3.0:
     resolution: {integrity: sha512-QMPrnwPho7lfkzZUN3a0RJ/oiwpt464eXf6aVh1HGOYh+s7Utu78q3FcFbW59c8TNWWQaz9flKN1cEb8dmxD+g==}
+
+  lite-emit@3.1.0:
+    resolution: {integrity: sha512-S7lPT1iPnJEjz8UX/zEnWjfvwhOp/lK/msYqXklDSlyr0ukgUa2JOIIY2K1TjgSZ6Y5qxxM1HizlF0yOoHp4MA==}
 
   load-plugin@6.0.3:
     resolution: {integrity: sha512-kc0X2FEUZr145odl68frm+lMJuQ23+rTXYmR6TImqPtbpmXC4vVXbWKDQ9IzndA0HfyQamWfKLhzsqGSTxE63w==}
@@ -5539,6 +5542,8 @@ snapshots:
   lines-and-columns@2.0.4: {}
 
   lite-emit@2.3.0: {}
+
+  lite-emit@3.1.0: {}
 
   load-plugin@6.0.3:
     dependencies:

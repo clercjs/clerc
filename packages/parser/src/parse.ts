@@ -18,9 +18,13 @@ import {
 
 const DOUBLE_DASH = "--";
 
+type ParseFunction<T extends FlagsDefinition> = (
+	args: string[],
+) => ParsedResult<InferFlags<T>>;
+
 export function createParser<T extends FlagsDefinition>(
 	options: ParserOptions<T> = {},
-) {
+): { parse: ParseFunction<T> } {
 	const {
 		flags: flagsConfig = {},
 		delimiters,
@@ -86,7 +90,7 @@ export function createParser<T extends FlagsDefinition>(
 		return false;
 	}
 
-	function parse(args: string[]): ParsedResult<InferFlags<T>> {
+	const parse: ParseFunction<T> = (args) => {
 		const result: ParsedResult<any> = {
 			parameters: [],
 			doubleDash: [],
@@ -260,7 +264,7 @@ export function createParser<T extends FlagsDefinition>(
 		}
 
 		return result;
-	}
+	};
 
 	return { parse };
 }
@@ -268,4 +272,4 @@ export function createParser<T extends FlagsDefinition>(
 export const parse = <T extends FlagsDefinition>(
 	args: string[],
 	options: ParserOptions<T> = {},
-) => createParser(options).parse(args);
+): ParsedResult<InferFlags<T>> => createParser(options).parse(args);
