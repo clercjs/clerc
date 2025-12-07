@@ -1,6 +1,6 @@
 import type { FlagOptions } from "./types";
 
-export const strictIsArray = <T>(arr: any): arr is readonly T[] =>
+export const looseIsArray = <T>(arr: any): arr is readonly T[] =>
 	Array.isArray(arr);
 
 export const isArrayOfType = (arr: any, type: any): boolean =>
@@ -23,9 +23,9 @@ export function setValueByType(
 	key: string,
 	value: string,
 	config: FlagOptions,
-) {
+): void {
 	const { type } = config;
-	if (strictIsArray(type)) {
+	if (looseIsArray(type)) {
 		if (isArrayOfType(type, Boolean)) {
 			flags[key] = (flags[key] ?? 0) + 1;
 		} else {
@@ -36,7 +36,7 @@ export function setValueByType(
 	}
 }
 
-export function setDotValues(obj: any, path: string, value: any) {
+export function setDotValues(obj: any, path: string, value: any): void {
 	const keys = path.split(".");
 	let current = obj;
 	for (let i = 0; i < keys.length - 1; i++) {
@@ -54,32 +54,14 @@ export function setDotValues(obj: any, path: string, value: any) {
 	}
 }
 
-export function toCamelCase(str: string) {
-	const dashIdx = str.indexOf("-");
-	if (dashIdx === -1) {
-		return str;
-	}
-
-	let result = str.slice(0, dashIdx);
-	for (let i = dashIdx; i < str.length; i++) {
-		if (str[i] === "-" && i + 1 < str.length) {
-			const nextChar = str.charCodeAt(i + 1);
-			if (nextChar >= 97 && nextChar <= 122) {
-				result += String.fromCharCode(nextChar - 32);
-				i++;
-			} else {
-				result += str[i + 1];
-				i++;
-			}
-		} else if (str[i] !== "-") {
-			result += str[i];
-		}
-	}
-
-	return result;
-}
-
-export function splitNameAndValue(arg: string, delimiters: string[]) {
+export function splitNameAndValue(
+	arg: string,
+	delimiters: string[],
+): {
+	rawName: string;
+	rawValue: string | undefined;
+	hasSep: boolean;
+} {
 	let sepIdx = -1;
 	let delimiterLen = 0;
 

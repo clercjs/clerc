@@ -1,3 +1,5 @@
+import { camelCase } from "@clerc/utils";
+
 import { InvalidSchemaError } from "./errors";
 import type {
 	FlagDefinitionValue,
@@ -6,7 +8,7 @@ import type {
 	ParserOptions,
 	PartialRequired,
 } from "./types";
-import { strictIsArray, toCamelCase } from "./utils";
+import { looseIsArray } from "./utils";
 
 const defaultParserOptions = {
 	delimiters: ["=", ":"],
@@ -20,7 +22,7 @@ export const resolveParserOptions = (
 });
 
 const normalizeConfig = (config: FlagDefinitionValue): FlagOptions =>
-	typeof config === "function" || strictIsArray(config)
+	typeof config === "function" || looseIsArray(config)
 		? { type: config }
 		: config;
 
@@ -40,7 +42,10 @@ function validateFlagOptions(name: string, options: FlagOptions) {
 	}
 }
 
-export function buildConfigsAndAliases(flags: FlagsDefinition) {
+export function buildConfigsAndAliases(flags: FlagsDefinition): {
+	configs: Map<string, FlagOptions>;
+	aliases: Map<string, string>;
+} {
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
 
@@ -50,7 +55,7 @@ export function buildConfigsAndAliases(flags: FlagsDefinition) {
 
 		configs.set(name, normalized);
 		aliases.set(name, name);
-		aliases.set(toCamelCase(name), name);
+		aliases.set(camelCase(name), name);
 		if (normalized.alias) {
 			const list = Array.isArray(normalized.alias)
 				? normalized.alias

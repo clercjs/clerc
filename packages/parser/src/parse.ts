@@ -1,3 +1,5 @@
+import { camelCase } from "@clerc/utils";
+
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import { iterateArgs } from "./iterator";
 import type {
@@ -13,7 +15,6 @@ import {
 	setDotValues,
 	setValueByType,
 	splitNameAndValue,
-	toCamelCase,
 } from "./utils";
 
 const DOUBLE_DASH = "--";
@@ -38,7 +39,7 @@ export function createParser<T extends FlagsDefinition>(
 
 		let key = aliases.get(rootName);
 		if (!key) {
-			key = aliases.get(toCamelCase(rootName));
+			key = aliases.get(camelCase(rootName));
 			if (!key) {
 				return undefined;
 			}
@@ -198,7 +199,7 @@ export function createParser<T extends FlagsDefinition>(
 						}
 					}
 					if (!resolved) {
-						const key = toCamelCase(rawName);
+						const key = camelCase(rawName);
 						if (hasSep) {
 							result.unknown[key] = rawValue!;
 						} else if (hasNext && !shouldProcessAsFlag(next)) {
