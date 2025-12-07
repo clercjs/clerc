@@ -1,4 +1,4 @@
-import type { FLAG, PARAMETER } from "./iterator";
+import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
 type Prettify<T> = {
 	[K in keyof T]: T[K];
@@ -17,12 +17,12 @@ export type FlagTypeFunction<T = unknown> = (value: string) => T;
  * A callback function to conditionally stop parsing.
  * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
  *
- * @param type - The type of the current argument: 'flag' for flags, 'parameter' for positional arguments
+ * @param type - The type of the current argument: 'known-flag' or 'unknown-flag' for flags, 'parameter' for positional arguments
  * @param arg - The current argument being processed
  * @returns true to stop parsing, false to continue
  */
 export type IgnoreFunction = (
-	type: typeof FLAG | typeof PARAMETER,
+	type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG | typeof PARAMETER,
 	arg: string,
 ) => boolean;
 

@@ -1,6 +1,7 @@
 import type { IgnoreFunction, ParsedResult } from "./types";
 
-export const FLAG = "flag";
+export const KNOWN_FLAG = "known-flag";
+export const UNKNOWN_FLAG = "unknown-flag";
 export const PARAMETER = "parameter";
 
 export interface ArgsIterator {
@@ -17,6 +18,7 @@ export function iterateArgs(
 	args: string[],
 	result: ParsedResult<any>,
 	shouldProcessAsFlag: (arg: string) => boolean,
+	isKnownFlag: (arg: string) => boolean,
 	ignore: IgnoreFunction | undefined,
 	callback: (iterator: ArgsIterator) => void,
 ): void {
@@ -31,7 +33,12 @@ export function iterateArgs(
 		next: "",
 		check: (arg: string) => {
 			if (ignore) {
-				const argType = shouldProcessAsFlag(arg) ? FLAG : PARAMETER;
+				const isFlag = shouldProcessAsFlag(arg);
+				const argType = isFlag
+					? isKnownFlag(arg)
+						? KNOWN_FLAG
+						: UNKNOWN_FLAG
+					: PARAMETER;
 
 				return ignore(argType, arg);
 			}

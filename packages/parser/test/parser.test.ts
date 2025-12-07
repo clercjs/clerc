@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { InvalidSchemaError, PARAMETER_TYPE, parse } from "../src";
+import {
+	InvalidSchemaError,
+	KNOWN_FLAG,
+	PARAMETER,
+	UNKNOWN_FLAG,
+	parse,
+} from "../src";
 
 describe("parser", () => {
 	it("should parse basic flags", () => {
@@ -351,7 +357,7 @@ describe("parser", () => {
 			flags: {
 				myFlag: [Boolean],
 			},
-			ignore: (type) => type === PARAMETER_TYPE,
+			ignore: (type) => type === PARAMETER,
 		});
 
 		expect(result1.flags).toEqual({ myFlag: 1 });
@@ -383,7 +389,7 @@ describe("parser", () => {
 				d: Boolean,
 			},
 			ignore: (type) => {
-				if (type === "flag") {
+				if (type === KNOWN_FLAG) {
 					flagCount++;
 
 					return flagCount > 2;
@@ -395,5 +401,17 @@ describe("parser", () => {
 
 		expect(result3.flags).toEqual({ a: true, b: true, c: false, d: false });
 		expect(result3.ignored).toEqual(["--c", "--d"]);
+	});
+
+	it("should distinguish known and unknown flags in ignore callback", () => {
+		const result = parse(["--known", "--unknown", "--known"], {
+			flags: {
+				known: Boolean,
+			},
+			ignore: (type) => type === UNKNOWN_FLAG,
+		});
+
+		expect(result.flags).toEqual({ known: true });
+		expect(result.ignored).toEqual(["--unknown", "--known"]);
 	});
 });

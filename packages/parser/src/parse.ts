@@ -54,6 +54,28 @@ export function createParser<T extends FlagsDefinition>(
 		};
 	}
 
+	function resolveNegated(name: string) {
+		if (!name.startsWith("no")) {
+			return undefined;
+		}
+		const possibleName =
+			name[2] === "-"
+				? name.slice(3) // --no-foo -> foo
+				: name.length > 2 && /[A-Z]/.test(name[2])
+					? name[2].toLowerCase() + name.slice(3) // --noFoo -> foo
+					: "";
+
+		if (possibleName) {
+			const possibleResolved = resolve(possibleName);
+			if (
+				possibleResolved?.config.type === Boolean &&
+				(possibleResolved.config as any).negatable !== false
+			) {
+				return possibleResolved;
+			}
+		}
+	}
+
 	function shouldProcessAsFlag(arg: string) {
 		// Check first character for quick rejection (45 is '-')
 		const firstChar = arg.charCodeAt(0);
@@ -91,6 +113,35 @@ export function createParser<T extends FlagsDefinition>(
 		return false;
 	}
 
+	function isKnownFlag(arg: string) {
+		const secondChar = arg.charCodeAt(1);
+
+		if (secondChar === 45) {
+			const { rawName } = splitNameAndValue(arg.slice(2), delimiters);
+			if (resolve(rawName)) {
+				return true;
+			}
+			if (resolveNegated(rawName)) {
+				return true;
+			}
+
+			return false;
+		}
+
+		if (isDigit(secondChar)) {
+			return true;
+		}
+
+		const chars = arg.slice(1);
+		for (const char of chars) {
+			if (!resolve(char)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	const parse: ParseFunction<T> = (args) => {
 		const result: ParsedResult<any> = {
 			parameters: [],
@@ -105,6 +156,7 @@ export function createParser<T extends FlagsDefinition>(
 			args,
 			result,
 			shouldProcessAsFlag,
+			isKnownFlag,
 			ignore,
 			(
 				// @keep-sorted
@@ -179,23 +231,11 @@ export function createParser<T extends FlagsDefinition>(
 					let isNegated = false;
 
 					// Try to resolve negated boolean flags: --no-foo or --noFoo
-					if (!resolved && rawName.startsWith("no")) {
-						const possibleName =
-							rawName[2] === "-"
-								? rawName.slice(3) // --no-foo -> foo
-								: rawName.length > 2 && /[A-Z]/.test(rawName[2])
-									? rawName[2].toLowerCase() + rawName.slice(3) // --noFoo -> foo
-									: "";
-
-						if (possibleName) {
-							const possibleResolved = resolve(possibleName);
-							if (
-								possibleResolved?.config.type === Boolean &&
-								(possibleResolved.config as any).negatable !== false
-							) {
-								resolved = possibleResolved;
-								isNegated = true;
-							}
+					if (!resolved) {
+						const negated = resolveNegated(rawName);
+						if (negated) {
+							resolved = negated;
+							isNegated = true;
 						}
 					}
 					if (!resolved) {
