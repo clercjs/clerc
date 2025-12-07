@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.44.0",
 	"packageManager": "pnpm@10.24.0",
+	"type": "module",
 	"scripts": {
 		"bench": "vitest bench",
 		"build": "pnpm -r run build",
