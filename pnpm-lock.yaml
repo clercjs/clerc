@@ -101,6 +101,9 @@ importers:
 
   packages/parser:
     devDependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@types/minimist':
         specifier: ^1.2.5
         version: 1.2.5
