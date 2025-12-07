@@ -3,6 +3,7 @@
 		"composite": true,
 		"target": "ESNext",
 		"lib": ["ESNext"],
+		"moduleDetection": "force",
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"resolveJsonModule": true,
@@ -13,23 +14,23 @@
 		"skipDefaultLibCheck": true,
 		"skipLibCheck": true,
 		"paths": {
-			"clerc": ["./packages/clerc/src/index.ts"],
 			"@clerc/core": ["./packages/core/src/index.ts"],
-			"@clerc/plugin-help": ["./packages/plugin-help/src/index.ts"],
-			"@clerc/plugin-not-found": ["./packages/plugin-not-found/src/index.ts"],
+			"@clerc/parser": ["./packages/parser/src/index.ts"],
 			"@clerc/plugin-completions": [
 				"./packages/plugin-completions/src/index.ts"
 			],
+			"@clerc/plugin-friendly-error": [
+				"./packages/plugin-friendly-error/src/index.ts"
+			],
+			"@clerc/plugin-help": ["./packages/plugin-help/src/index.ts"],
+			"@clerc/plugin-not-found": ["./packages/plugin-not-found/src/index.ts"],
 			"@clerc/plugin-strict-flags": [
 				"./packages/plugin-strict-flags/src/index.ts"
 			],
 			"@clerc/plugin-version": ["./packages/plugin-version/src/index.ts"],
-			"@clerc/plugin-friendly-error": [
-				"./packages/plugin-friendly-error/src/index.ts"
-			],
-			"@clerc/utils": ["./packages/utils/src/index.ts"],
 			"@clerc/test-utils": ["./packages/test-utils/src/index.ts"],
-			"@clerc/parser": ["./packages/parser/src/index.ts"]
+			"@clerc/utils": ["./packages/utils/src/index.ts"],
+			"clerc": ["./packages/clerc/src/index.ts"]
 		}
 	}
 }
