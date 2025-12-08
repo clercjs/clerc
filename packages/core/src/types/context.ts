@@ -1,5 +1,5 @@
 import type { InferFlags, ParsedResult } from "@clerc/parser";
-import type { PartialRequired } from "@clerc/utils";
+import type { DeepPrettify, PartialRequired } from "@clerc/utils";
 
 import type { Command } from "./command";
 import type { InferParameters } from "./parameters";
@@ -13,9 +13,8 @@ export interface BaseContext<C extends Command = Command> {
 	rawParsed: ParsedResult<InferFlags<NonNullable<C["flags"]>>>;
 }
 
-export type HandlerContext<C extends Command> = PartialRequired<
-	BaseContext<C>,
-	"command" | "calledAs"
-> & {
-	resolved: true;
-};
+export type HandlerContext<C extends Command> = DeepPrettify<
+	PartialRequired<BaseContext<C>, "command" | "calledAs"> & {
+		resolved: true;
+	}
+>;

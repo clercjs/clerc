@@ -5,7 +5,7 @@ import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
 import { compose } from "./interceptor";
-import { getParametersToResolve } from "./parameters";
+import { getParametersToResolve, parseParameters } from "./parameters";
 import { platformArgv } from "./platform";
 import type {
 	BaseContext,
@@ -164,9 +164,12 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			resolved: !!command,
 			command,
 			calledAs,
-			parameters: [
-				// TODO
-			],
+			parameters: command?.parameters
+				? parseParameters(
+						command.parameters,
+						parsed.parameters.slice(calledAs.split(" ").length),
+					)
+				: {},
 			flags: parsed.flags,
 			rawParsed: parsed,
 		};

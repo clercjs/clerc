@@ -1,7 +1,11 @@
+import type { DeepPrettify } from "@clerc/utils";
+
 import type { Command } from "./command";
 import type { BaseContext } from "./context";
 
-export type InterceptorContext<C extends Command = Command> = BaseContext<C>;
+export type InterceptorContext<C extends Command = Command> = DeepPrettify<
+	BaseContext<C>
+>;
 
 export type InterceptorNext = () => void | Promise<void>;
 
