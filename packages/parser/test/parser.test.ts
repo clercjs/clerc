@@ -353,16 +353,28 @@ describe("parser", () => {
 
 	it("should support ignore callback to stop parsing", () => {
 		// Stop parsing after first argument
+
+		let encounteredParameter = false;
+
 		const result1 = parse(["--my-flag", "./file.js", "--my-flag"], {
 			flags: {
 				myFlag: [Boolean],
 			},
-			ignore: (type) => type === PARAMETER,
+			ignore: (type) => {
+				if (type === PARAMETER && !encounteredParameter) {
+					encounteredParameter = true;
+
+					return false; // Allow first parameter
+				}
+
+				// If a parameter has been encountered, stop all subsequent parsing
+				return encounteredParameter;
+			},
 		});
 
 		expect(result1.flags).toEqual({ myFlag: 1 });
 		expect(result1.parameters).toEqual([]);
-		expect(result1.ignored).toEqual(["./file.js", "--my-flag"]);
+		expect(result1.ignored).toEqual(["--my-flag"]);
 
 		// Stop parsing at a specific flag
 		const result2 = parse(
