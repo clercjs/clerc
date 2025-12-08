@@ -143,7 +143,3 @@ type _InferFlags<T extends FlagsDefinition> = {
  * @template T The type of the flags configuration object.
  */
 export type InferFlags<T extends FlagsDefinition> = Prettify<_InferFlags<T>>;
-
-export type PartialRequired<T, K extends keyof T> = T & {
-	[P in K]-?: T[P];
-};

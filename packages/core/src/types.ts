@@ -40,7 +40,7 @@ export interface Command<
 export type CommandsRecord = Record<string, Command>;
 export type CommandsMap = Map<string, Command>;
 export type MakeEmitterEvents<Commands extends CommandsRecord> = {
-	[K in keyof Commands]: [Context<Commands[K]>];
+	[K in keyof Commands]: [HandlerContext<Commands[K]>];
 };
 
 export type ClercFlagOptions = FlagOptions & {
@@ -52,7 +52,33 @@ export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
 type InferFlagsFromMaybeUndefined<T extends ClercFlagsDefinition | undefined> =
 	T extends undefined ? never : InferFlags<NonNullable<T>>;
 
-export type Context<C extends Command> = {
+export interface BaseContext<C extends Command = Command> {
+	resolved: boolean;
+	command?: C;
+	calledAs?: string;
+	rawParsed: ParsedResult<InferFlagsFromMaybeUndefined<C["flags"]>>;
+}
+
+export type HandlerContext<C extends Command> = BaseContext<C> & {
+	resolved: true;
 	command: C;
 	calledAs: string;
-} & ParsedResult<InferFlagsFromMaybeUndefined<C["flags"]>>;
+};
+
+export type InterceptorContext<C extends Command = Command> = BaseContext<C>;
+
+export type InterceptorNext = () => void | Promise<void>;
+
+export type InterceptorHandler<C extends Command = Command> = (
+	context: InterceptorContext<C>,
+	next: InterceptorNext,
+) => void | Promise<void>;
+
+export interface InterceptorObject<C extends Command = Command> {
+	enforce?: "pre" | "normal" | "post";
+	handler: InterceptorHandler<C>;
+}
+
+export type Interceptor<C extends Command = Command> =
+	| InterceptorHandler<C>
+	| InterceptorObject<C>;

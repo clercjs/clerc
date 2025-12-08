@@ -4,15 +4,18 @@ import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
+import { compose } from "./interceptor";
 import { getParametersToResolve } from "./parameters";
 import { platformArgv } from "./platform";
 import type {
+	BaseContext,
 	ClercFlagsDefinition,
 	Command,
 	CommandOptions,
 	CommandsMap,
 	CommandsRecord,
-	Context,
+	HandlerContext,
+	Interceptor,
 	MakeEmitterEvents,
 } from "./types";
 
@@ -26,6 +29,7 @@ interface CreateOptions {
 export class Clerc<Commands extends CommandsRecord = {}> {
 	#commands: CommandsMap = new Map();
 	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>();
+	#interceptors: Interceptor[] = [];
 	#name = "";
 	#scriptName = "";
 	#description = "";
@@ -117,9 +121,15 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		return this as any;
 	}
 
+	public interceptor(interceptor: Interceptor): this {
+		this.#interceptors.push(interceptor);
+
+		return this;
+	}
+
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: (context: Context<Commands[Name]>) => void,
+		handler: (context: HandlerContext<Commands[Name]>) => void,
 	): this {
 		this.#emitter.on(name, handler);
 
@@ -138,7 +148,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		}
 	}
 
-	public parse(argv: string[] = platformArgv): void {
+	public async parse(argv: string[] = platformArgv): Promise<void> {
 		this.#validate();
 
 		const [command, calledAs] = resolveCommand(
@@ -146,20 +156,33 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			getParametersToResolve(argv),
 		);
 
-		if (!command) {
-			throw new Error("No matching command found.");
-		}
-
 		const parsed = parse(argv, {
 			flags: command?.flags,
 		});
 
-		const context: Context<Command> = {
+		const context: BaseContext = {
+			resolved: !!command,
 			command,
 			calledAs,
-			...parsed,
+			rawParsed: parsed,
 		};
 
-		this.#emitter.emit(command.name, context as any);
+		const emitInterceptor: Interceptor = {
+			enforce: "post",
+			handler: (ctx) => {
+				if (command) {
+					this.#emitter.emit(command.name, ctx as any);
+				} else {
+					throw new Error("No command resolved.");
+				}
+			},
+		};
+
+		const composedInterceptor = compose([
+			...this.#interceptors,
+			emitInterceptor,
+		]);
+
+		await composedInterceptor(context);
 	}
 }

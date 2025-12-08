@@ -1,3 +1,4 @@
+import type { PartialRequired } from "@clerc/utils";
 import { camelCase, toArray } from "@clerc/utils";
 
 import { InvalidSchemaError } from "./errors";
@@ -6,7 +7,6 @@ import type {
 	FlagOptions,
 	FlagsDefinition,
 	ParserOptions,
-	PartialRequired,
 } from "./types";
 import { looseIsArray } from "./utils";
 
