@@ -426,4 +426,30 @@ describe("parser", () => {
 		expect(result.flags).toEqual({ known: true });
 		expect(result.ignored).toEqual(["--unknown", "--known"]);
 	});
+
+	it("should handle custom delimiters", () => {
+		const { flags } = parse(["--flag1:val1", "--flag2=val2", "--flag3|val3"], {
+			flags: {
+				flag1: String,
+				flag2: String,
+				flag3: String,
+			},
+			delimiters: [":", "=", "|"],
+		});
+
+		expect(flags).toEqual({
+			flag1: "val1",
+			flag2: "val2",
+			flag3: "val3",
+		});
+
+		expect(() =>
+			parse([], {
+				flags: {
+					"|invalid": String,
+				},
+				delimiters: [":", "=", "|"],
+			}),
+		).toThrow(InvalidSchemaError);
+	});
 });

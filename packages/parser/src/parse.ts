@@ -31,7 +31,7 @@ export function createParser<T extends FlagsDefinition>(
 		delimiters,
 		ignore,
 	} = resolveParserOptions(options);
-	const { configs, aliases } = buildConfigsAndAliases(flagsConfig);
+	const { configs, aliases } = buildConfigsAndAliases(delimiters, flagsConfig);
 
 	function resolve(name: string) {
 		const dotIdx = name.indexOf(".");

@@ -26,28 +26,34 @@ const normalizeConfig = (config: FlagDefinitionValue): FlagOptions =>
 		? { type: config }
 		: config;
 
-const RESERVED_CHARACTERS_PATTERN = /[\s.:=]/;
+const BUILDTIN_DELIMITERS_RE = /[\s.]/;
 
-function validateFlagOptions(name: string, options: FlagOptions) {
-	const prefix = `Flag "${name}"`;
-	if (Array.isArray(options.type) && options.type.length > 1) {
-		throw new InvalidSchemaError(
-			`${prefix} has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
-		);
-	}
-	if (RESERVED_CHARACTERS_PATTERN.test(name)) {
-		throw new InvalidSchemaError(
-			`${prefix} contains reserved characters (spaces, dots, colons, equals signs).`,
-		);
-	}
-}
-
-export function buildConfigsAndAliases(flags: FlagsDefinition): {
+export function buildConfigsAndAliases(
+	delimiters: string[],
+	flags: FlagsDefinition,
+): {
 	configs: Map<string, FlagOptions>;
 	aliases: Map<string, string>;
 } {
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
+
+	function validateFlagOptions(name: string, options: FlagOptions) {
+		const prefix = `Flag "${name}"`;
+		if (Array.isArray(options.type) && options.type.length > 1) {
+			throw new InvalidSchemaError(
+				`${prefix} has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
+			);
+		}
+		if (
+			delimiters.some((char) => name.includes(char)) ||
+			BUILDTIN_DELIMITERS_RE.test(name)
+		) {
+			throw new InvalidSchemaError(
+				`${prefix} contains reserved characters, which are used as delimiters.`,
+			);
+		}
+	}
 
 	for (const [name, config] of Object.entries(flags)) {
 		const normalized = normalizeConfig(config);

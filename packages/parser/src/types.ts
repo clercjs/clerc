@@ -1,3 +1,5 @@
+import type { MaybeArray } from "@clerc/utils";
+
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
 type Prettify<T> = {
@@ -38,7 +40,7 @@ export interface BaseFlagOptions<T extends FlagType = FlagType> {
 	 */
 	type: T;
 	/** Aliases for the flag. */
-	alias?: string | string[];
+	alias?: MaybeArray<string>;
 	/** The default value of the flag. */
 	default?: unknown;
 }
