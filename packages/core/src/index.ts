@@ -1,3 +1,3 @@
 export { Clerc } from "./cli";
-export { compose } from "./interceptor";
+export { definePlugin } from "./plugin";
 export type * from "./types";
