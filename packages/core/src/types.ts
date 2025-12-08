@@ -9,10 +9,13 @@ import type { MaybeArray } from "@clerc/utils";
 
 export type ParsingMode = "all" | "stop-at-positional" | "custom";
 
-export interface CommandOptions<Parameters extends string[] = string[]> {
+export interface CommandOptions<
+	Parameters extends string[] = string[],
+	Flags extends ClercFlagsDefinition = {},
+> {
 	alias?: MaybeArray<string>;
 	parameters?: Parameters;
-	flags?: ClercFlagsDefinition;
+	flags?: Flags;
 
 	/**
 	 * @default "all"
@@ -26,9 +29,11 @@ export interface CommandOptions<Parameters extends string[] = string[]> {
 }
 
 export interface Command<
+	Name extends string = string,
 	Parameters extends string[] = string[],
-> extends CommandOptions<Parameters> {
-	name: string;
+	Flags extends ClercFlagsDefinition = {},
+> extends CommandOptions<Parameters, Flags> {
+	name: Name;
 	description: string;
 }
 
@@ -45,9 +50,9 @@ export type ClercFlagDefinitionValue = ClercFlagOptions | FlagType;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
 
 type InferFlagsFromMaybeUndefined<T extends ClercFlagsDefinition | undefined> =
-	T extends undefined ? {} : InferFlags<NonNullable<T>>;
+	T extends undefined ? never : InferFlags<NonNullable<T>>;
 
 export type Context<C extends Command> = {
-	command: Command;
+	command: C;
 	calledAs: string;
 } & ParsedResult<InferFlagsFromMaybeUndefined<C["flags"]>>;

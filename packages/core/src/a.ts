@@ -12,8 +12,16 @@ Clerc.create()
 				description: "Flag A",
 				type: Boolean,
 			},
+			b: {
+				description: "Flag B",
+				type: String,
+			},
 		},
 	})
-	.on("foo bar", (ctx) => {})
+	.on("foo bar", (ctx) => {
+		ctx.flags.b;
+		ctx.command.name;
+		console.log(ctx);
+	})
 	.command("foo", "", {})
 	.parse();

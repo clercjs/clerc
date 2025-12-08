@@ -7,6 +7,7 @@ import { resolveCommand } from "./commands";
 import { getParametersToResolve } from "./parameters";
 import { platformArgv } from "./platform";
 import type {
+	ClercFlagsDefinition,
 	Command,
 	CommandOptions,
 	CommandsMap,
@@ -89,11 +90,15 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		}
 	}
 
-	public command<Name extends string, Parameters extends string[]>(
+	public command<
+		Name extends string,
+		Parameters extends string[] = [],
+		Flags extends ClercFlagsDefinition = {},
+	>(
 		name: Name extends keyof Commands ? never : Name,
 		description: string,
-		options?: CommandOptions<[...Parameters]>,
-	): Clerc<Commands & Record<Name, Command<Parameters>>> {
+		options?: CommandOptions<[...Parameters], Flags>,
+	): Clerc<Commands & Record<Name, Command<Name, Parameters, Flags>>> {
 		const aliases = toArray(options?.alias ?? []);
 
 		this.#validateCommandNameAndAlias(name, aliases);
@@ -114,7 +119,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: (ctx: Context<Commands[Name]>) => void,
+		handler: (context: Context<Commands[Name]>) => void,
 	): this {
 		this.#emitter.on(name, handler);
 
@@ -136,15 +141,25 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	public parse(argv: string[] = platformArgv): void {
 		this.#validate();
 
-		const command = resolveCommand(
+		const [command, calledAs] = resolveCommand(
 			this.#commands,
 			getParametersToResolve(argv),
 		);
+
+		if (!command) {
+			throw new Error("No matching command found.");
+		}
 
 		const parsed = parse(argv, {
 			flags: command?.flags,
 		});
 
-		console.log(parsed);
+		const context: Context<Command> = {
+			command,
+			calledAs,
+			...parsed,
+		};
+
+		this.#emitter.emit(command.name, context as any);
 	}
 }
