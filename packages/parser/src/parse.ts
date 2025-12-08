@@ -160,7 +160,7 @@ export function createParser<T extends FlagsDefinition>(
 			ignore,
 			(
 				// @keep-sorted
-				{ check, current, eat, exit, hasNext, index, next },
+				{ current, eat, exit, hasNext, index, next, shouldIgnore },
 			) => {
 				if (current === DOUBLE_DASH) {
 					result.doubleDash.push(...args.slice(index + 1));
@@ -169,7 +169,7 @@ export function createParser<T extends FlagsDefinition>(
 					return;
 				}
 
-				if (check(current)) {
+				if (shouldIgnore(current)) {
 					result.ignored.push(current);
 					exit();
 

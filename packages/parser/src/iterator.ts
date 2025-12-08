@@ -9,7 +9,7 @@ export interface ArgsIterator {
 	index: number;
 	hasNext: boolean;
 	next: string;
-	check: (arg: string) => boolean;
+	shouldIgnore: (arg: string) => boolean;
 	eat: () => string | undefined;
 	exit: (push?: boolean) => void;
 }
@@ -31,7 +31,7 @@ export function iterateArgs(
 		index: 0,
 		hasNext: false,
 		next: "",
-		check: (arg: string) => {
+		shouldIgnore: (arg: string) => {
 			if (ignore) {
 				const isFlag = shouldProcessAsFlag(arg);
 				const argType = isFlag
@@ -51,7 +51,7 @@ export function iterateArgs(
 			}
 			const nextArg = args[index + 1];
 
-			if (iterator.check(nextArg)) {
+			if (iterator.shouldIgnore(nextArg)) {
 				iterator.exit();
 
 				return undefined;
