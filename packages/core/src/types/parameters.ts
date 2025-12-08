@@ -10,7 +10,8 @@ type InferParameter<T extends string> = T extends
 			? Record<Name, string | undefined>
 			: never;
 
-export type InferParameters<T extends string[]> = T extends (infer U extends
-	string)[]
-	? Prettify<UnionToIntersection<InferParameter<U>>>
-	: never;
+export type InferParameters<T extends string[]> =
+	// line break for readability
+	T extends (infer U extends string)[]
+		? Prettify<UnionToIntersection<InferParameter<U>>>
+		: never;
