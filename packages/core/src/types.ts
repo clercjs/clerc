@@ -5,7 +5,7 @@ import type {
 	InferFlags,
 	ParsedResult,
 } from "@clerc/parser";
-import type { MaybeArray } from "@clerc/utils";
+import type { MaybeArray, PartialRequired } from "@clerc/utils";
 
 export type ParsingMode = "all" | "stop-at-positional" | "custom";
 
@@ -59,10 +59,11 @@ export interface BaseContext<C extends Command = Command> {
 	rawParsed: ParsedResult<InferFlagsFromMaybeUndefined<C["flags"]>>;
 }
 
-export type HandlerContext<C extends Command> = BaseContext<C> & {
+export type HandlerContext<C extends Command> = PartialRequired<
+	BaseContext<C>,
+	"command" | "calledAs"
+> & {
 	resolved: true;
-	command: C;
-	calledAs: string;
 };
 
 export type InterceptorContext<C extends Command = Command> = BaseContext<C>;
