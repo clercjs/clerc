@@ -1,53 +1,150 @@
+import { parse } from "@clerc/parser";
+import type { LiteralUnion } from "@clerc/utils";
+import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
-import type { LiteralUnion } from "type-fest";
 
+import { resolveCommand } from "./commands";
+import { getParametersToResolve } from "./parameters";
 import { platformArgv } from "./platform";
-import type { Command, CommandOptions } from "./types";
+import type {
+	Command,
+	CommandOptions,
+	CommandsMap,
+	CommandsRecord,
+	Context,
+	MakeEmitterEvents,
+} from "./types";
 
-export class Clerc<Commands extends Record<string, Command> = {}> {
-	#commands = new Map<string, Command>();
-	#emitter = new LiteEmit();
+interface CreateOptions {
+	name?: string;
+	scriptName?: string;
+	description?: string;
+	version?: string;
+}
 
-	private constructor() {}
+export class Clerc<Commands extends CommandsRecord = {}> {
+	#commands: CommandsMap = new Map();
+	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>();
+	#name = "";
+	#scriptName = "";
+	#description = "";
+	#version = "";
 
-	public static create() {
-		return new Clerc();
+	private constructor({
+		name,
+		scriptName,
+		description,
+		version,
+	}: CreateOptions = {}) {
+		if (name) {
+			this.#name = name;
+		}
+		if (scriptName) {
+			this.#scriptName = scriptName;
+		}
+		if (description) {
+			this.#description = description;
+		}
+		if (version) {
+			this.#version = version;
+		}
+	}
+
+	public static create(options?: CreateOptions): Clerc {
+		return new Clerc(options);
+	}
+
+	public name(name: string): this {
+		this.#name = name;
+
+		return this;
+	}
+
+	public scriptName(scriptName: string): this {
+		this.#scriptName = scriptName;
+
+		return this;
+	}
+
+	public description(description: string): this {
+		this.#description = description;
+
+		return this;
+	}
+
+	public version(version: string): this {
+		this.#version = version;
+
+		return this;
+	}
+
+	#validateCommandNameAndAlias(name: string, aliases: string[]) {
+		if (this.#commands.has(name)) {
+			throw new Error(`Command with name "${name}" already exists.`);
+		}
+		for (const alias of aliases) {
+			if (this.#commands.has(alias)) {
+				throw new Error(`Command with name "${alias}" already exists.`);
+			}
+		}
 	}
 
 	public command<Name extends string, Parameters extends string[]>(
-		name: Name,
+		name: Name extends keyof Commands ? never : Name,
 		description: string,
 		options?: CommandOptions<[...Parameters]>,
 	): Clerc<Commands & Record<Name, Command<Parameters>>> {
-		this.#commands.set(name, {
+		const aliases = toArray(options?.alias ?? []);
+
+		this.#validateCommandNameAndAlias(name, aliases);
+
+		const command = {
 			name,
 			description,
 			...options,
-		});
+		};
+
+		this.#commands.set(name, command);
+		for (const alias of aliases) {
+			this.#commands.set(alias, command);
+		}
 
 		return this as any;
 	}
 
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: (
-			// WIP: CTX
-			ctx: any,
-		) => void,
+		handler: (ctx: Context<Commands[Name]>) => void,
 	): this {
-		const ctx = {};
-		this.#emitter.on(name as PropertyKey, () => {
-			handler(ctx);
-		});
+		this.#emitter.on(name, handler);
 
 		return this;
 	}
 
-	public parse(argv: string[] = platformArgv): void {}
-}
+	#validate() {
+		if (!this.#name) {
+			throw new Error("CLI name is required.");
+		}
+		if (!this.#scriptName) {
+			throw new Error("CLI script name is required.");
+		}
+		if (!this.#version) {
+			throw new Error("CLI version is required.");
+		}
+	}
 
-const cli = Clerc.create()
-	.command("serve", "Start the server", {
-		parameters: ["port", "host"],
-	})
-	.on("s");
+	public parse(argv: string[] = platformArgv): void {
+		this.#validate();
+
+		const command = resolveCommand(
+			this.#commands,
+			getParametersToResolve(argv),
+		);
+
+		const parsed = parse(argv, {
+			flags: command?.flags,
+		});
+
+		console.log(parsed);
+	}
+}

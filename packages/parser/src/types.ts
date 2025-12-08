@@ -1,10 +1,6 @@
-import type { MaybeArray } from "@clerc/utils";
+import type { MaybeArray, Prettify } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
-
-type Prettify<T> = {
-	[K in keyof T]: T[K];
-} & {};
 
 export type FlagDefaultValue<T = unknown> = T | (() => T);
 
