@@ -4,5 +4,5 @@
 		"declaration": true,
 		"isolatedDeclarations": true
 	},
-	"include": ["packages/utils/src", "packages/parser/src"]
+	"include": ["packages/utils/src", "packages/parser/src", "packages/core/src"]
 }
