@@ -17,6 +17,7 @@ import type {
 	HandlerContext,
 	Interceptor,
 	MakeEmitterEvents,
+	Plugin,
 } from "./types";
 
 interface CreateOptions {
@@ -79,6 +80,12 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public version(version: string): this {
 		this.#version = version;
+
+		return this;
+	}
+
+	public use(plugin: Plugin): this {
+		plugin.setup(this);
 
 		return this;
 	}
