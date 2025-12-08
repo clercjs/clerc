@@ -164,6 +164,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			resolved: !!command,
 			command,
 			calledAs,
+			parameters: [
+				// TODO
+			],
+			flags: parsed.flags,
 			rawParsed: parsed,
 		};
 
