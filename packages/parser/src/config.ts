@@ -1,4 +1,4 @@
-import { camelCase } from "@clerc/utils";
+import { camelCase, toArray } from "@clerc/utils";
 
 import { InvalidSchemaError } from "./errors";
 import type {
@@ -38,6 +38,10 @@ export function buildConfigsAndAliases(
 	const configs = new Map<string, FlagOptions>();
 	const aliases = new Map<string, string>();
 
+	const isNameInvalid = (name: string) =>
+		delimiters.some((char) => name.includes(char)) ||
+		BUILDTIN_DELIMITERS_RE.test(name);
+
 	function validateFlagOptions(name: string, options: FlagOptions) {
 		const prefix = `Flag "${name}"`;
 		if (Array.isArray(options.type) && options.type.length > 1) {
@@ -45,10 +49,14 @@ export function buildConfigsAndAliases(
 				`${prefix} has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
 			);
 		}
-		if (
-			delimiters.some((char) => name.includes(char)) ||
-			BUILDTIN_DELIMITERS_RE.test(name)
-		) {
+
+		const names = [name];
+
+		if (options.alias) {
+			names.push(...toArray(options.alias));
+		}
+
+		if (names.some(isNameInvalid)) {
 			throw new InvalidSchemaError(
 				`${prefix} contains reserved characters, which are used as delimiters.`,
 			);
