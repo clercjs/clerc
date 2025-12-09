@@ -1,8 +1,5 @@
 import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
-import { gracefulVersion } from "@clerc/utils";
-
-import { locales } from "./locales";
 
 interface VersionPluginOptions {
 	/**
@@ -18,44 +15,46 @@ interface VersionPluginOptions {
 	 */
 	flag?: boolean;
 }
+
+const formatVersion = (v: string) =>
+	v.length === 0 ? "" : v.startsWith("v") ? v : `v${v}`;
+
 export const versionPlugin = ({
 	command = true,
 	flag = true,
 }: VersionPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
-			const { add, t } = cli.i18n;
-			add(locales);
-			const gracefullyVersion = gracefulVersion(cli._version);
+			const formattedVersion = formatVersion(cli._version);
 			if (command) {
-				cli = cli
-					.command("version", t("version.description")!, {
-						help: {
-							notes: [t("version.notes.1")!],
-						},
+				cli
+					.command("version", "Prints current version", {
+						// TODO
+						// help: {
+						// 	notes: [t("version.notes.1")!],
+						// },
 					})
 					.on("version", () => {
-						process.stdout.write(gracefullyVersion);
+						process.stdout.write(formattedVersion);
 					});
 			}
 			if (flag) {
-				cli = cli.flag("version", t("version.description")!, {
-					alias: "V",
-					type: Boolean,
-					default: false,
-				});
-				cli.interceptor({
-					enforce: "pre",
-					fn: (ctx, next) => {
-						if (ctx.flags.version) {
-							process.stdout.write(gracefullyVersion);
-						} else {
-							next();
-						}
-					},
-				});
+				cli
+					.globalFlag("version", "Prints current version", {
+						alias: "V",
+						type: Boolean,
+						default: false,
+					})
+					.interceptor({
+						enforce: "pre",
+						handler: async (ctx, next) => {
+							if (ctx.flags.version) {
+								process.stdout.write(formattedVersion);
+							} else {
+								await next();
+							}
+						},
+					});
 			}
-
-			return cli;
 		},
 	});

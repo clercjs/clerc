@@ -13,7 +13,7 @@ describe("plugin-friendly-error", () => {
 			.use(
 				friendlyErrorPlugin({
 					target: (s) => {
-						expect(s).toMatchInlineSnapshot(`"No such command: foo."`);
+						expect(s).toMatchInlineSnapshot(`"No such command: "foo"."`);
 					},
 				}),
 			)
