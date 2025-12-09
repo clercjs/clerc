@@ -56,6 +56,22 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		}
 	}
 
+	public get _name(): string {
+		return this.#name || this.#scriptName;
+	}
+
+	public get _scriptName(): string {
+		return this.#scriptName;
+	}
+
+	public get _description(): string {
+		return this.#description;
+	}
+
+	public get _version(): string {
+		return this.#version;
+	}
+
 	public static create(options?: CreateOptions): Clerc {
 		return new Clerc(options);
 	}
@@ -144,11 +160,11 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	}
 
 	#validate() {
-		if (!this.#name) {
-			throw new Error("CLI name is required.");
-		}
 		if (!this.#scriptName) {
 			throw new Error("CLI script name is required.");
+		}
+		if (!this.#description) {
+			throw new Error("CLI description is required.");
 		}
 		if (!this.#version) {
 			throw new Error("CLI version is required.");
