@@ -1,7 +1,7 @@
 import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
-import { toArray } from "@clerc/utils";
+import { getReadableCommandName, toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
@@ -252,9 +252,11 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	}
 
 	public run(): void {
+		const parametersToResolve = getParametersToResolve(this.#argv);
+
 		const [command, calledAs] = resolveCommand(
 			this.#commands,
-			getParametersToResolve(this.#argv),
+			parametersToResolve,
 		);
 
 		const argvToPass = command
@@ -289,7 +291,9 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 				if (command) {
 					this.#emitter.emit(command.name, ctx as any);
 				} else {
-					throw new Error("No command resolved.");
+					throw new Error(
+						`No such command: ${getReadableCommandName(parametersToResolve, this.#scriptName)}.`,
+					);
 				}
 			},
 		};

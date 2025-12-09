@@ -29,3 +29,6 @@ export function camelCase(str: string): string {
 
 	return result;
 }
+
+export const getReadableCommandName = (parameters: string[]): string =>
+	parameters.length > 0 ? parameters.join(" ") : "<root>";
