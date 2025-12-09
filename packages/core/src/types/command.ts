@@ -29,6 +29,14 @@ export interface Command<
 	description: string;
 }
 
+export type CommandWithHandler<
+	Name extends string = string,
+	Parameters extends string[] = string[],
+	Flags extends ClercFlagsDefinition = {},
+> = Command<Name, Parameters, Flags> & {
+	handler?: CommandHandler<Command<Name, Parameters, Flags>>;
+};
+
 export type CommandsRecord = Record<string, Command>;
 export type CommandsMap = Map<string, Command>;
 export type MakeEmitterEvents<Commands extends CommandsRecord> = {
@@ -40,3 +48,6 @@ export type CommandHandlerContext<C extends Command> = DeepPrettify<
 		resolved: true;
 	}
 >;
+export type CommandHandler<C extends Command = Command> = (
+	context: CommandHandlerContext<C>,
+) => void;

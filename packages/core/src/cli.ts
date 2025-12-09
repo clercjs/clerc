@@ -12,8 +12,9 @@ import type {
 	BaseContext,
 	ClercFlagsDefinition,
 	Command,
-	CommandHandlerContext,
+	CommandHandler,
 	CommandOptions,
+	CommandWithHandler,
 	CommandsMap,
 	CommandsRecord,
 	Interceptor,
@@ -160,23 +161,40 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		Parameters extends string[] = [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
+		command: CommandWithHandler<Name, [...Parameters], Flags>,
+	): Clerc<
+		Commands & Record<string, CommandWithHandler<Name, Parameters, Flags>>
+	>;
+	public command<
+		Name extends string,
+		Parameters extends string[] = [],
+		Flags extends ClercFlagsDefinition = {},
+	>(
 		name: Name extends keyof Commands ? never : Name,
 		description: string,
 		options?: CommandOptions<[...Parameters], Flags>,
-	): Clerc<Commands & Record<Name, Command<Name, Parameters, Flags>>> {
+	): Clerc<Commands & Record<Name, Command<Name, Parameters, Flags>>>;
+	public command(
+		nameOrCommandObject: any,
+		description?: any,
+		options?: any,
+	): any {
+		const command =
+			typeof nameOrCommandObject === "string"
+				? {
+						name: nameOrCommandObject,
+						description,
+						...options,
+					}
+				: nameOrCommandObject;
+
 		const aliases = toArray(options?.alias ?? []);
 
 		this.#callWithErrorHandler(() =>
-			this.#validateCommandNameAndAlias(name, aliases),
+			this.#validateCommandNameAndAlias(command.name, aliases),
 		);
 
-		const command = {
-			name,
-			description,
-			...options,
-		};
-
-		this.#commands.set(name, command);
+		this.#commands.set(command.name, command);
 		for (const alias of aliases) {
 			this.#commands.set(alias, command);
 		}
@@ -192,7 +210,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: (context: CommandHandlerContext<Commands[Name]>) => void,
+		handler: CommandHandler<Commands[Name]>,
 	): this {
 		this.#emitter.on(name, handler);
 
