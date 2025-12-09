@@ -1,41 +1,29 @@
 import { friendlyErrorPlugin } from "@clerc/plugin-friendly-error";
 import { Cli } from "@clerc/test-utils";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 describe("plugin-friendly-error", () => {
-	const msgs: string[] = [];
-
 	beforeAll(() => {
 		process.exit = ((_code?: number) => {}) as any;
 	});
 
-	afterEach(() => {
-		msgs.length = 0;
-	});
-
-	it("should catch error", () => {
+	it("should catch error", async () => {
 		Cli()
 			.use(
 				friendlyErrorPlugin({
-					target: (s) => msgs.push(s),
+					target: (s) => {
+						expect(s).toMatchInlineSnapshot(`"No such command: foo."`);
+					},
 				}),
 			)
 			.parse(["foo"]);
-
-		expect(msgs).toMatchInlineSnapshot(`
-			[
-			  "No such command: "foo".",
-			]
-		`);
-
-		msgs.length = 0;
 	});
 
 	it("should catch async error", () => {
 		Cli()
 			.use(
 				friendlyErrorPlugin({
-					target: (s) => msgs.push(s),
+					target: (s) => expect(s).toMatchInlineSnapshot(`"foo error"`),
 				}),
 			)
 			.command("foo", "foo command")
@@ -43,15 +31,5 @@ describe("plugin-friendly-error", () => {
 				throw new Error("foo error");
 			})
 			.parse(["foo"]);
-
-		setTimeout(() => {
-			expect(msgs).toMatchInlineSnapshot(`
-			[
-			  "No such command: \\"foo\\".",
-			]
-		`);
-		}, 500);
-
-		msgs.length = 0;
 	});
 });

@@ -12,7 +12,7 @@ export const friendlyErrorPlugin = ({
 }: FriendlyErrorPluginOptions = {}) =>
 	definePlugin({
 		setup: (cli) =>
-			cli.errorHandler((err) => {
+			cli.errorHandler((err: any) => {
 				target(err.message);
 				process.exit(1);
 			}),
