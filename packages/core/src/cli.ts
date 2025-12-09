@@ -121,7 +121,7 @@ export class Clerc<
 	}
 
 	public use(plugin: Plugin): this {
-		plugin.setup(this);
+		plugin.setup(this as any);
 
 		return this;
 	}
