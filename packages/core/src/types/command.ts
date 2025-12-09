@@ -1,8 +1,8 @@
 import type { IgnoreFunction } from "@clerc/parser";
 import type { DeepPrettify, MaybeArray, PartialRequired } from "@clerc/utils";
 
-import type { ClercFlagsDefinition } from "./clerc";
 import type { BaseContext } from "./context";
+import type { ClercFlagsDefinition } from "./flag";
 
 export declare interface CommandCustomOptions {}
 
@@ -39,15 +39,22 @@ export type CommandWithHandler<
 
 export type CommandsRecord = Record<string, Command>;
 export type CommandsMap = Map<string, Command>;
-export type MakeEmitterEvents<Commands extends CommandsRecord> = {
-	[K in keyof Commands]: [CommandHandlerContext<Commands[K]>];
+export type MakeEmitterEvents<
+	Commands extends CommandsRecord,
+	GlobalFlags extends ClercFlagsDefinition = {},
+> = {
+	[K in keyof Commands]: [CommandHandlerContext<Commands[K], GlobalFlags>];
 };
 
-export type CommandHandlerContext<C extends Command> = DeepPrettify<
-	PartialRequired<BaseContext<C>, "command" | "calledAs"> & {
+export type CommandHandlerContext<
+	C extends Command,
+	GF extends ClercFlagsDefinition = {},
+> = DeepPrettify<
+	PartialRequired<BaseContext<C, GF>, "command" | "calledAs"> & {
 		resolved: true;
 	}
 >;
-export type CommandHandler<C extends Command = Command> = (
-	context: CommandHandlerContext<C>,
-) => void;
+export type CommandHandler<
+	C extends Command = Command,
+	GF extends ClercFlagsDefinition = {},
+> = (context: CommandHandlerContext<C, GF>) => void;

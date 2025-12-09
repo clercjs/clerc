@@ -1,4 +1,4 @@
-import type { ParsedResult } from "@clerc/parser";
+import type { FlagDefinitionValue, ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
@@ -34,13 +34,17 @@ interface ParseOptions {
 	run?: boolean;
 }
 
-export class Clerc<Commands extends CommandsRecord = {}> {
+export class Clerc<
+	Commands extends CommandsRecord = {},
+	GlobalFlags extends ClercFlagsDefinition = {},
+> {
 	#argv: string[] = [];
 	#commands: CommandsMap = new Map();
-	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>({
+	#emitter = new LiteEmit<MakeEmitterEvents<Commands, GlobalFlags>>({
 		errorHandler: (error) => this.#handleError(error),
 	});
 
+	#globalFlags: GlobalFlags = {} as GlobalFlags;
 	#interceptors: Interceptor[] = [];
 	#errorHandlers: ErrorHandler[] = [];
 	#name = "";
@@ -82,6 +86,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public get _version(): string {
 		return this.#version;
+	}
+
+	public get _globalFlags(): GlobalFlags {
+		return this.#globalFlags;
 	}
 
 	public static create(options?: CreateOptions): Clerc {
@@ -169,7 +177,8 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	>(
 		command: CommandWithHandler<Name, [...Parameters], Flags>,
 	): Clerc<
-		Commands & Record<string, CommandWithHandler<Name, Parameters, Flags>>
+		Commands & Record<string, CommandWithHandler<Name, Parameters, Flags>>,
+		GlobalFlags
 	>;
 	public command<
 		Name extends string,
@@ -179,7 +188,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		name: Name extends keyof Commands ? never : Name,
 		description: string,
 		options?: CommandOptions<[...Parameters], Flags>,
-	): Clerc<Commands & Record<Name, Command<Name, Parameters, Flags>>>;
+	): Clerc<
+		Commands & Record<Name, Command<Name, Parameters, Flags>>,
+		GlobalFlags
+	>;
 	public command(
 		nameOrCommandObject: any,
 		description?: any,
@@ -212,6 +224,19 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		return this as any;
 	}
 
+	public globalFlag<Name extends string, Flag extends FlagDefinitionValue>(
+		name: Name,
+		description: string,
+		options: Flag,
+	): Clerc<Commands, GlobalFlags & Record<Name, Flag>> {
+		this.#globalFlags[name] = {
+			description,
+			...options,
+		} as any;
+
+		return this as any;
+	}
+
 	public interceptor(interceptor: Interceptor): this {
 		this.#interceptors.push(interceptor);
 
@@ -220,7 +245,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: CommandHandler<Commands[Name]>,
+		handler: CommandHandler<Commands[Name], GlobalFlags>,
 	): this {
 		this.#emitter.on(name, handler);
 
@@ -244,7 +269,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 		const parsed = this.#callWithErrorHandler(() =>
 			parse(argv, {
-				flags,
+				flags: {
+					...this.#globalFlags,
+					...flags,
+				},
 				ignore,
 			}),
 		);
@@ -276,7 +304,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 				)
 			: {};
 
-		const context: BaseContext = {
+		const context: BaseContext<Command, GlobalFlags> = {
 			resolved: !!command,
 			command,
 			calledAs,
