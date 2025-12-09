@@ -238,17 +238,19 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			this.#parseArgv(argvToPass, command),
 		);
 
+		const parameters = command?.parameters
+			? parseParameters(
+					command.parameters,
+					parsed.parameters,
+					parsed.doubleDash,
+				)
+			: {};
+
 		const context: BaseContext = {
 			resolved: !!command,
 			command,
 			calledAs,
-			parameters: command?.parameters
-				? parseParameters(
-						command.parameters,
-						parsed.parameters,
-						parsed.doubleDash,
-					)
-				: {},
+			parameters,
 			flags: parsed.flags,
 			ignored: parsed.ignored,
 			rawParsed: parsed,
