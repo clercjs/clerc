@@ -235,7 +235,7 @@ export class Clerc<
 		}
 
 		if (command.handler) {
-			this.#emitter.on(command.name, command.handler);
+			this.on(command.name, command.handler);
 		}
 
 		return this as any;
