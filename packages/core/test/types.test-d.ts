@@ -3,6 +3,50 @@ import { describe, expectTypeOf, it } from "vitest";
 import { Clerc } from "../src";
 
 describe("core types", () => {
+	it("should infer required parameter", () => {
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["<bar>"],
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters.bar).toEqualTypeOf<string>();
+			});
+	});
+
+	it("should infer optional parameter", () => {
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["[bar...]"],
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters.bar).toEqualTypeOf<string[]>();
+			});
+	});
+
+	it("should infer variadic parameter", () => {
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["[bar...]"],
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters.bar).toEqualTypeOf<string[]>();
+			});
+	});
+
+	it("should infer multiple parameters", () => {
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["<bar>", "[baz]", "[qux...]"],
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters).toEqualTypeOf<{
+					bar: string;
+					baz: string | undefined;
+					qux: string[];
+				}>();
+			});
+	});
+
 	it("should infer global flags", () => {
 		Clerc.create()
 			.globalFlag("foo", "foo", {
