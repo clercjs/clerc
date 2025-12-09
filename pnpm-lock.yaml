@@ -206,8 +206,8 @@ importers:
   packages/test-utils:
     dependencies:
       '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
+        specifier: workspace:*
+        version: link:../core
 
   packages/utils:
     dependencies:

@@ -19,7 +19,7 @@
 	"sideEffects": false,
 	"main": "./src/index.ts",
 	"module": "./src/index.ts",
-	"peerDependencies": {
-		"@clerc/core": "*"
+	"dependencies": {
+		"@clerc/core": "workspace:*"
 	}
 }
