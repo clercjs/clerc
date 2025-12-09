@@ -1,15 +1,16 @@
 import type { PartialRequired } from "@clerc/utils";
 
 import type {
+	ClercFlagsDefinition,
 	Command,
 	Interceptor,
 	InterceptorContext,
 	InterceptorObject,
 } from "./types";
 
-function normalizeInspector<C extends Command>(
-	inspector: Interceptor<C>,
-): PartialRequired<InterceptorObject<C>, "enforce"> {
+function normalizeInspector<C extends Command, GF extends ClercFlagsDefinition>(
+	inspector: Interceptor<C, GF>,
+): PartialRequired<InterceptorObject<C, GF>, "enforce"> {
 	if (typeof inspector === "function") {
 		return { enforce: "normal", handler: inspector };
 	}
@@ -20,9 +21,9 @@ function normalizeInspector<C extends Command>(
 	};
 }
 
-export function compose<C extends Command>(
-	inspectors: Interceptor<C>[],
-): (context: InterceptorContext<C>) => Promise<void> {
+export function compose<C extends Command, GF extends ClercFlagsDefinition>(
+	inspectors: Interceptor<C, GF>[],
+): (context: InterceptorContext<C, GF>) => Promise<void> {
 	const normalized = inspectors.map(normalizeInspector);
 	const pre = normalized.filter((i) => i.enforce === "pre");
 	const normal = normalized.filter((i) => i.enforce === "normal");
@@ -30,7 +31,7 @@ export function compose<C extends Command>(
 
 	const orderedInspectors = [...pre, ...normal, ...post];
 
-	return async (context: InterceptorContext<C>) => {
+	return async (context: InterceptorContext<C, GF>) => {
 		let index = 0;
 
 		async function dispatch(): Promise<void> {

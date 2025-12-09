@@ -45,7 +45,7 @@ export class Clerc<
 	});
 
 	#globalFlags: GlobalFlags = {} as GlobalFlags;
-	#interceptors: Interceptor[] = [];
+	#interceptors: Interceptor<Command, GlobalFlags>[] = [];
 	#errorHandlers: ErrorHandler[] = [];
 	#name = "";
 	#scriptName = "";
@@ -237,7 +237,7 @@ export class Clerc<
 		return this as any;
 	}
 
-	public interceptor(interceptor: Interceptor): this {
+	public interceptor(interceptor: Interceptor<Command, GlobalFlags>): this {
 		this.#interceptors.push(interceptor);
 
 		return this;
@@ -332,7 +332,7 @@ export class Clerc<
 			emitInterceptor,
 		]);
 
-		this.#callWithErrorHandler(() => composedInterceptor(context));
+		this.#callWithErrorHandler(() => composedInterceptor(context as any));
 	}
 
 	public parse(
