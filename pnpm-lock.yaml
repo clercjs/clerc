@@ -129,12 +129,13 @@ importers:
 
   packages/plugin-completions:
     dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/plugin-friendly-error:
     dependencies:
@@ -147,9 +148,6 @@ importers:
 
   packages/plugin-help:
     dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
@@ -165,12 +163,13 @@ importers:
       yoctocolors:
         specifier: ^2.1.2
         version: 2.1.2
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/plugin-not-found:
     dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
@@ -180,6 +179,10 @@ importers:
       yoctocolors:
         specifier: ^2.1.2
         version: 2.1.2
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/plugin-strict-flags:
     devDependencies:
@@ -192,12 +195,13 @@ importers:
 
   packages/plugin-version:
     dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/test-utils:
     dependencies:
