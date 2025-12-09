@@ -1,5 +1,5 @@
 import type { Command, CommandHandlerContext } from "@clerc/core";
-import { gracefulFlagName, kebabCase } from "@clerc/utils";
+import { formatFlagName, kebabCase } from "@clerc/utils";
 
 const NO_DESCRIPTION = "(No Description)";
 const getCompletionValue = (command: Command) =>
@@ -8,7 +8,7 @@ const getCompletionFlag = (command: Command) =>
 	Object.entries(command.flags ?? {})
 		.map(([flagName, flag]) => {
 			const gen = [
-				`[CompletionResult]::new('${gracefulFlagName(flagName)}', '${kebabCase(
+				`[CompletionResult]::new('${formatFlagName(flagName)}', '${kebabCase(
 					flagName,
 				)}', [CompletionResultType]::ParameterName, '${
 					command.flags![flagName].description || NO_DESCRIPTION
@@ -16,7 +16,7 @@ const getCompletionFlag = (command: Command) =>
 			];
 			if (flag?.alias) {
 				gen.push(
-					`[CompletionResult]::new('${gracefulFlagName(flag.alias)}', '${
+					`[CompletionResult]::new('${formatFlagName(flag.alias)}', '${
 						flag.alias
 					}', [CompletionResultType]::ParameterName, '${
 						command.flags![flagName].description || NO_DESCRIPTION

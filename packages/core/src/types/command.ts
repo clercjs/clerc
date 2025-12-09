@@ -8,7 +8,7 @@ export declare interface CommandCustomOptions {}
 
 export interface CommandOptions<
 	Parameters extends string[] = string[],
-	Flags extends ClercFlagsDefinition = {},
+	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > extends CommandCustomOptions {
 	alias?: MaybeArray<string>;
 	parameters?: Parameters;
@@ -23,7 +23,7 @@ export interface CommandOptions<
 export interface Command<
 	Name extends string = string,
 	Parameters extends string[] = string[],
-	Flags extends ClercFlagsDefinition = {},
+	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > extends CommandOptions<Parameters, Flags> {
 	name: Name;
 	description: string;
@@ -32,7 +32,7 @@ export interface Command<
 export type CommandWithHandler<
 	Name extends string = string,
 	Parameters extends string[] = string[],
-	Flags extends ClercFlagsDefinition = {},
+	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > = Command<Name, Parameters, Flags> & {
 	handler?: CommandHandler<Command<Name, Parameters, Flags>>;
 };
@@ -41,14 +41,14 @@ export type CommandsRecord = Record<string, Command>;
 export type CommandsMap = Map<string, Command>;
 export type MakeEmitterEvents<
 	Commands extends CommandsRecord,
-	GlobalFlags extends ClercFlagsDefinition = {},
+	GlobalFlags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > = {
 	[K in keyof Commands]: [CommandHandlerContext<Commands[K], GlobalFlags>];
 };
 
 export type CommandHandlerContext<
 	C extends Command = Command,
-	GF extends ClercFlagsDefinition = {},
+	GF extends ClercFlagsDefinition = ClercFlagsDefinition,
 > = DeepPrettify<
 	PartialRequired<BaseContext<C, GF>, "command" | "calledAs"> & {
 		resolved: true;
@@ -56,5 +56,5 @@ export type CommandHandlerContext<
 >;
 export type CommandHandler<
 	C extends Command = Command,
-	GF extends ClercFlagsDefinition = {},
+	GF extends ClercFlagsDefinition = ClercFlagsDefinition,
 > = (context: CommandHandlerContext<C, GF>) => void;

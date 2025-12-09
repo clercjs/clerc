@@ -1,5 +1,6 @@
 import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
+import { formatVersion } from "@clerc/utils";
 
 interface VersionPluginOptions {
 	/**
@@ -15,9 +16,6 @@ interface VersionPluginOptions {
 	 */
 	flag?: boolean;
 }
-
-const formatVersion = (v: string) =>
-	v.length === 0 ? "" : v.startsWith("v") ? v : `v${v}`;
 
 export const versionPlugin = ({
 	command = true,

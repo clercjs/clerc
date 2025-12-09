@@ -5,6 +5,10 @@ export type * from "./types";
 export const toArray = <T>(a: MaybeArray<T>): T[] =>
 	Array.isArray(a) ? a : [a];
 
+/**
+ * Converts a dash-separated string to camelCase.
+ * Not using regexp for better performance, because this function is used in parser.
+ */
 export function camelCase(str: string): string {
 	const dashIdx = str.indexOf("-");
 	if (dashIdx === -1) {
@@ -42,3 +46,12 @@ export function joinWithAnd(values: string[]): string {
 
 	return `${values.join(", ")} and ${last}`;
 }
+
+export const kebabCase = <T extends string>(s: T): string =>
+	s.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`);
+
+export const formatFlagName = (n: string): string =>
+	n.length <= 1 ? `-${n}` : `--${kebabCase(n)}`;
+
+export const formatVersion = (v: string): string =>
+	v.length === 0 ? "" : v.startsWith("v") ? v : `v${v}`;

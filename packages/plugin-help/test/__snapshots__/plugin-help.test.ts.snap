@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`plugin-help > should show --help 1`] = `
+"[1mDescription[22m
+  [32mtest[39m [33mv0.0.0[39m
+
+[1mUsage[22m
+  $ test [command] [flags]
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m"
+`;
+
+exports[`plugin-help > should show help 1`] = `
+"[1mDescription[22m
+  [32mtest[39m [33mv0.0.0[39m
+
+[1mUsage[22m
+  $ test [command] [flags]
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m"
+`;
+
+exports[`plugin-help > should show help when no command 1`] = `
+"[1mDescription[22m
+  [32mtest[39m [33mv0.0.0[39m
+
+[1mUsage[22m
+  $ test [command] [flags]
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m"
+`;
