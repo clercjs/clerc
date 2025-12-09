@@ -1,6 +1,7 @@
-import { friendlyErrorPlugin } from "@clerc/plugin-friendly-error";
 import { Cli } from "@clerc/test-utils";
 import { beforeAll, describe, expect, it } from "vitest";
+
+import { friendlyErrorPlugin } from "../src";
 
 describe("plugin-friendly-error", () => {
 	beforeAll(() => {

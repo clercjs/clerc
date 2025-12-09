@@ -1,6 +1,7 @@
-import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
 import { Cli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
+
+import { strictFlagsPlugin } from "../src";
 
 describe("plugin-strict-flags", () => {
 	it("shouldn't show when flags are not passed", () => {
