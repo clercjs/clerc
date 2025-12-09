@@ -232,8 +232,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			getParametersToResolve(argv),
 		);
 
+		const argvToPasse = command ? argv.slice(calledAs.split(" ").length) : argv;
+
 		const parsed = this.#callWithErrorHandler(() =>
-			this.#parseArgv(argv, command),
+			this.#parseArgv(argvToPasse, command),
 		);
 
 		const context: BaseContext = {
@@ -243,7 +245,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			parameters: command?.parameters
 				? parseParameters(
 						command.parameters,
-						parsed.parameters.slice(calledAs.split(" ").length),
+						parsed.parameters,
 						parsed.doubleDash,
 					)
 				: {},
