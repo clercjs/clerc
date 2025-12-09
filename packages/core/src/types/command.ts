@@ -4,10 +4,12 @@ import type { DeepPrettify, MaybeArray, PartialRequired } from "@clerc/utils";
 import type { ClercFlagsDefinition } from "./clerc";
 import type { BaseContext } from "./context";
 
+export declare interface CommandCustomOptions {}
+
 export interface CommandOptions<
 	Parameters extends string[] = string[],
 	Flags extends ClercFlagsDefinition = {},
-> {
+> extends CommandCustomOptions {
 	alias?: MaybeArray<string>;
 	parameters?: Parameters;
 	flags?: Flags;
