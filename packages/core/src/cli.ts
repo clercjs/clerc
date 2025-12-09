@@ -6,6 +6,12 @@ import type { ErrorHandler } from "lite-emit";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
+import {
+	InvalidCommandError,
+	MissingRequiredMetadataError,
+	NoCommandGivenError,
+	NoSuchCommandError,
+} from "./errors";
 import { compose } from "./interceptor";
 import { getParametersToResolve, parseParameters } from "./parameters";
 import { platformArgv } from "./platform";
@@ -88,6 +94,10 @@ export class Clerc<
 		return this.#version;
 	}
 
+	public get _commands(): CommandsMap {
+		return this.#commands;
+	}
+
 	public get _globalFlags(): GlobalFlags {
 		return this.#globalFlags;
 	}
@@ -161,11 +171,15 @@ export class Clerc<
 
 	#validateCommandNameAndAlias(name: string, aliases: string[]) {
 		if (this.#commands.has(name)) {
-			throw new Error(`Command with name "${name}" already exists.`);
+			throw new InvalidCommandError(
+				`Command with name "${name}" already exists.`,
+			);
 		}
 		for (const alias of aliases) {
 			if (this.#commands.has(alias)) {
-				throw new Error(`Command with name "${alias}" already exists.`);
+				throw new InvalidCommandError(
+					`Command with name "${alias}" already exists.`,
+				);
 			}
 		}
 	}
@@ -254,13 +268,13 @@ export class Clerc<
 
 	#validate() {
 		if (!this.#scriptName) {
-			throw new Error("CLI script name is required.");
+			throw new MissingRequiredMetadataError("script name");
 		}
 		if (!this.#description) {
-			throw new Error("CLI description is required.");
+			throw new MissingRequiredMetadataError("description");
 		}
 		if (!this.#version) {
-			throw new Error("CLI version is required.");
+			throw new MissingRequiredMetadataError("version");
 		}
 	}
 
@@ -321,8 +335,11 @@ export class Clerc<
 					this.#emitter.emit(command.name, ctx as any);
 				} else {
 					throw parametersToResolve.length > 0
-						? new Error(`No such command: ${parametersToResolve.join(" ")}.`)
-						: new Error("No command specified.");
+						? new NoSuchCommandError(
+								parametersToResolve.join(" "),
+								parametersToResolve,
+							)
+						: new NoCommandGivenError();
 				}
 			},
 		};

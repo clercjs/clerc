@@ -1,6 +1,8 @@
 import { DOUBLE_DASH } from "@clerc/parser";
 import type { MaybeArray } from "@clerc/utils";
 
+import { InvalidParametersError } from "./errors";
+
 export function getParametersToResolve(argv: string[]): string[] {
 	const parameters: string[] = [];
 
@@ -30,7 +32,9 @@ function _parseParameters(
 	for (const [i, definition] of definitions.entries()) {
 		const match = definition.match(PARAMETER_REGEX);
 		if (!match || !isParameterDefinitionBracketsValid(definition)) {
-			throw new Error(`Invalid parameter definition: ${definition}`);
+			throw new InvalidParametersError(
+				`Invalid parameter definition: ${definition}`,
+			);
 		}
 
 		const name = match[2];
@@ -38,18 +42,18 @@ function _parseParameters(
 		const isRequired = definition.startsWith("<");
 
 		if (name in result) {
-			throw new Error(`Duplicate parameter name: ${name}`);
+			throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
 		}
 
 		if (isVariadic && i !== definitions.length - 1) {
-			throw new Error(
+			throw new InvalidParametersError(
 				"Variadic parameter must be the last parameter in the definition.",
 			);
 		}
 
 		if (isRequired) {
 			if (hasOptional) {
-				throw new Error(
+				throw new InvalidParametersError(
 					`Required parameter "${name}" cannot appear after an optional parameter.`,
 				);
 			}
@@ -60,7 +64,7 @@ function _parseParameters(
 		const value = isVariadic ? parameters.slice(i) : parameters[i];
 
 		if (isRequired && (isVariadic ? value.length === 0 : value === undefined)) {
-			throw new Error(
+			throw new InvalidParametersError(
 				`Missing required ${isVariadic ? "variadic " : ""}parameter: ${name}`,
 			);
 		}
