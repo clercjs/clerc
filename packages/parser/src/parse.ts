@@ -17,7 +17,7 @@ import {
 	splitNameAndValue,
 } from "./utils";
 
-const DOUBLE_DASH = "--";
+export const DOUBLE_DASH = "--";
 
 type ParseFunction<T extends FlagsDefinition> = (
 	args: string[],

@@ -1,4 +1,4 @@
 export * from "./errors";
 export { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
-export { createParser, parse } from "./parse";
+export { DOUBLE_DASH, createParser, parse } from "./parse";
 export type * from "./types";

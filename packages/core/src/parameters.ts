@@ -1,3 +1,4 @@
+import { DOUBLE_DASH } from "@clerc/parser";
 import type { MaybeArray } from "@clerc/utils";
 
 export function getParametersToResolve(argv: string[]): string[] {
@@ -19,7 +20,7 @@ const isParameterDefinitionBracketsValid = (definition: string): boolean =>
 	(definition.startsWith("<") && definition.endsWith(">")) ||
 	(definition.startsWith("[") && definition.endsWith("]"));
 
-export function parseParameters(
+function _parseParameters(
 	definitions: string[],
 	parameters: string[],
 ): Record<string, any> {
@@ -68,4 +69,24 @@ export function parseParameters(
 	}
 
 	return result;
+}
+
+export function parseParameters(
+	definitions: string[],
+	parameters: string[],
+	doubleDashParameters: string[],
+): Record<string, any> {
+	const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
+
+	if (doubleDashIndex === -1) {
+		return _parseParameters(definitions, parameters);
+	} else {
+		const definitionBeforeDoubleDash = definitions.slice(0, doubleDashIndex);
+		const definitionAfterDoubleDash = definitions.slice(doubleDashIndex + 1);
+
+		return {
+			..._parseParameters(definitionBeforeDoubleDash, parameters),
+			..._parseParameters(definitionAfterDoubleDash, doubleDashParameters),
+		};
+	}
 }

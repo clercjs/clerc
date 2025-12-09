@@ -175,6 +175,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 				? parseParameters(
 						command.parameters,
 						parsed.parameters.slice(calledAs.split(" ").length),
+						parsed.doubleDash,
 					)
 				: {},
 			flags: parsed.flags,
