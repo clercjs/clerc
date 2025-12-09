@@ -29,8 +29,12 @@ interface CreateOptions {
 
 export class Clerc<Commands extends CommandsRecord = {}> {
 	#commands: CommandsMap = new Map();
-	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>();
+	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>({
+		errorHandler: (error) => this.#handleError(error),
+	});
+
 	#interceptors: Interceptor[] = [];
+	#errorHandlers: ((error: unknown) => void)[] = [];
 	#name = "";
 	#scriptName = "";
 	#description = "";
@@ -106,6 +110,39 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		return this;
 	}
 
+	public errorHandler(handler: (error: unknown) => void): this {
+		this.#errorHandlers.push(handler);
+
+		return this;
+	}
+
+	#handleError(error: unknown) {
+		if (this.#errorHandlers.length > 0) {
+			for (const callback of this.#errorHandlers) {
+				callback(error);
+			}
+		} else {
+			throw error;
+		}
+	}
+
+	#callWithErrorHandler<T>(fn: () => T): T {
+		try {
+			const result = fn();
+
+			if (result instanceof Promise) {
+				result.catch((error) => {
+					this.#handleError(error);
+				});
+			}
+
+			return result;
+		} catch (error) {
+			this.#handleError(error);
+			throw error; // This will never be reached, but TypeScript needs it.
+		}
+	}
+
 	#validateCommandNameAndAlias(name: string, aliases: string[]) {
 		if (this.#commands.has(name)) {
 			throw new Error(`Command with name "${name}" already exists.`);
@@ -128,7 +165,9 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	): Clerc<Commands & Record<Name, Command<Name, Parameters, Flags>>> {
 		const aliases = toArray(options?.alias ?? []);
 
-		this.#validateCommandNameAndAlias(name, aliases);
+		this.#callWithErrorHandler(() =>
+			this.#validateCommandNameAndAlias(name, aliases),
+		);
 
 		const command = {
 			name,
@@ -172,16 +211,18 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	}
 
 	public async parse(argv: string[] = platformArgv): Promise<void> {
-		this.#validate();
+		this.#callWithErrorHandler(() => this.#validate());
 
 		const [command, calledAs] = resolveCommand(
 			this.#commands,
 			getParametersToResolve(argv),
 		);
 
-		const parsed = parse(argv, {
-			flags: command?.flags,
-		});
+		const parsed = this.#callWithErrorHandler(() =>
+			parse(argv, {
+				flags: command?.flags,
+			}),
+		);
 
 		const context: BaseContext = {
 			resolved: !!command,
@@ -214,6 +255,6 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			emitInterceptor,
 		]);
 
-		await composedInterceptor(context);
+		await this.#callWithErrorHandler(() => composedInterceptor(context));
 	}
 }
