@@ -1,9 +1,11 @@
+import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
+import { createStopAtFirstParameter } from "./ignore";
 import { compose } from "./interceptor";
 import { getParametersToResolve, parseParameters } from "./parameters";
 import { platformArgv } from "./platform";
@@ -11,10 +13,10 @@ import type {
 	BaseContext,
 	ClercFlagsDefinition,
 	Command,
+	CommandHandlerContext,
 	CommandOptions,
 	CommandsMap,
 	CommandsRecord,
-	HandlerContext,
 	Interceptor,
 	MakeEmitterEvents,
 	Plugin,
@@ -191,7 +193,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 
 	public on<Name extends LiteralUnion<keyof Commands, string>>(
 		name: Name,
-		handler: (context: HandlerContext<Commands[Name]>) => void,
+		handler: (context: CommandHandlerContext<Commands[Name]>) => void,
 	): this {
 		this.#emitter.on(name, handler);
 
@@ -210,6 +212,26 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		}
 	}
 
+	#parseArgv(argv: string[], command?: Command): ParsedResult<any> {
+		const { mode, flags } = command ?? {};
+
+		const ignore =
+			mode === "custom"
+				? command?.ignore
+				: mode === "stop-at-first-parameter"
+					? createStopAtFirstParameter()
+					: undefined;
+
+		const parsed = this.#callWithErrorHandler(() =>
+			parse(argv, {
+				flags,
+				ignore,
+			}),
+		);
+
+		return parsed;
+	}
+
 	public async parse(argv: string[] = platformArgv): Promise<void> {
 		this.#callWithErrorHandler(() => this.#validate());
 
@@ -219,9 +241,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		);
 
 		const parsed = this.#callWithErrorHandler(() =>
-			parse(argv, {
-				flags: command?.flags,
-			}),
+			this.#parseArgv(argv, command),
 		);
 
 		const context: BaseContext = {
@@ -236,6 +256,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 					)
 				: {},
 			flags: parsed.flags,
+			ignored: parsed.ignored,
 			rawParsed: parsed,
 		};
 

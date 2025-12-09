@@ -1,11 +1,10 @@
 import type { IgnoreFunction } from "@clerc/parser";
-import type { MaybeArray } from "@clerc/utils";
+import type { DeepPrettify, MaybeArray, PartialRequired } from "@clerc/utils";
 
 import type { ClercFlagsDefinition } from "./clerc";
-import type { HandlerContext } from "./context";
+import type { BaseContext } from "./context";
 
-// TODO: runtime code
-export type ParsingMode = "all" | "stop-at-positional" | "custom";
+export type ParsingMode = "all" | "stop-at-first-parameter" | "custom";
 
 export interface CommandOptions<
 	Parameters extends string[] = string[],
@@ -38,5 +37,11 @@ export interface Command<
 export type CommandsRecord = Record<string, Command>;
 export type CommandsMap = Map<string, Command>;
 export type MakeEmitterEvents<Commands extends CommandsRecord> = {
-	[K in keyof Commands]: [HandlerContext<Commands[K]>];
+	[K in keyof Commands]: [CommandHandlerContext<Commands[K]>];
 };
+
+export type CommandHandlerContext<C extends Command> = DeepPrettify<
+	PartialRequired<BaseContext<C>, "command" | "calledAs"> & {
+		resolved: true;
+	}
+>;
