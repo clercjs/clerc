@@ -5,7 +5,6 @@ import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
-import { createStopAtFirstParameter } from "./ignore";
 import { compose } from "./interceptor";
 import { getParametersToResolve, parseParameters } from "./parameters";
 import { platformArgv } from "./platform";
@@ -213,14 +212,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	}
 
 	#parseArgv(argv: string[], command?: Command): ParsedResult<any> {
-		const { mode, flags } = command ?? {};
-
-		const ignore =
-			mode === "custom"
-				? command?.ignore
-				: mode === "stop-at-first-parameter"
-					? createStopAtFirstParameter()
-					: undefined;
+		const { flags, ignore } = command ?? {};
 
 		const parsed = this.#callWithErrorHandler(() =>
 			parse(argv, {
