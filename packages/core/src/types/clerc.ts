@@ -5,3 +5,5 @@ export type ClercFlagOptions = FlagOptions & {
 };
 export type ClercFlagDefinitionValue = ClercFlagOptions | FlagType;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
+
+export type ErrorHandler = (error: unknown) => void;

@@ -2,6 +2,7 @@ import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
+import type { ErrorHandler } from "lite-emit";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
@@ -41,7 +42,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 	});
 
 	#interceptors: Interceptor[] = [];
-	#errorHandlers: ((error: unknown) => void)[] = [];
+	#errorHandlers: ErrorHandler[] = [];
 	#name = "";
 	#scriptName = "";
 	#description = "";
@@ -117,7 +118,7 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		return this;
 	}
 
-	public errorHandler(handler: (error: unknown) => void): this {
+	public errorHandler(handler: ErrorHandler): this {
 		this.#errorHandlers.push(handler);
 
 		return this;
@@ -291,11 +292,9 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 				if (command) {
 					this.#emitter.emit(command.name, ctx as any);
 				} else {
-					const error =
-						parametersToResolve.length > 0
-							? new Error(`No such command: ${parametersToResolve.join(" ")}.`)
-							: new Error("No command specified.");
-					throw error;
+					throw parametersToResolve.length > 0
+						? new Error(`No such command: ${parametersToResolve.join(" ")}.`)
+						: new Error("No command specified.");
 				}
 			},
 		};
