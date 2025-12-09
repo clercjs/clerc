@@ -1,7 +1,7 @@
 import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
-import { getReadableCommandName, toArray } from "@clerc/utils";
+import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
@@ -291,9 +291,11 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 				if (command) {
 					this.#emitter.emit(command.name, ctx as any);
 				} else {
-					throw new Error(
-						`No such command: ${getReadableCommandName(parametersToResolve, this.#scriptName)}.`,
-					);
+					const error =
+						parametersToResolve.length > 0
+							? new Error(`No such command: ${parametersToResolve.join(" ")}.`)
+							: new Error("No command specified.");
+					throw error;
 				}
 			},
 		};
