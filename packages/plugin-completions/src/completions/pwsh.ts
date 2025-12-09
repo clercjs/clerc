@@ -1,4 +1,4 @@
-import type { Command, HandlerContext } from "@clerc/core";
+import type { Command, CommandHandlerContext } from "@clerc/core";
 import { gracefulFlagName, kebabCase } from "@clerc/utils";
 
 const NO_DESCRIPTION = "(No Description)";
@@ -28,7 +28,7 @@ const getCompletionFlag = (command: Command) =>
 		})
 		.join("\n            ");
 
-export function getPwshCompletion(ctx: HandlerContext) {
+export function getPwshCompletion(ctx: CommandHandlerContext) {
 	const { cli } = ctx;
 	const { _scriptName: name, _commands: commands } = cli;
 

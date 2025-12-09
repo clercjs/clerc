@@ -47,7 +47,7 @@ export type MakeEmitterEvents<
 };
 
 export type CommandHandlerContext<
-	C extends Command,
+	C extends Command = Command,
 	GF extends ClercFlagsDefinition = {},
 > = DeepPrettify<
 	PartialRequired<BaseContext<C, GF>, "command" | "calledAs"> & {

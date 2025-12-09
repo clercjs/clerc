@@ -1,12 +1,12 @@
 // TODO
-import type { HandlerContext } from "@clerc/core";
+import type { CommandHandlerContext } from "@clerc/core";
 
 const generateCommandCompletion = (name: string) => `
             ${name})
                 cmd+="__${name}"
                 ;;`;
 
-export function getBashCompletion(ctx: HandlerContext) {
+export function getBashCompletion(ctx: CommandHandlerContext) {
 	const { cli } = ctx;
 	const { _scriptName: name, _commands: commands } = cli;
 
