@@ -1,9 +1,6 @@
 export class NoSuchCommandError extends Error {
-	constructor(
-		public commandName: string,
-		public parameters: string[],
-	) {
-		super(`No such command: ${commandName}`);
+	constructor(public commandName: string) {
+		super(`No such command: "${commandName}".`);
 	}
 }
 

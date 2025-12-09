@@ -338,10 +338,7 @@ export class Clerc<
 					this.#emitter.emit(command.name, ctx as any);
 				} else {
 					throw parametersToResolve.length > 0
-						? new NoSuchCommandError(
-								parametersToResolve.join(" "),
-								parametersToResolve,
-							)
+						? new NoSuchCommandError(parametersToResolve.join(" "))
 						: new NoCommandGivenError();
 				}
 			},
