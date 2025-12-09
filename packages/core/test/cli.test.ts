@@ -102,32 +102,30 @@ describe("cli", () => {
 				handler: (ctx) => {
 					expect(ctx.command.name).toStrictEqual("");
 					expect(ctx.rawParsed).toMatchInlineSnapshot(`
-            {
-              "_": [
-                "bar",
-                "qux",
-              ],
-              "flags": {
-                "foo": "baz",
-              },
-              "mergedFlags": {
-                "foo": "baz",
-              },
-              "parameters": [
-                "bar",
-                "qux",
-              ],
-              "unknownFlags": {},
-            }
-          `);
+						{
+						  "doubleDash": [],
+						  "flags": {
+						    "foo": "baz",
+						  },
+						  "ignored": [],
+						  "parameters": [
+						    "qux",
+						  ],
+						  "raw": [
+						    "--foo",
+						    "baz",
+						    "qux",
+						  ],
+						  "unknown": {},
+						}
+					`);
 					expect(ctx.parameters).toMatchInlineSnapshot(`
-            {
-              "optional": [
-                "bar",
-                "qux",
-              ],
-            }
-          `);
+						{
+						  "optional": [
+						    "qux",
+						  ],
+						}
+					`);
 					expect(ctx.flags).toMatchInlineSnapshot(`
             {
               "foo": "baz",
@@ -411,7 +409,7 @@ describe("cli", () => {
 			.parse(["foo", "bar"]);
 	});
 
-	it.skip("should register command with handler", () => {
+	it("should register command with handler", () => {
 		let count = 0;
 		const command = defineCommand({
 			name: "foo",
@@ -425,15 +423,15 @@ describe("cli", () => {
 		expect(count).toBe(1);
 	});
 
-	it.skip("should run matched command", async () => {
+	it("should run matched command", async () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
 			.on("foo", () => {
 				count++;
 			})
-			.parse({ run: false, argv: ["foo"] })
-			.runMatchedCommand();
+			.parse(["foo"], { run: false })
+			.run();
 
 		expect(count).toBe(1);
 	});
@@ -450,39 +448,15 @@ describe("cli", () => {
 			.parse(["bar", "baz", "param"]);
 	});
 
-	it.skip("shouldn't run matched command", async () => {
+	it("shouldn't run matched command", async () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
 			.on("foo", () => {
 				count++;
 			})
-			.parse({ run: false, argv: ["foo"] });
+			.parse(["foo"], { run: false });
 
 		expect(count).toBe(0);
-	});
-
-	it.skip("should translate", async () => {
-		try {
-			Cli("zh-CN").command("foo", "foo").parse(["bar"]);
-		} catch (e: any) {
-			expect(e.message).toBe('找不到命令: "bar"。');
-		}
-	});
-
-	it.skip("should be able to define commands using an array", async () => {
-		let count = 0;
-		const command = defineCommand(
-			{
-				name: "foo",
-				description: "foo",
-			},
-			() => {
-				count++;
-			},
-		);
-		Cli().command([command]).parse(["foo"]);
-
-		expect(count).toBe(1);
 	});
 });
