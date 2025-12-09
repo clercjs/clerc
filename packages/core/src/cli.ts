@@ -29,7 +29,12 @@ interface CreateOptions {
 	version?: string;
 }
 
+interface ParseOptions {
+	run?: boolean;
+}
+
 export class Clerc<Commands extends CommandsRecord = {}> {
+	#argv: string[] = [];
 	#commands: CommandsMap = new Map();
 	#emitter = new LiteEmit<MakeEmitterEvents<Commands>>({
 		errorHandler: (error) => this.#handleError(error),
@@ -199,6 +204,10 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			this.#commands.set(alias, command);
 		}
 
+		if (command.handler) {
+			this.#emitter.on(command.name, command.handler);
+		}
+
 		return this as any;
 	}
 
@@ -242,15 +251,15 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 		return parsed;
 	}
 
-	public async parse(argv: string[] = platformArgv): Promise<void> {
-		this.#callWithErrorHandler(() => this.#validate());
-
+	public run(): void {
 		const [command, calledAs] = resolveCommand(
 			this.#commands,
-			getParametersToResolve(argv),
+			getParametersToResolve(this.#argv),
 		);
 
-		const argvToPass = command ? argv.slice(calledAs.split(" ").length) : argv;
+		const argvToPass = command
+			? this.#argv.slice(calledAs.split(" ").length)
+			: this.#argv;
 
 		const parsed = this.#callWithErrorHandler(() =>
 			this.#parseArgv(argvToPass, command),
@@ -290,6 +299,21 @@ export class Clerc<Commands extends CommandsRecord = {}> {
 			emitInterceptor,
 		]);
 
-		await this.#callWithErrorHandler(() => composedInterceptor(context));
+		this.#callWithErrorHandler(() => composedInterceptor(context));
+	}
+
+	public parse(
+		argv: string[] = platformArgv,
+		{ run = true }: ParseOptions = {},
+	): this {
+		this.#callWithErrorHandler(() => this.#validate());
+
+		this.#argv = argv;
+
+		if (run) {
+			this.run();
+		}
+
+		return this;
 	}
 }
