@@ -30,5 +30,15 @@ export function camelCase(str: string): string {
 	return result;
 }
 
-export const getReadableCommandName = (parameters: string[]): string =>
-	parameters.length > 0 ? parameters.join(" ") : "<root>";
+export function joinWithAnd(values: string[]): string {
+	if (values.length === 0) {
+		return "";
+	}
+	if (values.length === 1) {
+		return values[0];
+	}
+
+	const last = values.pop();
+
+	return `${values.join(", ")} and ${last}`;
+}

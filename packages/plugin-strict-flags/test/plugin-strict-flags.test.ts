@@ -1,39 +1,27 @@
 import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
 import { Cli } from "@clerc/test-utils";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("plugin-strict-flags", () => {
-	const msgs: string[] = [];
-
-	beforeAll(() => {
-		// eslint-disable-next-line no-console
-		console.log = (s: string) => {
-			msgs.push(s);
-		};
-	});
-
-	afterEach(() => {
-		msgs.length = 0;
-	});
-
 	it("shouldn't show when flags are not passed", () => {
-		try {
-			Cli().use(strictFlagsPlugin()).command("a", "a").parse([]);
-		} catch (e: any) {
-			expect(e.message).toBe("No command given.");
-		}
-		msgs.length = 0;
+		Cli()
+			.errorHandler((err: any) => {
+				expect(err).toMatchInlineSnapshot("[Error: No command specified.]");
+			})
+			.use(strictFlagsPlugin())
+			.command("a", "a")
+			.parse([]);
 	});
 
 	it("should show unknown flags", () => {
-		try {
-			Cli()
-				.use(strictFlagsPlugin())
-				.command("a", "a")
-				.parse(["a", "-a", "-bc", "--foo"]);
-		} catch (e: any) {
-			expect(e.message).toBe("Unexpected flags: a, b, c and foo.");
-		}
-		msgs.length = 0;
+		Cli()
+			.errorHandler((err: any) => {
+				expect(err).toMatchInlineSnapshot(
+					"[Error: Unexpected flags: a, b, c and foo]",
+				);
+			})
+			.use(strictFlagsPlugin())
+			.command("a", "a")
+			.parse(["a", "-a", "-bc", "--foo"]);
 	});
 });

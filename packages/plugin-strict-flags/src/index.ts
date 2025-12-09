@@ -1,35 +1,20 @@
 // TODO: unit tests
 
 import { definePlugin } from "@clerc/core";
-import { semanticArray } from "@clerc/utils";
-
-import { locales } from "./locales";
+import { joinWithAnd } from "@clerc/utils";
 
 export const strictFlagsPlugin = () =>
 	definePlugin({
 		setup: (cli) => {
-			const { add, t } = cli.i18n;
-			add(locales);
-
-			return cli.interceptor((ctx, next) => {
-				const keys = Object.keys(ctx.unknownFlags);
+			cli.interceptor(async (ctx, next) => {
+				const keys = Object.keys(ctx.rawParsed.unknown);
 				if (!ctx.resolved || keys.length === 0) {
-					next();
+					await next();
 				} else {
 					const error =
 						keys.length > 1
-							? new Error(
-									t(
-										"strictFlags.unexpectedMore",
-										semanticArray(keys, cli.i18n),
-									),
-								)
-							: new Error(
-									t(
-										"strictFlags.unexpectedSingle",
-										semanticArray(keys, cli.i18n),
-									),
-								);
+							? new Error(`Unexpected flags: ${joinWithAnd(keys)}`)
+							: new Error(`Unexpected flag: ${keys[0]}`);
 					throw error;
 				}
 			});
