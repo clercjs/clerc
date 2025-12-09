@@ -1,39 +1,46 @@
-import { notFoundPlugin } from "@clerc/plugin-not-found";
 import { Cli } from "@clerc/test-utils";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-describe("plugin-not-found", () => {
+import { notFoundPlugin } from "../src";
+
+async function testConsoleError(fn: () => void | Promise<void>) {
+	const spy = vi.spyOn(console, "error");
+	const exitSpy = vi.spyOn(process, "exit");
 	const msgs: string[] = [];
 
-	beforeAll(() => {
-		// eslint-disable-next-line no-console
-		console.log = (s: string) => {
-			msgs.push(s);
-		};
-		console.error = (s: string) => {
-			msgs.push(s);
-		};
-		process.exit = ((_code?: number) => {}) as any;
+	spy.mockImplementation((msg) => {
+		msgs.push(msg);
 	});
+	exitSpy.mockImplementation(() => ({}) as never);
 
-	afterEach(() => {
-		msgs.length = 0;
-	});
+	try {
+		await fn();
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	} finally {
+		spy.mockRestore();
+		exitSpy.mockRestore();
+	}
 
-	it("should show commands", () => {
-		Cli().use(notFoundPlugin()).parse([]);
+	return msgs;
+}
+
+describe("plugin-not-found", () => {
+	it("should show commands", async () => {
+		const msgs = await testConsoleError(() => {
+			Cli().use(notFoundPlugin()).parse([]);
+		});
 
 		expect(msgs).toMatchInlineSnapshot(`
       [
-        "No command given.",
+        "No command specified.",
       ]
     `);
-
-		msgs.length = 0;
 	});
 
-	it("should show closest command", () => {
-		Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
+	it("should show closest command", async () => {
+		const msgs = await testConsoleError(() => {
+			Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
+		});
 
 		expect(msgs).toMatchInlineSnapshot(`
 			[
