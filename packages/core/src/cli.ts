@@ -199,7 +199,10 @@ export class Clerc<
 		Parameters extends string[] = [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
-		name: Name extends keyof Commands ? never : Name,
+		name: Name extends keyof Commands
+			? // type info
+				["COMMAND ALREADY EXISTS"]
+			: Name,
 		description: string,
 		options?: CommandOptions<[...Parameters], Flags>,
 	): Clerc<
