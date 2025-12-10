@@ -81,6 +81,10 @@ Check the examples made with `Clerc.js`:
 
 Clerc uses [`@clerc/parser`](https://github.com/clercjs/clerc/blob/main/packages/parser) to parse arguments. It is strongly-typed, which brings you better DX. It is powerful(supports custom type) and quite small and performant!
 
+Clerc has a plugin system, which means you can add features on demand (e.g. auto completions, help text generation...). It also provides chainable APIs for better composability.
+
+Clerc's flexible architecture and plugin system offer vast potential for further exploration and customization in diverse CLI application scenarios. There are more and more opportunities to leverage Clerc's capabilities to create unique and powerful command-line tools!
+
 ## 📝 License
 
 [MIT](./LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)
