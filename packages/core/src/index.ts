@@ -1,3 +1,9 @@
+export {
+	DOUBLE_DASH,
+	KNOWN_FLAG,
+	PARAMETER,
+	UNKNOWN_FLAG,
+} from "@clerc/parser";
 export { Clerc } from "./cli";
 export { resolveCommand } from "./commands";
 export * from "./errors";
