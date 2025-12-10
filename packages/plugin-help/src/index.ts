@@ -6,6 +6,8 @@ import { defaultFormatters } from "./formatters";
 import { HelpRenderer } from "./renderer";
 import type { Formatters } from "./types";
 
+export { defaultFormatters } from "./formatters";
+
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
 		help?: {
