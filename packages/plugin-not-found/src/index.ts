@@ -1,3 +1,4 @@
+import type { Plugin } from "@clerc/core";
 import {
 	NoCommandGivenError,
 	NoSuchCommandError,
@@ -6,7 +7,7 @@ import {
 import didyoumean from "didyoumean2";
 import * as yc from "yoctocolors";
 
-export const notFoundPlugin = () =>
+export const notFoundPlugin = (): Plugin =>
 	definePlugin({
 		setup: (cli) =>
 			cli.interceptor({

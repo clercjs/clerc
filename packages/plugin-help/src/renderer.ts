@@ -29,12 +29,12 @@ export class HelpRenderer {
 	constructor(
 		private _cli: Clerc,
 		private _globalFlags: ClercFlagsDefinition,
-		private _command?: Command,
+		private _command: Command | undefined,
 		private _notes?: string[],
 		private _examples?: [string, string][],
 	) {}
 
-	public render() {
+	public render(): string {
 		const sections: Section[] = [
 			this.renderHeader(),
 			this.renderUsage(),

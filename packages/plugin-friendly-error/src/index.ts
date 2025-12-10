@@ -1,5 +1,6 @@
 // TODO: unit tests
 
+import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
 import * as kons from "kons";
 
@@ -9,7 +10,7 @@ export interface FriendlyErrorPluginOptions {
 
 export const friendlyErrorPlugin = ({
 	target = kons.error,
-}: FriendlyErrorPluginOptions = {}) =>
+}: FriendlyErrorPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) =>
 			cli.errorHandler((err: any) => {

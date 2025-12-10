@@ -1,9 +1,10 @@
 // TODO: unit tests
 
+import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
 import { joinWithAnd } from "@clerc/utils";
 
-export const strictFlagsPlugin = () =>
+export const strictFlagsPlugin = (): Plugin =>
 	definePlugin({
 		setup: (cli) => {
 			cli.interceptor(async (ctx, next) => {

@@ -6,6 +6,6 @@ export default defineConfig({
 	...base,
 	dts: {
 		resolve: ["@clerc/parser"],
-		build: true,
+		oxc: true,
 	},
 });

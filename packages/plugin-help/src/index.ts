@@ -1,3 +1,4 @@
+import type { Plugin } from "@clerc/core";
 import { definePlugin, resolveCommand } from "@clerc/core";
 import { isTruthy } from "@clerc/utils";
 
@@ -29,7 +30,7 @@ export const helpPlugin = ({
 	notes,
 	examples,
 	banner,
-}: HelpPluginOptions = {}) =>
+}: HelpPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
 			const generalHelpNotes = [
