@@ -40,8 +40,8 @@ export class HelpRenderer {
 			this.renderHeader(),
 			this.renderUsage(),
 			this.renderCommands(),
-			this.renderCommandFlags(),
 			this.renderGlobalFlags(),
+			this.renderCommandFlags(),
 			this.renderNotes(),
 			this.renderExamples(),
 		];
