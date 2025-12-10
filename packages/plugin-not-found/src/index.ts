@@ -1,6 +1,6 @@
 import type { Plugin } from "@clerc/core";
 import {
-	NoCommandGivenError,
+	NoCommandSpecifiedError,
 	NoSuchCommandError,
 	definePlugin,
 } from "@clerc/core";
@@ -21,12 +21,12 @@ export const notFoundPlugin = (): Plugin =>
 						if (
 							!(
 								e instanceof NoSuchCommandError ||
-								e instanceof NoCommandGivenError
+								e instanceof NoCommandSpecifiedError
 							)
 						) {
 							throw e;
 						}
-						if (e instanceof NoCommandGivenError) {
+						if (e instanceof NoCommandSpecifiedError) {
 							console.error("No command specified.");
 							if (hasCommands) {
 								console.error(`Possible commands: ${commandKeys.join(", ")}`);

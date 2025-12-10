@@ -9,7 +9,7 @@ import { resolveCommand } from "./commands";
 import {
 	InvalidCommandError,
 	MissingRequiredMetadataError,
-	NoCommandGivenError,
+	NoCommandSpecifiedError,
 	NoSuchCommandError,
 } from "./errors";
 import { compose } from "./interceptor";
@@ -350,7 +350,7 @@ export class Clerc<
 				} else {
 					throw parametersToResolve.length > 0
 						? new NoSuchCommandError(parametersToResolve.join(" "))
-						: new NoCommandGivenError();
+						: new NoCommandSpecifiedError();
 				}
 			},
 		};

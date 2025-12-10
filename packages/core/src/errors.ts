@@ -4,7 +4,7 @@ export class NoSuchCommandError extends Error {
 	}
 }
 
-export class NoCommandGivenError extends Error {
+export class NoCommandSpecifiedError extends Error {
 	constructor() {
 		super("No command specified.");
 	}
