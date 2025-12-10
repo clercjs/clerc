@@ -1,51 +1,49 @@
+import { friendlyErrorPlugin } from "@clerc/plugin-friendly-error";
 import { Cli } from "@clerc/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { notFoundPlugin } from "../src";
 
-async function testConsoleError(fn: () => void | Promise<void>) {
-	const msgs: string[] = [];
-	const spy = vi.spyOn(console, "error").mockImplementation((msg) => {
-		msgs.push(msg);
-	});
-	const exitSpy = vi
-		.spyOn(process, "exit")
-		.mockImplementation(() => ({}) as never);
-
-	try {
-		await fn();
-		await new Promise((resolve) => setTimeout(resolve, 100));
-	} finally {
-		spy.mockRestore();
-		exitSpy.mockRestore();
-	}
-
-	return msgs;
-}
-
 describe("plugin-not-found", () => {
-	it("should show commands", async () => {
-		const msgs = await testConsoleError(() => {
-			Cli().use(notFoundPlugin()).parse([]);
-		});
-
-		expect(msgs).toMatchInlineSnapshot(`
-      [
-        "No command specified.",
-      ]
-    `);
+	beforeAll(() => {
+		vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
 	});
 
-	it("should show closest command", async () => {
-		const msgs = await testConsoleError(() => {
-			Cli().use(notFoundPlugin()).command("foo", "foo command").parse(["fo"]);
-		});
+	it("should show commands", () => {
+		Cli()
+			.errorHandler((e) =>
+				expect(e).toMatchInlineSnapshot("[Error: No command specified.]"),
+			)
+			.use(notFoundPlugin())
+			.parse([]);
+	});
 
-		expect(msgs).toMatchInlineSnapshot(`
-			[
-			  "Command "[9mfo[29m" not found.",
-			  "Did you mean "[1mfoo[22m"?",
-			]
-		`);
+	it("should show closest command", () => {
+		Cli()
+			.errorHandler((e) =>
+				expect(e).toMatchInlineSnapshot(`
+					[Error: Command "[9mfo[29m" not found.
+					Did you mean "[1mfoo[22m"?]
+				`),
+			)
+			.use(notFoundPlugin())
+			.command("foo", "foo command")
+			.parse(["fo"]);
+	});
+
+	it("should work with friendly-error", () => {
+		Cli()
+			.use(
+				friendlyErrorPlugin({
+					target: (str) =>
+						expect(str).toMatchInlineSnapshot(`
+							"Command "[9mfo[29m" not found.
+							Did you mean "[1mfoo[22m"?"
+						`),
+				}),
+			)
+			.use(notFoundPlugin())
+			.command("foo", "foo command")
+			.parse(["fo"]);
 	});
 });

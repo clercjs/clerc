@@ -27,25 +27,25 @@ export const notFoundPlugin = (): Plugin =>
 							throw e;
 						}
 						if (e instanceof NoCommandSpecifiedError) {
-							console.error("No command specified.");
+							let text = "No command specified.";
 							if (hasCommands) {
-								console.error(`Possible commands: ${commandKeys.join(", ")}`);
+								text += `\nPossible commands: ${commandKeys.join(", ")}.`;
 							}
 
-							return;
+							throw new NoCommandSpecifiedError(text);
 						}
 
 						const { commandName } = e;
 						const closestCommandName = didyoumean(commandName, commandKeys);
-						console.error(
-							`Command "${yc.strikethrough(commandName)}" not found.`,
-						);
+						let text = `Command "${yc.strikethrough(commandName)}" not found.`;
+
 						if (hasCommands && closestCommandName) {
-							console.error(`Did you mean "${yc.bold(closestCommandName)}"?`);
+							text += `\nDid you mean "${yc.bold(closestCommandName)}"?`;
 						} else if (!hasCommands) {
-							console.error("No commands registered.");
+							text += "\nNo commands registered.";
 						}
-						process.exit(2);
+
+						throw new NoSuchCommandError(commandName, text);
 					}
 				},
 			}),
