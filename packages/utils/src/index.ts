@@ -59,3 +59,6 @@ export const formatVersion = (v: string): string =>
 export const isTruthy: <T>(
 	item: T,
 ) => item is Exclude<T, false | null | undefined> = Boolean as any;
+
+export const objectIsEmpty = (obj: Record<string, any>): boolean =>
+	Object.keys(obj).length === 0;

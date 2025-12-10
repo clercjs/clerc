@@ -1,5 +1,10 @@
 import type { Clerc, ClercFlagsDefinition, Command } from "@clerc/core";
-import { formatFlagName, formatVersion, isTruthy } from "@clerc/utils";
+import {
+	formatFlagName,
+	formatVersion,
+	isTruthy,
+	objectIsEmpty,
+} from "@clerc/utils";
 import stringWidth from "string-width";
 import textTable from "text-table";
 import * as yc from "yoctocolors";
@@ -21,8 +26,8 @@ export type Section =
 export class HelpRenderer {
 	constructor(
 		private _cli: Clerc,
+		private _globalFlags: ClercFlagsDefinition,
 		private _command?: Command,
-		private _globalFlags?: ClercFlagsDefinition,
 		private _notes?: string[],
 		private _examples?: [string, string][],
 	) {}
@@ -89,7 +94,10 @@ export class HelpRenderer {
 		// 	usage += " [command]";
 		// }
 
-		if (command?.flags || this._globalFlags) {
+		if (
+			(command?.flags && !objectIsEmpty(command.flags)) ||
+			!objectIsEmpty(this._globalFlags)
+		) {
 			usage += " [FLAGS]";
 		}
 
@@ -139,7 +147,7 @@ export class HelpRenderer {
 
 	private renderCommandFlags() {
 		const command = this._command;
-		if (!command?.flags) {
+		if (!command?.flags || objectIsEmpty(command.flags)) {
 			return;
 		}
 
@@ -152,7 +160,7 @@ export class HelpRenderer {
 	}
 
 	private renderGlobalFlags() {
-		if (!this._globalFlags) {
+		if (!this._globalFlags || objectIsEmpty(this._globalFlags)) {
 			return;
 		}
 
@@ -165,7 +173,7 @@ export class HelpRenderer {
 	}
 
 	private renderNotes() {
-		if (!this._notes || this._notes.length === 0) {
+		if (!this._notes?.length) {
 			return;
 		}
 
@@ -176,7 +184,7 @@ export class HelpRenderer {
 	}
 
 	private renderExamples() {
-		if (!this._examples || this._examples.length === 0) {
+		if (!this._examples?.length) {
 			return;
 		}
 
