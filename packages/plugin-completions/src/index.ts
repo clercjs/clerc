@@ -93,7 +93,11 @@ export const completionsPlugin = (
 				});
 
 			cli
-				.command("completion-server", "Handle completions")
+				.command("completion-server", "Handle completions", {
+					help: {
+						showInHelp: false,
+					},
+				})
 				.on("completion-server", async () => {
 					const env = tabtab.parseEnv(process.env);
 					if (!env.complete) {
