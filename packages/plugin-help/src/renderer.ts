@@ -76,10 +76,18 @@ export class HelpRenderer {
 		const headerLine = command
 			? `${yc.green(_name)}${formattedCommandName}`
 			: `${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`;
+		const alias = command?.alias
+			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
+					command.alias,
+				)
+					.map((a) => yc.cyan(a))
+					.join(", ")}`
+			: "";
 
 		return {
 			body: [
 				`${headerLine}${description ? ` ${DELIMITER} ${description}` : ""}`,
+				alias,
 			],
 		};
 	}
