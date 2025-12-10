@@ -65,7 +65,7 @@ export const helpPlugin = ({
 
 			function printHelp(s: string) {
 				if (banner) {
-					console.log(`${banner}`);
+					console.log(banner);
 				}
 				console.log(s);
 			}
