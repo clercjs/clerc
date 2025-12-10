@@ -67,8 +67,11 @@ export class HelpRenderer {
 		const { _name, _version, _description } = this._cli;
 		const command = this._command;
 		const description = command?.description ?? _description;
+		const formattedCommandName = command?.name
+			? ` ${yc.cyan(command.name)}`
+			: "";
 		const headerLine = command
-			? `${yc.green(_name)} ${yc.cyan(command.name)}`
+			? `${yc.green(_name)}${formattedCommandName}`
 			: `${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`;
 
 		return {
@@ -85,7 +88,7 @@ export class HelpRenderer {
 		let usage = `$ ${_scriptName}`;
 
 		if (command) {
-			usage += ` ${command.name}`;
+			usage += command.name ? ` ${command.name}` : "";
 			if (command.parameters) {
 				usage += ` ${command.parameters.join(" ")}`;
 			}
