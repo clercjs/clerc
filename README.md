@@ -30,12 +30,11 @@
 
 # ✨ Features
 
-- **Lightweight** - Dependencies are bundled and minified
+- **Lightweight** - Dependencies are bundled.
 - **Plugin system** - Add rich features on demand.
 - **Chainable APIs** - Composable.
 - **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
 - **Parses parameters** - No need to read them by yourself.
-- **I18N** - Easy to change different locales.
 
 # 😊 The simplest CLI example
 
@@ -44,11 +43,10 @@ Install clerc, and create a file named `cli.mjs`:
 ```ts
 import { Clerc } from "clerc";
 
-Clerc.create(
-	"foo", // CLI Name
-	"A foo CLI", // CLI Description
-	"0.0.0", // CLI Version
-)
+Clerc.create() // Create a new Clerc instance
+	.scriptName("foo") // CLI Script Name
+	.description("A foo CLI") // CLI Description
+	.version("0.0.0") // CLI Version
 	.command(
 		"bar", // Command name
 		"A bar command", // Command description
@@ -81,15 +79,7 @@ Check the examples made with `Clerc.js`:
 
 ## Why using Clerc?
 
-Clerc uses [`type-flag`](https://github.com/privatenumber/type-flag) to parse arguments. It is strongly-typed, which brings you better DX. It is powerful(supports custom type) and quite small!
-
-And clerc uses [`lite-emit`](https://github.com/so1ve/lite-emit) to emit events. It is a event emitter library but with better type support.
-
-The whole bundled and minified `@clerc/core` package is only 10KB (ignored types), which is much smaller than yargs, commander, CAC and oclif :)
-
-## Why naming "Clerc"?
-
-Hiroki Osame's [`cleye`](https://github.com/privatenumber/cleye) is an awesome tool for building CLI apps. Its name sounds quite nice, so I also found an English name `Clerc` for this package =)
+Clerc uses [`@clerc/parser`](https://github.com/clercjs/clerc/blob/main/packages/parser) to parse arguments. It is strongly-typed, which brings you better DX. It is powerful(supports custom type) and quite small and performant!
 
 ## 📝 License
 
