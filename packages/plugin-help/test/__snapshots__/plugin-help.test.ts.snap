@@ -1,7 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`plugin-help > should show --help 1`] = `
-"[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
   $ test [FLAGS]
@@ -20,11 +22,15 @@ exports[`plugin-help > should show --help 1`] = `
 [1mExamples[22m
   $ test help              [33m-[39m  Show help
   $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command"
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
 `;
 
 exports[`plugin-help > should show help 1`] = `
-"[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
   $ test [FLAGS]
@@ -43,11 +49,15 @@ exports[`plugin-help > should show help 1`] = `
 [1mExamples[22m
   $ test help              [33m-[39m  Show help
   $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command"
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
 `;
 
 exports[`plugin-help > should show help when no command 1`] = `
-"[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
   $ test [FLAGS]
@@ -66,5 +76,7 @@ exports[`plugin-help > should show help when no command 1`] = `
 [1mExamples[22m
   $ test help              [33m-[39m  Show help
   $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command"
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
 `;

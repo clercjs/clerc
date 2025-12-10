@@ -1,35 +1,31 @@
-import { Cli } from "@clerc/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { Cli, getConsoleMock } from "@clerc/test-utils";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { mockConsole } from "vitest-console";
 
 import { helpPlugin } from "../src";
 
 describe("plugin-help", () => {
-	const processStdoutWriteSpy = vi
-		.spyOn(process.stdout, "write")
-		.mockImplementation(() => true);
+	const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
 
-	afterEach(() => {
-		processStdoutWriteSpy.mockClear();
-	});
+	afterEach(clearConsole);
+
+	afterAll(restoreConsole);
 
 	it("should show help", () => {
 		Cli().use(helpPlugin()).parse(["help"]);
 
-		expect(processStdoutWriteSpy).toHaveBeenCalled();
-		expect(processStdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show --help", () => {
 		Cli().use(helpPlugin()).parse(["--help"]);
 
-		expect(processStdoutWriteSpy).toHaveBeenCalled();
-		expect(processStdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show help when no command", () => {
 		Cli().use(helpPlugin()).parse([]);
 
-		expect(processStdoutWriteSpy).toHaveBeenCalled();
-		expect(processStdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 });

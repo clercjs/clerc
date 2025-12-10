@@ -53,10 +53,8 @@ export const helpPlugin = ({
 
 			function printHelp(s: string) {
 				if (banner) {
-					// eslint-disable-next-line no-console
 					console.log(`${banner}`);
 				}
-				// eslint-disable-next-line no-console
 				console.log(s);
 			}
 

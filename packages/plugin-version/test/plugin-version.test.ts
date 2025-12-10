@@ -1,25 +1,26 @@
 import { Cli } from "@clerc/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { mockConsole } from "vitest-console";
 
 import { versionPlugin } from "../src";
 
 describe("plugin-version", () => {
-	const spy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+	const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
 
-	afterEach(() => {
-		spy.mockClear();
-	});
+	afterEach(clearConsole);
+
+	afterAll(restoreConsole);
 
 	it("should show version command output", () => {
 		Cli().use(versionPlugin()).parse(["version"]);
 
-		expect(spy).toHaveBeenCalledWith("v0.0.0");
+		expect(console).toHaveLoggedWith("v0.0.0");
 	});
 
 	it("should show version flag output", () => {
 		Cli().use(versionPlugin()).parse(["--version"]);
 
-		expect(spy).toHaveBeenCalledWith("v0.0.0");
+		expect(console).toHaveLoggedWith("v0.0.0");
 	});
 
 	it('should be able to disable command with "command: false"', () => {
@@ -32,7 +33,7 @@ describe("plugin-version", () => {
 			})
 			.parse(["version"]);
 
-		expect(spy).toHaveBeenCalledTimes(0);
+		expect(console).not.toHaveLogged();
 	});
 
 	it('should be able to disable flag with "flag: false"', () => {
@@ -43,6 +44,6 @@ describe("plugin-version", () => {
 			})
 			.parse(["--version"]);
 
-		expect(spy).toHaveBeenCalledTimes(0);
+		expect(console).not.toHaveLogged();
 	});
 });

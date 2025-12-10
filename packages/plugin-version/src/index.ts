@@ -33,7 +33,6 @@ export const versionPlugin = ({
 						// },
 					})
 					.on("version", () => {
-						// eslint-disable-next-line no-console
 						console.log(formattedVersion);
 					});
 			}
@@ -48,7 +47,6 @@ export const versionPlugin = ({
 						enforce: "pre",
 						handler: async (ctx, next) => {
 							if (ctx.flags.version) {
-								// eslint-disable-next-line no-console
 								console.log(formattedVersion);
 							} else {
 								await next();

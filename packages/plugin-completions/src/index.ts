@@ -89,7 +89,6 @@ export const completionsPlugin = (
 						completer: cli._name,
 						shell: shell as any,
 					});
-					// eslint-disable-next-line no-console
 					console.log(script);
 				});
 
