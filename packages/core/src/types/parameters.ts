@@ -1,13 +1,13 @@
-import type { Prettify, UnionToIntersection } from "@clerc/utils";
+import type { CamelCase, Prettify, UnionToIntersection } from "@clerc/utils";
 
 type InferParameter<T extends string> = T extends
 	| `<${infer Name extends string}...>`
 	| `[${infer Name extends string}...]`
-	? Record<Name, string[]>
+	? Record<CamelCase<Name>, string[]>
 	: T extends `<${infer Name extends string}>`
-		? Record<Name, string>
+		? Record<CamelCase<Name>, string>
 		: T extends `[${infer Name extends string}]`
-			? Record<Name, string | undefined>
+			? Record<CamelCase<Name>, string | undefined>
 			: never;
 
 export type InferParameters<T extends string[]> =

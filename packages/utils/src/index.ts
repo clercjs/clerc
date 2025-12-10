@@ -6,18 +6,21 @@ export const toArray = <T>(a: MaybeArray<T>): T[] =>
 	Array.isArray(a) ? a : [a];
 
 /**
- * Converts a dash-separated string to camelCase.
+ * Converts a dash- or space-separated string to camelCase.
  * Not using regexp for better performance, because this function is used in parser.
  */
 export function camelCase(str: string): string {
-	const dashIdx = str.indexOf("-");
-	if (dashIdx === -1) {
+	const firstIdx = Math.min(
+		str.includes("-") ? str.indexOf("-") : Infinity,
+		str.includes(" ") ? str.indexOf(" ") : Infinity,
+	);
+	if (firstIdx === Infinity) {
 		return str;
 	}
 
-	let result = str.slice(0, dashIdx);
-	for (let i = dashIdx; i < str.length; i++) {
-		if (str[i] === "-" && i + 1 < str.length) {
+	let result = str.slice(0, firstIdx);
+	for (let i = firstIdx; i < str.length; i++) {
+		if ((str[i] === "-" || str[i] === " ") && i + 1 < str.length) {
 			const nextChar = str.charCodeAt(i + 1);
 			if (nextChar >= 97 && nextChar <= 122) {
 				result += String.fromCharCode(nextChar - 32);
@@ -26,7 +29,7 @@ export function camelCase(str: string): string {
 				result += str[i + 1];
 				i++;
 			}
-		} else if (str[i] !== "-") {
+		} else if (str[i] !== "-" && str[i] !== " ") {
 			result += str[i];
 		}
 	}

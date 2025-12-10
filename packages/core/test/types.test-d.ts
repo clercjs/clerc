@@ -78,4 +78,14 @@ describe("core types", () => {
 				expectTypeOf(ctx.flags.foo).toEqualTypeOf<number>();
 			});
 	});
+
+	it("should infer parameter with space", () => {
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["<foo bar>"],
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters.fooBar).toEqualTypeOf<string>();
+			});
+	});
 });

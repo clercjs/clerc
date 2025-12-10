@@ -1,5 +1,6 @@
 import { DOUBLE_DASH } from "@clerc/parser";
 import type { MaybeArray } from "@clerc/utils";
+import { camelCase } from "@clerc/utils";
 
 import { InvalidParametersError } from "./errors";
 
@@ -16,7 +17,7 @@ export function getParametersToResolve(argv: string[]): string[] {
 	return parameters;
 }
 
-const PARAMETER_REGEX = /^(<|\[)(\w+)(\.\.\.)?(\]|>)$/;
+const PARAMETER_REGEX = /^(<|\[)([\w ]+)(\.\.\.)?(\]|>)$/;
 
 const isParameterDefinitionBracketsValid = (definition: string): boolean =>
 	(definition.startsWith("<") && definition.endsWith(">")) ||
@@ -37,7 +38,7 @@ function _parseParameters(
 			);
 		}
 
-		const name = match[2];
+		const name = camelCase(match[2]);
 		const isVariadic = !!match[3];
 		const isRequired = definition.startsWith("<");
 

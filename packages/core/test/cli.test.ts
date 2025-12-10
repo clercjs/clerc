@@ -502,4 +502,15 @@ describe("cli", () => {
 			})
 			.parse(["bar"]);
 	});
+
+	it("should parse parameter with space", () => {
+		Cli()
+			.command("foo", "foo", {
+				parameters: ["<foo bar>"],
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.parameters.fooBar).toBe("baz");
+			})
+			.parse(["foo", "baz"]);
+	});
 });

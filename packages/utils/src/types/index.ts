@@ -11,4 +11,11 @@ export type UnionToIntersection<U> = (
 	? I
 	: never;
 
+export type CamelCase<S extends string> =
+	S extends `${infer Head} ${infer Tail}`
+		? `${Head}${Capitalize<CamelCase<Tail>>}`
+		: S extends `${infer Head}-${infer Tail}`
+			? `${Head}${Capitalize<CamelCase<Tail>>}`
+			: S;
+
 export type * from "./type-fest";
