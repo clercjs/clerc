@@ -25,21 +25,21 @@ describe("cli", () => {
 			.parse(["foo"]);
 	});
 
-	it("should honor scriptName and name", () => {
+	it("should handle scriptName and name", () => {
 		const cli = Cli().name("test name").scriptName("test");
 
 		expect(cli._name).toBe("test name");
 		expect(cli._scriptName).toBe("test");
 	});
 
-	it("should honor return scriptName when name is not set", () => {
+	it("should handle return scriptName when name is not set", () => {
 		const cli = Cli();
 
 		expect(cli._name).toBe("test");
 		expect(cli._scriptName).toBe("test");
 	});
 
-	it("should honor root", () => {
+	it("should handle root", () => {
 		Cli()
 			.command("", "root", {
 				flags: {
@@ -61,9 +61,11 @@ describe("cli", () => {
 					  },
 					  "ignored": [],
 					  "parameters": [
+					    "bar",
 					    "qux",
 					  ],
 					  "raw": [
+					    "bar",
 					    "--foo",
 					    "baz",
 					    "qux",
@@ -74,6 +76,7 @@ describe("cli", () => {
 				expect(ctx.parameters).toMatchInlineSnapshot(`
 					{
 					  "optional": [
+					    "bar",
 					    "qux",
 					  ],
 					}
@@ -85,13 +88,9 @@ describe("cli", () => {
         `);
 			})
 			.parse(["bar", "--foo", "baz", "qux"]);
-	});
 
-	it("should honor root object", () => {
 		Cli()
-			.command({
-				name: "",
-				description: "foo",
+			.command("", "root", {
 				flags: {
 					foo: {
 						description: "",
@@ -99,42 +98,38 @@ describe("cli", () => {
 						default: "",
 					},
 				},
-				parameters: ["[optional...]"],
-				handler: (ctx) => {
-					expect(ctx.command.name).toStrictEqual("");
-					expect(ctx.rawParsed).toMatchInlineSnapshot(`
-						{
-						  "doubleDash": [],
-						  "flags": {
-						    "foo": "baz",
-						  },
-						  "ignored": [],
-						  "parameters": [
-						    "qux",
-						  ],
-						  "raw": [
-						    "--foo",
-						    "baz",
-						    "qux",
-						  ],
-						  "unknown": {},
-						}
-					`);
-					expect(ctx.parameters).toMatchInlineSnapshot(`
-						{
-						  "optional": [
-						    "qux",
-						  ],
-						}
-					`);
-					expect(ctx.flags).toMatchInlineSnapshot(`
-            {
-              "foo": "baz",
-            }
-          `);
-				},
+				parameters: ["<required>"],
 			})
-			.parse(["bar", "--foo", "baz", "qux"]);
+			.on("", (ctx) => {
+				expect(ctx.command.name).toStrictEqual("");
+				expect(ctx.rawParsed).toMatchInlineSnapshot(`
+					{
+					  "doubleDash": [],
+					  "flags": {
+					    "foo": "",
+					  },
+					  "ignored": [],
+					  "parameters": [
+					    "bar",
+					  ],
+					  "raw": [
+					    "bar",
+					  ],
+					  "unknown": {},
+					}
+				`);
+				expect(ctx.parameters).toMatchInlineSnapshot(`
+					{
+					  "required": "bar",
+					}
+				`);
+				expect(ctx.flags).toMatchInlineSnapshot(`
+					{
+					  "foo": "",
+					}
+				`);
+			})
+			.parse(["bar"]);
 	});
 
 	it("should parse parameters", () => {
@@ -272,7 +267,7 @@ describe("cli", () => {
 			.parse(["foo", "--abc", "bar", "--abc", "baz"]);
 	});
 
-	it("should honor interceptor", () => {
+	it("should handle interceptor", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")

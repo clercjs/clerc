@@ -305,9 +305,10 @@ export class Clerc<
 			parametersToResolve,
 		);
 
-		const argvToPass = command
-			? this.#argv.slice(calledAs.split(" ").length)
-			: this.#argv;
+		const argvToPass =
+			command && calledAs.length > 0
+				? this.#argv.slice(calledAs.split(" ").length)
+				: this.#argv;
 
 		const parsed = this.#callWithErrorHandler(() =>
 			this.#parseArgv(argvToPass, command),
