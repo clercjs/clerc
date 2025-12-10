@@ -1,7 +1,7 @@
 ![Clerc Card](.github/assets/ClercCard.png)
 
 <p align="center">
-	<a target="_blank" href="https://clerc.js.org" noreferrer noopener>Clerc</a> is a full-featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
+	<a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a full-featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
 </p>
 
 <div align="center">
@@ -66,7 +66,7 @@ Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Cl
 
 # 📖 Documentation
 
-Please see https://clerc.js.org.
+Please see https://clerc.so1ve.dev.
 
 # 🦄 Examples
 
