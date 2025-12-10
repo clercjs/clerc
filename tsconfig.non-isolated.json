@@ -4,6 +4,7 @@
 		"allowImportingTsExtensions": true
 	},
 	"include": [
+		"examples",
 		"packages/*/test",
 		"packages/*/src",
 		"packages/*/tsdown.config.ts",
