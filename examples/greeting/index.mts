@@ -7,6 +7,6 @@ Clerc.create()
 	.version("0.0.0")
 	.command("bar", "A bar command")
 	.on("bar", (_ctx) => {
-		console.log("Hello, world from Clerc.js!");
+		console.log("Hello, world from Clerc!");
 	})
 	.parse();

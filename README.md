@@ -56,13 +56,13 @@ Clerc.create() // Create a new Clerc instance
 		(
 			_ctx, // The command context, but we haven't used it yet
 		) => {
-			console.log("Hello, world from Clerc.js!");
+			console.log("Hello, world from Clerc!");
 		},
 	)
 	.parse(); // Parse the arguments and run!
 ```
 
-Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Clerc.js!`
+Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Clerc!`
 
 # 📖 Documentation
 
@@ -70,7 +70,7 @@ Please see https://clerc.js.org.
 
 # 🦄 Examples
 
-Check the examples made with `Clerc.js`:
+Check the examples made with `Clerc`:
 
 - [Greeting](./examples/greeting) - The example from above
 - [Bumpp](./examples/bumpp) - Reimplementation of [`Bumpp`](https://github.com/antfu/bumpp)'s CLI
