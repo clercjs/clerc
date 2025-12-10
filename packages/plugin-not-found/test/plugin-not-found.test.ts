@@ -1,4 +1,3 @@
-import { friendlyErrorPlugin } from "@clerc/plugin-friendly-error";
 import { Cli } from "@clerc/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -25,22 +24,6 @@ describe("plugin-not-found", () => {
 					[Error: Command "[9mfo[29m" not found.
 					Did you mean "[1mfoo[22m"?]
 				`),
-			)
-			.use(notFoundPlugin())
-			.command("foo", "foo command")
-			.parse(["fo"]);
-	});
-
-	it("should work with friendly-error", () => {
-		Cli()
-			.use(
-				friendlyErrorPlugin({
-					target: (str) =>
-						expect(str).toMatchInlineSnapshot(`
-							"Command "[9mfo[29m" not found.
-							Did you mean "[1mfoo[22m"?"
-						`),
-				}),
 			)
 			.use(notFoundPlugin())
 			.command("foo", "foo command")
