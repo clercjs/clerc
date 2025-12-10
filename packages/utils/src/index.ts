@@ -55,3 +55,7 @@ export const formatFlagName = (n: string): string =>
 
 export const formatVersion = (v: string): string =>
 	v.length === 0 ? "" : v.startsWith("v") ? v : `v${v}`;
+
+export const isTruthy: <T>(
+	item: T,
+) => item is Exclude<T, false | null | undefined> = Boolean as any;

@@ -1,24 +1,30 @@
 import type { Clerc, ClercFlagsDefinition, Command } from "@clerc/core";
-import { formatFlagName, formatVersion } from "@clerc/utils";
+import { formatFlagName, formatVersion, isTruthy } from "@clerc/utils";
 import stringWidth from "string-width";
 import textTable from "text-table";
 import * as yc from "yoctocolors";
 
-export const table = (items: string[][]) =>
+const table = (items: string[][]) =>
 	textTable(items, { stringLength: stringWidth });
 
-export const splitTable = (items: string[][]) => table(items).split("\n");
+const splitTable = (items: string[][]) => table(items).split("\n");
 
-export interface Section {
-	title: string;
-	body: string | (string | undefined)[];
-}
+const DELIMITER = yc.yellow("-");
+
+export type Section =
+	| {
+			title?: string;
+			body: string | (string | undefined)[];
+	  }
+	| undefined;
 
 export class HelpRenderer {
 	constructor(
 		private _cli: Clerc,
 		private _command?: Command,
 		private _globalFlags?: ClercFlagsDefinition,
+		private _notes?: string[],
+		private _examples?: [string, string][],
 	) {}
 
 	public render() {
@@ -28,14 +34,21 @@ export class HelpRenderer {
 			this.renderCommands(),
 			this.renderCommandFlags(),
 			this.renderGlobalFlags(),
+			this.renderNotes(),
+			this.renderExamples(),
 		];
 
 		return sections
+			.filter(isTruthy)
 			.filter((section) => section.body.length > 0)
 			.map((section) => {
 				const body = Array.isArray(section.body)
 					? section.body.filter(Boolean).join("\n")
 					: section.body;
+
+				if (!section.title) {
+					return body;
+				}
 
 				return `${yc.bold(section.title)}\n${body
 					.split("\n")
@@ -46,14 +59,16 @@ export class HelpRenderer {
 	}
 
 	private renderHeader() {
-		const { _name, _version } = this._cli;
+		const { _name, _version, _description } = this._cli;
 		const command = this._command;
+		const description = command?.description ?? _description;
+		const headerLine = command
+			? `${yc.green(_name)} ${yc.cyan(command.name)}`
+			: `${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`;
 
 		return {
-			title: "Description",
 			body: [
-				`${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`,
-				command?.description,
+				`${headerLine}${description ? ` ${DELIMITER} ${description}` : ""}`,
 			],
 		};
 	}
@@ -69,12 +84,13 @@ export class HelpRenderer {
 			if (command.parameters) {
 				usage += ` ${command.parameters.join(" ")}`;
 			}
-		} else {
-			usage += " [command]";
 		}
+		// else {
+		// 	usage += " [command]";
+		// }
 
 		if (command?.flags || this._globalFlags) {
-			usage += " [flags]";
+			usage += " [FLAGS]";
 		}
 
 		return {
@@ -86,10 +102,7 @@ export class HelpRenderer {
 	private renderCommands() {
 		const commands = this._cli._commands;
 		if (this._command || commands.size === 0) {
-			return {
-				title: "Commands",
-				body: [],
-			};
+			return;
 		}
 
 		const items = [...commands.values()].map((command) => {
@@ -127,10 +140,7 @@ export class HelpRenderer {
 	private renderCommandFlags() {
 		const command = this._command;
 		if (!command?.flags) {
-			return {
-				title: "Flags",
-				body: [],
-			};
+			return;
 		}
 
 		const items = this.renderFlags(command.flags);
@@ -143,16 +153,39 @@ export class HelpRenderer {
 
 	private renderGlobalFlags() {
 		if (!this._globalFlags) {
-			return {
-				title: "Global Flags",
-				body: [],
-			};
+			return;
 		}
 
 		const items = this.renderFlags(this._globalFlags);
 
 		return {
 			title: "Global Flags",
+			body: splitTable(items),
+		};
+	}
+
+	private renderNotes() {
+		if (!this._notes || this._notes.length === 0) {
+			return;
+		}
+
+		return {
+			title: "Notes",
+			body: this._notes,
+		};
+	}
+
+	private renderExamples() {
+		if (!this._examples || this._examples.length === 0) {
+			return;
+		}
+
+		const items = this._examples.map(([command, description]) => {
+			return [command, DELIMITER, description];
+		});
+
+		return {
+			title: "Examples",
 			body: splitTable(items),
 		};
 	}

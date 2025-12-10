@@ -1,6 +1,16 @@
 import { definePlugin, resolveCommand } from "@clerc/core";
 
 import { HelpRenderer } from "./renderer";
+import { print } from "./utils";
+
+declare module "@clerc/core" {
+	export interface CommandCustomOptions {
+		help?: {
+			notes?: string[];
+			examples?: [string, string][];
+		};
+	}
+}
 
 export interface HelpPluginOptions {
 	command?: boolean;
@@ -23,9 +33,9 @@ export const helpPlugin = ({
 		setup: (cli) => {
 			function printHelp(s: string) {
 				if (banner) {
-					console.log(`${banner}\n`);
+					print(`${banner}\n`);
 				}
-				console.log(s);
+				print(s);
 			}
 
 			if (command) {
@@ -46,7 +56,13 @@ export const helpPlugin = ({
 							}
 						}
 
-						const renderer = new HelpRenderer(cli, command, cli._globalFlags);
+						const renderer = new HelpRenderer(
+							cli,
+							command,
+							cli._globalFlags,
+							command ? command.help?.notes : notes,
+							command ? command.help?.examples : examples,
+						);
 						printHelp(renderer.render());
 					});
 			}
@@ -67,19 +83,23 @@ export const helpPlugin = ({
 							cli,
 							ctx.command,
 							cli._globalFlags,
+							ctx.command ? ctx.command.help?.notes : notes,
+							ctx.command ? ctx.command.help?.examples : examples,
 						);
 						printHelp(renderer.render());
 					} else {
 						const shouldShowHelp =
 							showHelpWhenNoCommandSpecified &&
-							!ctx.command &&
-							ctx.rawParsed.parameters.length === 0;
+							!ctx.command && // no command resolved
+							ctx.rawParsed.parameters.length === 0; // and no command supplied, means no root command defined
 
 						if (shouldShowHelp) {
 							const renderer = new HelpRenderer(
 								cli,
 								undefined,
 								cli._globalFlags,
+								notes,
+								examples,
 							);
 							printHelp(renderer.render());
 						} else {
