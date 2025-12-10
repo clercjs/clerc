@@ -33,7 +33,8 @@ export const versionPlugin = ({
 						// },
 					})
 					.on("version", () => {
-						process.stdout.write(formattedVersion);
+						// eslint-disable-next-line no-console
+						console.log(formattedVersion);
 					});
 			}
 			if (flag) {
@@ -47,7 +48,8 @@ export const versionPlugin = ({
 						enforce: "pre",
 						handler: async (ctx, next) => {
 							if (ctx.flags.version) {
-								process.stdout.write(formattedVersion);
+								// eslint-disable-next-line no-console
+								console.log(formattedVersion);
 							} else {
 								await next();
 							}

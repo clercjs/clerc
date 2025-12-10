@@ -3,7 +3,6 @@ import { definePlugin, resolveCommand } from "@clerc/core";
 import { isTruthy } from "@clerc/utils";
 
 import { HelpRenderer } from "./renderer";
-import { print } from "./utils";
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
@@ -54,9 +53,11 @@ export const helpPlugin = ({
 
 			function printHelp(s: string) {
 				if (banner) {
-					print(`${banner}\n`);
+					// eslint-disable-next-line no-console
+					console.log(`${banner}`);
 				}
-				print(s);
+				// eslint-disable-next-line no-console
+				console.log(s);
 			}
 
 			if (command) {
