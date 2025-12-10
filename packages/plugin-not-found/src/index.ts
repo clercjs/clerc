@@ -1,28 +1,22 @@
-// TODO: unit tests
+import type { Plugin } from "@clerc/core";
 import {
 	NoCommandGivenError,
 	NoSuchCommandError,
 	definePlugin,
 } from "@clerc/core";
-import { semanticArray } from "@clerc/utils";
 import didyoumean from "didyoumean2";
 import * as yc from "yoctocolors";
 
-import { locales } from "./locales";
-
-export const notFoundPlugin = () =>
+export const notFoundPlugin = (): Plugin =>
 	definePlugin({
-		setup: (cli) => {
-			const { t, add } = cli.i18n;
-			add(locales);
-
-			return cli.interceptor({
-				enforce: "pre",
-				fn: (ctx, next) => {
-					const commandKeys = Object.keys(cli._commands);
+		setup: (cli) =>
+			cli.interceptor({
+				enforce: "post",
+				handler: async (_ctx, next) => {
+					const commandKeys = [...cli._commands.keys()];
 					const hasCommands = commandKeys.length > 0;
 					try {
-						next();
+						await next();
 					} catch (e: any) {
 						if (
 							!(
@@ -32,42 +26,27 @@ export const notFoundPlugin = () =>
 						) {
 							throw e;
 						}
-						if (ctx.raw._.length === 0 || e instanceof NoCommandGivenError) {
-							console.error(t("core.noCommandGiven"));
+						if (e instanceof NoCommandGivenError) {
+							console.error("No command specified.");
 							if (hasCommands) {
-								console.error(
-									t(
-										"notFound.possibleCommands",
-										semanticArray(commandKeys, cli.i18n),
-									),
-								);
+								console.error(`Possible commands: ${commandKeys.join(", ")}`);
 							}
 
 							return;
 						}
-						// Good example =]
-						const calledCommandName = e.commandName;
-						const closestCommandName = didyoumean(
-							calledCommandName,
-							commandKeys,
-						);
+
+						const { commandName } = e;
+						const closestCommandName = didyoumean(commandName, commandKeys);
 						console.error(
-							t(
-								"notFound.commandNotFound",
-								yc.strikethrough(calledCommandName),
-							),
+							`Command "${yc.strikethrough(commandName)}" not found.`,
 						);
 						if (hasCommands && closestCommandName) {
-							console.error(
-								t("notFound.didyoumean", yc.bold(closestCommandName)),
-							);
+							console.error(`Did you mean "${yc.bold(closestCommandName)}"?`);
 						} else if (!hasCommands) {
-							console.error(t("notFound.commandNotRegisteredNote"));
+							console.error("No commands registered.");
 						}
-						process.stderr.write("\n");
 						process.exit(2);
 					}
 				},
-			});
-		},
+			}),
 	});

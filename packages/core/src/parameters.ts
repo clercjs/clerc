@@ -1,101 +1,96 @@
-// Adapted from [privatenumber/cleye](https://github.com/privatenumber/cleye).
-// Thanks for his awesome work!
-import { camelCase } from "@clerc/utils";
+import { DOUBLE_DASH } from "@clerc/parser";
+import type { MaybeArray } from "@clerc/utils";
 
-import type { TranslateFn } from "./types";
+import { InvalidParametersError } from "./errors";
 
-const { stringify } = JSON;
+export function getParametersToResolve(argv: string[]): string[] {
+	const parameters: string[] = [];
 
-interface ParsedParameter {
-	name: string;
-	required: boolean;
-	spread: boolean;
-}
-
-export function parseParameters(parameters: string[], t: TranslateFn) {
-	const parsedParameters: ParsedParameter[] = [];
-
-	let hasOptional: string | undefined;
-	let hasSpread: string | undefined;
-
-	for (const parameter of parameters) {
-		if (hasSpread) {
-			throw new Error(
-				t("core.spreadParameterMustBeLast", stringify(hasSpread)),
-			);
+	for (const arg of argv) {
+		if (arg.startsWith("-")) {
+			break;
 		}
-
-		const firstCharacter = parameter[0];
-		const lastCharacter = parameter[parameter.length - 1];
-
-		let required: boolean | undefined;
-		if (firstCharacter === "<" && lastCharacter === ">") {
-			required = true;
-
-			if (hasOptional) {
-				throw new Error(
-					t(
-						"core.requiredParameterMustBeBeforeOptional",
-						stringify(parameter),
-						stringify(hasOptional),
-					),
-				);
-			}
-		}
-
-		if (firstCharacter === "[" && lastCharacter === "]") {
-			required = false;
-			hasOptional = parameter;
-		}
-
-		if (required === undefined) {
-			throw new Error(
-				t("core.parameterMustBeWrappedInBrackets", stringify(parameter)),
-			);
-		}
-
-		let name = parameter.slice(1, -1);
-
-		const spread = name.slice(-3) === "...";
-
-		if (spread) {
-			hasSpread = parameter;
-			name = name.slice(0, -3);
-		}
-
-		parsedParameters.push({
-			name,
-			required,
-			spread,
-		});
+		parameters.push(arg);
 	}
 
-	return parsedParameters;
+	return parameters;
 }
 
-export function mapParametersToArguments(
-	mapping: Record<string, string | string[]>,
-	parameters: ParsedParameter[],
-	cliArguments: string[],
-	t: TranslateFn,
-) {
-	for (let i = 0; i < parameters.length; i += 1) {
-		const { name, required, spread } = parameters[i];
-		const camelCaseName = camelCase(name);
-		if (camelCaseName in mapping) {
-			throw new Error(t("core.parameterIsUsedMoreThanOnce", stringify(name)));
+const PARAMETER_REGEX = /^(<|\[)(\w+)(\.\.\.)?(\]|>)$/;
+
+const isParameterDefinitionBracketsValid = (definition: string): boolean =>
+	(definition.startsWith("<") && definition.endsWith(">")) ||
+	(definition.startsWith("[") && definition.endsWith("]"));
+
+function _parseParameters(
+	definitions: string[],
+	parameters: string[],
+): Record<string, any> {
+	const result: Record<string, MaybeArray<string>> = {};
+	let hasOptional = false;
+
+	for (const [i, definition] of definitions.entries()) {
+		const match = definition.match(PARAMETER_REGEX);
+		if (!match || !isParameterDefinitionBracketsValid(definition)) {
+			throw new InvalidParametersError(
+				`Invalid parameter definition: ${definition}`,
+			);
 		}
 
-		const value = spread ? cliArguments.slice(i) : cliArguments[i];
+		const name = match[2];
+		const isVariadic = !!match[3];
+		const isRequired = definition.startsWith("<");
 
-		if (spread) {
-			i = parameters.length;
+		if (name in result) {
+			throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
 		}
 
-		if (required && (!value || (spread && value.length === 0))) {
-			throw new Error(t("core.missingRequiredParameter", stringify(name)));
+		if (isVariadic && i !== definitions.length - 1) {
+			throw new InvalidParametersError(
+				"Variadic parameter must be the last parameter in the definition.",
+			);
 		}
 
-		mapping[camelCaseName] = value;
+		if (isRequired) {
+			if (hasOptional) {
+				throw new InvalidParametersError(
+					`Required parameter "${name}" cannot appear after an optional parameter.`,
+				);
+			}
+		} else {
+			hasOptional = true;
+		}
+
+		const value = isVariadic ? parameters.slice(i) : parameters[i];
+
+		if (isRequired && (isVariadic ? value.length === 0 : value === undefined)) {
+			throw new InvalidParametersError(
+				`Missing required ${isVariadic ? "variadic " : ""}parameter: ${name}`,
+			);
+		}
+
+		result[name] = value;
+	}
+
+	return result;
+}
+
+export function parseParameters(
+	definitions: string[],
+	parameters: string[],
+	doubleDashParameters: string[],
+): Record<string, any> {
+	const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
+
+	if (doubleDashIndex === -1) {
+		return _parseParameters(definitions, parameters);
+	} else {
+		const definitionBeforeDoubleDash = definitions.slice(0, doubleDashIndex);
+		const definitionAfterDoubleDash = definitions.slice(doubleDashIndex + 1);
+
+		return {
+			..._parseParameters(definitionBeforeDoubleDash, parameters),
+			..._parseParameters(definitionAfterDoubleDash, doubleDashParameters),
+		};
 	}
 }

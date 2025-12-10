@@ -53,6 +53,9 @@
 		"didyoumean2": "^7.0.4",
 		"yoctocolors": "^2.1.2"
 	},
+	"devDependencies": {
+		"@clerc/core": "workspace:*"
+	},
 	"peerDependencies": {
 		"@clerc/core": "*"
 	}

@@ -49,7 +49,11 @@
 		"watch": "tsdown --watch"
 	},
 	"dependencies": {
-		"@clerc/utils": "workspace:*"
+		"@clerc/utils": "workspace:*",
+		"@pnpm/tabtab": "^0.5.4"
+	},
+	"devDependencies": {
+		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

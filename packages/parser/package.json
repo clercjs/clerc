@@ -1,0 +1,64 @@
+{
+	"name": "@clerc/parser",
+	"version": "0.44.0",
+	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+	"type": "module",
+	"description": "Clerc parser",
+	"keywords": [
+		"args",
+		"arguments",
+		"argv",
+		"clerc",
+		"cli",
+		"getopt",
+		"parser",
+		"terminal",
+		"utils"
+	],
+	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/parser#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/clercjs/clerc.git",
+		"directory": "/"
+	},
+	"bugs": {
+		"url": "https://github.com/clercjs/clerc/issues"
+	},
+	"license": "MIT",
+	"sideEffects": false,
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "dist/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"*": [
+				"./dist/*",
+				"./dist/index.d.ts"
+			]
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"watch": "tsdown --watch"
+	},
+	"devDependencies": {
+		"@clerc/utils": "workspace:*",
+		"@types/minimist": "^1.2.5",
+		"@types/nopt": "^3.0.32",
+		"@types/yargs-parser": "^21.0.3",
+		"minimist": "^1.2.8",
+		"mri": "^1.2.0",
+		"nopt": "^9.0.0",
+		"type-flag": "^4.0.3",
+		"yargs-parser": "^22.0.0"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"allowImportingTsExtensions": true
+	},
+	"include": [
+		"examples",
+		"test",
+		"packages/*/test",
+		"packages/*/src",
+		"packages/*/tsdown.config.ts",
+		"tsdown.config.ts",
+		"vite.config.ts"
+	]
+}

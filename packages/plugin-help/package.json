@@ -55,6 +55,10 @@
 		"text-table": "^0.2.0",
 		"yoctocolors": "^2.1.2"
 	},
+	"devDependencies": {
+		"@clerc/core": "workspace:*",
+		"@clerc/parser": "workspace:*"
+	},
 	"peerDependencies": {
 		"@clerc/core": "*"
 	}

@@ -1,58 +1,225 @@
+import type { Clerc, ClercFlagsDefinition, Command } from "@clerc/core";
+import {
+	formatFlagName,
+	formatVersion,
+	isTruthy,
+	objectIsEmpty,
+	toArray,
+} from "@clerc/utils";
+import stringWidth from "string-width";
+import textTable from "text-table";
 import * as yc from "yoctocolors";
 
-import { stringifyType, table } from "./utils";
+import { formatFlagType } from "./utils";
 
-export interface BlockSection {
-	type?: "block";
-	title: string;
-	body: string[];
-}
+const table = (items: string[][]) =>
+	textTable(items, { stringLength: stringWidth });
 
-export interface InlineSection {
-	type: "inline";
-	items: {
-		title: string;
-		body: string;
-	}[];
-}
+const splitTable = (items: string[][]) => table(items).split("\n");
 
-export type Section = BlockSection | InlineSection;
-export type Render = (sections: Section[]) => string;
-export interface Renderers {
-	renderSections?: (sections: Section[]) => Section[];
-	renderFlagName?: (name: string) => string;
-	renderType?: (type: any, hasDefault: boolean) => string;
-	renderDefault?: (default_: any) => string;
-}
+const DELIMITER = yc.yellow("-");
 
-export const render: Render = (sections: Section[]) => {
-	const rendered = [] as string[];
-	for (const section of sections) {
-		if (section.type === "block" || !section.type) {
-			const indent = "    ";
-			const formattedBody = section.body.map((line) => indent + line);
-			formattedBody.unshift("");
-			const body = formattedBody.join("\n");
-			rendered.push(table([[yc.bold(`${section.title}`)], [body]]).toString());
-		} else if (section.type === "inline") {
-			const formattedBody = section.items.map((item) => [
-				yc.bold(`${item.title}`),
-				item.body,
-			]);
-			const tableGenerated = table(formattedBody);
-			rendered.push(tableGenerated.toString());
-		}
-		rendered.push("");
+export type Section =
+	| {
+			title?: string;
+			body: string | (string | undefined)[];
+	  }
+	| undefined;
+
+export class HelpRenderer {
+	constructor(
+		private _cli: Clerc,
+		private _globalFlags: ClercFlagsDefinition,
+		private _command: Command | undefined,
+		private _notes?: string[],
+		private _examples?: [string, string][],
+	) {}
+
+	public render(): string {
+		const sections: Section[] = [
+			this.renderHeader(),
+			this.renderUsage(),
+			this.renderCommands(),
+			this.renderGlobalFlags(),
+			this.renderCommandFlags(),
+			this.renderNotes(),
+			this.renderExamples(),
+		];
+
+		return sections
+			.filter(isTruthy)
+			.filter((section) => section.body.length > 0)
+			.map((section) => {
+				const body = Array.isArray(section.body)
+					? section.body.filter(Boolean).join("\n")
+					: section.body;
+
+				if (!section.title) {
+					return body;
+				}
+
+				return `${yc.bold(section.title)}\n${body
+					.split("\n")
+					.map((line) => `  ${line}`)
+					.join("\n")}`;
+			})
+			.join("\n\n");
 	}
 
-	return rendered.join("\n");
-};
+	private renderHeader() {
+		const { _name, _version, _description } = this._cli;
+		const command = this._command;
+		const description = command?.description ?? _description;
+		const formattedCommandName = command?.name
+			? ` ${yc.cyan(command.name)}`
+			: "";
+		const headerLine = command
+			? `${yc.green(_name)}${formattedCommandName}`
+			: `${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`;
+		const alias = command?.alias
+			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
+					command.alias,
+				)
+					.map((a) => yc.cyan(a))
+					.join(", ")}`
+			: "";
 
-const noop = (x: any) => x;
+		return {
+			body: [
+				`${headerLine}${description ? ` ${DELIMITER} ${description}` : ""}`,
+				alias,
+			],
+		};
+	}
 
-export const defaultRenderers: Required<Renderers> = {
-	renderFlagName: noop,
-	renderSections: noop,
-	renderType: stringifyType,
-	renderDefault: JSON.stringify,
-};
+	private renderUsage() {
+		const { _scriptName } = this._cli;
+		const command = this._command;
+
+		let usage = `$ ${_scriptName}`;
+
+		if (command) {
+			usage += command.name ? ` ${command.name}` : "";
+			if (command.parameters) {
+				usage += ` ${command.parameters.join(" ")}`;
+			}
+		}
+		// else {
+		// 	usage += " [command]";
+		// }
+
+		if (
+			(command?.flags && !objectIsEmpty(command.flags)) ||
+			!objectIsEmpty(this._globalFlags)
+		) {
+			usage += " [FLAGS]";
+		}
+
+		return {
+			title: "Usage",
+			body: [usage],
+		};
+	}
+
+	private renderCommands() {
+		const commands = this._cli._commands;
+		if (this._command || commands.size === 0) {
+			return;
+		}
+
+		const items = [...commands.values()]
+			.map((command) => {
+				if ((command as any).__isAlias) {
+					return null;
+				}
+
+				const commandName = yc.cyan(command.name);
+				const aliases = command.alias
+					? ` (${toArray(command.alias).join(", ")})`
+					: "";
+
+				return [`${commandName}${aliases}`, command.description];
+			})
+			.filter(isTruthy);
+
+		return {
+			title: "Commands",
+			body: splitTable(items),
+		};
+	}
+
+	private renderFlags(flags: ClercFlagsDefinition) {
+		return Object.entries(flags).map(([name, flag]) => {
+			const flagName = formatFlagName(name);
+			const aliases = (
+				Array.isArray(flag.alias) ? flag.alias : flag.alias ? [flag.alias] : []
+			)
+				.map(formatFlagName)
+				.join(", ");
+			const description = flag.description ?? "";
+			const type = formatFlagType(flag.type);
+			const defaultValue =
+				flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
+
+			return [
+				yc.blue([flagName, aliases].filter(Boolean).join(", ")),
+				yc.gray(type),
+				description,
+				yc.gray(defaultValue),
+			];
+		});
+	}
+
+	private renderCommandFlags() {
+		const command = this._command;
+		if (!command?.flags || objectIsEmpty(command.flags)) {
+			return;
+		}
+
+		const items = this.renderFlags(command.flags);
+
+		return {
+			title: "Flags",
+			body: splitTable(items),
+		};
+	}
+
+	private renderGlobalFlags() {
+		if (!this._globalFlags || objectIsEmpty(this._globalFlags)) {
+			return;
+		}
+
+		const items = this.renderFlags(this._globalFlags);
+
+		return {
+			title: "Global Flags",
+			body: splitTable(items),
+		};
+	}
+
+	private renderNotes() {
+		if (!this._notes?.length) {
+			return;
+		}
+
+		return {
+			title: "Notes",
+			body: this._notes,
+		};
+	}
+
+	private renderExamples() {
+		if (!this._examples?.length) {
+			return;
+		}
+
+		const items = this._examples.map(([command, description]) => {
+			return [command, DELIMITER, description];
+		});
+
+		return {
+			title: "Examples",
+			body: splitTable(items),
+		};
+	}
+}

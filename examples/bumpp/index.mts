@@ -1,13 +1,12 @@
-import { Clerc, Root, helpPlugin, versionPlugin } from "clerc";
+import { Clerc, helpPlugin, versionPlugin } from "clerc";
 
-Clerc.create(
-	"bumpp",
-	"Interactive CLI that bumps your version numbers and more",
-	"9.2.0",
-)
+Clerc.create()
+	.scriptName("bumpp")
+	.description("Interactive CLI that bumps your version numbers and more")
+	.version("9.2.0")
 	.use(helpPlugin())
 	.use(versionPlugin())
-	.command(Root, "Bump your version numbers", {
+	.command("", "Bump your version numbers", {
 		parameters: ["[files...]"],
 		flags: {
 			preid: {
@@ -79,7 +78,7 @@ Clerc.create(
 			},
 		},
 	})
-	.on(Root, (ctx) => {
+	.on("", (ctx) => {
 		console.log(`Bumpping version:\n${JSON.stringify(ctx, null, 2)}`);
 	})
 	.parse();
