@@ -188,13 +188,14 @@ importers:
         version: link:../core
 
   packages/plugin-strict-flags:
+    dependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/plugin-version:
     dependencies:
