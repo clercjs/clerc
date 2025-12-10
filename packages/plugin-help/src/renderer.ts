@@ -10,7 +10,7 @@ import stringWidth from "string-width";
 import textTable from "text-table";
 import * as yc from "yoctocolors";
 
-import { formatFlagType } from "./utils";
+import type { Formatters } from "./types";
 
 const table = (items: string[][]) =>
 	textTable(items, { stringLength: stringWidth });
@@ -28,6 +28,7 @@ export type Section =
 
 export class HelpRenderer {
 	constructor(
+		private _formatters: Formatters,
 		private _cli: Clerc,
 		private _globalFlags: ClercFlagsDefinition,
 		private _command: Command | undefined,
@@ -157,7 +158,7 @@ export class HelpRenderer {
 				.map(formatFlagName)
 				.join(", ");
 			const description = flag.description ?? "";
-			const type = formatFlagType(flag.type);
+			const type = this._formatters.formatFlagType(flag.type);
 			const defaultValue =
 				flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
 

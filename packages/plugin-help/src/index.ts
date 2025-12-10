@@ -2,7 +2,9 @@ import type { Plugin } from "@clerc/core";
 import { definePlugin, resolveCommand } from "@clerc/core";
 import { isTruthy } from "@clerc/utils";
 
+import { defaultFormatters } from "./formatters";
 import { HelpRenderer } from "./renderer";
+import type { Formatters } from "./types";
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
@@ -21,6 +23,7 @@ export interface HelpPluginOptions {
 	notes?: string[];
 	examples?: [string, string][];
 	banner?: string;
+	formatters?: Partial<Formatters>;
 }
 
 export const helpPlugin = ({
@@ -30,9 +33,15 @@ export const helpPlugin = ({
 	notes,
 	examples,
 	banner,
+	formatters,
 }: HelpPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
+			const mergedFormatters = {
+				...defaultFormatters,
+				...formatters,
+			};
+
 			const generalHelpNotes = [
 				"If no command is specified, show help for the CLI.",
 				"If a command is specified, show help for the command.",
@@ -82,6 +91,7 @@ export const helpPlugin = ({
 						}
 
 						const renderer = new HelpRenderer(
+							mergedFormatters,
 							cli,
 							cli._globalFlags,
 							command,
@@ -105,6 +115,7 @@ export const helpPlugin = ({
 				handler: async (ctx, next) => {
 					if (ctx.flags.help) {
 						const renderer = new HelpRenderer(
+							mergedFormatters,
 							cli,
 							cli._globalFlags,
 							ctx.command,
@@ -120,6 +131,7 @@ export const helpPlugin = ({
 
 						if (shouldShowHelp) {
 							const renderer = new HelpRenderer(
+								mergedFormatters,
 								cli,
 								cli._globalFlags,
 								undefined,
