@@ -6,7 +6,7 @@ import { getCompletion } from "./complete";
 
 export interface CompletionsPluginOptions {
 	/**
-	 * Whether to register the `install-completions` and `uninstall-completions` commands.
+	 * Whether to register the `completions install` and `completions uninstall` commands.
 	 * @default true
 	 */
 	managementCommands?: boolean;
