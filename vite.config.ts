@@ -7,5 +7,11 @@ export default defineConfig({
 		coverage: {
 			provider: "istanbul",
 		},
+		server: {
+			deps: {
+				inline: ["vitest-console"],
+			},
+		},
+		setupFiles: ["test/setup.ts"],
 	},
 });

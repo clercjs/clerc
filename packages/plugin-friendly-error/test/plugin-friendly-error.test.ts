@@ -1,11 +1,11 @@
 import { Cli } from "@clerc/test-utils";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { friendlyErrorPlugin } from "../src";
 
 describe("plugin-friendly-error", () => {
 	beforeAll(() => {
-		process.exit = ((_code?: number) => {}) as any;
+		vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
 	});
 
 	it("should catch error", async () => {

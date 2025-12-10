@@ -5,6 +5,7 @@
 	},
 	"include": [
 		"examples",
+		"test",
 		"packages/*/test",
 		"packages/*/src",
 		"packages/*/tsdown.config.ts",

@@ -4,14 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { notFoundPlugin } from "../src";
 
 async function testConsoleError(fn: () => void | Promise<void>) {
-	const spy = vi.spyOn(console, "error");
-	const exitSpy = vi.spyOn(process, "exit");
 	const msgs: string[] = [];
-
-	spy.mockImplementation((msg) => {
+	const spy = vi.spyOn(console, "error").mockImplementation((msg) => {
 		msgs.push(msg);
 	});
-	exitSpy.mockImplementation(() => ({}) as never);
+	const exitSpy = vi
+		.spyOn(process, "exit")
+		.mockImplementation(() => ({}) as never);
 
 	try {
 		await fn();

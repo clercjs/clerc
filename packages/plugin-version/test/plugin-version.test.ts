@@ -1,35 +1,25 @@
 import { Cli } from "@clerc/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { versionPlugin } from "../src";
 
-function testStdoutWrite(expectedOutput: string, fn: () => void) {
-	const spy = vi.spyOn(process.stdout, "write");
+describe("plugin-version", () => {
+	const spy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
-	spy.mockImplementation((arg) => {
-		expect(arg).toContain(expectedOutput);
-
-		return true;
+	afterEach(() => {
+		spy.mockClear();
 	});
 
-	try {
-		fn();
-	} finally {
-		spy.mockRestore();
-	}
-}
-
-describe("plugin-version", () => {
 	it("should show version command output", () => {
-		testStdoutWrite("v0.0.0", () => {
-			Cli().use(versionPlugin()).parse(["version"]);
-		});
+		Cli().use(versionPlugin()).parse(["version"]);
+
+		expect(spy).toHaveBeenCalledWith("v0.0.0");
 	});
 
 	it("should show version flag output", () => {
-		testStdoutWrite("v0.0.0", () => {
-			Cli().use(versionPlugin()).parse(["--version"]);
-		});
+		Cli().use(versionPlugin()).parse(["--version"]);
+
+		expect(spy).toHaveBeenCalledWith("v0.0.0");
 	});
 
 	it('should be able to disable command with "command: false"', () => {
@@ -41,6 +31,8 @@ describe("plugin-version", () => {
 				);
 			})
 			.parse(["version"]);
+
+		expect(spy).toHaveBeenCalledTimes(0);
 	});
 
 	it('should be able to disable flag with "flag: false"', () => {
@@ -50,5 +42,7 @@ describe("plugin-version", () => {
 				expect(err).toMatchInlineSnapshot("[Error: No command specified.]");
 			})
 			.parse(["--version"]);
+
+		expect(spy).toHaveBeenCalledTimes(0);
 	});
 });
