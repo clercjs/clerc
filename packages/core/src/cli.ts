@@ -336,7 +336,7 @@ export class Clerc<
 			flags: parsed.flags,
 			ignored: parsed.ignored,
 			rawParsed: parsed,
-			maybeMissingParameters: !!parametersError,
+			missingParameters: !!parametersError,
 		};
 
 		const emitInterceptor: Interceptor = {
