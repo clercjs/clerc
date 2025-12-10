@@ -1,0 +1,123 @@
+import type { Clerc, ClercFlagsDefinition } from "@clerc/core";
+import { resolveCommand } from "@clerc/core";
+import { formatFlagName, toArray } from "@clerc/utils";
+import type { CompletionItem, ParseEnvResult } from "@pnpm/tabtab";
+
+function splitCommand(cmd: string) {
+	const args: string[] = [];
+	let current = "";
+	let quote: string | null = null;
+	let escape = false;
+
+	for (const char of cmd) {
+		if (escape) {
+			current += char;
+			escape = false;
+			continue;
+		}
+		if (char === "\\") {
+			escape = true;
+			continue;
+		}
+		if (quote) {
+			if (char === quote) {
+				quote = null;
+			} else {
+				current += char;
+			}
+		} else {
+			if (char === '"' || char === "'") {
+				quote = char;
+			} else if (/\s/.test(char)) {
+				if (current) {
+					args.push(current);
+					current = "";
+				}
+			} else {
+				current += char;
+			}
+		}
+	}
+	if (current) {
+		args.push(current);
+	}
+
+	return args;
+}
+
+export async function getCompletion(
+	cli: Clerc,
+	env: ParseEnvResult,
+): Promise<CompletionItem[]> {
+	const finishedArgv = env.partial.slice(
+		0,
+		env.partial.length - env.lastPartial.length,
+	);
+	const inputArgv = splitCommand(finishedArgv).slice(1);
+
+	if (inputArgv.includes("--")) {
+		return [];
+	}
+
+	const [command, commandName] = resolveCommand(cli._commands, inputArgv);
+
+	const lastPartial = env.lastPartial;
+	const isOption = lastPartial.startsWith("-");
+
+	if (isOption) {
+		const flags: ClercFlagsDefinition = command
+			? { ...cli._globalFlags, ...command.flags }
+			: cli._globalFlags;
+
+		const candidates: CompletionItem[] = [];
+		for (const [name, def] of Object.entries(flags)) {
+			candidates.push({
+				name: formatFlagName(name),
+				description: def.description,
+			});
+			if (def.alias) {
+				const aliases = toArray(def.alias);
+				for (const alias of aliases) {
+					candidates.push({
+						name: formatFlagName(alias),
+						description: def.description,
+					});
+				}
+			}
+		}
+
+		return candidates;
+	}
+
+	const candidates: CompletionItem[] = [];
+	let prefix = "";
+	if (commandName) {
+		const matchedParts = commandName.split(" ");
+		const remainingArgs = inputArgv.slice(matchedParts.length);
+		prefix = `${[command.name, ...remainingArgs].join(" ")} `;
+	} else {
+		prefix = inputArgv.length > 0 ? `${inputArgv.join(" ")} ` : "";
+	}
+
+	for (const c of cli._commands.values()) {
+		if (c.name.startsWith(prefix)) {
+			const remaining = c.name.slice(prefix.length);
+			// Only suggest the next word
+			const nextWord = remaining.split(" ")[0];
+			if (nextWord) {
+				candidates.push({
+					name: nextWord,
+					description: c.description,
+				});
+			}
+		}
+	}
+
+	// Deduplicate
+	const uniqueCandidates = new Map();
+	for (const c of candidates) {
+		uniqueCandidates.set(c.name, c);
+	}
+
+	return [...uniqueCandidates.values()];
+}

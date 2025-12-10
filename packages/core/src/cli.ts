@@ -50,7 +50,7 @@ export class Clerc<
 		errorHandler: (error) => this.#handleError(error),
 	});
 
-	#globalFlags: GlobalFlags = {} as GlobalFlags;
+	#globalFlags = {} as GlobalFlags;
 	#interceptors: Interceptor<Command, GlobalFlags>[] = [];
 	#errorHandlers: ErrorHandler[] = [];
 	#name = "";

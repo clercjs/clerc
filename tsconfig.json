@@ -1,6 +1,6 @@
 {
 	"references": [
-		{ "path": "./tsconfig.isolated-lib.json" },
+		{ "path": "./tsconfig.isolated.json" },
 		{ "path": "./tsconfig.non-isolated.json" }
 	],
 	"files": []

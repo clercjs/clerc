@@ -9,10 +9,6 @@
 		"packages/parser/src",
 		"packages/core/src",
 		"packages/clerc/src",
-		"packages/plugin-help/src",
-		"packages/plugin-version/src",
-		"packages/plugin-not-found/src",
-		"packages/plugin-strict-flags/src",
-		"packages/plugin-friendly-error/src"
+		"packages/plugin-*/src"
 	]
 }
