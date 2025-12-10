@@ -314,13 +314,19 @@ export class Clerc<
 			this.#parseArgv(argvToPass, command),
 		);
 
-		const parameters = command?.parameters
-			? parseParameters(
-					command.parameters,
-					parsed.parameters,
-					parsed.doubleDash,
-				)
-			: {};
+		let parameters = {};
+		let parametersError: Error | undefined;
+		try {
+			parameters = command?.parameters
+				? parseParameters(
+						command.parameters,
+						parsed.parameters,
+						parsed.doubleDash,
+					)
+				: {};
+		} catch (e) {
+			parametersError = e as Error;
+		}
 
 		const context: BaseContext<Command, GlobalFlags> = {
 			resolved: !!command,
@@ -330,11 +336,15 @@ export class Clerc<
 			flags: parsed.flags,
 			ignored: parsed.ignored,
 			rawParsed: parsed,
+			maybeMissingParameters: !!parametersError,
 		};
 
 		const emitInterceptor: Interceptor = {
 			enforce: "post",
 			handler: (ctx) => {
+				if (parametersError) {
+					throw parametersError;
+				}
 				if (command) {
 					this.#emitter.emit(command.name, ctx as any);
 				} else {

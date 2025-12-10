@@ -24,4 +24,5 @@ export interface BaseContext<
 	flags: InferFlagsWithGlobal<C, GF>;
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
+	maybeMissingParameters?: boolean;
 }
