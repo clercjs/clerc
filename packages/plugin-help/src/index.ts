@@ -1,4 +1,5 @@
 import { definePlugin, resolveCommand } from "@clerc/core";
+import { isTruthy } from "@clerc/utils";
 
 import { HelpRenderer } from "./renderer";
 import { print } from "./utils";
@@ -31,6 +32,25 @@ export const helpPlugin = ({
 }: HelpPluginOptions = {}) =>
 	definePlugin({
 		setup: (cli) => {
+			const generalHelpNotes = [
+				"If no command is specified, show help for the CLI.",
+				"If a command is specified, show help for the command.",
+				flag && "-h is an alias for --help.",
+			].filter(isTruthy);
+			const generalHelpExamples = [
+				command && [`$ ${cli._scriptName} help`, "Show help"],
+				command && [
+					`$ ${cli._scriptName} help <command>`,
+					"Show help for a specific command",
+				],
+				flag && [
+					`$ ${cli._scriptName} <command> --help`,
+					"Show help for a specific command",
+				],
+			].filter(isTruthy) as [string, string][];
+			const effectiveNotes = notes ?? generalHelpNotes;
+			const effectiveExamples = examples ?? generalHelpExamples;
+
 			function printHelp(s: string) {
 				if (banner) {
 					print(`${banner}\n`);
@@ -42,6 +62,10 @@ export const helpPlugin = ({
 				cli
 					.command("help", "Show help", {
 						parameters: ["[command...]"],
+						help: {
+							notes: generalHelpNotes,
+							examples: generalHelpExamples,
+						},
 					})
 					.on("help", (ctx) => {
 						const commandName = ctx.parameters.command;
@@ -58,10 +82,10 @@ export const helpPlugin = ({
 
 						const renderer = new HelpRenderer(
 							cli,
-							command,
 							cli._globalFlags,
-							command ? command.help?.notes : notes,
-							command ? command.help?.examples : examples,
+							command,
+							command ? command.help?.notes : effectiveNotes,
+							command ? command.help?.examples : effectiveExamples,
 						);
 						printHelp(renderer.render());
 					});
@@ -81,10 +105,10 @@ export const helpPlugin = ({
 					if (ctx.flags.help) {
 						const renderer = new HelpRenderer(
 							cli,
-							ctx.command,
 							cli._globalFlags,
-							ctx.command ? ctx.command.help?.notes : notes,
-							ctx.command ? ctx.command.help?.examples : examples,
+							ctx.command,
+							ctx.command ? ctx.command.help?.notes : effectiveNotes,
+							ctx.command ? ctx.command.help?.examples : effectiveExamples,
 						);
 						printHelp(renderer.render());
 					} else {
@@ -96,10 +120,10 @@ export const helpPlugin = ({
 						if (shouldShowHelp) {
 							const renderer = new HelpRenderer(
 								cli,
-								undefined,
 								cli._globalFlags,
-								notes,
-								examples,
+								undefined,
+								effectiveNotes,
+								effectiveExamples,
 							);
 							printHelp(renderer.render());
 						} else {
