@@ -167,6 +167,9 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      '@clerc/parser':
+        specifier: workspace:*
+        version: link:../parser
 
   packages/plugin-not-found:
     dependencies:

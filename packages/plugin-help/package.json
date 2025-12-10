@@ -56,7 +56,8 @@
 		"yoctocolors": "^2.1.2"
 	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*"
+		"@clerc/core": "workspace:*",
+		"@clerc/parser": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

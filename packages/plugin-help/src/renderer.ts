@@ -9,6 +9,8 @@ import stringWidth from "string-width";
 import textTable from "text-table";
 import * as yc from "yoctocolors";
 
+import { formatFlagType } from "./utils";
+
 const table = (items: string[][]) =>
 	textTable(items, { stringLength: stringWidth });
 
@@ -135,7 +137,7 @@ export class HelpRenderer {
 				.map(formatFlagName)
 				.join(", ");
 			const description = flag.description ?? "";
-			const type = (flag.type as any).name ?? (flag.type as any).toString();
+			const type = formatFlagType(flag.type);
 			const defaultValue =
 				flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
 
