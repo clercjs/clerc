@@ -231,7 +231,7 @@ export class Clerc<
 
 		this.#commands.set(command.name, command);
 		for (const alias of aliases) {
-			this.#commands.set(alias, command);
+			this.#commands.set(alias, { ...command, __isAlias: true });
 		}
 
 		if (command.handler) {

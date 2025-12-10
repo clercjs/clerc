@@ -4,6 +4,7 @@ import {
 	formatVersion,
 	isTruthy,
 	objectIsEmpty,
+	toArray,
 } from "@clerc/utils";
 import stringWidth from "string-width";
 import textTable from "text-table";
@@ -118,9 +119,20 @@ export class HelpRenderer {
 			return;
 		}
 
-		const items = [...commands.values()].map((command) => {
-			return [yc.cyan(command.name), command.description];
-		});
+		const items = [...commands.values()]
+			.map((command) => {
+				if ((command as any).__isAlias) {
+					return null;
+				}
+
+				const commandName = yc.cyan(command.name);
+				const aliases = command.alias
+					? ` (${toArray(command.alias).join(", ")})`
+					: "";
+
+				return [`${commandName}${aliases}`, command.description];
+			})
+			.filter(isTruthy);
 
 		return {
 			title: "Commands",
