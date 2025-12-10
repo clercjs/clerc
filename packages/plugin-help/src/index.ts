@@ -7,6 +7,7 @@ import { HelpRenderer } from "./renderer";
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
 		help?: {
+			showInHelp?: boolean;
 			notes?: string[];
 			examples?: [string, string][];
 		};
