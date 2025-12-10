@@ -10,6 +10,7 @@
 		"packages/*/src",
 		"packages/*/tsdown.config.ts",
 		"tsdown.config.ts",
+		"changelogithub.config.ts",
 		"vite.config.ts"
 	]
 }
