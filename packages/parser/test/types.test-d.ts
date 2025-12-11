@@ -75,14 +75,13 @@ describe("parser types", () => {
 				choiceFlag: { type: Choices("red", "green", "blue") },
 				choiceFlagWithDefault: {
 					type: Choices("small", "medium", "large"),
-					default: "medium",
+					default: "medium" as const,
 				},
 			},
 		});
 		expectTypeOf(result.flags).toEqualTypeOf<{
 			choiceFlag: "red" | "green" | "blue" | undefined;
-			// TODO: should be "small" | "medium" | "large"
-			choiceFlagWithDefault: string;
+			choiceFlagWithDefault: "small" | "medium" | "large";
 		}>();
 	});
 });
