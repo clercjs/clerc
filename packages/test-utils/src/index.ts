@@ -1,7 +1,7 @@
 import { Clerc } from "@clerc/core";
 import type { MockInstance } from "vitest";
 
-export const Cli = (instance: typeof Clerc = Clerc): Clerc =>
+export const TestCli = (instance: typeof Clerc = Clerc): Clerc =>
 	instance.create().scriptName("test").description("test").version("0.0.0");
 
 export const getConsoleMock = (method: keyof Console) =>

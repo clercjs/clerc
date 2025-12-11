@@ -1,4 +1,4 @@
-import { Cli, getConsoleMock } from "@clerc/test-utils";
+import { TestCli, getConsoleMock } from "@clerc/test-utils";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { mockConsole } from "vitest-console";
 
@@ -12,25 +12,25 @@ describe("plugin-help", () => {
 	afterAll(restoreConsole);
 
 	it("should show help", () => {
-		Cli().use(helpPlugin()).parse(["help"]);
+		TestCli().use(helpPlugin()).parse(["help"]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show --help", () => {
-		Cli().use(helpPlugin()).parse(["--help"]);
+		TestCli().use(helpPlugin()).parse(["--help"]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show help when no command", () => {
-		Cli().use(helpPlugin()).parse([]);
+		TestCli().use(helpPlugin()).parse([]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should not show commands which set `show` to false", () => {
-		Cli()
+		TestCli()
 			.use(helpPlugin())
 			.command("test", "", {
 				help: {
@@ -44,7 +44,7 @@ describe("plugin-help", () => {
 
 	describe("grouping", () => {
 		it("should group commands", () => {
-			Cli()
+			TestCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -71,7 +71,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should group global flags", () => {
-			Cli()
+			TestCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -98,7 +98,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should group command flags", () => {
-			Cli()
+			TestCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -131,7 +131,7 @@ describe("plugin-help", () => {
 
 		it("should throw error for undefined group", async () => {
 			await expect(async () => {
-				await Cli()
+				await TestCli()
 					.use(
 						helpPlugin({
 							groups: {
@@ -149,7 +149,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should not add group headers when no groups defined", () => {
-			Cli()
+			TestCli()
 				.use(helpPlugin())
 				.command("init", "Initialize project")
 				.command("build", "Build project")

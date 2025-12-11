@@ -1,11 +1,11 @@
-import { Cli } from "@clerc/test-utils";
+import { TestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import { defineCommand } from "../src";
 
 describe("cli", () => {
 	it("should parse", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.on("foo", (ctx) => {
 				expect(ctx.command.name).toBe("foo");
@@ -26,21 +26,21 @@ describe("cli", () => {
 	});
 
 	it("should handle scriptName and name", () => {
-		const cli = Cli().name("test name").scriptName("test");
+		const cli = TestCli().name("test name").scriptName("test");
 
 		expect(cli._name).toBe("test name");
 		expect(cli._scriptName).toBe("test");
 	});
 
 	it("should handle return scriptName when name is not set", () => {
-		const cli = Cli();
+		const cli = TestCli();
 
 		expect(cli._name).toBe("test");
 		expect(cli._scriptName).toBe("test");
 	});
 
 	it("should handle root", () => {
-		Cli()
+		TestCli()
 			.command("", "root", {
 				flags: {
 					foo: {
@@ -89,7 +89,7 @@ describe("cli", () => {
 			})
 			.parse(["bar", "--foo", "baz", "qux"]);
 
-		Cli()
+		TestCli()
 			.command("", "root", {
 				flags: {
 					foo: {
@@ -133,7 +133,7 @@ describe("cli", () => {
 	});
 
 	it("should parse parameters", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				parameters: ["[optional...]"],
 			})
@@ -145,7 +145,7 @@ describe("cli", () => {
 	});
 
 	it("should parse boolean flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				flags: {
 					foo: {
@@ -178,7 +178,7 @@ describe("cli", () => {
 	});
 
 	it("should parse string flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				flags: {
 					foo: {
@@ -197,7 +197,7 @@ describe("cli", () => {
 	});
 
 	it("should parse number flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				flags: {
 					foo: {
@@ -216,7 +216,7 @@ describe("cli", () => {
 	});
 
 	it("should parse dot-nested flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				flags: {
 					foo: {
@@ -238,7 +238,7 @@ describe("cli", () => {
 	});
 
 	it("should parse shorthand flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.on("foo", (ctx) => {
 				expect(ctx.command.name).toBe("foo");
@@ -249,7 +249,7 @@ describe("cli", () => {
 	});
 
 	it("should parse array flag", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				flags: {
 					abc: {
@@ -269,7 +269,7 @@ describe("cli", () => {
 
 	it("should handle interceptor", () => {
 		let count = 0;
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.interceptor(() => {})
 			.on("foo", () => {
@@ -282,7 +282,7 @@ describe("cli", () => {
 
 	it("should next", () => {
 		let count = 0;
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.interceptor((_ctx, next) => {
 				next();
@@ -305,12 +305,12 @@ describe("cli", () => {
 	it("should have exact one command", () => {
 		expect(() => {
 			// @ts-expect-error testing
-			Cli().command("foo", "foo").command("foo", "foo");
+			TestCli().command("foo", "foo").command("foo", "foo");
 		}).toThrow();
 	});
 
 	it("should parse nested command", () => {
-		Cli()
+		TestCli()
 			.command("foo bar", "foo bar", {
 				flags: {
 					aa: {
@@ -329,7 +329,7 @@ describe("cli", () => {
 	});
 
 	it("shouldn't parse nested command when parent command is called", () => {
-		Cli()
+		TestCli()
 			.command("foo bar", "foo bar", {
 				flags: {
 					aa: {
@@ -357,7 +357,7 @@ describe("cli", () => {
 	});
 
 	it("shouldn't parse when command is after command", () => {
-		Cli()
+		TestCli()
 			.command("foo bar", "foo bar", {
 				flags: {
 					aa: {
@@ -385,7 +385,7 @@ describe("cli", () => {
 	});
 
 	it("should parse subcommand", () => {
-		Cli()
+		TestCli()
 			.command("foo bar", "foo")
 			.on("foo bar", (ctx) => {
 				expect(ctx.command.name).toBe("foo bar");
@@ -414,14 +414,14 @@ describe("cli", () => {
 				count++;
 			},
 		});
-		Cli().command(command).parse(["foo"]);
+		TestCli().command(command).parse(["foo"]);
 
 		expect(count).toBe(1);
 	});
 
 	it("should run matched command", () => {
 		let count = 0;
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.on("foo", () => {
 				count++;
@@ -433,7 +433,7 @@ describe("cli", () => {
 	});
 
 	it("should resolve parameter with alias correctly", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				alias: "bar baz",
 				parameters: ["<param>"],
@@ -446,7 +446,7 @@ describe("cli", () => {
 
 	it("shouldn't run matched command", () => {
 		let count = 0;
-		Cli()
+		TestCli()
 			.command("foo", "foo")
 			.on("foo", () => {
 				count++;
@@ -457,7 +457,7 @@ describe("cli", () => {
 	});
 
 	it("should parse global flag", () => {
-		Cli()
+		TestCli()
 			.globalFlag("foo", "foo", {
 				type: String,
 				default: "bar",
@@ -470,7 +470,7 @@ describe("cli", () => {
 	});
 
 	it("should parse global flag with default value", () => {
-		Cli()
+		TestCli()
 			.globalFlag("foo", "foo", {
 				type: String,
 				default: "bar",
@@ -483,7 +483,7 @@ describe("cli", () => {
 	});
 
 	it("should override global flag", () => {
-		Cli()
+		TestCli()
 			.globalFlag("foo", "foo", {
 				type: String,
 				default: "bar",
@@ -504,7 +504,7 @@ describe("cli", () => {
 	});
 
 	it("should parse parameter with space", () => {
-		Cli()
+		TestCli()
 			.command("foo", "foo", {
 				parameters: ["<foo bar>"],
 			})
