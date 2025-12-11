@@ -9,7 +9,13 @@ export type FlagDefaultValue<T = unknown> = T | (() => T);
  *
  * @template T The target type.
  */
-export type FlagTypeFunction<T = unknown> = (value: string) => T;
+export type FlagTypeFunction<T = unknown> = ((value: string) => T) & {
+	/**
+	 * Optional display name for the type, useful in help output.
+	 * If provided, this will be shown instead of the function name.
+	 */
+	displayName?: string;
+};
 
 /**
  * A callback function to conditionally stop parsing.
