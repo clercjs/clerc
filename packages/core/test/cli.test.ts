@@ -407,14 +407,16 @@ describe("cli", () => {
 
 	it("should register command with handler", () => {
 		let count = 0;
-		const command = defineCommand({
-			name: "foo",
-			description: "foo",
-			handler: () => {
+		const command = defineCommand(
+			{
+				name: "foo",
+				description: "foo",
+			},
+			() => {
 				count++;
 			},
-		});
-		TestCli().command(command).parse(["foo"]);
+		);
+		TestBaseCli().command(command).parse(["foo"]);
 
 		expect(count).toBe(1);
 	});

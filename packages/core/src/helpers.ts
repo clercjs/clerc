@@ -1,9 +1,15 @@
-import type { ClercFlagsDefinition, CommandWithHandler } from "./types";
+import type {
+	ClercFlagsDefinition,
+	Command,
+	CommandHandler,
+	CommandWithHandler,
+} from "./types";
 
 export const defineCommand = <
 	Name extends string,
 	Parameters extends string[] = [],
 	Flags extends ClercFlagsDefinition = {},
 >(
-	command: CommandWithHandler<Name, [...Parameters], Flags>,
-): CommandWithHandler<Name, [...Parameters], Flags> => command;
+	command: Command<Name, [...Parameters], Flags>,
+	handler?: NoInfer<CommandHandler<Command<Name, Parameters, Flags>>>,
+): CommandWithHandler<Name, Parameters, Flags> => ({ ...command, handler });
