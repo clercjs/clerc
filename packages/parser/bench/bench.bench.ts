@@ -1,5 +1,6 @@
-import { parseArgs } from "node:util";
+import { parseArgs as nodeParseArgs } from "node:util";
 
+import { parse as argsTokensParse } from "args-tokens";
 import minimist from "minimist";
 import mri from "mri";
 import nopt from "nopt";
@@ -51,10 +52,26 @@ describe("bench", () => {
 	});
 
 	bench("node:util parseArgs", () => {
-		parseArgs({
+		nodeParseArgs({
 			args,
 			allowNegative: true,
 			options: {
+				bool: {
+					type: "boolean",
+				},
+				meep: {
+					type: "boolean",
+				},
+				multi: {
+					type: "string",
+				},
+			},
+		});
+	});
+
+	bench("args-tokens", () => {
+		argsTokensParse(args, {
+			args: {
 				bool: {
 					type: "boolean",
 				},
