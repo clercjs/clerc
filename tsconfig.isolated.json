@@ -4,11 +4,5 @@
 		"declaration": true,
 		"isolatedDeclarations": true
 	},
-	"include": [
-		"packages/utils/src",
-		"packages/parser/src",
-		"packages/core/src",
-		"packages/clerc/src",
-		"packages/plugin-*/src"
-	]
+	"include": ["packages/*/src"]
 }
