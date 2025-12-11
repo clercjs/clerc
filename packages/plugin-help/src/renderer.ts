@@ -90,7 +90,7 @@ export class HelpRenderer {
 			.filter((section) => section.body.length > 0)
 			.map((section) => {
 				const body = Array.isArray(section.body)
-					? section.body.filter(Boolean).join("\n")
+					? section.body.filter((s) => s !== undefined).join("\n")
 					: section.body;
 
 				if (!section.title) {
@@ -121,7 +121,7 @@ export class HelpRenderer {
 				)
 					.map((a) => yc.cyan(a))
 					.join(", ")}`
-			: "";
+			: undefined;
 
 		return {
 			body: [
@@ -138,7 +138,9 @@ export class HelpRenderer {
 		let usage = `$ ${_scriptName}`;
 
 		if (command) {
-			usage += command.name ? ` ${command.name}` : "";
+			if (command.name) {
+				usage += ` ${command.name}`;
+			}
 			if (command.parameters) {
 				usage += ` ${command.parameters.join(" ")}`;
 			}
@@ -200,6 +202,9 @@ export class HelpRenderer {
 		for (const [key, name] of this._commandGroups) {
 			const items = groupedCommands.get(key);
 			if (items && items.length > 0) {
+				if (body.length > 0) {
+					body.push("");
+				}
 				body.push(`${yc.dim(name)}`);
 				for (const line of splitTable(items)) {
 					body.push(`  ${line}`);
@@ -210,6 +215,7 @@ export class HelpRenderer {
 		// Output default group last
 		if (defaultCommands.length > 0) {
 			if (body.length > 0) {
+				body.push("");
 				body.push(`${yc.dim("Other")}`);
 				for (const line of splitTable(defaultCommands)) {
 					body.push(`  ${line}`);
@@ -274,6 +280,9 @@ export class HelpRenderer {
 		for (const [key, name] of groupMap) {
 			const items = groupedFlags.get(key);
 			if (items && items.length > 0) {
+				if (body.length > 0) {
+					body.push("");
+				}
 				body.push(`${yc.dim(name)}`);
 				for (const line of splitTable(items)) {
 					body.push(`  ${line}`);
@@ -284,6 +293,7 @@ export class HelpRenderer {
 		// Output default group last
 		if (defaultFlags.length > 0) {
 			if (body.length > 0) {
+				body.push("");
 				body.push(`${yc.dim("Other")}`);
 				for (const line of splitTable(defaultFlags)) {
 					body.push(`  ${line}`);

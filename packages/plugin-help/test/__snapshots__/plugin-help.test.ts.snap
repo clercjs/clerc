@@ -13,10 +13,11 @@ exports[`plugin-help > grouping > should group command flags 1`] = `
 
 [1mFlags[22m
   [2mInput Options[22m
-    [34m--src[39m    [90mString[39m  Source directory  [90m[39m
-    [34m--entry[39m  [90mString[39m  Entry file        [90m[39m
+    [34m--src[39m    [90mString[39m  Source directory
+    [34m--entry[39m  [90mString[39m  Entry file
+  
   [2mOther[22m
-    [34m--output[39m  [90mString[39m  Output directory  [90m[39m",
+    [34m--output[39m  [90mString[39m  Output directory",
   ],
 ]
 `;
@@ -33,8 +34,10 @@ exports[`plugin-help > grouping > should group commands 1`] = `
   [2mCore Commands[22m
     [36minit[39m   Initialize project
     [36mbuild[39m  Build project
+  
   [2mUtility Commands[22m
     [36mclean[39m  Clean build artifacts
+  
   [2mOther[22m
     [36mhelp[39m   Show help
     [36mother[39m  Other command
@@ -68,11 +71,12 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
 
 [1mGlobal Flags[22m
   [2mOutput Options[22m
-    [34m--verbose, -v[39m  [90mBoolean[39m  Enable verbose output  [90m[39m
-    [34m--quiet, -q[39m    [90mBoolean[39m  Suppress output        [90m[39m
+    [34m--verbose, -v[39m  [90mBoolean[39m  Enable verbose output
+    [34m--quiet, -q[39m    [90mBoolean[39m  Suppress output
+  
   [2mOther[22m
     [34m--help, -h[39m  [90mBoolean[39m  Show help         [90m[default: false][39m
-    [34m--config[39m    [90mString[39m   Config file path  [90m[39m
+    [34m--config[39m    [90mString[39m   Config file path
 
 [1mNotes[22m
   If no command is specified, show help for the CLI.
