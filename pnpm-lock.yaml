@@ -224,6 +224,9 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      clerc:
+        specifier: workspace:*
+        version: link:../clerc
 
   packages/utils:
     dependencies:
