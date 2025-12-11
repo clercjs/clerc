@@ -145,14 +145,14 @@ export class HelpRenderer {
 				usage += ` ${command.parameters.join(" ")}`;
 			}
 		} else {
-			usage += this._cli._commands.has("") ? " [COMMAND]" : " <COMMAND>";
+			usage += this._cli._commands.has("") ? " [command]" : " <command>";
 		}
 
 		if (
 			(command?.flags && !objectIsEmpty(command.flags)) ||
 			!objectIsEmpty(this._globalFlags)
 		) {
-			usage += " [FLAGS]";
+			usage += " [flags]";
 		}
 
 		return {
