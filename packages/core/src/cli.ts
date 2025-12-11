@@ -37,9 +37,9 @@ interface CreateOptions {
 	version?: string;
 }
 
-interface ParseOptions {
+interface ParseOptions<Run extends boolean = true> {
 	argv?: string[];
-	run?: boolean;
+	run?: Run;
 }
 
 export class Clerc<
@@ -302,7 +302,7 @@ export class Clerc<
 		return parsed;
 	}
 
-	public run(): void {
+	public async run(): Promise<void> {
 		const parametersToResolve = getParametersToResolve(this.#argv);
 
 		const [command, calledAs] = resolveCommand(
@@ -365,10 +365,14 @@ export class Clerc<
 			emitInterceptor,
 		]);
 
-		this.#callWithErrorHandler(() => composedInterceptor(context as any));
+		return this.#callWithErrorHandler(() =>
+			composedInterceptor(context as any),
+		);
 	}
 
-	public parse(argvOrOptions: string[] | ParseOptions = platformArgv): this {
+	public parse<Run extends boolean = true>(
+		argvOrOptions: string[] | ParseOptions<Run> = platformArgv,
+	): Run extends true ? Promise<void> : this {
 		this.#callWithErrorHandler(() => this.#validate());
 
 		if (Array.isArray(argvOrOptions)) {
@@ -380,9 +384,9 @@ export class Clerc<
 		this.#argv = argv;
 
 		if (run) {
-			this.run();
+			return this.run() as any;
 		}
 
-		return this;
+		return this as any;
 	}
 }
