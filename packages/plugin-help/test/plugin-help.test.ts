@@ -143,7 +143,9 @@ describe("plugin-help", () => {
 						help: { group: "undefined-group" },
 					})
 					.parse([]);
-			}).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Unknown command group "undefined-group" for "init". Available groups: core]`);
+			}).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Unknown command group "undefined-group" for "init". Available groups: core]`,
+			);
 		});
 
 		it("should not add group headers when no groups defined", () => {
