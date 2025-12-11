@@ -4,6 +4,14 @@ import tabtab, { getShellFromEnv } from "@pnpm/tabtab";
 
 import { getCompletion } from "./complete";
 
+declare module "@clerc/core" {
+	export interface CommandCustomOptions {
+		completions?: {
+			show?: boolean;
+		};
+	}
+}
+
 export interface CompletionsPluginOptions {
 	/**
 	 * Whether to register the `completions install` and `completions uninstall` commands.
@@ -95,7 +103,7 @@ export const completionsPlugin = (
 			cli
 				.command("completion-server", "Handle completions", {
 					help: {
-						showInHelp: false,
+						show: false,
 					},
 				})
 				.on("completion-server", async () => {

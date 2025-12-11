@@ -99,15 +99,19 @@ export async function getCompletion(
 		prefix = inputArgv.length > 0 ? `${inputArgv.join(" ")} ` : "";
 	}
 
-	for (const c of cli._commands.values()) {
-		if (c.name.startsWith(prefix)) {
-			const remaining = c.name.slice(prefix.length);
+	for (const command of cli._commands.values()) {
+		if (command.completions?.show === false) {
+			continue;
+		}
+
+		if (command.name.startsWith(prefix)) {
+			const remaining = command.name.slice(prefix.length);
 			// Only suggest the next word
 			const nextWord = remaining.split(" ")[0];
 			if (nextWord) {
 				candidates.push({
 					name: nextWord,
-					description: c.description,
+					description: command.description,
 				});
 			}
 		}
