@@ -14,16 +14,16 @@ import type { FlagTypeFunction } from "@clerc/parser";
  * // Help output will show: json | yaml | xml
  * ```
  */
-export function Choices(values: string[]): FlagTypeFunction<string> {
+export function Choices<T extends string>(...values: T[]): FlagTypeFunction<T> {
 	const fn = ((value: string) => {
-		if (!values.includes(value)) {
+		if (!values.includes(value as any)) {
 			throw new Error(
 				`Invalid value: ${value}. Must be one of: ${values.join(", ")}`,
 			);
 		}
 
 		return value;
-	}) as FlagTypeFunction<string>;
+	}) as FlagTypeFunction<T>;
 
 	fn.displayName = values.join(" | ");
 

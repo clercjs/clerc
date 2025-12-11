@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { ObjectInputType } from "../src";
-import { parse } from "../src";
+import { Choices, parse } from "../src";
 
 describe("parser types", () => {
 	it("should inferflags", () => {
@@ -66,6 +66,23 @@ describe("parser types", () => {
 			weirdType: string | number;
 			any1: any;
 			any2: any;
+		}>();
+	});
+
+	it("should infer custom choices", () => {
+		const result = parse([], {
+			flags: {
+				choiceFlag: { type: Choices("red", "green", "blue") },
+				choiceFlagWithDefault: {
+					type: Choices("small", "medium", "large"),
+					default: "medium",
+				},
+			},
+		});
+		expectTypeOf(result.flags).toEqualTypeOf<{
+			choiceFlag: "red" | "green" | "blue" | undefined;
+			// TODO: should be "small" | "medium" | "large"
+			choiceFlagWithDefault: string;
 		}>();
 	});
 });
