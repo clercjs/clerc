@@ -1,7 +1,17 @@
-export * from "@clerc/core";
-export * from "@clerc/plugin-completions";
-export * from "@clerc/plugin-friendly-error";
-export * from "@clerc/plugin-help";
-export * from "@clerc/plugin-not-found";
-export * from "@clerc/plugin-strict-flags";
-export * from "@clerc/plugin-version";
+import { Clerc as ClercBase } from "@clerc/core";
+import { helpPlugin } from "@clerc/plugin-help";
+import { versionPlugin } from "@clerc/plugin-version";
+
+export * from "./re-exports";
+
+// @ts-expect-error TS2675
+export class Clerc extends ClercBase {
+	public static create(
+		options?: Parameters<typeof ClercBase.create>[0],
+	): ClercBase {
+		const instance = super.create(options);
+		instance.use(helpPlugin()).use(versionPlugin());
+
+		return instance;
+	}
+}
