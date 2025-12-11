@@ -10,5 +10,29 @@ describe("flag-types", () => {
 			expect(typeof format).toBe("function");
 			expect(format.displayName).toBe("json | yaml | xml");
 		});
+
+		it("should validate valid choices", () => {
+			const format = Choices("json", "yaml", "xml");
+
+			expect(format("json")).toBe("json");
+			expect(format("yaml")).toBe("yaml");
+			expect(format("xml")).toBe("xml");
+		});
+
+		it("should throw an error for invalid choices", () => {
+			const format = Choices("json", "yaml", "xml");
+
+			expect(() => format("invalid")).toThrow(
+				"Invalid value: invalid. Must be one of: json, yaml, xml",
+			);
+		});
+
+		it("should handle single choice", () => {
+			const format = Choices("only");
+
+			expect(format.displayName).toBe("only");
+			expect(format("only")).toBe("only");
+			expect(() => format("other")).toThrow();
+		});
 	});
 });
