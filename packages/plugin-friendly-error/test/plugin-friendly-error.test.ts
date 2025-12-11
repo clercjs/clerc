@@ -1,4 +1,4 @@
-import { TestCli } from "@clerc/test-utils";
+import { TestBaseCli } from "@clerc/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { friendlyErrorPlugin } from "../src";
@@ -9,7 +9,7 @@ describe("plugin-friendly-error", () => {
 	});
 
 	it("should catch error", async () => {
-		TestCli()
+		TestBaseCli()
 			.use(
 				friendlyErrorPlugin({
 					target: (s) => {
@@ -21,7 +21,7 @@ describe("plugin-friendly-error", () => {
 	});
 
 	it("should catch async error", () => {
-		TestCli()
+		TestBaseCli()
 			.use(
 				friendlyErrorPlugin({
 					target: (s) => expect(s).toMatchInlineSnapshot(`"foo error"`),

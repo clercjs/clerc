@@ -1,4 +1,4 @@
-import { TestCli } from "@clerc/test-utils";
+import { TestBaseCli } from "@clerc/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { notFoundPlugin } from "../src";
@@ -10,7 +10,7 @@ describe("plugin-not-found", () => {
 
 	it("should show commands", async () => {
 		await expect(async () => {
-			await TestCli().use(notFoundPlugin()).parse([]);
+			await TestBaseCli().use(notFoundPlugin()).parse([]);
 		}).rejects.toThrowErrorMatchingInlineSnapshot(
 			"[Error: No command specified.]",
 		);
@@ -18,7 +18,7 @@ describe("plugin-not-found", () => {
 
 	it("should show closest command", async () => {
 		await expect(async () => {
-			await TestCli()
+			await TestBaseCli()
 				.use(notFoundPlugin())
 				.command("foo", "foo command")
 				.parse(["fo"]);

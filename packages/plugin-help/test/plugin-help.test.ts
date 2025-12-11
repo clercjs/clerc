@@ -1,4 +1,4 @@
-import { TestCli, getConsoleMock } from "@clerc/test-utils";
+import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { mockConsole } from "vitest-console";
 
@@ -12,25 +12,25 @@ describe("plugin-help", () => {
 	afterAll(restoreConsole);
 
 	it("should show help", () => {
-		TestCli().use(helpPlugin()).parse(["help"]);
+		TestBaseCli().use(helpPlugin()).parse(["help"]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show --help", () => {
-		TestCli().use(helpPlugin()).parse(["--help"]);
+		TestBaseCli().use(helpPlugin()).parse(["--help"]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should show help when no command", () => {
-		TestCli().use(helpPlugin()).parse([]);
+		TestBaseCli().use(helpPlugin()).parse([]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
 	it("should not show commands which set `show` to false", () => {
-		TestCli()
+		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "", {
 				help: {
@@ -44,7 +44,7 @@ describe("plugin-help", () => {
 
 	describe("grouping", () => {
 		it("should group commands", () => {
-			TestCli()
+			TestBaseCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -71,7 +71,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should group global flags", () => {
-			TestCli()
+			TestBaseCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -98,7 +98,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should group command flags", () => {
-			TestCli()
+			TestBaseCli()
 				.use(
 					helpPlugin({
 						groups: {
@@ -131,7 +131,7 @@ describe("plugin-help", () => {
 
 		it("should throw error for undefined group", async () => {
 			await expect(async () => {
-				await TestCli()
+				await TestBaseCli()
 					.use(
 						helpPlugin({
 							groups: {
@@ -149,7 +149,7 @@ describe("plugin-help", () => {
 		});
 
 		it("should not add group headers when no groups defined", () => {
-			TestCli()
+			TestBaseCli()
 				.use(helpPlugin())
 				.command("init", "Initialize project")
 				.command("build", "Build project")
