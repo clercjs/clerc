@@ -159,9 +159,9 @@ export class Clerc<
 			const result = fn();
 
 			if (result instanceof Promise) {
-				result.catch((error) => {
+				return result.catch((error) => {
 					this.#handleError(error);
-				});
+				}) as T;
 			}
 
 			return result;

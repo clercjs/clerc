@@ -129,24 +129,21 @@ describe("plugin-help", () => {
 			expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 		});
 
-		it("should throw error for undefined group", () => {
-			Cli()
-				.errorHandler((err) => {
-					expect(err).toMatchInlineSnapshot(
-						`[Error: Unknown command group "undefined-group" for "init". Available groups: core]`,
-					);
-				})
-				.use(
-					helpPlugin({
-						groups: {
-							commands: [["core", "Core Commands"]],
-						},
-					}),
-				)
-				.command("init", "Initialize project", {
-					help: { group: "undefined-group" },
-				})
-				.parse([]);
+		it("should throw error for undefined group", async () => {
+			await expect(async () => {
+				await Cli()
+					.use(
+						helpPlugin({
+							groups: {
+								commands: [["core", "Core Commands"]],
+							},
+						}),
+					)
+					.command("init", "Initialize project", {
+						help: { group: "undefined-group" },
+					})
+					.parse([]);
+			}).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Unknown command group "undefined-group" for "init". Available groups: core]`);
 		});
 
 		it("should not add group headers when no groups defined", () => {

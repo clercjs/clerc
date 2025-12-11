@@ -23,26 +23,22 @@ describe("plugin-version", () => {
 		expect(console).toHaveLoggedWith("v0.0.0");
 	});
 
-	it('should be able to disable command with "command: false"', () => {
-		Cli()
-			.use(versionPlugin({ command: false }))
-			.errorHandler((err: any) => {
-				expect(err).toMatchInlineSnapshot(
-					`[Error: No such command: "version".]`,
-				);
-			})
-			.parse(["version"]);
+	it('should be able to disable command with "command: false"', async () => {
+		await expect(async () => {
+			await Cli()
+				.use(versionPlugin({ command: false }))
+				.parse(["version"]);
+		}).rejects.toThrow('No such command: "version".');
 
 		expect(console).not.toHaveLogged();
 	});
 
-	it('should be able to disable flag with "flag: false"', () => {
-		Cli()
-			.use(versionPlugin({ flag: false }))
-			.errorHandler((err: any) => {
-				expect(err).toMatchInlineSnapshot("[Error: No command specified.]");
-			})
-			.parse(["--version"]);
+	it('should be able to disable flag with "flag: false"', async () => {
+		await expect(async () => {
+			await Cli()
+				.use(versionPlugin({ flag: false }))
+				.parse(["--version"]);
+		}).rejects.toThrow("No command specified.");
 
 		expect(console).not.toHaveLogged();
 	});

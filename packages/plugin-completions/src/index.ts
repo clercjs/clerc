@@ -38,6 +38,9 @@ export const completionsPlugin = (
 			if (managementCommands) {
 				cli
 					.command("completions install", "Install shell completions", {
+						help: {
+							group: "completions",
+						},
 						flags: {
 							shell: {
 								description: "Shell type",
@@ -68,7 +71,11 @@ export const completionsPlugin = (
 					});
 
 				cli
-					.command("completions uninstall", "Uninstall shell completions")
+					.command("completions uninstall", "Uninstall shell completions", {
+						help: {
+							group: "completions",
+						},
+					})
 					.on("completions uninstall", async () => {
 						await tabtab.uninstall({
 							name: cli._name,
@@ -78,6 +85,9 @@ export const completionsPlugin = (
 
 			cli
 				.command("completions", "Generate completions script", {
+					help: {
+						group: "completions",
+					},
 					flags: {
 						shell: {
 							description: "Shell type",

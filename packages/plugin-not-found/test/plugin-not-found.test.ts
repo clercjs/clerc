@@ -8,25 +8,23 @@ describe("plugin-not-found", () => {
 		vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
 	});
 
-	it("should show commands", () => {
-		Cli()
-			.errorHandler((e) =>
-				expect(e).toMatchInlineSnapshot("[Error: No command specified.]"),
-			)
-			.use(notFoundPlugin())
-			.parse([]);
+	it("should show commands", async () => {
+		await expect(async () => {
+			await Cli().use(notFoundPlugin()).parse([]);
+		}).rejects.toThrowErrorMatchingInlineSnapshot(
+			"[Error: No command specified.]",
+		);
 	});
 
-	it("should show closest command", () => {
-		Cli()
-			.errorHandler((e) =>
-				expect(e).toMatchInlineSnapshot(`
-					[Error: Command "[9mfo[29m" not found.
-					Did you mean "[1mfoo[22m"?]
-				`),
-			)
-			.use(notFoundPlugin())
-			.command("foo", "foo command")
-			.parse(["fo"]);
+	it("should show closest command", async () => {
+		await expect(async () => {
+			await Cli()
+				.use(notFoundPlugin())
+				.command("foo", "foo command")
+				.parse(["fo"]);
+		}).rejects.toThrowErrorMatchingInlineSnapshot(`
+			[Error: Command "[9mfo[29m" not found.
+			Did you mean "[1mfoo[22m"?]
+		`);
 	});
 });

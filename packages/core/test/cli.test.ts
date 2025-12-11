@@ -419,7 +419,7 @@ describe("cli", () => {
 		expect(count).toBe(1);
 	});
 
-	it("should run matched command", async () => {
+	it("should run matched command", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
@@ -432,7 +432,7 @@ describe("cli", () => {
 		expect(count).toBe(1);
 	});
 
-	it("should resolve parameter with alias correctly", async () => {
+	it("should resolve parameter with alias correctly", () => {
 		Cli()
 			.command("foo", "foo", {
 				alias: "bar baz",
@@ -444,7 +444,7 @@ describe("cli", () => {
 			.parse(["bar", "baz", "param"]);
 	});
 
-	it("shouldn't run matched command", async () => {
+	it("shouldn't run matched command", () => {
 		let count = 0;
 		Cli()
 			.command("foo", "foo")
