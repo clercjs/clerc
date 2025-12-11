@@ -332,3 +332,31 @@ const { flags, doubleDash } = parse(["--foo", "--", "--bar"], {
 // flags: { foo: true, bar: false }
 // doubleDash: ["--bar"]
 ```
+
+## Benchmark
+
+Benchmarked with vitest.
+
+```
+✓ packages/parser/bench/bench.bench.ts > bench 6267ms
+		name                           hz     min     max    mean     p75     p99    p995    p999     rme  samples
+	· minimist               684,422.77  0.0012  3.5582  0.0015  0.0013  0.0031  0.0040  0.0222  ±1.50%   342212
+	· mri                  2,451,855.02  0.0003  0.2422  0.0004  0.0004  0.0007  0.0009  0.0021  ±0.33%  1225928
+	· yargs-parser            90,437.66  0.0092  3.1595  0.0111  0.0103  0.0346  0.0602  0.1311  ±1.42%    45219
+	· nopt                   636,086.73  0.0014  0.3214  0.0016  0.0015  0.0027  0.0031  0.0056  ±0.38%   318044
+	· type-flag              715,908.28  0.0012  0.3783  0.0014  0.0013  0.0022  0.0027  0.0282  ±0.61%   357955
+	· node:util parseArgs  1,204,359.72  0.0007  0.3827  0.0008  0.0008  0.0016  0.0017  0.0047  ±0.56%   602196
+	· args-tokens          2,379,934.00  0.0002  0.2923  0.0004  0.0004  0.0010  0.0015  0.0051  ±0.49%  1189967
+	· @clerc/parser        2,119,030.30  0.0003  0.2482  0.0005  0.0005  0.0009  0.0011  0.0017  ±0.49%  1059516
+
+BENCH  Summary
+
+  mri - packages/parser/bench/bench.bench.ts > bench
+    1.03x faster than args-tokens
+    1.16x faster than @clerc/parser
+    2.04x faster than node:util parseArgs
+    3.42x faster than type-flag
+    3.58x faster than minimist
+    3.85x faster than nopt
+    27.11x faster than yargs-parser
+```
