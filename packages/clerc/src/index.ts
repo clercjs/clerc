@@ -10,7 +10,7 @@ export class Clerc extends ClercBase {
 		options?: Parameters<typeof ClercBase.create>[0],
 	): ClercBase {
 		const instance = super.create(options);
-		instance.use(helpPlugin()).use(versionPlugin());
+		instance.use(versionPlugin()).use(helpPlugin());
 
 		return instance;
 	}
