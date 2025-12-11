@@ -29,12 +29,12 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
-	it("should not show commands which set `showInHelp` to false", () => {
+	it("should not show commands which set `show` to false", () => {
 		Cli()
 			.use(helpPlugin())
 			.command("test", "", {
 				help: {
-					showInHelp: false,
+					show: false,
 				},
 			})
 			.parse([]);

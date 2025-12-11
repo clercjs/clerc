@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`plugin-help > should not show commands which set \`showInHelp\` to false 1`] = `
+exports[`plugin-help > should not show commands which set \`show\` to false 1`] = `
 [
   [
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test

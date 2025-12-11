@@ -130,7 +130,7 @@ export class HelpRenderer {
 
 		const items = [...commands.values()]
 			.map((command) => {
-				if ((command as any).__isAlias || command.help?.showInHelp === false) {
+				if ((command as any).__isAlias || command.help?.show === false) {
 					return null;
 				}
 

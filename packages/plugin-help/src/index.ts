@@ -11,7 +11,7 @@ export { defaultFormatters } from "./formatters";
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
 		help?: {
-			showInHelp?: boolean;
+			show?: boolean;
 			notes?: string[];
 			examples?: [string, string][];
 		};
