@@ -20,6 +20,7 @@
 	"main": "./src/index.ts",
 	"module": "./src/index.ts",
 	"dependencies": {
-		"@clerc/core": "workspace:*"
+		"@clerc/core": "workspace:*",
+		"clerc": "workspace:*"
 	}
 }
