@@ -14,7 +14,9 @@
 		"test": "vitest",
 		"test:coverage": "vitest --coverage",
 		"test:ui": "vitest --ui",
-		"typecheck": "tsgo --noEmit",
+		"typecheck": "nr typecheck:isolated && nr typecheck:non-isolated",
+		"typecheck:isolated": "tsgo -p tsconfig.isolated.json",
+		"typecheck:non-isolated": "tsc -p tsconfig.non-isolated.json",
 		"watch": "pnpm -r --parallel run watch"
 	},
 	"devDependencies": {
@@ -23,7 +25,7 @@
 		"@so1ve/eslint-config": "^3.18.1",
 		"@so1ve/prettier-config": "^3.18.1",
 		"@types/node": "^24.10.1",
-		"@typescript/native-preview": "7.0.0-dev.20250812.1",
+		"@typescript/native-preview": "7.0.0-dev.20251211.1",
 		"@vitest/coverage-istanbul": "^4.0.15",
 		"@vitest/ui": "^4.0.15",
 		"bumpp": "^10.3.2",
