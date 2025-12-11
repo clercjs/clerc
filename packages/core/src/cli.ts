@@ -1,4 +1,4 @@
-import type { FlagDefinitionValue, ParsedResult } from "@clerc/parser";
+import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
@@ -18,6 +18,7 @@ import { platformArgv } from "./platform";
 import type {
 	BaseContext,
 	ClercFlagsDefinition,
+	ClercGlobalFlagDefinitionValue,
 	Command,
 	CommandHandler,
 	CommandOptions,
@@ -242,7 +243,10 @@ export class Clerc<
 		return this as any;
 	}
 
-	public globalFlag<Name extends string, Flag extends FlagDefinitionValue>(
+	public globalFlag<
+		Name extends string,
+		Flag extends ClercGlobalFlagDefinitionValue,
+	>(
 		name: Name,
 		description: string,
 		options: Flag,

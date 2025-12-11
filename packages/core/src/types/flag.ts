@@ -1,6 +1,15 @@
-import type { FlagOptions } from "@clerc/parser";
+import type { FlagOptions, FlagType } from "@clerc/parser";
 
-export type ClercFlagOptions = FlagOptions & {
+export declare interface FlagCustomOptions {}
+
+export type ClercFlagOptions = FlagOptions & FlagCustomOptions;
+
+export type ClercGlobalFlagDefinitionValue = ClercFlagOptions | FlagType;
+
+export type ClercFlagOptionsWithDescription = ClercFlagOptions & {
 	description: string;
 };
-export type ClercFlagsDefinition = Record<string, ClercFlagOptions>;
+export type ClercFlagsDefinition = Record<
+	string,
+	ClercFlagOptionsWithDescription
+>;
