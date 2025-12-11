@@ -1,5 +1,5 @@
 import type { Clerc, ClercFlagsDefinition } from "@clerc/core";
-import { resolveCommand } from "@clerc/core";
+import { DOUBLE_DASH, resolveCommand } from "@clerc/core";
 import { formatFlagName, toArray } from "@clerc/utils";
 import type { CompletionItem, ParseEnvResult } from "@pnpm/tabtab";
 
@@ -55,7 +55,7 @@ export async function getCompletion(
 	);
 	const inputArgv = splitCommand(finishedArgv).slice(1);
 
-	if (inputArgv.includes("--")) {
+	if (inputArgv.includes(DOUBLE_DASH)) {
 		return [];
 	}
 
