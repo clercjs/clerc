@@ -1,4 +1,4 @@
-import type { MaybeArray, Prettify } from "@clerc/utils";
+import type { IsAny, MaybeArray, Prettify } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
@@ -115,25 +115,36 @@ type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
 	? DefaultType
 	: Fallback;
 
+type IsTypeAny<T extends FlagDefinitionValue> =
+	IsAny<T> extends true
+		? true
+		: T extends { type: infer Type }
+			? IsAny<Type> extends true
+				? true
+				: false
+			: false;
+
 type _InferFlags<T extends FlagsDefinition> = {
-	[K in keyof T]: T[K] extends
-		| readonly [BooleanConstructor]
-		| { type: readonly [BooleanConstructor] }
-		? number
-		: T[K] extends ObjectConstructor | { type: ObjectConstructor }
-			? ObjectInputType
-			: T[K] extends
-						| readonly [FlagType<infer U>]
-						| { type: readonly [FlagType<infer U>] }
-				? U[] | InferFlagDefault<T[K], never>
-				: T[K] extends FlagType<infer U> | { type: FlagType<infer U> }
-					?
-							| U
-							| InferFlagDefault<
-									T[K],
-									[U] extends [boolean] ? never : undefined
-							  >
-					: never;
+	[K in keyof T]: IsTypeAny<T[K]> extends true
+		? any
+		: T[K] extends
+					| readonly [BooleanConstructor]
+					| { type: readonly [BooleanConstructor] }
+			? number
+			: T[K] extends ObjectConstructor | { type: ObjectConstructor }
+				? ObjectInputType
+				: T[K] extends
+							| readonly [FlagType<infer U>]
+							| { type: readonly [FlagType<infer U>] }
+					? U[] | InferFlagDefault<T[K], never>
+					: T[K] extends FlagType<infer U> | { type: FlagType<infer U> }
+						?
+								| U
+								| InferFlagDefault<
+										T[K],
+										[U] extends [boolean] ? never : undefined
+								  >
+						: never;
 };
 
 /**

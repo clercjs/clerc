@@ -32,3 +32,5 @@ export type DeepPrettify<T, E = never> = ConditionalDeepPrettify<
 	E | NonRecursiveType | MapsSetsOrArrays,
 	object
 >;
+
+export type IsAny<T> = 0 extends 1 & T ? true : false;
