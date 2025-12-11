@@ -29,6 +29,12 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should use [] as placeholder when root command exists", () => {
+		TestBaseCli().use(helpPlugin()).command("", "Root command").parse(["help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should not show commands which set `show` to false", () => {
 		TestBaseCli()
 			.use(helpPlugin())

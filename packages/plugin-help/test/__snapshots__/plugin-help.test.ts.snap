@@ -28,7 +28,7 @@ exports[`plugin-help > grouping > should group commands 1`] = `
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [2mCore Commands[22m
@@ -64,7 +64,7 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m  Show help
@@ -97,7 +97,7 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m   Show help
@@ -126,7 +126,7 @@ exports[`plugin-help > should not show commands which set \`show\` to false 1`] 
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m  Show help
@@ -153,7 +153,7 @@ exports[`plugin-help > should show --help 1`] = `
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m  Show help
@@ -180,7 +180,7 @@ exports[`plugin-help > should show help 1`] = `
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m  Show help
@@ -207,10 +207,38 @@ exports[`plugin-help > should show help when no command 1`] = `
     "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
 
 [1mUsage[22m
-  $ test [FLAGS]
+  $ test <COMMAND> [FLAGS]
 
 [1mCommands[22m
   [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
+`;
+
+exports[`plugin-help > should use [] as placeholder when root command exists 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  $ test [COMMAND] [FLAGS]
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+  [36m[39m      Root command
 
 [1mGlobal Flags[22m
   [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m

@@ -144,10 +144,9 @@ export class HelpRenderer {
 			if (command.parameters) {
 				usage += ` ${command.parameters.join(" ")}`;
 			}
+		} else {
+			usage += this._cli._commands.has("") ? " [COMMAND]" : " <COMMAND>";
 		}
-		// else {
-		// 	usage += " [command]";
-		// }
 
 		if (
 			(command?.flags && !objectIsEmpty(command.flags)) ||
