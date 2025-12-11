@@ -10,7 +10,9 @@ import stringWidth from "string-width";
 import textTable from "text-table";
 import * as yc from "yoctocolors";
 
-import type { Formatters } from "./types";
+import type { Formatters, GroupsOptions } from "./types";
+
+const DEFAULT_GROUP_KEY = "default";
 
 const table = (items: string[][]) =>
 	textTable(items, { stringLength: stringWidth });
@@ -26,7 +28,38 @@ export type Section =
 	  }
 	| undefined;
 
+function groupDefinitionsToMap(
+	definitions?: [string, string][],
+): Map<string, string> {
+	const map = new Map<string, string>();
+	if (definitions) {
+		for (const [key, name] of definitions) {
+			map.set(key, name);
+		}
+	}
+
+	return map;
+}
+
+function validateGroup(
+	group: string | undefined,
+	groupMap: Map<string, string>,
+	itemType: string,
+	itemName: string,
+): void {
+	if (group && group !== DEFAULT_GROUP_KEY && !groupMap.has(group)) {
+		throw new Error(
+			`Unknown ${itemType} group "${group}" for "${itemName}". ` +
+				`Available groups: ${[...groupMap.keys()].join(", ") || "(none)"}`,
+		);
+	}
+}
+
 export class HelpRenderer {
+	private _commandGroups: Map<string, string>;
+	private _flagGroups: Map<string, string>;
+	private _globalFlagGroups: Map<string, string>;
+
 	constructor(
 		private _formatters: Formatters,
 		private _cli: Clerc,
@@ -34,7 +67,12 @@ export class HelpRenderer {
 		private _command: Command | undefined,
 		private _notes?: string[],
 		private _examples?: [string, string][],
-	) {}
+		groups?: GroupsOptions,
+	) {
+		this._commandGroups = groupDefinitionsToMap(groups?.commands);
+		this._flagGroups = groupDefinitionsToMap(groups?.flags);
+		this._globalFlagGroups = groupDefinitionsToMap(groups?.globalFlags);
+	}
 
 	public render(): string {
 		const sections: Section[] = [
@@ -128,47 +166,137 @@ export class HelpRenderer {
 			return;
 		}
 
-		const items = [...commands.values()]
-			.map((command) => {
-				if ((command as any).__isAlias || command.help?.show === false) {
-					return null;
+		// Group commands
+		const groupedCommands = new Map<string, string[][]>();
+		const defaultCommands: string[][] = [];
+
+		for (const command of commands.values()) {
+			if ((command as any).__isAlias || command.help?.show === false) {
+				continue;
+			}
+
+			const group = command.help?.group;
+			validateGroup(group, this._commandGroups, "command", command.name);
+
+			const commandName = yc.cyan(command.name);
+			const aliases = command.alias
+				? ` (${toArray(command.alias).join(", ")})`
+				: "";
+			const item = [`${commandName}${aliases}`, command.description];
+
+			if (group && group !== DEFAULT_GROUP_KEY) {
+				const groupItems = groupedCommands.get(group) ?? [];
+				groupItems.push(item);
+				groupedCommands.set(group, groupItems);
+			} else {
+				defaultCommands.push(item);
+			}
+		}
+
+		// Build body with groups
+		const body: string[] = [];
+
+		// Output defined groups in order
+		for (const [key, name] of this._commandGroups) {
+			const items = groupedCommands.get(key);
+			if (items && items.length > 0) {
+				body.push(`${yc.dim(name)}`);
+				for (const line of splitTable(items)) {
+					body.push(`  ${line}`);
 				}
+			}
+		}
 
-				const commandName = yc.cyan(command.name);
-				const aliases = command.alias
-					? ` (${toArray(command.alias).join(", ")})`
-					: "";
-
-				return [`${commandName}${aliases}`, command.description];
-			})
-			.filter(isTruthy);
+		// Output default group last
+		if (defaultCommands.length > 0) {
+			if (body.length > 0) {
+				body.push(`${yc.dim("Other")}`);
+				for (const line of splitTable(defaultCommands)) {
+					body.push(`  ${line}`);
+				}
+			} else {
+				// No groups defined, output flat
+				body.push(...splitTable(defaultCommands));
+			}
+		}
 
 		return {
 			title: "Commands",
-			body: splitTable(items),
+			body,
 		};
 	}
 
-	private renderFlags(flags: ClercFlagsDefinition) {
-		return Object.entries(flags).map(([name, flag]) => {
-			const flagName = formatFlagName(name);
-			const aliases = (
-				Array.isArray(flag.alias) ? flag.alias : flag.alias ? [flag.alias] : []
-			)
-				.map(formatFlagName)
-				.join(", ");
-			const description = flag.description ?? "";
-			const type = this._formatters.formatFlagType(flag.type);
-			const defaultValue =
-				flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
+	private renderFlagItem(name: string, flag: ClercFlagsDefinition[string]) {
+		const flagName = formatFlagName(name);
+		const aliases = (
+			Array.isArray(flag.alias) ? flag.alias : flag.alias ? [flag.alias] : []
+		)
+			.map(formatFlagName)
+			.join(", ");
+		const description = flag.description ?? "";
+		const type = this._formatters.formatFlagType(flag.type);
+		const defaultValue =
+			flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
 
-			return [
-				yc.blue([flagName, aliases].filter(Boolean).join(", ")),
-				yc.gray(type),
-				description,
-				yc.gray(defaultValue),
-			];
-		});
+		return [
+			yc.blue([flagName, aliases].filter(Boolean).join(", ")),
+			yc.gray(type),
+			description,
+			yc.gray(defaultValue),
+		];
+	}
+
+	private renderGroupedFlags(
+		flags: ClercFlagsDefinition,
+		groupMap: Map<string, string>,
+		itemType: string,
+	) {
+		const groupedFlags = new Map<string, string[][]>();
+		const defaultFlags: string[][] = [];
+
+		for (const [name, flag] of Object.entries(flags)) {
+			const group = (flag as any).help?.group as string | undefined;
+			validateGroup(group, groupMap, itemType, name);
+
+			const item = this.renderFlagItem(name, flag);
+
+			if (group && group !== DEFAULT_GROUP_KEY) {
+				const groupItems = groupedFlags.get(group) ?? [];
+				groupItems.push(item);
+				groupedFlags.set(group, groupItems);
+			} else {
+				defaultFlags.push(item);
+			}
+		}
+
+		// Build body with groups
+		const body: string[] = [];
+
+		// Output defined groups in order
+		for (const [key, name] of groupMap) {
+			const items = groupedFlags.get(key);
+			if (items && items.length > 0) {
+				body.push(`${yc.dim(name)}`);
+				for (const line of splitTable(items)) {
+					body.push(`  ${line}`);
+				}
+			}
+		}
+
+		// Output default group last
+		if (defaultFlags.length > 0) {
+			if (body.length > 0) {
+				body.push(`${yc.dim("Other")}`);
+				for (const line of splitTable(defaultFlags)) {
+					body.push(`  ${line}`);
+				}
+			} else {
+				// No groups defined, output flat
+				body.push(...splitTable(defaultFlags));
+			}
+		}
+
+		return body;
 	}
 
 	private renderCommandFlags() {
@@ -177,11 +305,15 @@ export class HelpRenderer {
 			return;
 		}
 
-		const items = this.renderFlags(command.flags);
+		const body = this.renderGroupedFlags(
+			command.flags,
+			this._flagGroups,
+			"flag",
+		);
 
 		return {
 			title: "Flags",
-			body: splitTable(items),
+			body,
 		};
 	}
 
@@ -190,11 +322,15 @@ export class HelpRenderer {
 			return;
 		}
 
-		const items = this.renderFlags(this._globalFlags);
+		const body = this.renderGroupedFlags(
+			this._globalFlags,
+			this._globalFlagGroups,
+			"global flag",
+		);
 
 		return {
 			title: "Global Flags",
-			body: splitTable(items),
+			body,
 		};
 	}
 

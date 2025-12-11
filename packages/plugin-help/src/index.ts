@@ -4,32 +4,50 @@ import { isTruthy } from "@clerc/utils";
 
 import { defaultFormatters } from "./formatters";
 import { HelpRenderer } from "./renderer";
-import type { Formatters } from "./types";
+import type { Formatters, GroupsOptions } from "./types";
 
 export { defaultFormatters } from "./formatters";
+export type { GroupDefinition, GroupsOptions } from "./types";
+
+export interface HelpOptions {
+	/**
+	 * The group this item belongs to.
+	 * The group must be defined in the `groups` option of `helpPlugin()`.
+	 */
+	group?: string;
+}
+
+export interface CommandHelpOptions extends HelpOptions {
+	/**
+	 * Whether to show the command in help output.
+	 *
+	 * @default true
+	 */
+	show?: boolean;
+	/**
+	 * Notes to show in the help output.
+	 */
+	notes?: string[];
+	/**
+	 * Examples to show in the help output.
+	 * Each example is a tuple of `[command, description]`.
+	 */
+	examples?: [string, string][];
+}
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
 		/**
 		 * Help options for the command.
 		 */
-		help?: {
-			/**
-			 * Whether to show the command in help output.
-			 *
-			 * @default true
-			 */
-			show?: boolean;
-			/**
-			 * Notes to show in the help output.
-			 */
-			notes?: string[];
-			/**
-			 * Examples to show in the help output.
-			 * Each example is a tuple of `[command, description]`.
-			 */
-			examples?: [string, string][];
-		};
+		help?: CommandHelpOptions;
+	}
+
+	export interface FlagCustomOptions {
+		/**
+		 * Help options for the flag.
+		 */
+		help?: HelpOptions;
 	}
 }
 
@@ -69,6 +87,13 @@ export interface HelpPluginOptions {
 	 * Custom formatters for rendering help.
 	 */
 	formatters?: Partial<Formatters>;
+	/**
+	 * Group definitions for commands and flags.
+	 * Groups allow organizing commands and flags into logical sections in help output.
+	 * Each group is defined as `[key, name]` where `key` is the identifier used in help options
+	 * and `name` is the display name shown in help output.
+	 */
+	groups?: GroupsOptions;
 }
 
 export const helpPlugin = ({
@@ -79,6 +104,7 @@ export const helpPlugin = ({
 	examples,
 	banner,
 	formatters,
+	groups,
 }: HelpPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
@@ -142,6 +168,7 @@ export const helpPlugin = ({
 							command,
 							command ? command.help?.notes : effectiveNotes,
 							command ? command.help?.examples : effectiveExamples,
+							groups,
 						);
 						printHelp(renderer.render());
 					});
@@ -166,6 +193,7 @@ export const helpPlugin = ({
 							ctx.command,
 							ctx.command ? ctx.command.help?.notes : effectiveNotes,
 							ctx.command ? ctx.command.help?.examples : effectiveExamples,
+							groups,
 						);
 						printHelp(renderer.render());
 					} else {
@@ -182,6 +210,7 @@ export const helpPlugin = ({
 								undefined,
 								effectiveNotes,
 								effectiveExamples,
+								groups,
 							);
 							printHelp(renderer.render());
 						} else {

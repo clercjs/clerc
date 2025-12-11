@@ -1,5 +1,121 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`plugin-help > grouping > should group command flags 1`] = `
+[
+  [
+    "[32mtest[39m [36mbuild[39m [33m-[39m Build project
+
+[1mUsage[22m
+  $ test build [FLAGS]
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mFlags[22m
+  [2mInput Options[22m
+    [34m--src[39m    [90mString[39m  Source directory  [90m[39m
+    [34m--entry[39m  [90mString[39m  Entry file        [90m[39m
+  [2mOther[22m
+    [34m--output[39m  [90mString[39m  Output directory  [90m[39m",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should group commands 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  $ test [FLAGS]
+
+[1mCommands[22m
+  [2mCore Commands[22m
+    [36minit[39m   Initialize project
+    [36mbuild[39m  Build project
+  [2mUtility Commands[22m
+    [36mclean[39m  Clean build artifacts
+  [2mOther[22m
+    [36mhelp[39m   Show help
+    [36mother[39m  Other command
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should group global flags 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  $ test [FLAGS]
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [2mOutput Options[22m
+    [34m--verbose, -v[39m  [90mBoolean[39m  Enable verbose output  [90m[39m
+    [34m--quiet, -q[39m    [90mBoolean[39m  Suppress output        [90m[39m
+  [2mOther[22m
+    [34m--help, -h[39m  [90mBoolean[39m  Show help         [90m[default: false][39m
+    [34m--config[39m    [90mString[39m   Config file path  [90m[39m
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should not add group headers when no groups defined 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  $ test [FLAGS]
+
+[1mCommands[22m
+  [36mhelp[39m   Show help
+  [36minit[39m   Initialize project
+  [36mbuild[39m  Build project
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
+`;
+
 exports[`plugin-help > should not show commands which set \`show\` to false 1`] = `
 [
   [
