@@ -12,6 +12,9 @@ export default defineConfig({
 				inline: ["vitest-console"],
 			},
 		},
+		typecheck: {
+			tsconfig: "tsconfig.non-isolated.json",
+		},
 		setupFiles: ["test/setup.ts"],
 	},
 });
