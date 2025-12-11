@@ -233,17 +233,15 @@ export class HelpRenderer {
 		)
 			.map(formatFlagName)
 			.join(", ");
-		const description = flag.description ?? "";
 		const type = this._formatters.formatFlagType(flag.type);
-		const defaultValue =
-			flag.default === undefined ? "" : `[default: ${String(flag.default)}]`;
 
 		return [
 			yc.blue([flagName, aliases].filter(Boolean).join(", ")),
 			yc.gray(type),
-			description,
-			yc.gray(defaultValue),
-		];
+			flag.description,
+			flag.default !== undefined &&
+				yc.gray(`[default: ${String(flag.default)}]`),
+		].filter(isTruthy);
 	}
 
 	private renderGroupedFlags(
