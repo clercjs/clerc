@@ -37,6 +37,7 @@ interface CreateOptions {
 }
 
 interface ParseOptions {
+	argv?: string[];
 	run?: boolean;
 }
 
@@ -363,11 +364,14 @@ export class Clerc<
 		this.#callWithErrorHandler(() => composedInterceptor(context as any));
 	}
 
-	public parse(
-		argv: string[] = platformArgv,
-		{ run = true }: ParseOptions = {},
-	): this {
+	public parse(argvOrOptions: string[] | ParseOptions = platformArgv): this {
 		this.#callWithErrorHandler(() => this.#validate());
+
+		if (Array.isArray(argvOrOptions)) {
+			argvOrOptions = { argv: argvOrOptions };
+		}
+
+		const { argv = platformArgv, run = true } = argvOrOptions;
 
 		this.#argv = argv;
 

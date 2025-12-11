@@ -426,7 +426,7 @@ describe("cli", () => {
 			.on("foo", () => {
 				count++;
 			})
-			.parse(["foo"], { run: false })
+			.parse({ argv: ["foo"], run: false })
 			.run();
 
 		expect(count).toBe(1);
@@ -451,7 +451,7 @@ describe("cli", () => {
 			.on("foo", () => {
 				count++;
 			})
-			.parse(["foo"], { run: false });
+			.parse({ argv: ["foo"], run: false });
 
 		expect(count).toBe(0);
 	});
