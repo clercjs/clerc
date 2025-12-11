@@ -10,21 +10,64 @@ export { defaultFormatters } from "./formatters";
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
+		/**
+		 * Help options for the command.
+		 */
 		help?: {
+			/**
+			 * Whether to show the command in help output.
+			 *
+			 * @default true
+			 */
 			show?: boolean;
+			/**
+			 * Notes to show in the help output.
+			 */
 			notes?: string[];
+			/**
+			 * Examples to show in the help output.
+			 * Each example is a tuple of `[command, description]`.
+			 */
 			examples?: [string, string][];
 		};
 	}
 }
 
 export interface HelpPluginOptions {
+	/**
+	 * Whether to register the `help` command.
+	 *
+	 * @default true
+	 */
 	command?: boolean;
+	/**
+	 * Whether to register the `--help` global flag.
+	 *
+	 * @default true
+	 */
 	flag?: boolean;
+	/**
+	 * Whether to show help when no command is specified.
+	 *
+	 * @default true
+	 */
 	showHelpWhenNoCommandSpecified?: boolean;
+	/**
+	 * Notes to show in the help output.
+	 */
 	notes?: string[];
+	/**
+	 * Examples to show in the help output.
+	 * Each example is a tuple of `[command, description]`.
+	 */
 	examples?: [string, string][];
+	/**
+	 * A banner to show before the help output.
+	 */
 	banner?: string;
+	/**
+	 * Custom formatters for rendering help.
+	 */
 	formatters?: Partial<Formatters>;
 }
 

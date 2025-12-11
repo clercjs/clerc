@@ -6,7 +6,15 @@ import { getCompletion } from "./complete";
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
+		/**
+		 * Completions options for the command.
+		 */
 		completions?: {
+			/**
+			 * Whether to show the command in completions output.
+			 *
+			 * @default true
+			 */
 			show?: boolean;
 		};
 	}
