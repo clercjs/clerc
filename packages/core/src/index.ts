@@ -1,4 +1,5 @@
 export {
+	Choices,
 	DOUBLE_DASH,
 	KNOWN_FLAG,
 	PARAMETER,
