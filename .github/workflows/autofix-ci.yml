@@ -1,38 +1,13 @@
 name: autofix.ci
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
   pull_request: {}
 
-permissions:
-  contents: read
-
 jobs:
   autofix:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PNPM
-        run: corepack enable
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 24.x
-          cache: pnpm
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: ni --no-frozen-lockfile
-
-      - name: Lint and fix
-        run: nr lint:fix
-
-      - uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
-        with:
-          commit-message: "chore: apply automatic fixes"
+    uses: so1ve/workflows/.github/workflows/autofix-ci.yml@v1
+    permissions:
+      contents: read

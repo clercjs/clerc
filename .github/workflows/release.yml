@@ -6,40 +6,9 @@ on:
       - "v*"
 
 permissions:
-  id-token: write
   contents: write
+  id-token: write
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Setup PNPM
-        run: corepack enable
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 24.x
-          cache: pnpm
-
-      - name: Update npm
-        run: npm install -g npm@latest
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Build
-        run: nr build
-
-      - name: Publish
-        run: pnpm -r publish --access public --no-git-checks
-
-      - run: nlx changelogithub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: so1ve/workflows/.github/workflows/release.yml@v1

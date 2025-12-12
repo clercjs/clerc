@@ -1,93 +1,13 @@
-name: CI
+name: Conventional CI
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PNPM
-        run: corepack enable
-
-      - name: Set node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 24.x
-          cache: pnpm
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Lint
-        run: nr lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PNPM
-        run: corepack enable
-
-      - name: Set node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 24.x
-          cache: pnpm
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Build
-        run: nr build
-
-      - name: Typecheck
-        run: nr typecheck
-
-  test:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        node: [22.x, 24.x]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-      fail-fast: false
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PNPM
-        run: corepack enable
-
-      - name: Set node version to ${{ matrix.node }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
-          cache: pnpm
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Build
-        run: nr build
-
-      - name: Test
-        run: nr test:all
+  conventional-ci:
+    uses: so1ve/workflows/.github/workflows/conventional-ci.yml@v1
+    with:
+      test: pnpm run test:all
