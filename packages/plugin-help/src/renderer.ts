@@ -157,7 +157,7 @@ export class HelpRenderer {
 
 		return {
 			title: "Usage",
-			body: [usage],
+			body: [yc.magenta(usage)],
 		};
 	}
 
