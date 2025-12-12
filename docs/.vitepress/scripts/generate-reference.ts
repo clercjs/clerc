@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { cp, rename, rm } from "node:fs/promises";
 
 import type { TypeDocOptions } from "typedoc";
@@ -6,10 +6,22 @@ import { Application } from "typedoc";
 
 const LANGUAGES = ["zh"];
 const IGNORED_PACKAGES = ["test-utils"];
-export const PACKAGES = readdirSync("../packages", { withFileTypes: true })
-	.filter((dirent) => dirent.isDirectory())
-	.map((dirent) => dirent.name)
-	.filter((name) => !IGNORED_PACKAGES.includes(name));
+export const PACKAGES = Object.fromEntries(
+	readdirSync("../packages", { withFileTypes: true })
+		.filter((dirent) => dirent.isDirectory())
+		.map((dirent) => dirent.name)
+		.filter((name) => !IGNORED_PACKAGES.includes(name))
+		.map((name) => {
+			const pkgPath = `../packages/${name}/package.json`;
+			if (!existsSync(pkgPath)) {
+				throw new Error(`Package.json not found for package: ${name}`);
+			}
+			const pkgJson = JSON.parse(readFileSync(pkgPath, "utf-8"));
+
+			return [name, pkgJson.name as string] as const;
+		})
+		.sort(([a], [b]) => a.localeCompare(b)),
+);
 const tsconfig = "../tsconfig.json";
 
 if (import.meta.main) {
@@ -19,14 +31,14 @@ if (import.meta.main) {
 	await rm("reference/api", { recursive: true, force: true });
 
 	// Generate API documentation
-	for (const pkg of PACKAGES) {
-		console.log(`📚 Generating reference for ${pkg}...`);
+	for (const [pkg, name] of Object.entries(PACKAGES)) {
+		console.log(`📚 Generating reference for ${name}...`);
 		await runTypedoc(tsconfig, pkg);
 	}
 	console.log("✅ Reference generated successfully!");
 	console.log("📚 Beautifying reference structure...");
 
-	for (const pkg of PACKAGES) {
+	for (const pkg of Object.keys(PACKAGES)) {
 		if (existsSync(`reference/api/${pkg}/globals.md`)) {
 			await rm(`reference/api/${pkg}/index.md`, { force: true });
 			await rename(

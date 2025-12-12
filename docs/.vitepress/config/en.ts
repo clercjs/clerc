@@ -59,8 +59,8 @@ const guideSidebar = [
 	},
 	{
 		text: "API Reference",
-		items: PACKAGES.map((pkg) => ({
-			text: pkg,
+		items: Object.entries(PACKAGES).map(([pkg, name]) => ({
+			text: name,
 			link: `/reference/api/${pkg}/`,
 		})),
 	},
@@ -68,7 +68,7 @@ const guideSidebar = [
 
 const sidebar = {
 	...Object.fromEntries(
-		PACKAGES.map((pkg) => [
+		Object.keys(PACKAGES).map((pkg) => [
 			`/reference/api/${pkg}/`,
 			[
 				{
