@@ -201,6 +201,11 @@ export class HelpRenderer {
 		// Build body with groups
 		const body: string[] = [];
 
+		// Output default group first (without title)
+		if (defaultCommands.length > 0) {
+			body.push(...splitTable(defaultCommands));
+		}
+
 		// Output defined groups in order
 		for (const [key, name] of this._commandGroups) {
 			const items = groupedCommands.get(key);
@@ -210,18 +215,6 @@ export class HelpRenderer {
 				}
 				body.push(`${yc.dim(name)}`);
 				body.push(...splitTable(items).map(withIndent));
-			}
-		}
-
-		// Output default group last
-		if (defaultCommands.length > 0) {
-			if (body.length > 0) {
-				body.push("");
-				body.push(`${yc.dim("Other")}`);
-				body.push(...splitTable(defaultCommands).map(withIndent));
-			} else {
-				// No groups defined, output flat
-				body.push(...splitTable(defaultCommands));
 			}
 		}
 
@@ -275,6 +268,11 @@ export class HelpRenderer {
 		// Build body with groups
 		const body: string[] = [];
 
+		// Output default group first (without title)
+		if (defaultFlags.length > 0) {
+			body.push(...splitTable(defaultFlags));
+		}
+
 		// Output defined groups in order
 		for (const [key, name] of groupMap) {
 			const items = groupedFlags.get(key);
@@ -284,18 +282,6 @@ export class HelpRenderer {
 				}
 				body.push(`${yc.dim(name)}`);
 				body.push(...splitTable(items).map(withIndent));
-			}
-		}
-
-		// Output default group last
-		if (defaultFlags.length > 0) {
-			if (body.length > 0) {
-				body.push("");
-				body.push(`${yc.dim("Other")}`);
-				body.push(...splitTable(defaultFlags).map(withIndent));
-			} else {
-				// No groups defined, output flat
-				body.push(...splitTable(defaultFlags));
 			}
 		}
 
