@@ -20,6 +20,9 @@ const table = (items: string[][]) =>
 const splitTable = (items: string[][]) => table(items).split("\n");
 
 const DELIMITER = yc.yellow("-");
+const INDENT = " ".repeat(2);
+
+const withIndent = (str: string): string => `${INDENT}${str}`;
 
 export type Section =
 	| {
@@ -99,7 +102,7 @@ export class HelpRenderer {
 
 				return `${yc.bold(section.title)}\n${body
 					.split("\n")
-					.map((line) => `  ${line}`)
+					.map(withIndent)
 					.join("\n")}`;
 			})
 			.join("\n\n");
@@ -205,9 +208,7 @@ export class HelpRenderer {
 					body.push("");
 				}
 				body.push(`${yc.dim(name)}`);
-				for (const line of splitTable(items)) {
-					body.push(`  ${line}`);
-				}
+				body.push(...splitTable(items).map(withIndent));
 			}
 		}
 
@@ -216,9 +217,7 @@ export class HelpRenderer {
 			if (body.length > 0) {
 				body.push("");
 				body.push(`${yc.dim("Other")}`);
-				for (const line of splitTable(defaultCommands)) {
-					body.push(`  ${line}`);
-				}
+				body.push(...splitTable(defaultCommands).map(withIndent));
 			} else {
 				// No groups defined, output flat
 				body.push(...splitTable(defaultCommands));
@@ -283,9 +282,7 @@ export class HelpRenderer {
 					body.push("");
 				}
 				body.push(`${yc.dim(name)}`);
-				for (const line of splitTable(items)) {
-					body.push(`  ${line}`);
-				}
+				body.push(...splitTable(items).map(withIndent));
 			}
 		}
 
@@ -294,9 +291,7 @@ export class HelpRenderer {
 			if (body.length > 0) {
 				body.push("");
 				body.push(`${yc.dim("Other")}`);
-				for (const line of splitTable(defaultFlags)) {
-					body.push(`  ${line}`);
-				}
+				body.push(...splitTable(defaultFlags).map(withIndent));
 			} else {
 				// No groups defined, output flat
 				body.push(...splitTable(defaultFlags));
