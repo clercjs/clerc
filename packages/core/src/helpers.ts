@@ -8,7 +8,7 @@ import type {
 
 export const defineCommand = <
 	Name extends string,
-	const Parameters extends readonly Parameter[] = readonly [],
+	const Parameters extends readonly Parameter[],
 	Flags extends ClercFlagsDefinition = {},
 >(
 	command: Command<Name, Parameters, Flags>,

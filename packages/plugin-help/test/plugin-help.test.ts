@@ -49,7 +49,6 @@ describe("plugin-help", () => {
 	});
 
 	it("should show parameter constraints", () => {
-		const constraintEnum = Constraints.Enum("a", "b", "c");
 		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "Test command", {
@@ -57,7 +56,7 @@ describe("plugin-help", () => {
 					"<param>",
 					{
 						key: "<param2>",
-						constraint: constraintEnum,
+						constraint: Constraints.Enum("a", "b", "c"),
 					},
 					{
 						key: "[range]",

@@ -162,11 +162,9 @@ describe("core types", () => {
 	});
 
 	it("should infer parameters constraints", () => {
-		const e = Constraints.Enum("a", "b");
-
 		Clerc.create()
 			.command("test", "test", {
-				parameters: [{ key: "<foo>", constraint: e }],
+				parameters: [{ key: "<foo>", constraint: Constraints.Enum("a", "b") }],
 			})
 			.on("test", (ctx) => {
 				expectTypeOf(ctx.parameters).toEqualTypeOf<{ foo: "a" | "b" }>();
@@ -174,11 +172,11 @@ describe("core types", () => {
 	});
 
 	it("should infer variadic parameters constraints", () => {
-		const e = Constraints.Enum("a", "b");
-
 		Clerc.create()
 			.command("test", "test", {
-				parameters: [{ key: "<foo...>", constraint: e }],
+				parameters: [
+					{ key: "<foo...>", constraint: Constraints.Enum("a", "b") },
+				],
 			})
 			.on("test", (ctx) => {
 				expectTypeOf(ctx.parameters).toEqualTypeOf<{ foo: ("a" | "b")[] }>();

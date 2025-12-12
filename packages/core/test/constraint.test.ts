@@ -5,13 +5,11 @@ import { Constraints } from "../src";
 
 describe("constraint", () => {
 	it("should validate enum", async () => {
-		const constraint = Constraints.Enum("a", "b");
-
 		const cli = TestBaseCli().command("test", "test command", {
 			parameters: [
 				{
 					key: "<value>",
-					constraint,
+					constraint: Constraints.Enum("a", "b"),
 				},
 			],
 		});
@@ -83,13 +81,11 @@ describe("constraint", () => {
 	});
 
 	it("should validate variadic parameters", async () => {
-		const constraint = Constraints.Enum("a", "b");
-
 		const cli = TestBaseCli().command("test", "test command", {
 			parameters: [
 				{
 					key: "<value...>",
-					constraint,
+					constraint: Constraints.Enum("a", "b"),
 				},
 			],
 		});
