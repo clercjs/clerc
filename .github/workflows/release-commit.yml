@@ -2,8 +2,6 @@ name: Publish Any Commit
 
 on: [push, pull_request]
 
-permissions: {}
-
 jobs:
   release-commit:
     uses: so1ve/workflows/.github/workflows/release-commit.yml@v1
