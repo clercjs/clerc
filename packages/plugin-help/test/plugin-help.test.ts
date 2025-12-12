@@ -1,10 +1,12 @@
 import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
-import { NoSuchCommandError, friendlyErrorPlugin } from "clerc";
+import { Constraints, NoSuchCommandError, friendlyErrorPlugin } from "clerc";
 import * as kons from "kons";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mockConsole } from "vitest-console";
 
 import { helpPlugin } from "../src";
+
+const { Enum, Range } = Constraints;
 
 vi.mock("kons", () => ({
 	error: vi.fn(),
@@ -39,6 +41,28 @@ describe("plugin-help", () => {
 
 	it("should show help when no command", () => {
 		TestBaseCli().use(helpPlugin()).parse([]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should show parameter constraints", () => {
+		const constraintEnum = Constraints.Enum("a", "b", "c");
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: [
+					"<param>",
+					{
+						key: "<param2>",
+						constraint: constraintEnum,
+					},
+					{
+						key: "[range]",
+						constraint: Range(1, 10),
+					},
+				],
+			})
+			.parse(["test", "--help"]);
 
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});

@@ -87,6 +87,7 @@ export class HelpRenderer {
 		const sections: Section[] = [
 			this.renderHeader(),
 			this.renderUsage(),
+			this.renderParameters(),
 			this.renderCommands(),
 			this.renderGlobalFlags(),
 			this.renderCommandFlags(),
@@ -167,6 +168,29 @@ export class HelpRenderer {
 		return {
 			title: "Usage",
 			body: [yc.magenta(usage)],
+		};
+	}
+
+	private renderParameters() {
+		const command = this._command;
+		if (!command?.parameters || command.parameters.length === 0) {
+			return;
+		}
+
+		const items = command.parameters.map((parameter) => {
+			const key = typeof parameter === "string" ? parameter : parameter.key;
+			const constraint =
+				typeof parameter === "string" ? undefined : parameter.constraint;
+
+			return [
+				yc.blue(key),
+				constraint?.display ? yc.gray(constraint.display) : undefined,
+			].filter(isTruthy);
+		});
+
+		return {
+			title: "Parameters",
+			body: splitTable(items),
 		};
 	}
 
