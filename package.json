@@ -37,6 +37,7 @@
 		"@vitest/ui": "^4.0.15",
 		"bumpp": "^10.3.2",
 		"changelogithub": "^14.0.0",
+		"clerc": "workspace:*",
 		"eslint": "^9.39.1",
 		"prettier": "^3.7.3",
 		"tsdown": "^0.16.8",

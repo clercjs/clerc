@@ -68,6 +68,9 @@ importers:
       changelogithub:
         specifier: ^14.0.0
         version: 14.0.0
+      clerc:
+        specifier: workspace:*
+        version: link:packages/clerc
       eslint:
         specifier: ^9.39.1
         version: 9.39.1(jiti@2.6.1)
