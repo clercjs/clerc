@@ -29,7 +29,7 @@ const guideSidebar = [
 			},
 			{
 				text: "Parameters",
-				link: "/guide/parameters"
+				link: "/guide/parameters",
 			},
 			{
 				text: "Flags",

@@ -29,7 +29,7 @@ const guideSidebar = [
 			},
 			{
 				text: "参数",
-				link: "/zh/guide/parameters"
+				link: "/zh/guide/parameters",
 			},
 			{
 				text: "选项",
