@@ -163,5 +163,23 @@ describe("plugin-help", () => {
 
 			expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 		});
+
+		it("should display subcommands", () => {
+			TestBaseCli()
+				.use(helpPlugin())
+				.command("parent", "Parent command")
+				.command("parent child1", "First child command")
+				.command("parent child2", "Second child command")
+				.parse(["parent", "--help"]);
+
+			TestBaseCli()
+				.use(helpPlugin())
+				.command("", "Parent command")
+				.command("child1", "First child command")
+				.command("child2", "Second child command")
+				.parse(["--help"]);
+
+			expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+		});
 	});
 });

@@ -1,5 +1,32 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`plugin-help > grouping > should display subcommands 1`] = `
+[
+  [
+    "[32mtest[39m [36mparent[39m [33m-[39m Parent command
+
+[1mUsage[22m
+  [35m$ test parent [flags][39m
+
+[1mSubcommands[22m
+  [36mchild1[39m  First child command
+  [36mchild2[39m  Second child command
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m",
+  ],
+  [
+    "[32mtest[39m [33m-[39m Parent command
+
+[1mUsage[22m
+  [35m$ test [flags][39m
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m",
+  ],
+]
+`;
+
 exports[`plugin-help > grouping > should group command flags 1`] = `
 [
   [

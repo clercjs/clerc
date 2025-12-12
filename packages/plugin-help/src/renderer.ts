@@ -1,4 +1,9 @@
-import type { Clerc, ClercFlagsDefinition, Command } from "@clerc/core";
+import type {
+	Clerc,
+	ClercFlagsDefinition,
+	Command,
+	CommandsMap,
+} from "@clerc/core";
 import {
 	formatFlagName,
 	formatVersion,
@@ -165,9 +170,46 @@ export class HelpRenderer {
 		};
 	}
 
+	private getSubcommands(parentCommandName: string): CommandsMap {
+		const subcommands = new Map<string, Command>();
+
+		if (!parentCommandName) {
+			return subcommands;
+		}
+
+		const prefix = `${parentCommandName} `;
+
+		for (const [name, command] of this._cli._commands) {
+			if (name.startsWith(prefix) && name !== parentCommandName) {
+				const subcommandName = name.slice(prefix.length);
+				subcommands.set(subcommandName, command);
+			}
+		}
+
+		return subcommands;
+	}
+
 	private renderCommands() {
 		const commands = this._cli._commands;
-		if (this._command || commands.size === 0) {
+
+		// If a command is selected, show its subcommands
+		let commandsToShow: CommandsMap;
+		let title = "Commands";
+		let prefix = "";
+
+		if (this._command) {
+			prefix = this._command.name ? `${this._command.name} ` : "";
+			title = "Subcommands";
+			commandsToShow = this.getSubcommands(this._command.name);
+
+			if (commandsToShow.size === 0) {
+				return;
+			}
+		} else {
+			commandsToShow = commands;
+		}
+
+		if (commandsToShow.size === 0) {
 			return;
 		}
 
@@ -176,7 +218,7 @@ export class HelpRenderer {
 		const defaultCommands: string[][] = [];
 		let rootCommand: string[] = [];
 
-		for (const command of commands.values()) {
+		for (const command of commandsToShow.values()) {
 			if ((command as any).__isAlias || command.help?.show === false) {
 				continue;
 			}
@@ -184,7 +226,9 @@ export class HelpRenderer {
 			const group = command.help?.group;
 			validateGroup(group, this._commandGroups, "command", command.name);
 
-			const commandName = yc.cyan(formatCommandName(command.name));
+			const commandName = yc.cyan(
+				formatCommandName(command.name.slice(prefix.length)),
+			);
 			const aliases = command.alias
 				? ` (${toArray(command.alias).join(", ")})`
 				: "";
@@ -233,7 +277,7 @@ export class HelpRenderer {
 		}
 
 		return {
-			title: "Commands",
+			title,
 			body,
 		};
 	}
