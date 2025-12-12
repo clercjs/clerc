@@ -1,6 +1,8 @@
+export type * as Parser from "@clerc/parser";
 export {
 	Choices,
 	DOUBLE_DASH,
+	InvalidSchemaError,
 	KNOWN_FLAG,
 	PARAMETER,
 	UNKNOWN_FLAG,
