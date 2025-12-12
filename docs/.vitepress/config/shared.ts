@@ -86,7 +86,7 @@ export const sharedConfig = defineConfig({
 					compilerOptions: {
 						paths: Object.fromEntries(
 							Object.entries(tsconfigBase.compilerOptions.paths).map(
-								([key, paths]) => [key, paths.map(p=>p.join("..", source))],
+								([key, paths]) => [key, paths.map((p) => p.join("..", source))],
 							),
 						),
 					},
