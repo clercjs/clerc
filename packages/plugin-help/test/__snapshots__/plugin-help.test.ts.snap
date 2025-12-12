@@ -279,3 +279,11 @@ exports[`plugin-help > should use [] as placeholder when root command exists 1`]
   ],
 ]
 `;
+
+exports[`plugin-help > should work with friendly-error 1`] = `
+[
+  [
+    "No such command: "not-exist".",
+  ],
+]
+`;

@@ -1,5 +1,5 @@
 import type { Plugin } from "@clerc/core";
-import { definePlugin, resolveCommand } from "@clerc/core";
+import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
 import { isTruthy } from "@clerc/utils";
 
 import { defaultFormatters } from "./formatters";
@@ -155,9 +155,7 @@ export const helpPlugin = ({
 							[command] = resolveCommand(cli._commands, commandName);
 
 							if (!command) {
-								console.error(`Command "${commandName.join(" ")}" not found.`);
-
-								return;
+								throw new NoSuchCommandError(commandName.join(" "));
 							}
 						}
 
@@ -183,16 +181,22 @@ export const helpPlugin = ({
 			}
 
 			cli.interceptor({
-				enforce: "pre",
+				enforce: "post",
 				handler: async (ctx, next) => {
 					if (ctx.flags.help) {
+						const command = ctx.command;
+						// If no command resolved, but parameters are present, just let the next interceptor handle it
+						if (!command && ctx.rawParsed.parameters.length > 0) {
+							await next();
+						}
+
 						const renderer = new HelpRenderer(
 							mergedFormatters,
 							cli,
 							cli._globalFlags,
-							ctx.command,
-							ctx.command ? ctx.command.help?.notes : effectiveNotes,
-							ctx.command ? ctx.command.help?.examples : effectiveExamples,
+							command,
+							command ? command.help?.notes : effectiveNotes,
+							command ? command.help?.examples : effectiveExamples,
 							groups,
 						);
 						printHelp(renderer.render());

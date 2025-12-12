@@ -53,7 +53,8 @@
 	"devDependencies": {
 		"@clerc/core": "workspace:*",
 		"@clerc/parser": "workspace:*",
-		"@clerc/utils": "workspace:*"
+		"@clerc/utils": "workspace:*",
+		"kons": "^0.7.1"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

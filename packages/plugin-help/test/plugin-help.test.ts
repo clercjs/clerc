@@ -1,10 +1,24 @@
 import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { NoSuchCommandError, friendlyErrorPlugin } from "clerc";
+import * as kons from "kons";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mockConsole } from "vitest-console";
 
 import { helpPlugin } from "../src";
 
+vi.mock("kons", () => ({
+	error: vi.fn(),
+}));
+
 describe("plugin-help", () => {
+	vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
+	const spy = vi.spyOn(kons, "error").mockImplementation(() => {});
+	vi.mocked(kons.error).mockImplementation(() => {});
+
+	afterEach(() => {
+		spy.mockClear();
+	});
+
 	const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
 
 	afterEach(clearConsole);
@@ -181,5 +195,26 @@ describe("plugin-help", () => {
 
 			expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 		});
+	});
+
+	it("should throw error when command not found", async () => {
+		await expect(async () => {
+			await TestBaseCli().use(helpPlugin()).parse(["not-exist", "--help"]);
+		}).rejects.toThrow(NoSuchCommandError);
+
+		await expect(async () => {
+			await TestBaseCli().use(helpPlugin()).parse(["help", "not-exist"]);
+		}).rejects.toThrow(NoSuchCommandError);
+	});
+
+	it("should work with friendly-error", async () => {
+		expect(async () => {
+			await TestBaseCli()
+				.use(helpPlugin())
+				.use(friendlyErrorPlugin())
+				.parse(["not-exist", "--help"]);
+
+			expect(spy.mock.calls).toMatchSnapshot();
+		}).not.toThrow();
 	});
 });

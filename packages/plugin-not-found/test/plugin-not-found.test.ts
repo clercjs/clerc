@@ -1,12 +1,10 @@
 import { TestBaseCli } from "@clerc/test-utils";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { notFoundPlugin } from "../src";
 
 describe("plugin-not-found", () => {
-	beforeAll(() => {
-		vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
-	});
+	vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
 
 	it("should show commands", async () => {
 		await expect(async () => {

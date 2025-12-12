@@ -242,6 +242,9 @@ importers:
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+      kons:
+        specifier: ^0.7.1
+        version: 0.7.1
 
   packages/plugin-not-found:
     dependencies:
