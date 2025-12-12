@@ -77,6 +77,7 @@ const sidebar = {
 				},
 				{
 					text: "API 参考",
+					link: `/api/${pkg}/`,
 					items: getTypedocSidebar(pkg),
 					base: "/zh/reference",
 				},
