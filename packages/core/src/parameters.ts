@@ -3,6 +3,7 @@ import type { MaybeArray } from "@clerc/utils";
 import { camelCase } from "@clerc/utils";
 
 import { InvalidParametersError } from "./errors";
+import type { Parameter } from "./types/parameters";
 
 export function getParametersToResolve(argv: string[]): string[] {
 	const parameters: string[] = [];
@@ -24,23 +25,25 @@ const isParameterDefinitionBracketsValid = (definition: string): boolean =>
 	(definition.startsWith("[") && definition.endsWith("]"));
 
 function _parseParameters(
-	definitions: readonly string[],
+	definitions: readonly Parameter[],
 	parameters: string[],
 ): Record<string, any> {
 	const result: Record<string, MaybeArray<string>> = {};
 	let hasOptional = false;
 
 	for (const [i, definition] of definitions.entries()) {
-		const match = definition.match(PARAMETER_REGEX);
-		if (!match || !isParameterDefinitionBracketsValid(definition)) {
+		const definitionKey =
+			typeof definition === "string" ? definition : definition.key;
+		const match = definitionKey.match(PARAMETER_REGEX);
+		if (!match || !isParameterDefinitionBracketsValid(definitionKey)) {
 			throw new InvalidParametersError(
-				`Invalid parameter definition: ${definition}`,
+				`Invalid parameter definition: ${definitionKey}`,
 			);
 		}
 
 		const name = camelCase(match[2]);
 		const isVariadic = !!match[3];
-		const isRequired = definition.startsWith("<");
+		const isRequired = definitionKey.startsWith("<");
 
 		if (name in result) {
 			throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
@@ -70,6 +73,16 @@ function _parseParameters(
 			);
 		}
 
+		if (typeof definition !== "string" && definition.constraint) {
+			if (isVariadic) {
+				for (const v of value as string[]) {
+					definition.constraint(v);
+				}
+			} else if (value !== undefined) {
+				definition.constraint(value as string);
+			}
+		}
+
 		result[name] = value;
 	}
 
@@ -77,7 +90,7 @@ function _parseParameters(
 }
 
 export function parseParameters(
-	definitions: readonly string[],
+	definitions: readonly Parameter[],
 	parameters: string[],
 	doubleDashParameters: string[],
 ): Record<string, any> {

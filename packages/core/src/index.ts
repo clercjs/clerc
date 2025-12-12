@@ -1,7 +1,6 @@
 export type * as Parser from "@clerc/parser";
 export {
 	DOUBLE_DASH,
-	Enum,
 	InvalidSchemaError,
 	KNOWN_FLAG,
 	PARAMETER,
@@ -10,7 +9,9 @@ export {
 export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";
 export { resolveCommand } from "./commands";
+export * as Constraints from "./constraint";
 export * from "./errors";
+export * as Types from "./flag-types";
 export * from "./helpers";
 export { createStopAtFirstParameter } from "./ignore";
 export { definePlugin } from "./plugin";

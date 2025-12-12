@@ -3,11 +3,12 @@ import type {
 	Command,
 	CommandHandler,
 	CommandWithHandler,
+	Parameter,
 } from "./types";
 
 export const defineCommand = <
 	Name extends string,
-	const Parameters extends readonly string[] = readonly [],
+	const Parameters extends readonly Parameter[] = readonly [],
 	Flags extends ClercFlagsDefinition = {},
 >(
 	command: Command<Name, Parameters, Flags>,

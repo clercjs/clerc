@@ -3,11 +3,12 @@ import type { DeepPrettify, MaybeArray, PartialRequired } from "@clerc/utils";
 
 import type { BaseContext } from "./context";
 import type { ClercFlagsDefinition } from "./flag";
+import type { Parameter } from "./parameters";
 
 export declare interface CommandCustomOptions {}
 
 export interface CommandOptions<
-	Parameters extends readonly string[] = readonly string[],
+	Parameters extends readonly Parameter[] = readonly Parameter[],
 	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > extends CommandCustomOptions {
 	alias?: MaybeArray<string>;
@@ -22,7 +23,7 @@ export interface CommandOptions<
 
 export interface Command<
 	Name extends string = string,
-	Parameters extends readonly string[] = readonly string[],
+	Parameters extends readonly Parameter[] = readonly Parameter[],
 	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > extends CommandOptions<Parameters, Flags> {
 	name: Name;
@@ -31,7 +32,7 @@ export interface Command<
 
 export type CommandWithHandler<
 	Name extends string = string,
-	Parameters extends readonly string[] = readonly string[],
+	Parameters extends readonly Parameter[] = readonly Parameter[],
 	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > = Command<Name, Parameters, Flags> & {
 	handler?: CommandHandler<Command<Name, Parameters, Flags>>;

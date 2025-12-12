@@ -28,6 +28,7 @@ import type {
 	ContextStore,
 	Interceptor,
 	MakeEmitterEvents,
+	Parameter,
 	Plugin,
 } from "./types";
 
@@ -194,7 +195,7 @@ export class Clerc<
 
 	public command<
 		Name extends string,
-		const Parameters extends readonly string[] = readonly [],
+		const Parameters extends readonly Parameter[] = readonly [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
 		command: CommandWithHandler<Name, Parameters, Flags>,
@@ -204,7 +205,7 @@ export class Clerc<
 	>;
 	public command<
 		Name extends string,
-		const Parameters extends readonly string[] = readonly [],
+		const Parameters extends readonly Parameter[] = readonly [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
 		name: Name extends keyof Commands
