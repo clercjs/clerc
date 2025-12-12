@@ -74,6 +74,15 @@ if (import.meta.main) {
 			formatWithPrettier: true,
 			flattenOutputFiles: true,
 
+			indexFormat: "table",
+			parametersFormat: "table",
+			interfacePropertiesFormat: "table",
+			classPropertiesFormat: "table",
+			propertyMembersFormat: "table",
+			typeDeclarationFormat: "table",
+			typeAliasPropertiesFormat: "table",
+			enumMembersFormat: "table",
+
 			// @ts-expect-error VitePress config
 			docsRoot: "./reference",
 		};
