@@ -20,7 +20,7 @@ export const PACKAGES = Object.fromEntries(
 
 			return [name, pkgJson.name as string] as const;
 		})
-		.sort(([a], [b]) => a.localeCompare(b)),
+		.toSorted(([a], [b]) => a.localeCompare(b)),
 );
 const tsconfig = "../tsconfig.json";
 
