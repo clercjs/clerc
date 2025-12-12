@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { ObjectInputType } from "../src";
-import { Choices, parse } from "../src";
+import { Enum, parse } from "../src";
 
 describe("parser types", () => {
 	it("should inferflags", () => {
@@ -86,12 +86,12 @@ describe("parser types", () => {
 		}>();
 	});
 
-	it("should infer custom choices", () => {
+	it("should infer custom enum", () => {
 		const result = parse([], {
 			flags: {
-				choiceFlag: { type: Choices("red", "green", "blue") },
+				choiceFlag: { type: Enum("red", "green", "blue") },
 				choiceFlagWithDefault: {
-					type: Choices("small", "medium", "large"),
+					type: Enum("small", "medium", "large"),
 					default: "medium" as const,
 				},
 			},

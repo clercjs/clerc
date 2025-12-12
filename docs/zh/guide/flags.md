@@ -408,16 +408,16 @@ const cli = Cli()
 
 Clerc 提供了一些内置的高级选项类型，方便处理常见的需求：
 
-- `Choices`: 限制选项值为预定义的集合。
+- `Enum`: 限制选项值为预定义的集合。
 
 ```ts
-import { Choices } from "clerc";
+import { Enum } from "clerc";
 
 Cli()
 	.command("serve", "启动服务器", {
 		flags: {
 			mode: {
-				type: Choices("development", "production", "test"),
+				type: Enum("development", "production", "test"),
 				default: "development" as const,
 				description: "设置应用程序模式",
 			},

@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { Choices } from "../src/flag-types";
+import { Enum } from "../src/flag-types";
 
 describe("flag-types", () => {
-	describe("Choices", () => {
-		it("should create a Choices type function", () => {
-			const format = Choices("json", "yaml", "xml");
+	describe("Enum", () => {
+		it("should create a Enum type function", () => {
+			const format = Enum("json", "yaml", "xml");
 
 			expect(typeof format).toBe("function");
 			expect(format.display).toBe("json | yaml | xml");
 		});
 
-		it("should validate valid choices", () => {
-			const format = Choices("json", "yaml", "xml");
+		it("should validate valid enum", () => {
+			const format = Enum("json", "yaml", "xml");
 
 			expect(format("json")).toBe("json");
 			expect(format("yaml")).toBe("yaml");
 			expect(format("xml")).toBe("xml");
 		});
 
-		it("should throw an error for invalid choices", () => {
-			const format = Choices("json", "yaml", "xml");
+		it("should throw an error for invalid enum", () => {
+			const format = Enum("json", "yaml", "xml");
 
 			expect(() => format("invalid")).toThrow(
 				"Invalid value: invalid. Must be one of: json, yaml, xml",
@@ -28,7 +28,7 @@ describe("flag-types", () => {
 		});
 
 		it("should handle single choice", () => {
-			const format = Choices("only");
+			const format = Enum("only");
 
 			expect(format.display).toBe("only");
 			expect(format("only")).toBe("only");

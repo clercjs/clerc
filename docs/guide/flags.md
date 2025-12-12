@@ -403,16 +403,16 @@ const cli = Cli()
 
 Clerc provides some built-in advanced flag types to facilitate common needs:
 
-- `Choices`: Restrict flag values to a predefined set.
+- `Enum`: Restrict flag values to a predefined set.
 
 ```ts
-import { Choices } from "clerc";
+import { Enum } from "clerc";
 
 Cli()
 	.command("serve", "Start the server", {
 		flags: {
 			mode: {
-				type: Choices("development", "production", "test"),
+				type: Enum("development", "production", "test"),
 				default: "development" as const,
 				description: "Set the application mode",
 			},

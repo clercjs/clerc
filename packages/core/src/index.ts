@@ -1,7 +1,7 @@
 export type * as Parser from "@clerc/parser";
 export {
-	Choices,
 	DOUBLE_DASH,
+	Enum,
 	InvalidSchemaError,
 	KNOWN_FLAG,
 	PARAMETER,
