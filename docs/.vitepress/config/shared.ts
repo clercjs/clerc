@@ -13,6 +13,26 @@ import {
 import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
 import { MarkdownTransform, clercImports } from "../plugins/markdown-transform";
 
+const flattenItems = (
+	items: DefaultTheme.SidebarItem[],
+): DefaultTheme.SidebarItem[] =>
+	items
+		.flatMap((item) => {
+			if (item.items && !item.link) {
+				return flattenItems(item.items);
+			}
+
+			if (item.items) {
+				return {
+					...item,
+					items: flattenItems(item.items),
+				};
+			}
+
+			return item;
+		})
+		.toSorted((a, b) => a.text!.localeCompare(b.text!));
+
 export function getTypedocSidebar(pkg: string) {
 	const filepath = path.resolve(
 		import.meta.dirname,
@@ -27,9 +47,7 @@ export function getTypedocSidebar(pkg: string) {
 			readFileSync(filepath, "utf-8"),
 		) as DefaultTheme.SidebarItem[];
 
-		return items
-			.flatMap((i) => i.items!)
-			.toSorted((a, b) => a.text!.localeCompare(b.text!));
+		return flattenItems(items);
 	} catch (error) {
 		console.error(`Failed to load typedoc sidebar for ${pkg}:`, error);
 
