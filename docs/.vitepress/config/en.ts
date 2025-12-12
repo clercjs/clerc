@@ -72,6 +72,10 @@ const sidebar = {
 			`/reference/api/${pkg}/`,
 			[
 				{
+					text: "Go back to guide",
+					link: "/guide/getting-started",
+				},
+				{
 					text: "API Reference",
 					items: getTypedocSidebar(pkg),
 					base: "/reference",

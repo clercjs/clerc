@@ -72,6 +72,10 @@ const sidebar = {
 			`/zh/reference/api/${pkg}/`,
 			[
 				{
+					text: "返回指南",
+					link: "/zh/guide/getting-started",
+				},
+				{
 					text: "API 参考",
 					items: getTypedocSidebar(pkg),
 					base: "/zh/reference",
