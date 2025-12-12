@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Getting Started
-      link: /getting-started
+      link: /guide/getting-started
     - theme: alt
       text: View on GitHub
       link: https://github.com/clercjs/clerc

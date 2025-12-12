@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /zh/getting-started
+      link: /zh/guide/getting-started
     - theme: alt
       text: 在 GitHub 上查看
       link: https://github.com/clercjs/clerc

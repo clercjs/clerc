@@ -13,11 +13,11 @@ export const zhConfig = defineConfig({
 	lang: "zh-CN",
 	description: "全功能 CLI 库",
 	themeConfig: {
-		siteTitle: "Clerc 官方中文文档",
+		siteTitle: "Clerc 文档",
 		nav: [
 			{
 				text: "指南",
-				link: "/zh/getting-started",
+				link: "/zh/guide/getting-started",
 			},
 			{
 				text: "官方插件列表",
@@ -34,39 +34,39 @@ export const zhConfig = defineConfig({
 				items: [
 					{
 						text: "快速开始",
-						link: "/zh/getting-started",
+						link: "/zh/guide/getting-started",
 					},
 					{
 						text: "命令",
-						link: "/zh/commands",
+						link: "/zh/guide/commands",
 					},
 					{
 						text: "上下文",
-						link: "/zh/context",
+						link: "/zh/guide/context",
 					},
 					{
 						text: "选项",
-						link: "/zh/flags",
+						link: "/zh/guide/flags",
 					},
 					{
 						text: "全局选项",
-						link: "/zh/global-flags",
+						link: "/zh/guide/global-flags",
 					},
 					{
 						text: "拦截器",
-						link: "/zh/interceptors",
+						link: "/zh/guide/interceptors",
 					},
 					{
 						text: "插件",
-						link: "/zh/plugins",
+						link: "/zh/guide/plugins",
 					},
 					{
 						text: "错误处理",
-						link: "/zh/error-handling",
+						link: "/zh/guide/error-handling",
 					},
 					{
 						text: "进阶用法",
-						link: "/zh/advanced",
+						link: "/zh/guide/advanced",
 					},
 				],
 			},

@@ -13,11 +13,11 @@ export const enConfig = defineConfig({
 	lang: "en-US",
 	description: "The The full-featured Command-Line Interface library",
 	themeConfig: {
-		siteTitle: "Clerc Official Docs",
+		siteTitle: "Clerc Docs",
 		nav: [
 			{
 				text: "Guide",
-				link: "/getting-started",
+				link: "/guide/getting-started",
 			},
 			{
 				text: "Official Plugins",
@@ -34,39 +34,39 @@ export const enConfig = defineConfig({
 				items: [
 					{
 						text: "Getting Started",
-						link: "/getting-started",
+						link: "/guide/getting-started",
 					},
 					{
 						text: "Commands",
-						link: "/commands",
+						link: "/guide/commands",
 					},
 					{
 						text: "Context",
-						link: "/context",
+						link: "/guide/context",
 					},
 					{
 						text: "Flags",
-						link: "/flags",
+						link: "/guide/flags",
 					},
 					{
 						text: "Global Flags",
-						link: "/global-flags",
+						link: "/guide/global-flags",
 					},
 					{
 						text: "Interceptors",
-						link: "/interceptors",
+						link: "/guide/interceptors",
 					},
 					{
 						text: "Plugins",
-						link: "/plugins",
+						link: "/guide/plugins",
 					},
 					{
 						text: "Error Handling",
-						link: "/error-handling",
+						link: "/guide/error-handling",
 					},
 					{
 						text: "Advanced Usage",
-						link: "/advanced",
+						link: "/guide/advanced",
 					},
 				],
 			},
