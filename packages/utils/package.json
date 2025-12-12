@@ -1,6 +1,6 @@
 {
 	"name": "@clerc/utils",
-	"version": "1.0.0-beta.6",
+	"version": "1.0.0-beta.7",
 	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
 	"type": "module",
 	"description": "Clerc utils",
