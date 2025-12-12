@@ -84,7 +84,11 @@ export const sharedConfig = defineConfig({
 			transformerTwoslash({
 				twoslashOptions: {
 					compilerOptions: {
-						paths: Object.fromEntries(Object.entries(tsconfigBase.compilerOptions.paths).map(([key,source])=>[key,path.join('..',source)])),
+						paths: Object.fromEntries(
+							Object.entries(tsconfigBase.compilerOptions.paths).map(
+								([key, source]) => [key, path.join("..", source)],
+							),
+						),
 					},
 					handbookOptions: {
 						noErrors: true,
