@@ -28,6 +28,10 @@ const guideSidebar = [
 				link: "/zh/guide/context",
 			},
 			{
+				text: "参数",
+				link: "/zh/guide/parameters"
+			}
+			{
 				text: "选项",
 				link: "/zh/guide/flags",
 			},
