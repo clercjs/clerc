@@ -5,6 +5,7 @@ export {
 	PARAMETER,
 	UNKNOWN_FLAG,
 } from "@clerc/parser";
+export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";
 export { resolveCommand } from "./commands";
 export * from "./errors";

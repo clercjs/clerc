@@ -30,14 +30,14 @@ import type {
 	Plugin,
 } from "./types";
 
-interface CreateOptions {
+export interface CreateOptions {
 	name?: string;
 	scriptName?: string;
 	description?: string;
 	version?: string;
 }
 
-interface ParseOptions<Run extends boolean = true> {
+export interface ParseOptions<Run extends boolean = true> {
 	argv?: string[];
 	run?: Run;
 }
