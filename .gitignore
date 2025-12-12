@@ -10,5 +10,8 @@ logs
 node_modules
 temp
 *.tsbuildinfo
+
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/reference/api
+docs/zh/reference/api

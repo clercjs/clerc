@@ -2,12 +2,85 @@ import { join } from "node:path";
 
 import { defineConfig } from "vitepress";
 
+import { PACKAGES } from "../scripts/generate-reference";
 import { getNavigation } from "../utils/navigation";
+import { getTypedocSidebar } from "./shared";
 
 const pluginNavigation = await getNavigation(
 	join(import.meta.dirname, "..", "..", "zh", "official-plugins"),
 	"/zh/official-plugins",
 );
+
+const guideSidebar = [
+	{
+		text: "指南",
+		items: [
+			{
+				text: "快速开始",
+				link: "/zh/guide/getting-started",
+			},
+			{
+				text: "命令",
+				link: "/zh/guide/commands",
+			},
+			{
+				text: "上下文",
+				link: "/zh/guide/context",
+			},
+			{
+				text: "选项",
+				link: "/zh/guide/flags",
+			},
+			{
+				text: "全局选项",
+				link: "/zh/guide/global-flags",
+			},
+			{
+				text: "拦截器",
+				link: "/zh/guide/interceptors",
+			},
+			{
+				text: "插件",
+				link: "/zh/guide/plugins",
+			},
+			{
+				text: "错误处理",
+				link: "/zh/guide/error-handling",
+			},
+			{
+				text: "进阶用法",
+				link: "/zh/guide/advanced",
+			},
+		],
+	},
+	{
+		text: "官方插件列表",
+		items: pluginNavigation,
+	},
+	{
+		text: "API 参考",
+		items: PACKAGES.map((pkg) => ({
+			text: pkg,
+			link: `/zh/reference/api/${pkg}/`,
+		})),
+	},
+];
+
+const sidebar = {
+	...Object.fromEntries(
+		PACKAGES.map((pkg) => [
+			`/zh/reference/api/${pkg}/`,
+			[
+				{
+					text: "API 参考",
+					items: getTypedocSidebar(pkg),
+					base: "/zh/reference",
+				},
+			],
+		]),
+	),
+	"/zh/": guideSidebar,
+};
 
 export const zhConfig = defineConfig({
 	lang: "zh-CN",
@@ -28,53 +101,7 @@ export const zhConfig = defineConfig({
 				link: "/zh/members",
 			},
 		],
-		sidebar: [
-			{
-				text: "指南",
-				items: [
-					{
-						text: "快速开始",
-						link: "/zh/guide/getting-started",
-					},
-					{
-						text: "命令",
-						link: "/zh/guide/commands",
-					},
-					{
-						text: "上下文",
-						link: "/zh/guide/context",
-					},
-					{
-						text: "选项",
-						link: "/zh/guide/flags",
-					},
-					{
-						text: "全局选项",
-						link: "/zh/guide/global-flags",
-					},
-					{
-						text: "拦截器",
-						link: "/zh/guide/interceptors",
-					},
-					{
-						text: "插件",
-						link: "/zh/guide/plugins",
-					},
-					{
-						text: "错误处理",
-						link: "/zh/guide/error-handling",
-					},
-					{
-						text: "进阶用法",
-						link: "/zh/guide/advanced",
-					},
-				],
-			},
-			{
-				text: "官方插件列表",
-				items: pluginNavigation,
-			},
-		],
+		sidebar,
 		editLink: {
 			text: "给本页内容提出建议",
 			pattern: "https://github.com/clercjs/clerc/tree/main/docs/:path",

@@ -1,5 +1,9 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+
 import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
 import UnoCSS from "unocss/vite";
+import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 import {
 	groupIconMdPlugin,
@@ -8,6 +12,30 @@ import {
 
 import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
 import { MarkdownTransform, clercImports } from "../plugins/markdown-transform";
+
+export function getTypedocSidebar(pkg: string) {
+	const filepath = path.resolve(
+		import.meta.dirname,
+		`../../reference/api/${pkg}/typedoc-sidebar.json`,
+	);
+	if (!existsSync(filepath)) {
+		return [];
+	}
+
+	try {
+		const items = JSON.parse(
+			readFileSync(filepath, "utf-8"),
+		) as DefaultTheme.SidebarItem[];
+
+		return items
+			.flatMap((i) => i.items!)
+			.toSorted((a, b) => a.text!.localeCompare(b.text!));
+	} catch (error) {
+		console.error(`Failed to load typedoc sidebar for ${pkg}:`, error);
+
+		return [];
+	}
+}
 
 export const sharedConfig = defineConfig({
 	title: "Clerc",

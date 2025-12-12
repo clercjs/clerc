@@ -3,7 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "vitepress build",
+		"build": "pnpm generate && vitepress build",
 		"dev": "vitepress dev",
 		"generate": "node .vitepress/scripts/generate-reference.ts",
 		"preview": "vitepress preview",

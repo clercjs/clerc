@@ -9,6 +9,7 @@
 		"build": "tsdown",
 		"docs:build": "pnpm -C docs build",
 		"docs:dev": "pnpm -C docs dev",
+		"docs:generate": "pnpm -C docs generate",
 		"docs:preview": "pnpm -C docs preview",
 		"lint": "eslint . && prettier . --check",
 		"lint:fix": "eslint . --fix && prettier . --write",

@@ -2,12 +2,85 @@ import { join } from "node:path";
 
 import { defineConfig } from "vitepress";
 
+import { PACKAGES } from "../scripts/generate-reference";
 import { getNavigation } from "../utils/navigation";
+import { getTypedocSidebar } from "./shared";
 
 const pluginNavigation = await getNavigation(
 	join(import.meta.dirname, "..", "..", "official-plugins"),
 	"/official-plugins",
 );
+
+const guideSidebar = [
+	{
+		text: "Guide",
+		items: [
+			{
+				text: "Getting Started",
+				link: "/guide/getting-started",
+			},
+			{
+				text: "Commands",
+				link: "/guide/commands",
+			},
+			{
+				text: "Context",
+				link: "/guide/context",
+			},
+			{
+				text: "Flags",
+				link: "/guide/flags",
+			},
+			{
+				text: "Global Flags",
+				link: "/guide/global-flags",
+			},
+			{
+				text: "Interceptors",
+				link: "/guide/interceptors",
+			},
+			{
+				text: "Plugins",
+				link: "/guide/plugins",
+			},
+			{
+				text: "Error Handling",
+				link: "/guide/error-handling",
+			},
+			{
+				text: "Advanced Usage",
+				link: "/guide/advanced",
+			},
+		],
+	},
+	{
+		text: "Official Plugins",
+		items: pluginNavigation,
+	},
+	{
+		text: "API Reference",
+		items: PACKAGES.map((pkg) => ({
+			text: pkg,
+			link: `/reference/api/${pkg}/`,
+		})),
+	},
+];
+
+const sidebar = {
+	...Object.fromEntries(
+		PACKAGES.map((pkg) => [
+			`/reference/api/${pkg}/`,
+			[
+				{
+					text: "API Reference",
+					items: getTypedocSidebar(pkg),
+					base: "/reference",
+				},
+			],
+		]),
+	),
+	"/": guideSidebar,
+};
 
 export const enConfig = defineConfig({
 	lang: "en-US",
@@ -28,53 +101,7 @@ export const enConfig = defineConfig({
 				link: "/members",
 			},
 		],
-		sidebar: [
-			{
-				text: "Guide",
-				items: [
-					{
-						text: "Getting Started",
-						link: "/guide/getting-started",
-					},
-					{
-						text: "Commands",
-						link: "/guide/commands",
-					},
-					{
-						text: "Context",
-						link: "/guide/context",
-					},
-					{
-						text: "Flags",
-						link: "/guide/flags",
-					},
-					{
-						text: "Global Flags",
-						link: "/guide/global-flags",
-					},
-					{
-						text: "Interceptors",
-						link: "/guide/interceptors",
-					},
-					{
-						text: "Plugins",
-						link: "/guide/plugins",
-					},
-					{
-						text: "Error Handling",
-						link: "/guide/error-handling",
-					},
-					{
-						text: "Advanced Usage",
-						link: "/guide/advanced",
-					},
-				],
-			},
-			{
-				text: "Official Plugins",
-				items: pluginNavigation,
-			},
-		],
+		sidebar,
 		editLink: {
 			text: "Suggest to this page",
 			pattern: "https://github.com/clercjs/clerc/tree/main/docs/:path",

@@ -1,58 +1,80 @@
-import { cp, rm } from "node:fs/promises";
+import { existsSync, readdirSync } from "node:fs";
+import { cp, rename, rm } from "node:fs/promises";
 
 import type { TypeDocOptions } from "typedoc";
 import { Application } from "typedoc";
 
-const LANGUAGES = ["zh-CN"];
+const LANGUAGES = ["zh"];
+const IGNORED_PACKAGES = ["test-utils"];
+export const PACKAGES = readdirSync("../packages", { withFileTypes: true })
+	.filter((dirent) => dirent.isDirectory())
+	.map((dirent) => dirent.name)
+	.filter((name) => !IGNORED_PACKAGES.includes(name));
 const tsconfig = "../tsconfig.json";
 
-console.log("📚 Generating reference...");
+if (import.meta.main) {
+	console.log("📚 Generating reference...");
 
-// Generate API documentation
-await runTypedoc(tsconfig);
-console.log("✅ Reference generated successfully!");
-console.log("📚 Beautifying reference structure...");
+	// Clean up previous reference
+	await rm("reference/api", { recursive: true, force: true });
 
-await rm("reference/api/index.md", { force: true });
-await rm("reference/api/_media", { recursive: true, force: true });
+	// Generate API documentation
+	for (const pkg of PACKAGES) {
+		console.log(`📚 Generating reference for ${pkg}...`);
+		await runTypedoc(tsconfig, pkg);
+	}
+	console.log("✅ Reference generated successfully!");
+	console.log("📚 Beautifying reference structure...");
 
-for (const language of LANGUAGES) {
-	await rm(`${language}/reference/api`, { recursive: true, force: true });
-	await cp("reference/api", `${language}/reference/api`, {
-		recursive: true,
-		force: true,
-	});
-}
+	for (const pkg of PACKAGES) {
+		if (existsSync(`reference/api/${pkg}/globals.md`)) {
+			await rm(`reference/api/${pkg}/index.md`, { force: true });
+			await rename(
+				`reference/api/${pkg}/globals.md`,
+				`reference/api/${pkg}/index.md`,
+			);
+		}
+		await rm(`reference/api/${pkg}/_media`, { recursive: true, force: true });
+	}
 
-/**
- * Run TypeDoc with the specified tsconfig
- */
-async function runTypedoc(tsconfig: string): Promise<void> {
-	const options: TypeDocOptions &
-		import("typedoc-plugin-markdown").PluginOptions = {
-		tsconfig,
-		plugin: ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
-		out: "./reference/api",
-		entryPoints: ["../src/index.ts"],
-		excludeInternal: true,
+	for (const language of LANGUAGES) {
+		await rm(`${language}/reference/api`, { recursive: true, force: true });
+		await cp("reference/api", `${language}/reference/api`, {
+			recursive: true,
+			force: true,
+		});
+	}
 
-		hideBreadcrumbs: true,
-		useCodeBlocks: true,
-		formatWithPrettier: true,
-		flattenOutputFiles: true,
+	/**
+	 * Run TypeDoc with the specified tsconfig
+	 */
+	async function runTypedoc(tsconfig: string, pkg: string): Promise<void> {
+		const options: TypeDocOptions &
+			import("typedoc-plugin-markdown").PluginOptions = {
+			tsconfig,
+			plugin: ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+			out: `./reference/api/${pkg}`,
+			entryPoints: [`../packages/${pkg}/src/index.ts`],
+			excludeInternal: true,
 
-		// @ts-expect-error VitePress config
-		docsRoot: "./reference",
-	};
-	const app = await Application.bootstrapWithPlugins(options);
+			hideBreadcrumbs: true,
+			useCodeBlocks: true,
+			formatWithPrettier: true,
+			flattenOutputFiles: true,
 
-	// May be undefined if errors are encountered.
-	const project = await app.convert();
+			// @ts-expect-error VitePress config
+			docsRoot: "./reference",
+		};
+		const app = await Application.bootstrapWithPlugins(options);
 
-	if (project) {
-		// Generate configured outputs
-		await app.generateOutputs(project);
-	} else {
-		throw new Error("Failed to generate TypeDoc output");
+		// May be undefined if errors are encountered.
+		const project = await app.convert();
+
+		if (project) {
+			// Generate configured outputs
+			await app.generateOutputs(project);
+		} else {
+			throw new Error(`Failed to generate TypeDoc output for ${pkg}`);
+		}
 	}
 }
