@@ -1,9 +1,0 @@
-{
-	"extends": "./tsconfig.base.json",
-	"compilerOptions": {
-		"lib": ["ESNext", "DOM"],
-		"module": "ESNext",
-		"types": ["vitepress/client"]
-	},
-	"include": ["docs/.vitepress/**/*.ts", "uno.config.ts"]
-}

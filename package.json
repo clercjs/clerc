@@ -7,9 +7,9 @@
 	"scripts": {
 		"bench": "vitest bench",
 		"build": "tsdown",
-		"docs:build": "vitepress build docs",
-		"docs:dev": "vitepress dev docs",
-		"docs:preview": "vitepress preview docs",
+		"docs:build": "pnpm -C docs build",
+		"docs:dev": "pnpm -C docs dev",
+		"docs:preview": "pnpm -C docs preview",
 		"lint": "eslint . && prettier . --check",
 		"lint:fix": "eslint . --fix && prettier . --write",
 		"prepublishOnly": "nr build",
@@ -20,7 +20,7 @@
 		"test:typecheck": "vitest --typecheck",
 		"test:ui": "vitest --ui",
 		"typecheck": "nr typecheck:isolated && nr typecheck:non-isolated && nr typecheck:docs",
-		"typecheck:docs": "tsgo -p tsconfig.docs.json",
+		"typecheck:docs": "pnpm -C docs typecheck",
 		"typecheck:isolated": "tsgo -p tsconfig.isolated.json",
 		"typecheck:non-isolated": "tsc -p tsconfig.non-isolated.json",
 		"watch": "tsdown --watch"
@@ -28,7 +28,6 @@
 	"devDependencies": {
 		"@antfu/ni": "^28.0.0",
 		"@clerc/test-utils": "workspace:*",
-		"@shikijs/vitepress-twoslash": "^3.19.0",
 		"@so1ve/eslint-config": "^3.19.0",
 		"@so1ve/prettier-config": "^3.19.0",
 		"@types/node": "^24.10.1",
@@ -40,13 +39,9 @@
 		"eslint": "^9.39.1",
 		"prettier": "^3.7.3",
 		"tsdown": "^0.16.8",
-		"typedoc": "^0.28.15",
 		"typescript": "^5.9.3",
-		"unocss": "^66.5.10",
 		"vite": "^7.2.6",
 		"vite-tsconfig-paths": "6.0.0-beta.4",
-		"vitepress": "2.0.0-alpha.15",
-		"vitepress-plugin-group-icons": "^1.6.5",
 		"vitest": "^4.0.15",
 		"vitest-console": "^0.2.1"
 	}
