@@ -67,6 +67,8 @@ describe("parser types", () => {
 				numberWithDefault: { type: Number, default: 42 },
 				arrayStringWithDefault: { type: [String], default: ["a", "b"] },
 				weirdType: { type: String, default: 123 }, // should be string | number
+				objectWithWeirdDefault: { type: Object, default: "not an object" }, // should be ObjectInputType | string
+				counterWithWeirdDefault: { type: [Boolean], default: "not a number" }, // should be number | string
 				any1: Boolean as any,
 				any2: { type: Boolean as any },
 			},
@@ -77,6 +79,8 @@ describe("parser types", () => {
 			numberWithDefault: number;
 			arrayStringWithDefault: string[];
 			weirdType: string | number;
+			objectWithWeirdDefault: ObjectInputType | string;
+			counterWithWeirdDefault: number | string;
 			any1: any;
 			any2: any;
 		}>();

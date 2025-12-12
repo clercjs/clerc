@@ -140,9 +140,9 @@ type _InferFlags<T extends FlagsDefinition> = {
 		: T[K] extends
 					| readonly [BooleanConstructor]
 					| { type: readonly [BooleanConstructor] }
-			? number
+			? number | InferFlagDefault<T[K], never>
 			: T[K] extends ObjectConstructor | { type: ObjectConstructor }
-				? ObjectInputType
+				? ObjectInputType | InferFlagDefault<T[K], never>
 				: T[K] extends
 							| readonly [FlagType<infer U>]
 							| { type: readonly [FlagType<infer U>] }
