@@ -6,6 +6,7 @@ on:
       - "v*"
 
 permissions:
+  id-token: write
   contents: write
 
 jobs:
@@ -24,11 +25,20 @@ jobs:
           node-version: 24.x
           cache: pnpm
 
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Setup
         run: npm i -g @antfu/ni
 
       - name: Install
         run: nci
+
+      - name: Build
+        run: nr build
+
+      - name: Publish
+        run: pnpm publish -r --filter ./packages/*
 
       - run: nlx changelogithub
         env:
