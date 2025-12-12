@@ -4,6 +4,7 @@
 		"allowImportingTsExtensions": true
 	},
 	"include": [
+		"uno.config.ts",
 		"examples",
 		"test",
 		"packages/*/test",

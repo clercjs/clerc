@@ -2,7 +2,8 @@
 	"extends": "./tsconfig.base.json",
 	"references": [
 		{ "path": "./tsconfig.isolated.json" },
-		{ "path": "./tsconfig.non-isolated.json" }
+		{ "path": "./tsconfig.non-isolated.json" },
+		{ "path": "./tsconfig.docs.json" }
 	],
 	"files": []
 }
