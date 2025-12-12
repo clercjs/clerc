@@ -77,7 +77,7 @@ export const zhConfig = defineConfig({
 		],
 		editLink: {
 			text: "给本页内容提出建议",
-			pattern: "https://github.com/clercjs/website/tree/main/docs/:path",
+			pattern: "https://github.com/clercjs/clerc/tree/main/docs/:path",
 		},
 		outline: {
 			label: "本页内容",
@@ -88,7 +88,7 @@ export const zhConfig = defineConfig({
 		},
 		footer: {
 			message: "在 MIT 许可证下发布",
-			copyright: "版权许可 © 2023-现在 ClercJS",
+			copyright: "版权许可 © 2023-现在 Clerc Developers",
 		},
 		search: {
 			provider: "local",

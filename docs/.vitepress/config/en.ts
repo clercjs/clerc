@@ -77,7 +77,7 @@ export const enConfig = defineConfig({
 		],
 		editLink: {
 			text: "Suggest to this page",
-			pattern: "https://github.com/clercjs/website/tree/main/docs/:path",
+			pattern: "https://github.com/clercjs/clerc/tree/main/docs/:path",
 		},
 		outline: {
 			label: "This page",
@@ -88,7 +88,7 @@ export const enConfig = defineConfig({
 		},
 		footer: {
 			message: "Released under the MIT license",
-			copyright: "Copyright © 2023-present ClercJS",
+			copyright: "Copyright © 2023-present Clerc Developers",
 		},
 	},
 });
