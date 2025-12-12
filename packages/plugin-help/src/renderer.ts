@@ -174,6 +174,7 @@ export class HelpRenderer {
 		// Group commands
 		const groupedCommands = new Map<string, string[][]>();
 		const defaultCommands: string[][] = [];
+		let rootCommand: string[] = [];
 
 		for (const command of commands.values()) {
 			if ((command as any).__isAlias || command.help?.show === false) {
@@ -189,7 +190,10 @@ export class HelpRenderer {
 				: "";
 			const item = [`${commandName}${aliases}`, command.description];
 
-			if (group && group !== DEFAULT_GROUP_KEY) {
+			if (command.name === "") {
+				// Root command
+				rootCommand = item;
+			} else if (group && group !== DEFAULT_GROUP_KEY) {
 				const groupItems = groupedCommands.get(group) ?? [];
 				groupItems.push(item);
 				groupedCommands.set(group, groupItems);
@@ -201,9 +205,19 @@ export class HelpRenderer {
 		// Build body with groups
 		const body: string[] = [];
 
-		// Output default group first (without title)
+		const defaultGroup: string[][] = [];
+
+		// Output root command first
+		if (rootCommand.length > 0) {
+			defaultGroup.push(rootCommand);
+		}
+
 		if (defaultCommands.length > 0) {
-			body.push(...splitTable(defaultCommands));
+			defaultGroup.push(...defaultCommands);
+		}
+
+		if (defaultGroup.length > 0) {
+			body.push(...splitTable(defaultGroup));
 		}
 
 		// Output defined groups in order
