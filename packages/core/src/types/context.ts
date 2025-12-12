@@ -13,6 +13,8 @@ type InferFlagsWithGlobal<
 	InferFlags<NonNullable<C["flags"]> & Omit<GF, keyof NonNullable<C["flags"]>>>
 >;
 
+export declare interface ContextStore {}
+
 export interface BaseContext<
 	C extends Command = Command,
 	GF extends ClercFlagsDefinition = {},
@@ -25,4 +27,5 @@ export interface BaseContext<
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
 	missingParameters: boolean;
+	store: ContextStore;
 }

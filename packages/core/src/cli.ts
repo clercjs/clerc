@@ -25,6 +25,7 @@ import type {
 	CommandWithHandler,
 	CommandsMap,
 	CommandsRecord,
+	ContextStore,
 	Interceptor,
 	MakeEmitterEvents,
 	Plugin,
@@ -53,6 +54,7 @@ export class Clerc<
 	});
 
 	#globalFlags = {} as GlobalFlags;
+	#store: ContextStore = {} as ContextStore;
 	#interceptors: Interceptor<Command, GlobalFlags>[] = [];
 	#errorHandlers: ErrorHandler[] = [];
 	#name = "";
@@ -102,6 +104,10 @@ export class Clerc<
 
 	public get _globalFlags(): GlobalFlags {
 		return this.#globalFlags;
+	}
+
+	public get store(): ContextStore {
+		return this.#store;
 	}
 
 	public static create(options?: CreateOptions): Clerc {
@@ -342,6 +348,7 @@ export class Clerc<
 			ignored: parsed.ignored,
 			rawParsed: parsed,
 			missingParameters: !!parametersError,
+			store: { ...this.#store },
 		};
 
 		const emitInterceptor: Interceptor = {
