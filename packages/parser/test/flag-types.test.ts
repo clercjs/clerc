@@ -8,7 +8,7 @@ describe("flag-types", () => {
 			const format = Choices("json", "yaml", "xml");
 
 			expect(typeof format).toBe("function");
-			expect(format.displayName).toBe("json | yaml | xml");
+			expect(format.display).toBe("json | yaml | xml");
 		});
 
 		it("should validate valid choices", () => {

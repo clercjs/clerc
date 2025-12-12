@@ -25,7 +25,7 @@ export function Choices<T extends string>(...values: T[]): FlagTypeFunction<T> {
 		return value;
 	}) as FlagTypeFunction<T>;
 
-	fn.displayName = values.join(" | ");
+	fn.display = values.join(" | ");
 
 	return fn;
 }
