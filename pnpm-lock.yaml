@@ -92,13 +92,13 @@ importers:
       '@clerc/parser':
         specifier: workspace:^
         version: link:../parser
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
       lite-emit:
         specifier: ^3.1.0
         version: 3.1.0
     devDependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
       is-platform:
         specifier: ^1.0.0
         version: 1.0.0
@@ -138,9 +138,6 @@ importers:
 
   packages/plugin-completions:
     dependencies:
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@pnpm/tabtab':
         specifier: ^0.5.4
         version: 0.5.4
@@ -148,6 +145,9 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/plugin-friendly-error:
     dependencies:
@@ -160,9 +160,6 @@ importers:
 
   packages/plugin-help:
     dependencies:
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@types/text-table':
         specifier: ^0.2.5
         version: 0.2.5
@@ -182,12 +179,12 @@ importers:
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
-
-  packages/plugin-not-found:
-    dependencies:
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+
+  packages/plugin-not-found:
+    dependencies:
       didyoumean2:
         specifier: ^7.0.4
         version: 7.0.4
@@ -198,26 +195,27 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/plugin-strict-flags:
-    dependencies:
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/plugin-version:
-    dependencies:
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/test-utils:
     dependencies:
