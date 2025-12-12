@@ -188,17 +188,17 @@ export class Clerc<
 
 	public command<
 		Name extends string,
-		Parameters extends string[] = [],
+		const Parameters extends readonly string[] = readonly [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
-		command: CommandWithHandler<Name, [...Parameters], Flags>,
+		command: CommandWithHandler<Name, Parameters, Flags>,
 	): Clerc<
 		Commands & Record<string, CommandWithHandler<Name, Parameters, Flags>>,
 		GlobalFlags
 	>;
 	public command<
 		Name extends string,
-		Parameters extends string[] = [],
+		const Parameters extends readonly string[] = readonly [],
 		Flags extends ClercFlagsDefinition = {},
 	>(
 		name: Name extends keyof Commands
@@ -206,7 +206,7 @@ export class Clerc<
 				["COMMAND ALREADY EXISTS"]
 			: Name,
 		description: string,
-		options?: CommandOptions<[...Parameters], Flags>,
+		options?: CommandOptions<Parameters, Flags>,
 	): Clerc<
 		Commands & Record<Name, Command<Name, Parameters, Flags>>,
 		GlobalFlags

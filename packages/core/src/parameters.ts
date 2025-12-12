@@ -24,7 +24,7 @@ const isParameterDefinitionBracketsValid = (definition: string): boolean =>
 	(definition.startsWith("[") && definition.endsWith("]"));
 
 function _parseParameters(
-	definitions: string[],
+	definitions: readonly string[],
 	parameters: string[],
 ): Record<string, any> {
 	const result: Record<string, MaybeArray<string>> = {};
@@ -77,7 +77,7 @@ function _parseParameters(
 }
 
 export function parseParameters(
-	definitions: string[],
+	definitions: readonly string[],
 	parameters: string[],
 	doubleDashParameters: string[],
 ): Record<string, any> {

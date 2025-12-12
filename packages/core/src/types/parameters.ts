@@ -10,8 +10,8 @@ type InferParameter<T extends string> = T extends
 			? Record<CamelCase<Name>, string | undefined>
 			: never;
 
-export type InferParameters<T extends string[]> =
+export type InferParameters<T extends readonly string[]> =
 	// line break for readability
-	T extends (infer U extends string)[]
+	T extends readonly (infer U extends string)[]
 		? Prettify<UnionToIntersection<InferParameter<U>>>
 		: never;

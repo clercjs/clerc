@@ -114,4 +114,33 @@ describe("core types", () => {
 			},
 		);
 	});
+
+	it("should accept readonly arrays as parameters", () => {
+		defineCommand(
+			{
+				name: "foo",
+				description: "foo command",
+				parameters: ["<bar>", "[baz]", "[qux...]"] as const,
+			},
+			(ctx) => {
+				expectTypeOf(ctx.parameters).toEqualTypeOf<{
+					bar: string;
+					baz: string | undefined;
+					qux: string[];
+				}>();
+			},
+		);
+
+		Clerc.create()
+			.command("foo", "foo command", {
+				parameters: ["<bar>", "[baz]", "[qux...]"] as const,
+			})
+			.on("foo", (ctx) => {
+				expectTypeOf(ctx.parameters).toEqualTypeOf<{
+					bar: string;
+					baz: string | undefined;
+					qux: string[];
+				}>();
+			});
+	});
 });
