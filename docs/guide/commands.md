@@ -20,6 +20,48 @@ const cli = Cli()
 
 This creates a CLI application named `foo-cli` with a command called `foo`. When the user runs `foo-cli foo`, the CLI will output "It works!".
 
+## Optional Description
+
+The description parameter is optional. You can omit it if you don't need to document the command:
+
+```ts
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("A simple CLI")
+	.version("1.0.0")
+	.command("foo", {
+		// No description, pass options directly
+		flags: {
+			output: {
+				type: String,
+				description: "Output file",
+			},
+		},
+	})
+	.on("foo", (ctx) => {
+		console.log("It works!");
+	})
+	.parse();
+```
+
+Alternatively, you can use the traditional syntax with a description:
+
+```ts
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("A simple CLI")
+	.version("1.0.0")
+	.command("foo", "A foo command", {
+		flags: {
+			output: {
+				type: String,
+				description: "Output file",
+			},
+		},
+	})
+	.parse();
+```
+
 ## Aliases
 
 ### Overview
@@ -139,82 +181,7 @@ const cli = Cli()
 
 ## Parameters
 
-### General
-
-Parameters (also known as _positional arguments_) are names that correspond to argument values. Think of parameters as variable names and argument values as values associated with variables.
-
-You can define parameters in the `parameters` array property to access specific arguments by name. This is useful for writing more readable code, enforcing validation, and generating help documentation.
-
-Parameters can be defined in the following formats:
-
-- **Required parameters** are denoted by angle brackets (e.g., `<parameter name>`).
-- **Optional parameters** are denoted by square brackets (e.g., `[parameter name]`).
-- **Spread parameters** are denoted by the `...` suffix (e.g., `<parameter name...>` or `[parameter name...]`).
-
-Note that required parameters **cannot come after optional parameters**, and spread parameters must be placed last.
-
-Parameters can be accessed using camelCase notation on the `ctx.parameters` property.
-
-Example:
-
-```ts
-// $ node ./foo-cli.mjs a b c d
-
-const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command", {
-		parameters: [
-			"<required parameter>",
-			"[optional parameter]",
-			"[optional spread...]",
-		],
-	})
-	.on("foo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.requiredParameter; // => "a"
-		ctx.parameters.optionalParameter; // => "b"
-		ctx.parameters.optionalSpread; // => ["c", "d"]
-	})
-	.parse();
-```
-
-### End-of-file
-
-The end-of-file (`--`) (also known as _flag terminator_) allows users to pass a portion of arguments. This is useful for arguments that should be parsed separately from other arguments or arguments that look like flags.
-
-An example is [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script):
-
-```sh
-$ npm run <script> -- <script arguments>
-```
-
-The `--` indicates that all arguments after it should be passed to the _script_ rather than _npm_.
-
-You can specify `--` in the `parameters` array to parse flag terminator arguments.
-
-Example:
-
-```ts
-// $ node ./foo-cli.mjs echo -- hello world
-
-const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("echo", "Echo", {
-		parameters: ["<script>", "--", "[arguments...]"],
-	})
-	.on("echo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.script; // => "echo"
-		ctx.parameters.arguments; // => ["hello", "world"]
-	})
-	.parse();
-```
+Please refer to the [Parameters Documentation](./parameters) for detailed information about parameter definition, constraints, and descriptions.
 
 ## Flags
 

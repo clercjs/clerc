@@ -22,6 +22,48 @@ const cli = Cli()
 
 这将创建一个名为 `foo-cli` 的 CLI 应用程序，其中包含一个名为 `foo` 的命令。当用户运行 `foo-cli foo` 时，CLI 将输出 "It works!"。
 
+## 可选描述
+
+描述参数是可选的。如果你不需要记录命令，可以省略它：
+
+```ts
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("一个简单的 CLI")
+	.version("1.0.0")
+	.command("foo", {
+		// 无描述，直接传递选项
+		flags: {
+			output: {
+				type: String,
+				description: "输出文件",
+			},
+		},
+	})
+	.on("foo", (ctx) => {
+		console.log("It works!");
+	})
+	.parse();
+```
+
+或者，你也可以使用带有描述的传统语法：
+
+```ts
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("一个简单的 CLI")
+	.version("1.0.0")
+	.command("foo", "一个 foo 命令", {
+		flags: {
+			output: {
+				type: String,
+				description: "输出文件",
+			},
+		},
+	})
+	.parse();
+```
+
 ## 别名
 
 ### 概述

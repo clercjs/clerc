@@ -180,6 +180,28 @@ const cli = Cli()
 	.parse();
 ```
 
+## Flag Description
+
+The `description` property is optional and can be omitted if you don't need to document the flag:
+
+```ts
+const cli = Cli()
+	.command("build", "Build the project", {
+		flags: {
+			verbose: {
+				type: Boolean,
+				// description is optional
+			},
+
+			output: {
+				type: String,
+				description: "Output directory", // or include it for better documentation
+			},
+		},
+	})
+	.parse();
+```
+
 ## Flag Types Explained
 
 ### String Type

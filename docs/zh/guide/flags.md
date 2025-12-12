@@ -128,7 +128,29 @@ const cli = Cli()
 	.parse();
 ```
 
-## 基本用法
+## 标志描述
+
+`description` 属性是可选的，如果你不需要记录标志，可以省略它：
+
+```ts
+const cli = Cli()
+	.command("build", "构建项目", {
+		flags: {
+			verbose: {
+				type: Boolean,
+				// 描述是可选的
+			},
+
+			output: {
+				type: String,
+				description: "输出目录", // 或包含它以获得更好的文档
+			},
+		},
+	})
+	.parse();
+```
+
+## 标志类型详解
 
 ```ts
 // $ node ./foo-cli.mjs echo --some-boolean --some-string hello --some-number 1 -n 2
