@@ -7,9 +7,9 @@ import type {
 
 export const defineCommand = <
 	Name extends string,
-	Parameters extends readonly string[] = readonly [],
+	const Parameters extends readonly string[] = readonly [],
 	Flags extends ClercFlagsDefinition = {},
 >(
-	command: Command<Name, [...Parameters], Flags>,
+	command: Command<Name, Parameters, Flags>,
 	handler?: NoInfer<CommandHandler<Command<Name, Parameters, Flags>>>,
 ): CommandWithHandler<Name, Parameters, Flags> => ({ ...command, handler });

@@ -131,6 +131,23 @@ describe("core types", () => {
 			},
 		);
 
+		const parameters = ["<bar>", "[baz]", "[qux...]"] as const;
+
+		defineCommand(
+			{
+				name: "foo",
+				description: "foo command",
+				parameters,
+			},
+			(ctx) => {
+				expectTypeOf(ctx.parameters).toEqualTypeOf<{
+					bar: string;
+					baz: string | undefined;
+					qux: string[];
+				}>();
+			},
+		);
+
 		Clerc.create()
 			.command("foo", "foo command", {
 				parameters: ["<bar>", "[baz]", "[qux...]"] as const,
