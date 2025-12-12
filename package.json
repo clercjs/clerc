@@ -10,7 +10,7 @@
 		"lint": "eslint . && prettier . --check",
 		"lint:fix": "eslint . --fix && prettier . --write",
 		"prepublishOnly": "nr build",
-		"release": "bumpp package.json packages/*/package.json --commit --push --tag && nr build",
+		"release": "bumpp package.json packages/*/package.json --commit --push --tag",
 		"test": "vitest",
 		"test:all": "nr test && nr test:typecheck",
 		"test:coverage": "vitest --coverage",

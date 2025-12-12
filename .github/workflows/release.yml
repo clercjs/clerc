@@ -38,7 +38,7 @@ jobs:
         run: nr build
 
       - name: Publish
-        run: pnpm publish -r --filter ./packages/*
+        run: pnpm publish -r --no-git-checks --filter ./packages/*
 
       - run: nlx changelogithub
         env:
