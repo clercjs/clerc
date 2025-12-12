@@ -19,7 +19,8 @@
 		"test:coverage": "vitest --coverage",
 		"test:typecheck": "vitest --typecheck",
 		"test:ui": "vitest --ui",
-		"typecheck": "nr typecheck:isolated && nr typecheck:non-isolated",
+		"typecheck": "nr typecheck:isolated && nr typecheck:non-isolated && nr typecheck:docs",
+		"typecheck:docs": "tsgo -p tsconfig.docs.json",
 		"typecheck:isolated": "tsgo -p tsconfig.isolated.json",
 		"typecheck:non-isolated": "tsc -p tsconfig.non-isolated.json",
 		"watch": "tsdown --watch"
