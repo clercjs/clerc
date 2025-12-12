@@ -1,4 +1,3 @@
-````mdc
 ---
 title: Parameters
 ---
@@ -253,4 +252,3 @@ const cli = Cli()
 	.parse();
 ```
 
-````
