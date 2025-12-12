@@ -11,6 +11,7 @@ import textTable from "text-table";
 import * as yc from "yoctocolors";
 
 import type { Formatters, GroupsOptions } from "./types";
+import { formatCommandName } from "./utils";
 
 const DEFAULT_GROUP_KEY = "default";
 
@@ -182,7 +183,7 @@ export class HelpRenderer {
 			const group = command.help?.group;
 			validateGroup(group, this._commandGroups, "command", command.name);
 
-			const commandName = yc.cyan(command.name);
+			const commandName = yc.cyan(formatCommandName(command.name));
 			const aliases = command.alias
 				? ` (${toArray(command.alias).join(", ")})`
 				: "";

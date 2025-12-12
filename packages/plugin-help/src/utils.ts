@@ -9,3 +9,11 @@ export function formatFlagType(type: FlagType): string {
 
 	return `Array<${innerType.displayName ?? innerType.name}>`;
 }
+
+export function formatCommandName(name: string): string {
+	if (name === "") {
+		return "(root)";
+	}
+
+	return name;
+}
