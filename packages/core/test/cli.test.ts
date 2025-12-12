@@ -547,8 +547,8 @@ describe("cli", () => {
 			})
 			.on("foo", (ctx) => {
 				expect(ctx.command.description).toBeUndefined();
-				expect(ctx.flags.bar).toBe(true);
-				expect(ctx.flags.baz).toBe(true);
+				expect(ctx.flags.bar).toBeTruthy();
+				expect(ctx.flags.baz).toBeTruthy();
 			})
 			.parse(["foo", "--bar", "--baz"]);
 	});

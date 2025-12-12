@@ -11,8 +11,6 @@ import { mockConsole } from "vitest-console";
 
 import { helpPlugin } from "../src";
 
-const { Enum, Range } = Constraints;
-
 vi.mock("kons", () => ({
 	error: vi.fn(),
 }));
@@ -63,7 +61,7 @@ describe("plugin-help", () => {
 					},
 					{
 						key: "[range]",
-						constraint: Range(1, 10),
+						constraint: Constraints.Range(1, 10),
 					},
 				],
 			})
