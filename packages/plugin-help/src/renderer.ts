@@ -118,7 +118,7 @@ export class HelpRenderer {
 	private renderHeader() {
 		const { _name, _version, _description } = this._cli;
 		const command = this._command;
-		const description = command?.description ?? _description;
+		const description = command ? command.description : _description;
 		const formattedCommandName = command?.name
 			? ` ${yc.cyan(command.name)}`
 			: "";
@@ -152,7 +152,7 @@ export class HelpRenderer {
 				usage += ` ${command.name}`;
 			}
 			if (command.parameters) {
-				usage += ` ${command.parameters.join(" ")}`;
+				usage += ` ${command.parameters.map((p) => (typeof p === "string" ? p : p.key)).join(" ")}`;
 			}
 		} else {
 			usage += this._cli._commands.has("") ? " [command]" : " <command>";
@@ -181,10 +181,13 @@ export class HelpRenderer {
 			const key = typeof parameter === "string" ? parameter : parameter.key;
 			const constraint =
 				typeof parameter === "string" ? undefined : parameter.constraint;
+			const description =
+				typeof parameter === "string" ? undefined : parameter.description;
 
 			return [
 				yc.blue(key),
 				constraint?.display ? yc.gray(constraint.display) : undefined,
+				description,
 			].filter(isTruthy);
 		});
 
@@ -256,7 +259,9 @@ export class HelpRenderer {
 			const aliases = command.alias
 				? ` (${toArray(command.alias).join(", ")})`
 				: "";
-			const item = [`${commandName}${aliases}`, command.description];
+			const item = [`${commandName}${aliases}`, command.description].filter(
+				isTruthy,
+			);
 
 			if (command.name === "") {
 				// Root command

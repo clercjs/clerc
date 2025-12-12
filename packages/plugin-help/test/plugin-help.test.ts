@@ -1,5 +1,10 @@
 import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
-import { Constraints, NoSuchCommandError, friendlyErrorPlugin } from "clerc";
+import {
+	Clerc,
+	Constraints,
+	NoSuchCommandError,
+	friendlyErrorPlugin,
+} from "clerc";
 import * as kons from "kons";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mockConsole } from "vitest-console";
@@ -61,6 +66,65 @@ describe("plugin-help", () => {
 						constraint: Range(1, 10),
 					},
 				],
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should show parameter description", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: [
+					{
+						key: "<param>",
+						description: "Description for param",
+					},
+				],
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should support optional description for command", () => {
+		TestBaseCli().use(helpPlugin()).command("test").parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should support optional description for global flag", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.globalFlag("verbose", {
+				type: Boolean,
+				description: "Enable verbose output",
+			})
+			.parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should support no description", () => {
+		Clerc.create()
+			.scriptName("test")
+			.version("1.0.0")
+			.use(helpPlugin())
+			.command("test", {
+				parameters: [
+					{
+						key: "<param>",
+					},
+				],
+				flags: {
+					flag: {
+						type: Boolean,
+					},
+				},
+			})
+			.globalFlag("global", {
+				type: Boolean,
 			})
 			.parse(["test", "--help"]);
 

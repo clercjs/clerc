@@ -27,7 +27,7 @@ export interface Command<
 	Flags extends ClercFlagsDefinition = ClercFlagsDefinition,
 > extends CommandOptions<Parameters, Flags> {
 	name: Name;
-	description: string;
+	description?: string;
 }
 
 export type CommandWithHandler<

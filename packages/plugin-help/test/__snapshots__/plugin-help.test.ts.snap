@@ -314,7 +314,7 @@ exports[`plugin-help > should show parameter constraints 1`] = `
     "[32mtest[39m [36mtest[39m [33m-[39m Test command
 
 [1mUsage[22m
-  [35m$ test test <param> [object Object] [object Object] [flags][39m
+  [35m$ test test <param> <param2> [range] [flags][39m
 
 [1mParameters[22m
   [34m<param>[39m
@@ -323,6 +323,100 @@ exports[`plugin-help > should show parameter constraints 1`] = `
 
 [1mGlobal Flags[22m
   [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m",
+  ],
+]
+`;
+
+exports[`plugin-help > should show parameter description 1`] = `
+[
+  [
+    "[32mtest[39m [36mtest[39m [33m-[39m Test command
+
+[1mUsage[22m
+  [35m$ test test <param> [flags][39m
+
+[1mParameters[22m
+  [34m<param>[39m  Description for param
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m",
+  ],
+]
+`;
+
+exports[`plugin-help > should support no description 1`] = `
+[
+  [
+    "[32mtest[39m [36mtest[39m
+
+[1mUsage[22m
+  [35m$ test test <param> [flags][39m
+
+[1mParameters[22m
+  [34m<param>[39m
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+  [34m--global[39m    [90mBoolean[39m
+
+[1mFlags[22m
+  [34m--flag[39m  [90mBoolean[39m",
+  ],
+]
+`;
+
+exports[`plugin-help > should support optional description for command 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  [35m$ test <command> [flags][39m
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+  [36mtest[39m
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
+  ],
+]
+`;
+
+exports[`plugin-help > should support optional description for global flag 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  [35m$ test <command> [flags][39m
+
+[1mCommands[22m
+  [36mhelp[39m  Show help
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help              [90m[default: false][39m
+  [34m--verbose[39m   [90mBoolean[39m  Enable verbose output
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.
+
+[1mExamples[22m
+  $ test help              [33m-[39m  Show help
+  $ test help <command>    [33m-[39m  Show help for a specific command
+  $ test <command> --help  [33m-[39m  Show help for a specific command",
   ],
 ]
 `;

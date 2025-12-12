@@ -530,4 +530,26 @@ describe("cli", () => {
 				.parse(["bar"]),
 		).resolves.not.toThrow();
 	});
+
+	it("should register command and global flag without description", () => {
+		TestBaseCli()
+			.command("foo", {
+				flags: {
+					bar: {
+						type: Boolean,
+						default: false,
+					},
+				},
+			})
+			.globalFlag("baz", {
+				type: Boolean,
+				default: false,
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.command.description).toBeUndefined();
+				expect(ctx.flags.bar).toBe(true);
+				expect(ctx.flags.baz).toBe(true);
+			})
+			.parse(["foo", "--bar", "--baz"]);
+	});
 });

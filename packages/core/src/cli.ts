@@ -212,6 +212,20 @@ export class Clerc<
 			? // type info
 				["COMMAND ALREADY EXISTS"]
 			: Name,
+		options?: CommandOptions<Parameters, Flags>,
+	): Clerc<
+		Commands & Record<Name, Command<Name, Parameters, Flags>>,
+		GlobalFlags
+	>;
+	public command<
+		Name extends string,
+		const Parameters extends readonly Parameter[] = readonly [],
+		Flags extends ClercFlagsDefinition = {},
+	>(
+		name: Name extends keyof Commands
+			? // type info
+				["COMMAND ALREADY EXISTS"]
+			: Name,
 		description: string,
 		options?: CommandOptions<Parameters, Flags>,
 	): Clerc<
@@ -220,15 +234,16 @@ export class Clerc<
 	>;
 	public command(
 		nameOrCommandObject: any,
-		description?: any,
+		descriptionOrOptions?: any,
 		options?: any,
 	): any {
+		const isDescription = typeof descriptionOrOptions === "string";
 		const command =
 			typeof nameOrCommandObject === "string"
 				? {
 						name: nameOrCommandObject,
-						description,
-						...options,
+						description: isDescription ? descriptionOrOptions : undefined,
+						...(isDescription ? options : descriptionOrOptions),
 					}
 				: nameOrCommandObject;
 
@@ -257,11 +272,25 @@ export class Clerc<
 		name: Name,
 		description: string,
 		options: Flag,
-	): Clerc<Commands, GlobalFlags & Record<Name, Flag>> {
+	): Clerc<Commands, GlobalFlags & Record<Name, Flag>>;
+	public globalFlag<
+		Name extends string,
+		Flag extends ClercGlobalFlagDefinitionValue,
+	>(
+		name: Name,
+		options: Flag,
+	): Clerc<Commands, GlobalFlags & Record<Name, Flag>>;
+	public globalFlag(
+		name: string,
+		descriptionOrOptions: any,
+		options?: any,
+	): any {
+		const isDescription = typeof descriptionOrOptions === "string";
+		// @ts-expect-error
 		this.#globalFlags[name] = {
-			description,
-			...options,
-		} as any;
+			description: isDescription ? descriptionOrOptions : undefined,
+			...(isDescription ? options : descriptionOrOptions),
+		};
 
 		return this as any;
 	}
@@ -284,9 +313,6 @@ export class Clerc<
 	#validate() {
 		if (!this.#scriptName) {
 			throw new MissingRequiredMetadataError("script name");
-		}
-		if (!this.#description) {
-			throw new MissingRequiredMetadataError("description");
 		}
 		if (!this.#version) {
 			throw new MissingRequiredMetadataError("version");

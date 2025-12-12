@@ -28,6 +28,7 @@ export type InferParameters<T extends readonly Parameter[]> =
 
 export interface ParameterDefinition {
 	key: string;
+	description?: string;
 	constraint?: ConstraintFunction;
 }
 export type Parameter = string | ParameterDefinition;
