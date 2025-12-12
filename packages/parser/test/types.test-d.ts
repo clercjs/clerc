@@ -33,6 +33,19 @@ describe("parser types", () => {
 		}>();
 	});
 
+	it("should infer required", () => {
+		const result = parse([], {
+			flags: {
+				requiredString: { type: String, required: true },
+				optionalString: { type: String, required: false },
+			},
+		});
+		expectTypeOf(result.flags).toEqualTypeOf<{
+			requiredString: string;
+			optionalString: string | undefined;
+		}>();
+	});
+
 	it("should have negatable only for boolean flags", () => {
 		parse([], {
 			flags: {

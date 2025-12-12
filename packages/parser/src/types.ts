@@ -47,6 +47,8 @@ export interface BaseFlagOptions<T extends FlagType = FlagType> {
 	alias?: MaybeArray<string>;
 	/** The default value of the flag. */
 	default?: unknown;
+	/** Whether the flag is required. */
+	required?: boolean;
 }
 export type FlagOptions =
 	| (BaseFlagOptions<BooleanConstructor> & {
@@ -150,7 +152,11 @@ type _InferFlags<T extends FlagsDefinition> = {
 								| U
 								| InferFlagDefault<
 										T[K],
-										[U] extends [boolean] ? never : undefined
+										[U] extends [boolean]
+											? never
+											: T[K] extends { required: true }
+												? never
+												: undefined
 								  >
 						: never;
 };
