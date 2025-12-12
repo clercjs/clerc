@@ -217,4 +217,33 @@ describe("plugin-help", () => {
 			expect(spy.mock.calls).toMatchSnapshot();
 		}).not.toThrow();
 	});
+
+	it('should format custom flag type with "display" property', () => {
+		const customType = (val: string) => val;
+		customType.display = "custom-type";
+
+		TestBaseCli()
+			.use(helpPlugin())
+			.globalFlag("custom", "A flag with custom type", {
+				type: customType,
+			})
+			.parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it('should format custom flag default with "display" property', () => {
+		const defaultFn = () => "string";
+		defaultFn.display = "custom-default";
+
+		TestBaseCli()
+			.use(helpPlugin())
+			.globalFlag("custom", "A flag with custom default", {
+				type: String,
+				default: defaultFn,
+			})
+			.parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
 });

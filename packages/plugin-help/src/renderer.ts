@@ -296,7 +296,9 @@ export class HelpRenderer {
 			yc.gray(type),
 			flag.description,
 			flag.default !== undefined &&
-				yc.gray(`[default: ${String(flag.default)}]`),
+				yc.gray(
+					`[default: ${this._formatters.formatFlagDefault(flag.default)}]`,
+				),
 		].filter(isTruthy);
 	}
 

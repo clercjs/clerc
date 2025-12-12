@@ -30,7 +30,7 @@ describe("flag-types", () => {
 		it("should handle single choice", () => {
 			const format = Choices("only");
 
-			expect(format.displayName).toBe("only");
+			expect(format.display).toBe("only");
 			expect(format("only")).toBe("only");
 			expect(() => format("other")).toThrow();
 		});

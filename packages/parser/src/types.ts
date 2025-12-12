@@ -2,7 +2,9 @@ import type { IsAny, MaybeArray, Prettify } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
-export type FlagDefaultValue<T = unknown> = T | (() => T);
+export type FlagDefaultValue<T = unknown> =
+	| T
+	| ((() => T) & { display?: string });
 
 /**
  * Defines how a string input is converted to the target type T.

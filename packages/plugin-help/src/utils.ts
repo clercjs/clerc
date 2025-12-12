@@ -1,4 +1,4 @@
-import type { FlagType } from "@clerc/parser";
+import type { FlagDefaultValue, FlagType } from "@clerc/parser";
 
 export function formatFlagType(type: FlagType): string {
 	if (typeof type === "function") {
@@ -8,6 +8,14 @@ export function formatFlagType(type: FlagType): string {
 	const innerType = type[0] as any;
 
 	return `Array<${innerType.displayName ?? innerType.name}>`;
+}
+
+export function formatFlagDefault<T>(value: FlagDefaultValue<T>): string {
+	if (typeof value === "function" && "display" in value && value.display) {
+		return value.display;
+	}
+
+	return String(value);
 }
 
 export function formatCommandName(name: string): string {
