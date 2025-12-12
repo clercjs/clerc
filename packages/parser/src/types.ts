@@ -2,22 +2,26 @@ import type { IsAny, MaybeArray, Prettify } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
-export type FlagDefaultValue<T = unknown> =
-	| T
-	| ((() => T) & { display?: string });
+export interface FlagDefaultValueFunction<T> {
+	(): T;
+	display?: string;
+}
+
+export type FlagDefaultValue<T = unknown> = T | FlagDefaultValueFunction<T>;
 
 /**
  * Defines how a string input is converted to the target type T.
  *
  * @template T The target type.
  */
-export type FlagTypeFunction<T = unknown> = ((value: string) => T) & {
+export interface FlagTypeFunction<T = unknown> {
+	(value: string): T;
 	/**
 	 * Optional display name for the type, useful in help output.
 	 * If provided, this will be shown instead of the function name.
 	 */
 	display?: string;
-};
+}
 
 /**
  * A callback function to conditionally stop parsing.
