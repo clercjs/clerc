@@ -140,7 +140,7 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "[port]",
-				constraint: Constraints.Range(1024, 65535),
+				constraint: Constraints.Range(1024, 65_535),
 				description: "Port number",
 			},
 		],
@@ -176,7 +176,10 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<repo>",
-				constraint: Constraints.Regex(/^[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+$/, "owner/repo format"),
+				constraint: Constraints.Regex(
+					/^[\w\-.]+\/[\w\-.]+$/,
+					"owner/repo format",
+				),
 				description: "Repository in owner/repo format",
 			},
 		],
@@ -205,7 +208,7 @@ const cli = Cli()
 				constraint: Constraints.Custom(
 					(value) => /\.(jpg|png|gif)$/i.test(value),
 					"image file (.jpg, .png, .gif)",
-					(value) => `Invalid file: ${value}. Must be an image file.`
+					(value) => `Invalid file: ${value}. Must be an image file.`,
 				),
 				description: "Image file to upload",
 			},
@@ -251,4 +254,3 @@ const cli = Cli()
 	})
 	.parse();
 ```
-

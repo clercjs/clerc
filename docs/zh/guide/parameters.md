@@ -4,7 +4,7 @@ title: 参数
 
 # 参数
 
-参数（也称为_位置参数_）是与参数值相对应的名称。将参数想象为变量名，参数值为与变量相关联的值。
+参数（也称为*位置参数*）是与参数值相对应的名称。将参数想象为变量名，参数值为与变量相关联的值。
 
 本指南涵盖参数定义、约束和描述。
 
@@ -140,7 +140,7 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "[port]",
-				constraint: Constraints.Range(1024, 65535),
+				constraint: Constraints.Range(1024, 65_535),
 				description: "Port number",
 			},
 		],
@@ -176,7 +176,10 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<repo>",
-				constraint: Constraints.Regex(/^[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+$/, "owner/repo format"),
+				constraint: Constraints.Regex(
+					/^[\w\-.]+\/[\w\-.]+$/,
+					"owner/repo format",
+				),
 				description: "Repository in owner/repo format",
 			},
 		],
@@ -205,7 +208,7 @@ const cli = Cli()
 				constraint: Constraints.Custom(
 					(value) => /\.(jpg|png|gif)$/i.test(value),
 					"image file (.jpg, .png, .gif)",
-					(value) => `Invalid file: ${value}. Must be an image file.`
+					(value) => `Invalid file: ${value}. Must be an image file.`,
 				),
 				description: "Image file to upload",
 			},
@@ -219,7 +222,7 @@ const cli = Cli()
 
 ## 文件结尾符
 
-文件结尾符（`--`）（也称为_标志终止符_）允许用户传递一部分参数。这对于需要与其他参数分开解析的参数或看起来像标志的参数很有用。
+文件结尾符（`--`）（也称为*标志终止符*）允许用户传递一部分参数。这对于需要与其他参数分开解析的参数或看起来像标志的参数很有用。
 
 一个例子是 [`npm run`](https://docs.npmjs.com/cli/v8/commands/npm-run-script)：
 
@@ -227,7 +230,7 @@ const cli = Cli()
 $ npm run <script> -- <script arguments>
 ```
 
-`--` 表示之后的所有参数应该传递给_脚本_而不是_npm_。
+`--` 表示之后的所有参数应该传递给*脚本*而不是*npm*。
 
 你可以在 `parameters` 数组中指定 `--` 来解析标志终止符参数。
 
