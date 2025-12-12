@@ -46,10 +46,6 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"devDependencies": {
 		"@clerc/utils": "workspace:*",
 		"@types/minimist": "^1.2.5",

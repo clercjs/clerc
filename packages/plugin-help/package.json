@@ -44,12 +44,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"dependencies": {
-		"@clerc/utils": "workspace:*",
 		"@types/text-table": "^0.2.5",
 		"string-width": "^8.1.0",
 		"text-table": "^0.2.0",
@@ -57,7 +52,8 @@
 	},
 	"devDependencies": {
 		"@clerc/core": "workspace:*",
-		"@clerc/parser": "workspace:*"
+		"@clerc/parser": "workspace:*",
+		"@clerc/utils": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

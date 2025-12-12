@@ -45,10 +45,6 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"peerDependencies": {
 		"@clerc/core": "*"
 	}

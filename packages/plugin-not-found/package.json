@@ -44,17 +44,13 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"dependencies": {
-		"@clerc/utils": "workspace:*",
 		"didyoumean2": "^7.0.4",
 		"yoctocolors": "^2.1.2"
 	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*"
+		"@clerc/core": "workspace:*",
+		"@clerc/utils": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

@@ -44,10 +44,6 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"dependencies": {
 		"kons": "^0.7.1"
 	},

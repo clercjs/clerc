@@ -44,16 +44,12 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"dependencies": {
-		"@clerc/utils": "workspace:*",
 		"@pnpm/tabtab": "^0.5.4"
 	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*"
+		"@clerc/core": "workspace:*",
+		"@clerc/utils": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

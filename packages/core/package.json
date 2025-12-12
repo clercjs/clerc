@@ -43,16 +43,12 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"scripts": {
-		"build": "tsdown",
-		"watch": "tsdown --watch"
-	},
 	"dependencies": {
 		"@clerc/parser": "workspace:^",
-		"@clerc/utils": "workspace:*",
 		"lite-emit": "^3.1.0"
 	},
 	"devDependencies": {
+		"@clerc/utils": "workspace:*",
 		"is-platform": "^1.0.0"
 	}
 }
