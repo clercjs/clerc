@@ -6,7 +6,7 @@ title: Version Plugin
 
 A plugin that adds a version command to your CLI.
 
-:::tip
+:::info
 
 This plugin is built into the `Clerc` class exported by the `clerc` package, so you don't need to install it separately to use it.
 

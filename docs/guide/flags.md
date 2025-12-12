@@ -326,7 +326,7 @@ const cli = Cli()
 	.parse();
 ```
 
-:::tip
+:::info
 
 If you want to pass key-value pairs like `K=V`, you can use the colon delimiter in the command line:
 
