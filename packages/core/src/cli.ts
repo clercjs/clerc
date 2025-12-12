@@ -225,7 +225,7 @@ export class Clerc<
 					}
 				: nameOrCommandObject;
 
-		const aliases = toArray(options?.alias ?? []);
+		const aliases = toArray(command?.alias ?? []);
 
 		this.#callWithErrorHandler(() =>
 			this.#validateCommandNameAndAlias(command.name, aliases),

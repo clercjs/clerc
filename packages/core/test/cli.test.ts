@@ -515,4 +515,19 @@ describe("cli", () => {
 			})
 			.parse(["foo", "baz"]);
 	});
+
+	it("should resolve alias from command object", async () => {
+		await expect(
+			TestBaseCli()
+				.command({
+					name: "foo",
+					description: "foo",
+					alias: "bar",
+					handler: (ctx) => {
+						expect(ctx.command.name).toBe("foo");
+					},
+				})
+				.parse(["bar"]),
+		).resolves.not.toThrow();
+	});
 });
