@@ -4,7 +4,7 @@
  * @template T - The union type of allowed string values. Just a marker type to help with inference.
  */
 // eslint-disable-next-line unused-imports/no-unused-vars
-export interface ConstraintFunction<T = string> {
+export interface ConstraintFunction<T extends string = string> {
 	(value: string): void;
 	display?: string;
 }
