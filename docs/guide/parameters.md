@@ -69,6 +69,7 @@ const cli = Cli()
 			{
 				key: "<value>",
 				description: "Configuration value",
+				type: String,
 			},
 		],
 	})
@@ -81,6 +82,8 @@ const cli = Cli()
 ## Parameter Types
 
 Parameter types allow you to validate, convert, and parse parameter values, and provide valid options in help documentation. Parameter types use the same functions as [flag types](./types), meaning you can share the same type definitions between parameters and flags. When a type is specified for a parameter, the parsed value will be automatically converted to the type.
+
+By default, the parameter type is `String`.
 
 For comprehensive information about all available types, see the [Types](./types) guide.
 
