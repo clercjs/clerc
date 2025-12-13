@@ -1,11 +1,11 @@
-import type { FlagTypeFunction } from "./types";
+import type { TypeFunction } from "./types";
 
 /**
  * Creates a Enum type function that validates the input against allowed values.
  * The display name will be formatted as "value1 | value2 | ..." for help output.
  *
  * @param values - Array of allowed string values
- * @returns A FlagTypeFunction that validates and returns the input value
+ * @returns A TypeFunction that validates and returns the input value
  * @throws {Error} If the value is not in the allowed values list
  *
  * @example
@@ -14,7 +14,7 @@ import type { FlagTypeFunction } from "./types";
  * // Help output will show: json | yaml | xml
  * ```
  */
-export function Enum<T extends string>(...values: T[]): FlagTypeFunction<T> {
+export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
 	const fn = ((value: string) => {
 		if (!values.includes(value as any)) {
 			throw new Error(
@@ -23,7 +23,7 @@ export function Enum<T extends string>(...values: T[]): FlagTypeFunction<T> {
 		}
 
 		return value;
-	}) as FlagTypeFunction<T>;
+	}) as TypeFunction<T>;
 
 	fn.display = values.join(" | ");
 
@@ -35,10 +35,10 @@ export function Enum<T extends string>(...values: T[]): FlagTypeFunction<T> {
  *
  * @param min - The minimum acceptable value (inclusive)
  * @param max - The maximum acceptable value (inclusive)
- * @returns A FlagTypeFunction that validates the input value
+ * @returns A TypeFunction that validates the input value
  * @throws {Error} If the value is not a number or is outside the specified range
  */
-export function Range(min: number, max: number): FlagTypeFunction<number> {
+export function Range(min: number, max: number): TypeFunction<number> {
 	const fn = ((value: string) => {
 		const num = Number(value);
 		if (Number.isNaN(num) || num < min || num > max) {
@@ -48,7 +48,7 @@ export function Range(min: number, max: number): FlagTypeFunction<number> {
 		}
 
 		return num;
-	}) as FlagTypeFunction<number>;
+	}) as TypeFunction<number>;
 	fn.display = `${min}-${max}`;
 
 	return fn;
@@ -59,13 +59,13 @@ export function Range(min: number, max: number): FlagTypeFunction<number> {
  *
  * @param pattern - The regular expression pattern to validate against
  * @param description - Optional description for display purposes
- * @returns A FlagTypeFunction that validates the input value
+ * @returns A TypeFunction that validates the input value
  * @throws {Error} If the value does not match the regex pattern
  */
 export function Regex(
 	pattern: RegExp,
 	description?: string,
-): FlagTypeFunction<string> {
+): TypeFunction<string> {
 	const fn = ((value: string) => {
 		if (!pattern.test(value)) {
 			throw new Error(
@@ -74,7 +74,7 @@ export function Regex(
 		}
 
 		return value;
-	}) as FlagTypeFunction<string>;
+	}) as TypeFunction<string>;
 	fn.display = description ?? pattern.toString();
 
 	return fn;

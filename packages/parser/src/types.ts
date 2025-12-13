@@ -14,7 +14,7 @@ export type FlagDefaultValue<T = unknown> = T | FlagDefaultValueFunction<T>;
  *
  * @template T The target type.
  */
-export interface FlagTypeFunction<T = unknown> {
+export interface TypeFunction<T = unknown> {
 	(value: string): T;
 	/**
 	 * Optional display name for the type, useful in help output.
@@ -37,8 +37,8 @@ export type IgnoreFunction = (
 ) => boolean;
 
 export type FlagType<T = unknown> =
-	| FlagTypeFunction<T>
-	| readonly [FlagTypeFunction<T>];
+	| TypeFunction<T>
+	| readonly [TypeFunction<T>];
 
 export interface BaseFlagOptions<T extends FlagType = FlagType> {
 	/**

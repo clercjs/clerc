@@ -1,4 +1,4 @@
-import type { FlagTypeFunction } from "@clerc/parser";
+import type { TypeFunction } from "@clerc/parser";
 import type { CamelCase, Prettify, UnionToIntersection } from "@clerc/utils";
 
 type InferStringParameter<T extends string, Type = string> = T extends
@@ -14,7 +14,7 @@ type InferStringParameter<T extends string, Type = string> = T extends
 type InferParameter<T extends Parameter> = T extends string
 	? InferStringParameter<T>
 	: T extends ParameterDefinition
-		? T["type"] extends FlagTypeFunction<infer U>
+		? T["type"] extends TypeFunction<infer U>
 			? InferStringParameter<T["key"], U>
 			: InferStringParameter<T["key"]>
 		: never;
@@ -28,6 +28,6 @@ export type InferParameters<T extends readonly Parameter[]> =
 export interface ParameterDefinition {
 	key: string;
 	description?: string;
-	type?: FlagTypeFunction;
+	type?: TypeFunction;
 }
 export type Parameter = string | ParameterDefinition;
