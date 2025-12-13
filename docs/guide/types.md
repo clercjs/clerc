@@ -485,12 +485,13 @@ Custom type functions with display properties can also be used for parameters, p
 
 ```ts
 // Custom type function for parsing version numbers
-const Version = (value: string): string => {
+function Version(value: string): string {
 	if (!/^\d+\.\d+\.\d+$/.test(value)) {
 		throw new Error(`Invalid version format: ${value}. Expected format: x.y.z`);
 	}
+
 	return value;
-};
+}
 
 // Add display property for help documentation
 Version.display = "x.y.z";

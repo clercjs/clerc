@@ -71,6 +71,9 @@ const cli = Clerc.create()
 		}
 	})
 	.parse();
+
+// 也可以通过 cli.store 访问存储
+const config = cli.store.config;
 ```
 
 ### 存储与上下文存储的区别
@@ -92,12 +95,9 @@ declare module "@clerc/core" {
 	}
 }
 
-// 在命令中使用
-.on("my-command", (ctx) => {
-	ctx.store.help.addGroup({
-		commands: [["custom", "自定义命令"]],
-	});
-})
+cli.store.help.addGroup({
+	commands: [["custom", "自定义命令"]],
+});
 ```
 
 这允许插件提供自己的存储 API，可以通过存储对象访问。
