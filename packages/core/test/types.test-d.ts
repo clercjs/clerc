@@ -176,10 +176,32 @@ describe("core types", () => {
 	it("should infer parameters types", () => {
 		Clerc.create()
 			.command("test", "test", {
-				parameters: [{ key: "<foo>", type: Types.Enum("a", "b") }],
+				parameters: [
+					{
+						key: "<foo>",
+						type: Types.Enum("a", "b"),
+					},
+					{
+						key: "<bar>",
+						type: Number,
+					},
+					{
+						key: "[baz]",
+						type: Boolean,
+					},
+					{
+						key: "[qux]",
+						type: Types.Range(1, 10),
+					},
+				],
 			})
 			.on("test", (ctx) => {
-				expectTypeOf(ctx.parameters).toEqualTypeOf<{ foo: "a" | "b" }>();
+				expectTypeOf(ctx.parameters).toEqualTypeOf<{
+					foo: "a" | "b";
+					bar: number;
+					baz: boolean | undefined;
+					qux: number | undefined;
+				}>();
 			});
 	});
 
