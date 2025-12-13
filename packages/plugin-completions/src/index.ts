@@ -1,5 +1,5 @@
 import type { Plugin } from "@clerc/core";
-import { definePlugin } from "@clerc/core";
+import { Types, definePlugin } from "@clerc/core";
 import tabtab, { getShellFromEnv } from "@pnpm/tabtab";
 
 import { getCompletion } from "./complete";
@@ -39,6 +39,8 @@ export const completionsPlugin = (
 				commands: [["completions", "Completions"]],
 			});
 
+			const supportedShellEnum = Types.Enum(...tabtab.SUPPORTED_SHELLS);
+
 			if (managementCommands) {
 				cli
 					.command("completions install", "Install shell completions", {
@@ -48,10 +50,16 @@ export const completionsPlugin = (
 						flags: {
 							shell: {
 								description: "Shell type",
-								type: String,
+								type: supportedShellEnum,
 							},
 						},
-						parameters: ["[shell]"],
+						parameters: [
+							{
+								key: "[shell]",
+								description: "Shell type",
+								type: supportedShellEnum,
+							},
+						],
 					})
 					.on("completions install", async (ctx) => {
 						const shell = ctx.parameters.shell ?? ctx.flags.shell;
@@ -60,7 +68,7 @@ export const completionsPlugin = (
 								"Please specify the shell type via the --shell flag or the [shell] parameter.",
 							);
 						}
-						if (!tabtab.SUPPORTED_SHELLS.includes(shell as any)) {
+						if (!tabtab.SUPPORTED_SHELLS.includes(shell)) {
 							throw new Error(
 								`Unsupported shell: ${shell}. Supported shells are: ${tabtab.SUPPORTED_SHELLS.join(
 									", ",
@@ -70,7 +78,7 @@ export const completionsPlugin = (
 						await tabtab.install({
 							name: cli._name,
 							completer: cli._name,
-							shell: shell as any,
+							shell,
 						});
 					});
 
@@ -95,10 +103,16 @@ export const completionsPlugin = (
 					flags: {
 						shell: {
 							description: "Shell type",
-							type: String,
+							type: supportedShellEnum,
 						},
 					},
-					parameters: ["[shell]"],
+					parameters: [
+						{
+							key: "[shell]",
+							description: "Shell type",
+							type: supportedShellEnum,
+						},
+					],
 				})
 				.on("completions", async (ctx) => {
 					const shell = ctx.parameters.shell ?? ctx.flags.shell;
@@ -107,7 +121,7 @@ export const completionsPlugin = (
 							"Please specify the shell type via the --shell flag or the [shell] parameter.",
 						);
 					}
-					if (!tabtab.SUPPORTED_SHELLS.includes(shell as any)) {
+					if (!tabtab.SUPPORTED_SHELLS.includes(shell)) {
 						throw new Error(
 							`Unsupported shell: ${shell}. Supported shells are: ${tabtab.SUPPORTED_SHELLS.join(
 								", ",
@@ -117,7 +131,7 @@ export const completionsPlugin = (
 					const script = await tabtab.getCompletionScript({
 						name: cli._name,
 						completer: cli._name,
-						shell: shell as any,
+						shell,
 					});
 					console.log(script);
 				});
