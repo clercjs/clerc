@@ -76,8 +76,8 @@ export const completionsPlugin = (
 							);
 						}
 						await tabtab.install({
-							name: cli._name,
-							completer: cli._name,
+							name: cli._scriptName,
+							completer: cli._scriptName,
 							shell,
 						});
 					});
@@ -90,7 +90,7 @@ export const completionsPlugin = (
 					})
 					.on("completions uninstall", async () => {
 						await tabtab.uninstall({
-							name: cli._name,
+							name: cli._scriptName,
 						});
 					});
 			}
@@ -129,8 +129,8 @@ export const completionsPlugin = (
 						);
 					}
 					const script = await tabtab.getCompletionScript({
-						name: cli._name,
-						completer: cli._name,
+						name: cli._scriptName,
+						completer: cli._scriptName,
 						shell,
 					});
 					console.log(script);
