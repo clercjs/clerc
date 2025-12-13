@@ -254,6 +254,30 @@ exports[`plugin-help > should show --help 1`] = `
 ]
 `;
 
+exports[`plugin-help > should show available subcommands when parent command does not exist (using --help) 1`] = `
+[
+  [
+    "[32mtest[39m [36mcompletions[39m not found
+
+[1mAvailable Subcommands[22m
+  [36minstall[39m    Install shell completions
+  [36muninstall[39m  Uninstall shell completions",
+  ],
+]
+`;
+
+exports[`plugin-help > should show available subcommands when parent command does not exist 1`] = `
+[
+  [
+    "[32mtest[39m [36mcompletions[39m not found
+
+[1mAvailable Subcommands[22m
+  [36minstall[39m    Install shell completions
+  [36muninstall[39m  Uninstall shell completions",
+  ],
+]
+`;
+
 exports[`plugin-help > should show help 1`] = `
 [
   [

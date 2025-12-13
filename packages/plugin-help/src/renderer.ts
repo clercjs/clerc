@@ -70,12 +70,12 @@ export class HelpRenderer {
 	private _commandGroups: Map<string, string>;
 	private _flagGroups: Map<string, string>;
 	private _globalFlagGroups: Map<string, string>;
+	private _command: Command | undefined;
 
 	constructor(
 		private _formatters: Formatters,
 		private _cli: Clerc,
 		private _globalFlags: ClercFlagsDefinition,
-		private _command: Command | undefined,
 		private _notes?: string[],
 		private _examples?: [string, string][],
 		groups?: GroupsOptions,
@@ -85,21 +85,17 @@ export class HelpRenderer {
 		this._globalFlagGroups = groupDefinitionsToMap(groups?.globalFlags);
 	}
 
-	public render(): string {
-		const sections: Section[] = [
-			this.renderHeader(),
-			this.renderUsage(),
-			this.renderParameters(),
-			this.renderCommandFlags(),
-			this.renderGlobalFlags(),
-			this.renderCommands(),
-			this.renderExamples(),
-			this.renderNotes(),
-		];
+	public setCommand(command: Command | undefined): void {
+		if (command) {
+			this._command = command;
+			this._notes = command?.help?.notes;
+			this._examples = command?.help?.examples;
+		}
+	}
 
+	private renderSections(sections: Section[]): string {
 		return sections
 			.filter(isTruthy)
-			.filter((section) => section.body.length > 0)
 			.map((section) => {
 				const body = Array.isArray(section.body)
 					? section.body.filter((s) => s !== undefined).join("\n")
@@ -115,6 +111,21 @@ export class HelpRenderer {
 					.join("\n")}`;
 			})
 			.join("\n\n");
+	}
+
+	public render(): string {
+		const sections: Section[] = [
+			this.renderHeader(),
+			this.renderUsage(),
+			this.renderParameters(),
+			this.renderCommandFlags(),
+			this.renderGlobalFlags(),
+			this.renderCommands(),
+			this.renderExamples(),
+			this.renderNotes(),
+		];
+
+		return this.renderSections(sections);
 	}
 
 	private renderHeader() {
@@ -201,14 +212,14 @@ export class HelpRenderer {
 	private getSubcommands(parentCommandName: string): CommandsMap {
 		const subcommands = new Map<string, Command>();
 
-		if (!parentCommandName) {
+		if (parentCommandName === "") {
 			return subcommands;
 		}
 
 		const prefix = `${parentCommandName} `;
 
 		for (const [name, command] of this._cli._commands) {
-			if (name.startsWith(prefix) && name !== parentCommandName) {
+			if (name.startsWith(prefix)) {
 				const subcommandName = name.slice(prefix.length);
 				subcommands.set(subcommandName, command);
 			}
@@ -217,31 +228,10 @@ export class HelpRenderer {
 		return subcommands;
 	}
 
-	private renderCommands() {
-		const commands = this._cli._commands;
-
-		// If a command is selected, show its subcommands
-		let commandsToShow: CommandsMap;
-		let title = "Commands";
-		let prefix = "";
-
-		if (this._command) {
-			prefix = this._command.name ? `${this._command.name} ` : "";
-			title = "Subcommands";
-			commandsToShow = this.getSubcommands(this._command.name);
-
-			if (commandsToShow.size === 0) {
-				return;
-			}
-		} else {
-			commandsToShow = commands;
-		}
-
-		if (commandsToShow.size === 0) {
-			return;
-		}
-
-		// Group commands
+	private buildGroupedCommandsBody(
+		commandsToShow: CommandsMap,
+		prefix: string,
+	): string[] {
 		const groupedCommands = new Map<string, string[][]>();
 		const defaultCommands: string[][] = [];
 		let rootCommand: string[] = [];
@@ -265,7 +255,6 @@ export class HelpRenderer {
 			);
 
 			if (command.name === "") {
-				// Root command
 				rootCommand = item;
 			} else if (group && group !== DEFAULT_GROUP_KEY) {
 				const groupItems = groupedCommands.get(group) ?? [];
@@ -276,7 +265,6 @@ export class HelpRenderer {
 			}
 		}
 
-		// Build body with groups
 		const body: string[] = [];
 
 		const defaultGroup: string[][] = [];
@@ -305,6 +293,62 @@ export class HelpRenderer {
 				body.push(...splitTable(items).map(withIndent));
 			}
 		}
+
+		return body;
+	}
+
+	public renderAvailableSubcommands(parentCommandName: string): string {
+		const subcommands = this.getSubcommands(parentCommandName);
+
+		if (subcommands.size === 0) {
+			return "";
+		}
+
+		const prefix = `${parentCommandName} `;
+		const body = this.buildGroupedCommandsBody(subcommands, prefix);
+
+		if (body.length === 0) {
+			return "";
+		}
+
+		const sections: Section[] = [
+			{
+				body: `${yc.green(this._cli._name)} ${yc.cyan(parentCommandName)} not found`,
+			},
+			{
+				title: "Available Subcommands",
+				body,
+			},
+		];
+
+		return this.renderSections(sections);
+	}
+
+	private renderCommands() {
+		const commands = this._cli._commands;
+
+		// If a command is selected, show its subcommands
+		let commandsToShow: CommandsMap;
+		let title = "Commands";
+		let prefix = "";
+
+		if (this._command) {
+			prefix = this._command.name ? `${this._command.name} ` : "";
+			title = "Subcommands";
+			commandsToShow = this.getSubcommands(this._command.name);
+
+			if (commandsToShow.size === 0) {
+				return;
+			}
+		} else {
+			commandsToShow = commands;
+		}
+
+		if (commandsToShow.size === 0) {
+			return;
+		}
+
+		const body = this.buildGroupedCommandsBody(commandsToShow, prefix);
 
 		return {
 			title,

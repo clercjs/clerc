@@ -300,6 +300,35 @@ describe("plugin-help", () => {
 		}).rejects.toThrow(NoSuchCommandError);
 	});
 
+	it("should show available subcommands when parent command does not exist", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("completions install", "Install shell completions")
+			.command("completions uninstall", "Uninstall shell completions")
+			.parse(["help", "completions"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should show available subcommands when parent command does not exist (using --help)", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("completions install", "Install shell completions")
+			.command("completions uninstall", "Uninstall shell completions")
+			.parse(["completions", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
+	it("should still throw error when no subcommands exist for non-existent command", async () => {
+		await expect(async () => {
+			await TestBaseCli()
+				.use(helpPlugin())
+				.command("other", "Other command")
+				.parse(["help", "not-exist"]);
+		}).rejects.toThrow(NoSuchCommandError);
+	});
+
 	it("should work with friendly-error", async () => {
 		expect(async () => {
 			await TestBaseCli()

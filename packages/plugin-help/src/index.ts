@@ -142,6 +142,28 @@ export const helpPlugin = ({
 				console.log(s);
 			}
 
+			const renderer = new HelpRenderer(
+				mergedFormatters,
+				cli,
+				cli._globalFlags,
+				effectiveNotes,
+				effectiveExamples,
+				groups,
+			);
+
+			function tryPrintSubcommandsHelp(commandName: string) {
+				const subcommandsOutput =
+					renderer.renderAvailableSubcommands(commandName);
+
+				if (subcommandsOutput) {
+					printHelp(subcommandsOutput);
+
+					return true;
+				}
+
+				return false;
+			}
+
 			if (command) {
 				cli
 					.command("help", "Show help", {
@@ -158,19 +180,18 @@ export const helpPlugin = ({
 							[command] = resolveCommand(cli._commands, commandName);
 
 							if (!command) {
-								throw new NoSuchCommandError(commandName.join(" "));
+								const parentCommandName = commandName.join(" ");
+
+								if (tryPrintSubcommandsHelp(parentCommandName)) {
+									return;
+								}
+
+								// No subcommands, throw error
+								throw new NoSuchCommandError(parentCommandName);
 							}
 						}
 
-						const renderer = new HelpRenderer(
-							mergedFormatters,
-							cli,
-							cli._globalFlags,
-							command,
-							command ? command.help?.notes : effectiveNotes,
-							command ? command.help?.examples : effectiveExamples,
-							groups,
-						);
+						renderer.setCommand(command);
 						printHelp(renderer.render());
 					});
 			}
@@ -190,18 +211,16 @@ export const helpPlugin = ({
 						const command = ctx.command;
 						// If no command resolved, but parameters are present, just let the next interceptor handle it
 						if (!command && ctx.rawParsed.parameters.length > 0) {
+							const parentCommandName = ctx.rawParsed.parameters.join(" ");
+
+							if (tryPrintSubcommandsHelp(parentCommandName)) {
+								return;
+							}
+
 							await next();
 						}
 
-						const renderer = new HelpRenderer(
-							mergedFormatters,
-							cli,
-							cli._globalFlags,
-							command,
-							command ? command.help?.notes : effectiveNotes,
-							command ? command.help?.examples : effectiveExamples,
-							groups,
-						);
+						renderer.setCommand(command);
 						printHelp(renderer.render());
 					} else {
 						const shouldShowHelp =
@@ -210,15 +229,6 @@ export const helpPlugin = ({
 							ctx.rawParsed.parameters.length === 0; // and no command supplied, means no root command defined
 
 						if (shouldShowHelp) {
-							const renderer = new HelpRenderer(
-								mergedFormatters,
-								cli,
-								cli._globalFlags,
-								undefined,
-								effectiveNotes,
-								effectiveExamples,
-								groups,
-							);
 							printHelp(renderer.render());
 						} else {
 							await next();
