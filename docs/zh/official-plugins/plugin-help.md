@@ -94,24 +94,26 @@ const cli = Clerc.create()
 	.scriptName("my-cli")
 	.description("我的 CLI 应用程序")
 	.version("1.0.0")
-	.use(helpPlugin({
-		groups: {
-			commands: [
-				["dev", "开发命令"],
-				["build", "构建命令"],
-				["test", "测试命令"],
-			],
-			flags: [
-				["input", "输入选项"],
-				["output", "输出选项"],
-				["config", "配置选项"],
-			],
-			globalFlags: [
-				["help", "帮助选项"],
-				["version", "版本选项"],
-			],
-		},
-	}))
+	.use(
+		helpPlugin({
+			groups: {
+				commands: [
+					["dev", "开发命令"],
+					["build", "构建命令"],
+					["test", "测试命令"],
+				],
+				flags: [
+					["input", "输入选项"],
+					["output", "输出选项"],
+					["config", "配置选项"],
+				],
+				globalFlags: [
+					["help", "帮助选项"],
+					["version", "版本选项"],
+				],
+			},
+		}),
+	)
 	.command("dev", "启动开发服务器", {
 		help: {
 			group: "dev", // 分配到 "dev" 组

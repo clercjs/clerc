@@ -515,7 +515,9 @@ const cli = Cli()
 		],
 	})
 	.on("publish", (ctx) => {
-		console.log(`Publishing version ${ctx.parameters.version} to ${ctx.parameters.channel || "stable"} channel`);
+		console.log(
+			`Publishing version ${ctx.parameters.version} to ${ctx.parameters.channel || "stable"} channel`,
+		);
 	})
 	.parse();
 ```

@@ -94,24 +94,26 @@ const cli = Clerc.create()
 	.scriptName("my-cli")
 	.description("My CLI application")
 	.version("1.0.0")
-	.use(helpPlugin({
-		groups: {
-			commands: [
-				["dev", "Development Commands"],
-				["build", "Build Commands"],
-				["test", "Testing Commands"],
-			],
-			flags: [
-				["input", "Input Options"],
-				["output", "Output Options"],
-				["config", "Configuration Options"],
-			],
-			globalFlags: [
-				["help", "Help Options"],
-				["version", "Version Options"],
-			],
-		},
-	}))
+	.use(
+		helpPlugin({
+			groups: {
+				commands: [
+					["dev", "Development Commands"],
+					["build", "Build Commands"],
+					["test", "Testing Commands"],
+				],
+				flags: [
+					["input", "Input Options"],
+					["output", "Output Options"],
+					["config", "Configuration Options"],
+				],
+				globalFlags: [
+					["help", "Help Options"],
+					["version", "Version Options"],
+				],
+			},
+		}),
+	)
 	.command("dev", "Start development server", {
 		help: {
 			group: "dev", // Assign to "dev" group
