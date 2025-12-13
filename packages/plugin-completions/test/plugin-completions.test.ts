@@ -32,7 +32,6 @@ describe("plugin-completions", () => {
 		expect(completionsCmd).toBeDefined();
 		expect(completionsCmd?.flags).toBeDefined();
 		expect(completionsCmd?.flags?.shell).toBeDefined();
-		expect(completionsCmd?.parameters).toContain("[shell]");
 	});
 
 	it("should have completion-server command hidden from help", () => {
@@ -65,7 +64,6 @@ describe("plugin-completions", () => {
 		expect(installCmd).toBeDefined();
 		expect(installCmd?.flags).toBeDefined();
 		expect(installCmd?.flags?.shell).toBeDefined();
-		expect(installCmd?.parameters).toContain("[shell]");
 
 		const uninstallCmd = cli._commands.get("completions uninstall");
 

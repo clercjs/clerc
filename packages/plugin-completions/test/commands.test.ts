@@ -35,31 +35,21 @@ describe("plugin-completions/commands", () => {
 		});
 
 		it("should throw error if shell is missing", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-			const errorFn = vi.fn();
-			cli.errorHandler(errorFn);
-
-			await cli.parse(["completions", "install"]);
-
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			expect(errorFn).toHaveBeenCalled();
-			expect(errorFn.mock.calls[0][0].message).toContain(
-				"Please specify the shell type",
-			);
+			await expect(async () => {
+				await TestBaseCli()
+					.use(completionsPlugin())
+					.parse(["completions", "install"]);
+			}).rejects.toThrow("Please specify the shell type");
 		});
 
 		it("should throw error if shell is unsupported", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-			const errorFn = vi.fn();
-			cli.errorHandler(errorFn);
-
-			await cli.parse(["completions", "install", "--shell", "invalid"]);
-
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			expect(errorFn).toHaveBeenCalled();
-			expect(errorFn.mock.calls[0][0].message).toContain("Unsupported shell");
+			await expect(async () => {
+				await TestBaseCli()
+					.use(completionsPlugin())
+					.parse(["completions", "install", "--shell", "invalid"]);
+			}).rejects.toThrowErrorMatchingInlineSnapshot(
+				"[Error: Invalid value: invalid. Must be one of: bash, zsh, fish]",
+			);
 		});
 	});
 
@@ -93,31 +83,19 @@ describe("plugin-completions/commands", () => {
 		});
 
 		it("should throw error if shell is missing", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-			const errorFn = vi.fn();
-			cli.errorHandler(errorFn);
-
-			await cli.parse(["completions"]);
-
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			expect(errorFn).toHaveBeenCalled();
-			expect(errorFn.mock.calls[0][0].message).toContain(
-				"Please specify the shell type",
-			);
+			await expect(async () => {
+				await TestBaseCli().use(completionsPlugin()).parse(["completions"]);
+			}).rejects.toThrow("Please specify the shell type");
 		});
 
 		it("should throw error if shell is unsupported", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-			const errorFn = vi.fn();
-			cli.errorHandler(errorFn);
-
-			await cli.parse(["completions", "--shell", "invalid"]);
-
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			expect(errorFn).toHaveBeenCalled();
-			expect(errorFn.mock.calls[0][0].message).toContain("Unsupported shell");
+			await expect(async () => {
+				await TestBaseCli()
+					.use(completionsPlugin())
+					.parse(["completions", "--shell", "invalid"]);
+			}).rejects.toThrowErrorMatchingInlineSnapshot(
+				"[Error: Invalid value: invalid. Must be one of: bash, zsh, fish]",
+			);
 		});
 	});
 
