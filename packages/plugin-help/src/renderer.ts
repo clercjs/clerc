@@ -67,29 +67,34 @@ function validateGroup(
 }
 
 export class HelpRenderer {
-	private _commandGroups: Map<string, string>;
-	private _flagGroups: Map<string, string>;
-	private _globalFlagGroups: Map<string, string>;
 	private _command: Command | undefined;
+
+	private get _commandGroups() {
+		return groupDefinitionsToMap(this._getGroups().commands);
+	}
+
+	private get _flagGroups() {
+		return groupDefinitionsToMap(this._getGroups().flags);
+	}
+
+	private get _globalFlagGroups() {
+		return groupDefinitionsToMap(this._getGroups().globalFlags);
+	}
 
 	constructor(
 		private _formatters: Formatters,
 		private _cli: Clerc,
 		private _globalFlags: ClercFlagsDefinition,
-		private _notes?: string[],
+		private _getGroups: () => GroupsOptions,
 		private _examples?: [string, string][],
-		groups?: GroupsOptions,
-	) {
-		this._commandGroups = groupDefinitionsToMap(groups?.commands);
-		this._flagGroups = groupDefinitionsToMap(groups?.flags);
-		this._globalFlagGroups = groupDefinitionsToMap(groups?.globalFlags);
-	}
+		private _notes?: string[],
+	) {}
 
 	public setCommand(command: Command | undefined): void {
 		if (command) {
 			this._command = command;
-			this._notes = command?.help?.notes;
 			this._examples = command?.help?.examples;
+			this._notes = command?.help?.notes;
 		}
 	}
 

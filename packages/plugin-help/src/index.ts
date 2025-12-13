@@ -146,9 +146,9 @@ export const helpPlugin = ({
 				mergedFormatters,
 				cli,
 				cli._globalFlags,
-				effectiveNotes,
+				() => groups,
 				effectiveExamples,
-				groups,
+				effectiveNotes,
 			);
 
 			function tryPrintSubcommandsHelp(commandName: string) {
