@@ -4,6 +4,7 @@ import { isTruthy } from "@clerc/utils";
 
 import { defaultFormatters } from "./formatters";
 import { HelpRenderer } from "./renderer";
+import { addStoreApi } from "./store";
 import type { Formatters, GroupsOptions } from "./types";
 
 export { defaultFormatters } from "./formatters";
@@ -104,10 +105,12 @@ export const helpPlugin = ({
 	examples,
 	banner,
 	formatters,
-	groups,
+	groups = {},
 }: HelpPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
+			addStoreApi(cli, { groups });
+
 			const mergedFormatters = {
 				...defaultFormatters,
 				...formatters,

@@ -27,5 +27,5 @@ export interface BaseContext<
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
 	missingParameters: boolean;
-	store: ContextStore;
+	store: Partial<ContextStore>;
 }

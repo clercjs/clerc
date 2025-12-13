@@ -55,7 +55,7 @@ export class Clerc<
 	});
 
 	#globalFlags = {} as GlobalFlags;
-	#store: ContextStore = {} as ContextStore;
+	#store = {} as Partial<ContextStore>;
 	#interceptors: Interceptor<Command, GlobalFlags>[] = [];
 	#errorHandlers: ErrorHandler[] = [];
 	#name = "";
@@ -107,7 +107,7 @@ export class Clerc<
 		return this.#globalFlags;
 	}
 
-	public get store(): ContextStore {
+	public get store(): Partial<ContextStore> {
 		return this.#store;
 	}
 
