@@ -86,6 +86,19 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should support flag shorthand", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				flags: {
+					verbose: Boolean,
+				},
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should support optional description for global flag", () => {
 		TestBaseCli()
 			.use(helpPlugin())

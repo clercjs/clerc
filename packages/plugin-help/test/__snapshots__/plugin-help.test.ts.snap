@@ -344,6 +344,23 @@ exports[`plugin-help > should show parameter types 1`] = `
 ]
 `;
 
+exports[`plugin-help > should support flag shorthand 1`] = `
+[
+  [
+    "[32mtest[39m [36mtest[39m [33m-[39m Test command
+
+[1mUsage[22m
+  [35m$ test test [flags][39m
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mFlags[22m
+  [34m--verbose[39m  [90mBoolean[39m",
+  ],
+]
+`;
+
 exports[`plugin-help > should support no description 1`] = `
 [
   [
