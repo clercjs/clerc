@@ -86,14 +86,14 @@ export class HelpRenderer {
 		private _cli: Clerc,
 		private _globalFlags: ClercFlagsDefinition,
 		private _getGroups: () => GroupsOptions,
-		private _examples?: [string, string][],
+		private _getExamples: () => [string, string][] | undefined,
 		private _notes?: string[],
 	) {}
 
 	public setCommand(command: Command | undefined): void {
 		if (command) {
 			this._command = command;
-			this._examples = command?.help?.examples;
+			this._getExamples = () => command?.help?.examples;
 			this._notes = command?.help?.notes;
 		}
 	}
@@ -475,11 +475,12 @@ export class HelpRenderer {
 	}
 
 	private renderExamples() {
-		if (!this._examples?.length) {
+		const examples = this._getExamples();
+		if (!examples?.length) {
 			return;
 		}
 
-		const items = this._examples.map(([command, description]) => {
+		const items = examples.map(([command, description]) => {
 			return [command, DELIMITER, description];
 		});
 

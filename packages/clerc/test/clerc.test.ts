@@ -1,4 +1,4 @@
-import { TestCli } from "@clerc/test-utils";
+import { TestCli, getConsoleMock } from "@clerc/test-utils";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { mockConsole } from "vitest-console";
 
@@ -9,13 +9,13 @@ describe("clerc", () => {
 
 	afterAll(restoreConsole);
 
-	it("should extend BaseClerc", async () => {
-		expect(async () => {
-			await TestCli().parse([]);
-			await TestCli().parse(["help"]);
-			await TestCli().parse(["--help"]);
-			await TestCli().parse(["version"]);
-			await TestCli().parse(["--version"]);
-		}).not.toThrow();
+	it("should install plugins", async () => {
+		await TestCli().parse([]);
+		await TestCli().parse(["help"]);
+		await TestCli().parse(["--help"]);
+		await TestCli().parse(["version"]);
+		await TestCli().parse(["--version"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 });
