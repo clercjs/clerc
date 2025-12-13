@@ -1,7 +1,6 @@
-import type { FlagOptions } from "./types";
+import { looseIsArray } from "@clerc/utils";
 
-export const looseIsArray = <T>(arr: any): arr is readonly T[] =>
-	Array.isArray(arr);
+import type { FlagOptions } from "./types";
 
 export const isArrayOfType = (arr: any, type: any): boolean =>
 	Array.isArray(arr) && arr[0] === type;

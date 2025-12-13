@@ -1,5 +1,8 @@
 import type { MaybeArray } from "./types";
 
+export const looseIsArray = <T>(arr: any): arr is readonly T[] =>
+	Array.isArray(arr);
+
 export type * from "./types";
 
 export const toArray = <T>(a: MaybeArray<T>): T[] =>

@@ -1,9 +1,11 @@
 import type {
 	Clerc,
+	ClercFlagDefinitionValue,
 	ClercFlagsDefinition,
 	Command,
 	CommandsMap,
 } from "@clerc/core";
+import { normalizeFlagValue } from "@clerc/core";
 import {
 	formatFlagName,
 	formatVersion,
@@ -310,7 +312,8 @@ export class HelpRenderer {
 		};
 	}
 
-	private renderFlagItem(name: string, flag: ClercFlagsDefinition[string]) {
+	private renderFlagItem(name: string, flag: ClercFlagDefinitionValue) {
+		flag = normalizeFlagValue(flag);
 		const flagName = formatFlagName(name);
 		const aliases = (
 			Array.isArray(flag.alias) ? flag.alias : flag.alias ? [flag.alias] : []

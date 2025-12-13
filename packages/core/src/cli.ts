@@ -17,8 +17,8 @@ import { getParametersToResolve, parseParameters } from "./parameters";
 import { platformArgv } from "./platform";
 import type {
 	BaseContext,
+	ClercFlagDefinitionValue,
 	ClercFlagsDefinition,
-	ClercGlobalFlagDefinitionValue,
 	Command,
 	CommandHandler,
 	CommandOptions,
@@ -265,18 +265,12 @@ export class Clerc<
 		return this as any;
 	}
 
-	public globalFlag<
-		Name extends string,
-		Flag extends ClercGlobalFlagDefinitionValue,
-	>(
+	public globalFlag<Name extends string, Flag extends ClercFlagDefinitionValue>(
 		name: Name,
 		description: string,
 		options: Flag,
 	): Clerc<Commands, GlobalFlags & Record<Name, Flag>>;
-	public globalFlag<
-		Name extends string,
-		Flag extends ClercGlobalFlagDefinitionValue,
-	>(
+	public globalFlag<Name extends string, Flag extends ClercFlagDefinitionValue>(
 		name: Name,
 		options: Flag,
 	): Clerc<Commands, GlobalFlags & Record<Name, Flag>>;

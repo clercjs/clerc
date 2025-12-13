@@ -1,5 +1,5 @@
 import type { Clerc, ClercFlagsDefinition } from "@clerc/core";
-import { DOUBLE_DASH, resolveCommand } from "@clerc/core";
+import { DOUBLE_DASH, normalizeFlagValue, resolveCommand } from "@clerc/core";
 import { formatFlagName, toArray } from "@clerc/utils";
 import type { CompletionItem, ParseEnvResult } from "@pnpm/tabtab";
 
@@ -71,16 +71,17 @@ export async function getCompletion(
 
 		const candidates: CompletionItem[] = [];
 		for (const [name, def] of Object.entries(flags)) {
+			const normalized = normalizeFlagValue(def);
 			candidates.push({
 				name: formatFlagName(name),
-				description: def.description,
+				description: normalized.description,
 			});
-			if (def.alias) {
-				const aliases = toArray(def.alias);
+			if (normalized.alias) {
+				const aliases = toArray(normalized.alias);
 				for (const alias of aliases) {
 					candidates.push({
 						name: formatFlagName(alias),
-						description: def.description,
+						description: normalized.description,
 					});
 				}
 			}

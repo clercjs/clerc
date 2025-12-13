@@ -1,5 +1,5 @@
 import type { PartialRequired } from "@clerc/utils";
-import { camelCase, toArray } from "@clerc/utils";
+import { camelCase, looseIsArray, toArray } from "@clerc/utils";
 
 import { InvalidSchemaError } from "./errors";
 import type {
@@ -8,7 +8,6 @@ import type {
 	FlagsDefinition,
 	ParserOptions,
 } from "./types";
-import { looseIsArray } from "./utils";
 
 const defaultParserOptions = {
 	delimiters: ["=", ":"],
