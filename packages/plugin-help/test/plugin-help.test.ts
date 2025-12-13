@@ -150,6 +150,15 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should not show commands placeholder when only registered root command", () => {
+		TestBaseCli()
+			.use(helpPlugin({ command: false }))
+			.command("")
+			.parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should not show commands which set `show` to false", () => {
 		TestBaseCli()
 			.use(helpPlugin())
