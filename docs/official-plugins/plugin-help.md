@@ -85,6 +85,51 @@ The plugin automatically generates beautiful help information for your CLI, incl
 
 ## Advanced Usage
 
+### Command and Flag Groups
+
+The help plugin supports organizing commands and flags into logical groups using the `groups` option. This makes your help output more organized and easier to navigate.
+
+```ts
+const cli = Clerc.create()
+	.scriptName("my-cli")
+	.description("My CLI application")
+	.version("1.0.0")
+	.use(helpPlugin({
+		groups: {
+			commands: [
+				["dev", "Development Commands"],
+				["build", "Build Commands"],
+				["test", "Testing Commands"],
+			],
+			flags: [
+				["input", "Input Options"],
+				["output", "Output Options"],
+				["config", "Configuration Options"],
+			],
+			globalFlags: [
+				["help", "Help Options"],
+				["version", "Version Options"],
+			],
+		},
+	}))
+	.command("dev", "Start development server", {
+		help: {
+			group: "dev", // Assign to "dev" group
+		},
+	})
+	.command("build", "Build the application", {
+		help: {
+			group: "build", // Assign to "build" group
+		},
+	})
+	.command("test", "Run tests", {
+		help: {
+			group: "test", // Assign to "test" group
+		},
+	})
+	.parse();
+```
+
 ### Custom Command Help
 
 You can set the `help` option to customize the help information for each command:
@@ -151,3 +196,58 @@ const cli = Clerc.create()
 	)
 	.parse();
 ```
+
+### Using cli.store.help
+
+The help plugin also provides a shared API that allows you to dynamically modify properties like help groups at runtime.
+
+```ts
+const cli = Clerc.create()
+	.scriptName("my-cli")
+	.description("My CLI application")
+	.version("1.0.0")
+	.use(
+		helpPlugin({
+			groups: {
+				commands: [
+					["dev", "Development Commands"],
+					["build", "Build Commands"],
+				],
+				flags: [
+					["input", "Input Options"],
+					["output", "Output Options"],
+				],
+			},
+		}),
+	)
+	.command("dev", "Start development server", {
+		help: {
+			group: "dev", // Assign to the "dev" group
+		},
+	})
+	.command("build", "Build the application", {
+		help: {
+			group: "build", // Assign to the "build" group
+		},
+	})
+	.on("dev", (ctx) => {
+		console.log("Development server started");
+	})
+	.on("build", (ctx) => {
+		console.log("Application built");
+	})
+	.parse();
+
+cli.store.help.addGroup({
+	commands: [["test", "Test"]],
+});
+```
+
+#### Store API Methods
+
+- `ctx.store.help.addGroup(options)`: Dynamically add help groups at runtime
+  - `options.commands`: Array of `[key, name]` tuples for command groups
+  - `options.flags`: Array of `[key, name]` tuples for flag groups
+  - `options.globalFlags`: Array of `[key, name]` tuples for global flag groups
+
+This allows you to organize your help output into logical sections, making it easier for users to find relevant commands and options.

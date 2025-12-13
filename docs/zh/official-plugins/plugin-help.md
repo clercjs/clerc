@@ -85,6 +85,51 @@ $ node my-cli help hello
 
 ## 高级用法
 
+### 命令和选项分组
+
+帮助插件支持使用 `groups` 选项将命令和选项组织到逻辑组中。这使您的帮助输出更有组织性，更易于导航。
+
+```ts
+const cli = Clerc.create()
+	.scriptName("my-cli")
+	.description("我的 CLI 应用程序")
+	.version("1.0.0")
+	.use(helpPlugin({
+		groups: {
+			commands: [
+				["dev", "开发命令"],
+				["build", "构建命令"],
+				["test", "测试命令"],
+			],
+			flags: [
+				["input", "输入选项"],
+				["output", "输出选项"],
+				["config", "配置选项"],
+			],
+			globalFlags: [
+				["help", "帮助选项"],
+				["version", "版本选项"],
+			],
+		},
+	}))
+	.command("dev", "启动开发服务器", {
+		help: {
+			group: "dev", // 分配到 "dev" 组
+		},
+	})
+	.command("build", "构建应用程序", {
+		help: {
+			group: "build", // 分配到 "build" 组
+		},
+	})
+	.command("test", "运行测试", {
+		help: {
+			group: "test", // 分配到 "test" 组
+		},
+	})
+	.parse();
+```
+
 ### 自定义命令帮助信息
 
 你可以设置 `help` 选项来自定义每个命令的帮助信息：
@@ -148,3 +193,58 @@ const cli = Clerc.create()
 	)
 	.parse();
 ```
+
+### 使用 cli.store.help
+
+帮助插件还提供了一个共享的 API，允许您在运行时动态修改如分组等属性。
+
+```ts
+const cli = Clerc.create()
+	.scriptName("my-cli")
+	.description("我的 CLI 应用程序")
+	.version("1.0.0")
+	.use(
+		helpPlugin({
+			groups: {
+				commands: [
+					["dev", "开发命令"],
+					["build", "构建命令"],
+				],
+				flags: [
+					["input", "输入选项"],
+					["output", "输出选项"],
+				],
+			},
+		}),
+	)
+	.command("dev", "启动开发服务器", {
+		help: {
+			group: "dev", // 分配到 "dev" 组
+		},
+	})
+	.command("build", "构建应用程序", {
+		help: {
+			group: "build", // 分配到 "build" 组
+		},
+	})
+	.on("dev", (ctx) => {
+		console.log("开发服务器已启动");
+	})
+	.on("build", (ctx) => {
+		console.log("应用程序已构建");
+	})
+	.parse();
+
+cli.store.help.addGroup({
+	commands: [["test", "测试命令"]],
+});
+```
+
+#### API 方法
+
+- `ctx.store.help.addGroup(options)`: 在运行时动态添加帮助组
+  - `options.commands`: 命令组的 `[key, name]` 元组数组
+  - `options.flags`: 标志组的 `[key, name]` 元组数组
+  - `options.globalFlags`: 全局标志组的 `[key, name]` 元组数组
+
+这允许您将帮助输出组织到逻辑部分中，使用户更容易找到相关的命令和选项。
