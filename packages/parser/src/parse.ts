@@ -211,10 +211,9 @@ export function createParser<T extends FlagsDefinition>(
 								break;
 							} else {
 								// -ab foo, we are on "b"
-								const nextValue = eat();
-								if (nextValue && !shouldProcessAsFlag(nextValue)) {
-									setValueByType(result.flags, key, nextValue, config);
-								}
+								const value =
+									hasNext && !shouldProcessAsFlag(next) ? (eat() ?? "") : "";
+								setValueByType(result.flags, key, value, config);
 							}
 						}
 					}

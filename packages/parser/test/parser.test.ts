@@ -318,6 +318,8 @@ describe("parser", () => {
 				"-5",
 				"--eq=",
 				"---three",
+				"--string",
+				"-a",
 				"--not-given",
 			],
 			{
@@ -332,6 +334,8 @@ describe("parser", () => {
 					},
 					3: Boolean,
 					4: Boolean,
+					string: String,
+					a: String,
 					notGiven: String,
 				},
 			},
@@ -345,6 +349,8 @@ describe("parser", () => {
 			alias2: true,
 			3: true,
 			4: true,
+			string: "",
+			a: "",
 			notGiven: "",
 		});
 		expect(unknown).toEqual({});
