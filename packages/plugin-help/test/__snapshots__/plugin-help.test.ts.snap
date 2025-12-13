@@ -200,6 +200,28 @@ exports[`plugin-help > should format custom flag type with "display" property 1`
 ]
 `;
 
+exports[`plugin-help > should not show commands placeholder when no commands exist 1`] = `
+[
+  [
+    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+
+[1mUsage[22m
+  [35m$ test [flags][39m
+
+[1mGlobal Flags[22m
+  [34m--help, -h[39m  [90mBoolean[39m  Show help  [90m[default: false][39m
+
+[1mExamples[22m
+  $ test <command> --help  [33m-[39m  Show help for a specific command
+
+[1mNotes[22m
+  If no command is specified, show help for the CLI.
+  If a command is specified, show help for the command.
+  -h is an alias for --help.",
+  ],
+]
+`;
+
 exports[`plugin-help > should not show commands which set \`show\` to false 1`] = `
 [
   [

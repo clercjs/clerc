@@ -173,7 +173,9 @@ export class HelpRenderer {
 				usage += ` ${command.parameters.map((p) => (typeof p === "string" ? p : p.key)).join(" ")}`;
 			}
 		} else {
-			usage += this._cli._commands.has("") ? " [command]" : " <command>";
+			if (this._cli._commands.size > 0) {
+				usage += this._cli._commands.has("") ? " [command]" : " <command>";
+			}
 		}
 
 		if (

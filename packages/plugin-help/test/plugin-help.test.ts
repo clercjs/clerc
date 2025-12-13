@@ -142,6 +142,14 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should not show commands placeholder when no commands exist", () => {
+		TestBaseCli()
+			.use(helpPlugin({ command: false }))
+			.parse(["--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should not show commands which set `show` to false", () => {
 		TestBaseCli()
 			.use(helpPlugin())
