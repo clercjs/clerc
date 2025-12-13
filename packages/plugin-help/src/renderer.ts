@@ -27,7 +27,7 @@ const table = (items: string[][]) =>
 
 const splitTable = (items: string[][]) => table(items).split("\n");
 
-const DELIMITER = yc.yellow("-");
+const DELIMITER = "-";
 const INDENT = " ".repeat(2);
 
 const withIndent = (str: string): string => `${INDENT}${str}`;
@@ -110,7 +110,7 @@ export class HelpRenderer {
 					return body;
 				}
 
-				return `${yc.bold(section.title)}\n${body
+				return `${yc.underline(yc.bold(section.title))}\n${body
 					.split("\n")
 					.map(withIndent)
 					.join("\n")}`;
@@ -138,16 +138,16 @@ export class HelpRenderer {
 		const command = this._command;
 		const description = command ? command.description : _description;
 		const formattedCommandName = command?.name
-			? ` ${yc.cyan(command.name)}`
+			? ` ${yc.bold(command.name)}`
 			: "";
 		const headerLine = command
-			? `${yc.green(_name)}${formattedCommandName}`
-			: `${yc.green(_name)} ${yc.yellow(formatVersion(_version))}`;
+			? `${_name}${formattedCommandName}`
+			: `${yc.bold(_name)} ${formatVersion(_version)}`;
 		const alias = command?.alias
 			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
 					command.alias,
 				)
-					.map((a) => yc.cyan(a))
+					.map((a) => yc.bold(a))
 					.join(", ")}`
 			: undefined;
 
@@ -190,7 +190,7 @@ export class HelpRenderer {
 
 		return {
 			title: "Usage",
-			body: [yc.magenta(usage)],
+			body: [usage],
 		};
 	}
 
@@ -207,8 +207,8 @@ export class HelpRenderer {
 				typeof parameter === "string" ? undefined : parameter.description;
 
 			return [
-				yc.blue(key),
-				type?.display ? yc.gray(type.display) : undefined,
+				yc.bold(key),
+				type ? this._formatters.formatFlagType(type) : "string",
 				description,
 			].filter(isTruthy);
 		});
@@ -254,7 +254,7 @@ export class HelpRenderer {
 			const group = command.help?.group;
 			validateGroup(group, this._commandGroups, "command", command.name);
 
-			const commandName = yc.cyan(
+			const commandName = yc.bold(
 				formatCommandName(command.name.slice(prefix.length)),
 			);
 			const aliases = command.alias
@@ -323,7 +323,7 @@ export class HelpRenderer {
 
 		const sections: Section[] = [
 			{
-				body: `${yc.green(this._cli._name)} ${yc.cyan(parentCommandName)} not found`,
+				body: `${this._cli._name} ${yc.bold(parentCommandName)} not found`,
 			},
 			{
 				title: "Available Subcommands",
@@ -377,12 +377,12 @@ export class HelpRenderer {
 		const type = this._formatters.formatFlagType(flag.type);
 
 		return [
-			yc.blue([flagName, aliases].filter(Boolean).join(", ")),
-			yc.gray(type),
+			yc.bold([flagName, aliases].filter(Boolean).join(", ")),
+			yc.dim(type),
 			flag.description,
 			flag.default !== undefined &&
-				yc.gray(
-					`[default: ${this._formatters.formatFlagDefault(flag.default)}]`,
+				yc.dim(
+					`[default: ${yc.bold(this._formatters.formatFlagDefault(flag.default))}]`,
 				),
 		].filter(isTruthy);
 	}
