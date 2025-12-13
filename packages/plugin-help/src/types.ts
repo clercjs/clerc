@@ -1,7 +1,7 @@
-import type { FlagDefaultValue, FlagType } from "@clerc/parser";
+import type { FlagDefaultValue, TypeValue } from "@clerc/parser";
 
 export interface Formatters {
-	formatFlagType: (type: FlagType) => string;
+	formatTypeValue: (type: TypeValue) => string;
 	formatFlagDefault: <T>(value: FlagDefaultValue<T>) => string;
 }
 

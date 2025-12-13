@@ -183,7 +183,7 @@ const cli = Clerc.create()
 			banner: "欢迎使用 My CLI 应用程序！", // 自定义横幅
 			formatters: {
 				// 自定义类型格式化函数
-				formatFlagType: (type: FlagType) => {
+				formatTypeValue: (type) => {
 					if (typeof type === "function") {
 						return type.name;
 					}

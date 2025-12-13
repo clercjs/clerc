@@ -36,11 +36,11 @@ export type IgnoreFunction = (
 	arg: string,
 ) => boolean;
 
-export type FlagType<T = unknown> =
+export type TypeValue<T = unknown> =
 	| TypeFunction<T>
 	| readonly [TypeFunction<T>];
 
-export interface BaseFlagOptions<T extends FlagType = FlagType> {
+export interface BaseFlagOptions<T extends TypeValue = TypeValue> {
 	/**
 	 * The type constructor or a function to convert the string value.
 	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
@@ -68,7 +68,7 @@ export type FlagOptions =
 	| (BaseFlagOptions & {
 			negatable?: never;
 	  });
-export type FlagDefinitionValue = FlagOptions | FlagType;
+export type FlagDefinitionValue = FlagOptions | TypeValue;
 export type FlagsDefinition = Record<string, FlagDefinitionValue>;
 
 /**
@@ -148,10 +148,10 @@ type _InferFlags<T extends FlagsDefinition> = {
 			: T[K] extends ObjectConstructor | { type: ObjectConstructor }
 				? ObjectInputType | InferFlagDefault<T[K], never>
 				: T[K] extends
-							| readonly [FlagType<infer U>]
-							| { type: readonly [FlagType<infer U>] }
+							| readonly [TypeValue<infer U>]
+							| { type: readonly [TypeValue<infer U>] }
 					? U[] | InferFlagDefault<T[K], never>
-					: T[K] extends FlagType<infer U> | { type: FlagType<infer U> }
+					: T[K] extends TypeValue<infer U> | { type: TypeValue<infer U> }
 						?
 								| U
 								| InferFlagDefault<

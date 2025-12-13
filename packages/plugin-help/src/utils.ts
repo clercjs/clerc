@@ -1,6 +1,6 @@
-import type { FlagDefaultValue, FlagType } from "@clerc/parser";
+import type { FlagDefaultValue, TypeValue } from "@clerc/parser";
 
-export function formatFlagType(type: FlagType): string {
+export function formatTypeValue(type: TypeValue): string {
 	if (typeof type === "function") {
 		return type.display ?? type.name;
 	}

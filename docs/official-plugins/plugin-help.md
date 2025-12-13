@@ -186,7 +186,7 @@ const cli = Clerc.create()
 			banner: "Welcome to My CLI application!", // Custom banner
 			formatters: {
 				// Custom type formatting functions
-				formatFlagType: (type: FlagType) => {
+				formatTypeValue: (type) => {
 					if (typeof type === "function") {
 						return type.name;
 					}

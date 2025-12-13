@@ -1,7 +1,7 @@
 import type { Formatters } from "./types";
-import { formatFlagDefault, formatFlagType } from "./utils";
+import { formatFlagDefault, formatTypeValue } from "./utils";
 
 export const defaultFormatters: Formatters = {
-	formatFlagType,
+	formatTypeValue,
 	formatFlagDefault,
 };

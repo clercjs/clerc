@@ -208,7 +208,7 @@ export class HelpRenderer {
 
 			return [
 				yc.bold(key),
-				type ? this._formatters.formatFlagType(type) : "string",
+				type ? this._formatters.formatTypeValue(type) : "string",
 				description,
 			].filter(isTruthy);
 		});
@@ -374,7 +374,7 @@ export class HelpRenderer {
 		)
 			.map(formatFlagName)
 			.join(", ");
-		const type = this._formatters.formatFlagType(flag.type);
+		const type = this._formatters.formatTypeValue(flag.type);
 
 		return [
 			yc.bold([flagName, aliases].filter(Boolean).join(", ")),
