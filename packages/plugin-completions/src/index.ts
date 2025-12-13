@@ -35,6 +35,10 @@ export const completionsPlugin = (
 		setup: (cli) => {
 			const { managementCommands = true } = options;
 
+			cli.store.help?.addGroup({
+				commands: [["completions", "Completions"]],
+			});
+
 			if (managementCommands) {
 				cli
 					.command("completions install", "Install shell completions", {
