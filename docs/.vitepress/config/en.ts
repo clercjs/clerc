@@ -40,6 +40,10 @@ const guideSidebar = [
 				link: "/guide/global-flags",
 			},
 			{
+				text: "Types",
+				link: "/guide/types",
+			},
+			{
 				text: "Interceptors",
 				link: "/guide/interceptors",
 			},

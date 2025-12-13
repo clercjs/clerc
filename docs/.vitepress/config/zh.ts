@@ -40,6 +40,10 @@ const guideSidebar = [
 				link: "/zh/guide/global-flags",
 			},
 			{
+				text: "类型",
+				link: "/zh/guide/types",
+			},
+			{
 				text: "拦截器",
 				link: "/zh/guide/interceptors",
 			},
