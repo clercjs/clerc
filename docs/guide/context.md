@@ -8,8 +8,6 @@ In both `handler` and `interceptor`, the first parameter received is a context o
 
 ## Types
 
-This is the context type defined in commit [c1ac0a2](https://github.com/clercjs/clerc/commit/c1ac0a2c7a23ae7f26fe0d9b55fb4a27120131a8/packages/core/src/types/context.ts):
-
 ```ts
 export interface BaseContext<
 	C extends Command = Command,
@@ -23,6 +21,7 @@ export interface BaseContext<
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
 	missingParameters: boolean;
+	store: Partial<ContextStore>;
 }
 ```
 
