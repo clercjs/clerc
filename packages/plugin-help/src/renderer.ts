@@ -90,11 +90,11 @@ export class HelpRenderer {
 			this.renderHeader(),
 			this.renderUsage(),
 			this.renderParameters(),
-			this.renderCommands(),
-			this.renderGlobalFlags(),
 			this.renderCommandFlags(),
-			this.renderNotes(),
+			this.renderGlobalFlags(),
+			this.renderCommands(),
 			this.renderExamples(),
+			this.renderNotes(),
 		];
 
 		return sections
