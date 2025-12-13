@@ -6,7 +6,7 @@ title: Parameters
 
 Parameters (also known as _positional arguments_) are names that correspond to argument values. Think of parameters as variable names and argument values as values associated with variables.
 
-This guide covers parameter definitions, constraints, and descriptions.
+This guide covers parameter definitions, types, and descriptions.
 
 ## Basic Parameter Definition
 
@@ -50,7 +50,7 @@ const cli = Cli()
 
 For more advanced parameter configuration, you can use parameter objects instead of simple strings. Parameter objects allow you to:
 
-- Add a constraint to validate parameter values
+- Add a type to validate and convert parameter values
 - Add a description for documentation and help output
 
 ### Basic Parameter Object
@@ -78,20 +78,20 @@ const cli = Cli()
 	.parse();
 ```
 
-## Parameter Constraints
+## Parameter Types
 
-Parameter constraints allow you to validate parameter values and provide valid options in help documentation.
+Parameter types allow you to validate, convert, and parse parameter values, and provide valid options in help documentation. Parameter types use the same functions as [flag types](./flags.md#flag-types-explained), meaning you can share the same type definitions between parameters and flags. When a type is specified for a parameter, the parsed value will be automatically converted to the type.
 
-### Using Constraint Functions
+### Using Type Functions
 
-Clerc provides several built-in constraint factory functions:
+Clerc provides several built-in type factory functions:
 
-#### Enum Constraint
+#### Enum Type
 
 Restrict parameter values to a predefined set of options:
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("build-cli")
@@ -101,7 +101,7 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<setting>",
-				constraint: Constraints.Enum("output", "target", "format"),
+				type: Types.Enum("output", "target", "format"),
 				description: "Setting name",
 			},
 			{
@@ -125,12 +125,12 @@ $ build-cli config invalid value
 # Error: Invalid value: invalid. Must be one of: output, target, format
 ```
 
-#### Range Constraint
+#### Range Type
 
-Restrict numeric parameter values to a specific range:
+Restrict numeric parameter values to a specific range and convert to numbers:
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("server-cli")
@@ -140,13 +140,13 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "[port]",
-				constraint: Constraints.Range(1024, 65_535),
+				type: Types.Range(1024, 65_535),
 				description: "Port number",
 			},
 		],
 	})
 	.on("start", (ctx) => {
-		const port = ctx.parameters.port || 3000;
+		const port = ctx.parameters.port ?? 3000;
 		console.log(`Starting server on port ${port}`);
 	})
 	.parse();
@@ -161,12 +161,12 @@ $ server-cli start 100
 # Error: Invalid value: 100. Must be a number between 1024 and 65535
 ```
 
-#### Regex Constraint
+#### Regex Type
 
 Validate parameter values against a regular expression pattern:
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("git-clone")
@@ -176,46 +176,13 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<repo>",
-				constraint: Constraints.Regex(
-					/^[\w\-.]+\/[\w\-.]+$/,
-					"owner/repo format",
-				),
+				type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
 				description: "Repository in owner/repo format",
 			},
 		],
 	})
 	.on("clone", (ctx) => {
 		console.log(`Cloning ${ctx.parameters.repo}`);
-	})
-	.parse();
-```
-
-#### Custom Constraint
-
-Create custom validation logic:
-
-```ts
-import { Constraints } from "clerc";
-
-const cli = Cli()
-	.scriptName("app")
-	.description("Application")
-	.version("1.0.0")
-	.command("upload", "Upload file", {
-		parameters: [
-			{
-				key: "<file>",
-				constraint: Constraints.Custom(
-					(value) => /\.(jpg|png|gif)$/i.test(value),
-					"image file (.jpg, .png, .gif)",
-					(value) => `Invalid file: ${value}. Must be an image file.`,
-				),
-				description: "Image file to upload",
-			},
-		],
-	})
-	.on("upload", (ctx) => {
-		console.log(`Uploading ${ctx.parameters.file}`);
 	})
 	.parse();
 ```

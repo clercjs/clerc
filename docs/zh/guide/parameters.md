@@ -6,7 +6,7 @@ title: 参数
 
 参数（也称为*位置参数*）是与参数值相对应的名称。将参数想象为变量名，参数值为与变量相关联的值。
 
-本指南涵盖参数定义、约束和描述。
+本指南涵盖参数定义、类型和描述。
 
 ## 基本参数定义
 
@@ -50,7 +50,7 @@ const cli = Cli()
 
 对于更高级的参数配置，你可以使用参数对象而不是简单字符串。参数对象允许你：
 
-- 添加约束来验证参数值
+- 添加类型来验证和转换参数值
 - 添加描述用于文档和帮助输出
 
 ### 基本参数对象
@@ -78,20 +78,20 @@ const cli = Cli()
 	.parse();
 ```
 
-## 参数约束
+## 参数类型
 
-参数约束允许你验证参数值，并在帮助文档中提供有效的选项。
+参数类型允许你验证、转换和解析参数值，并在帮助文档中提供有效的选项。参数类型与[标志类型](./flags.md#flag-types-explained)使用相同的函数，这意味着你可以在参数和标志之间共享相同的类型定义。当为参数指定类型时，解析的值将自动转换为该类型。
 
-### 使用约束函数
+### 使用类型函数
 
-Clerc 提供了几个内置的约束工厂函数：
+Clerc 提供了几个内置的类型工厂函数：
 
-#### 枚举约束
+#### 枚举类型
 
 将参数值限制为一组预定义的选项：
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("build-cli")
@@ -101,7 +101,7 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<setting>",
-				constraint: Constraints.Enum("output", "target", "format"),
+				type: Types.Enum("output", "target", "format"),
 				description: "Setting name",
 			},
 			{
@@ -125,12 +125,12 @@ $ build-cli config invalid value
 # Error: Invalid value: invalid. Must be one of: output, target, format
 ```
 
-#### 范围约束
+#### 范围类型
 
-将数值参数限制在特定范围内：
+将数值参数限制在特定范围内并转换为数字：
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("server-cli")
@@ -140,7 +140,7 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "[port]",
-				constraint: Constraints.Range(1024, 65_535),
+				type: Types.Range(1024, 65_535),
 				description: "Port number",
 			},
 		],
@@ -161,12 +161,12 @@ $ server-cli start 100
 # Error: Invalid value: 100. Must be a number between 1024 and 65535
 ```
 
-#### 正则表达式约束
+#### 正则表达式类型
 
 针对正则表达式模式验证参数值：
 
 ```ts
-import { Constraints } from "clerc";
+import { Types } from "clerc";
 
 const cli = Cli()
 	.scriptName("git-clone")
@@ -176,46 +176,13 @@ const cli = Cli()
 		parameters: [
 			{
 				key: "<repo>",
-				constraint: Constraints.Regex(
-					/^[\w\-.]+\/[\w\-.]+$/,
-					"owner/repo format",
-				),
+				type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
 				description: "Repository in owner/repo format",
 			},
 		],
 	})
 	.on("clone", (ctx) => {
 		console.log(`Cloning ${ctx.parameters.repo}`);
-	})
-	.parse();
-```
-
-#### 自定义约束
-
-创建自定义验证逻辑：
-
-```ts
-import { Constraints } from "clerc";
-
-const cli = Cli()
-	.scriptName("app")
-	.description("Application")
-	.version("1.0.0")
-	.command("upload", "Upload file", {
-		parameters: [
-			{
-				key: "<file>",
-				constraint: Constraints.Custom(
-					(value) => /\.(jpg|png|gif)$/i.test(value),
-					"image file (.jpg, .png, .gif)",
-					(value) => `Invalid file: ${value}. Must be an image file.`,
-				),
-				description: "Image file to upload",
-			},
-		],
-	})
-	.on("upload", (ctx) => {
-		console.log(`Uploading ${ctx.parameters.file}`);
 	})
 	.parse();
 ```

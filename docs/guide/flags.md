@@ -423,26 +423,39 @@ const cli = Cli()
 
 ## Built-in Advanced Types
 
-Clerc provides some built-in advanced flag types to facilitate common needs:
+Clerc provides some built-in advanced type functions to facilitate common needs:
 
-- `Enum`: Restrict flag values to a predefined set.
+- `Enum`: Restrict flag and parameter values to a predefined set.
+- `Range`: Restrict numeric values to a specific range and convert to numbers.
+- `Regex`: Validate values against a regular expression pattern.
+
+These type functions can be used for both flags and parameters, allowing you to share the same type definitions across your CLI:
 
 ```ts
-import { Enum } from "clerc";
+import { Types } from "clerc";
 
 Cli()
 	.command("serve", "Start the server", {
 		flags: {
 			mode: {
-				type: Enum("development", "production", "test"),
+				type: Types.Enum("development", "production", "test"),
 				default: "development" as const,
 				description: "Set the application mode",
 			},
 		},
+		parameters: [
+			{
+				key: "[port]",
+				type: Types.Range(1024, 65_535),
+				description: "Port number",
+			},
+		],
 	})
 	.on("serve", (ctx) => {
 		ctx.flags.mode;
 		//        ^?
+		ctx.parameters.port;
+		//             ^?
 	})
 	.parse();
 ```

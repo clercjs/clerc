@@ -431,23 +431,36 @@ const cli = Cli()
 Clerc 提供了一些内置的高级选项类型，方便处理常见的需求：
 
 - `Enum`: 限制选项值为预定义的集合。
+- `Range`: 限制数字值在特定范围内并转换为数字。
+- `Regex`: 验证值是否符合正则表达式模式。
+
+这些类型函数可以同时用于标志和参数，允许你在整个 CLI 中共享相同的类型定义：
 
 ```ts
-import { Enum } from "clerc";
+import { Types } from "clerc";
 
 Cli()
 	.command("serve", "启动服务器", {
 		flags: {
 			mode: {
-				type: Enum("development", "production", "test"),
+				type: Types.Enum("development", "production", "test"),
 				default: "development" as const,
 				description: "设置应用程序模式",
 			},
 		},
+		parameters: [
+			{
+				key: "[port]",
+				type: Types.Range(1024, 65_535),
+				description: "Port number",
+			},
+		],
 	})
 	.on("serve", (ctx) => {
 		ctx.flags.mode;
 		//        ^?
+		ctx.parameters.port;
+		//             ^?
 	})
 	.parse();
 ```
