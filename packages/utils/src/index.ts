@@ -1,4 +1,4 @@
-import type { MaybeArray } from "./types";
+import type { MaybeArray, MaybeGetter } from "./types";
 
 export const looseIsArray = <T>(arr: any): arr is readonly T[] =>
 	Array.isArray(arr);
@@ -68,3 +68,6 @@ export const isTruthy: <T>(
 
 export const objectIsEmpty = (obj: Record<string, any>): boolean =>
 	Object.keys(obj).length === 0;
+
+export const resolveValue = <T>(value: MaybeGetter<T>): T =>
+	typeof value === "function" ? (value as () => T)() : value;

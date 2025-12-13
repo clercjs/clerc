@@ -1,4 +1,4 @@
-import { camelCase } from "@clerc/utils";
+import { camelCase, resolveValue } from "@clerc/utils";
 
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import { MissingRequiredFlagError } from "./errors";
@@ -287,10 +287,7 @@ export function createParser<T extends FlagsDefinition>(
 			const val = result.flags[key];
 			if (val === undefined) {
 				if (config.default !== undefined) {
-					result.flags[key] =
-						typeof config.default === "function"
-							? config.default()
-							: config.default;
+					result.flags[key] = resolveValue(config.default);
 				}
 				// Make sure arrays and objects are always initialized with default values
 				else if (Array.isArray(config.type)) {
