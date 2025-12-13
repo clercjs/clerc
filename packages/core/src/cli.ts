@@ -2,7 +2,6 @@ import type { ParsedResult } from "@clerc/parser";
 import { parse } from "@clerc/parser";
 import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
-import type { ErrorHandler } from "lite-emit";
 import { LiteEmit } from "lite-emit";
 
 import { resolveCommand } from "./commands";
@@ -26,6 +25,7 @@ import type {
 	CommandsMap,
 	CommandsRecord,
 	ContextStore,
+	ErrorHandler,
 	Interceptor,
 	MakeEmitterEvents,
 	Parameter,
