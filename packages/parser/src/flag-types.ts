@@ -49,7 +49,7 @@ export function Range(min: number, max: number): TypeFunction<number> {
 
 		return num;
 	}) as TypeFunction<number>;
-	fn.display = `${min}-${max}`;
+	fn.display = `${min} - ${max}`;
 
 	return fn;
 }
@@ -75,7 +75,7 @@ export function Regex(
 
 		return value;
 	}) as TypeFunction<string>;
-	fn.display = description ?? pattern.toString();
+	fn.display = description ?? `Regex: ${pattern.toString()}`;
 
 	return fn;
 }

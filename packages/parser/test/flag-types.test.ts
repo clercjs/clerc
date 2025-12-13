@@ -41,7 +41,7 @@ describe("flag-types", () => {
 			const range = Range(1, 10);
 
 			expect(typeof range).toBe("function");
-			expect(range.display).toBe("1-10");
+			expect(range.display).toBe("1 - 10");
 		});
 
 		it("should validate valid range", () => {
@@ -72,7 +72,7 @@ describe("flag-types", () => {
 			const regex = Regex(/^\d+$/);
 
 			expect(typeof regex).toBe("function");
-			expect(regex.display).toBe("/^\\d+$/");
+			expect(regex.display).toBe("Regex: /^\\d+$/");
 		});
 
 		it("should validate valid regex", () => {

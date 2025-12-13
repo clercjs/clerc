@@ -57,6 +57,10 @@ describe("plugin-help", () => {
 						key: "[range]",
 						type: Types.Range(1, 10),
 					},
+					{
+						key: "[regex]",
+						type: Types.Regex(/^\d+$/),
+					},
 				],
 			})
 			.parse(["test", "--help"]);
