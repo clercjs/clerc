@@ -77,4 +77,27 @@ describe("type", () => {
 			"Invalid value: c. Must be one of: a, b",
 		);
 	});
+
+	it("should convert parameter value using type", async () => {
+		await TestBaseCli()
+			.command("test", "test command", {
+				parameters: [
+					{
+						key: "<port>",
+						type: Types.Range(1024, 65_535),
+					},
+					{
+						key: "[ports...]",
+						type: Types.Range(1024, 65_535),
+					},
+				],
+			})
+			.on("test", (ctx) => {
+				expect(ctx.parameters).toEqual({
+					port: 3000,
+					ports: [11_451],
+				});
+			})
+			.parse({ argv: ["test", "3000", "11451"] });
+	});
 });
