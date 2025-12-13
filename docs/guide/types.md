@@ -397,6 +397,42 @@ $ git-clone clone invalid
 
 You can create custom type functions by providing a function that accepts a string argument and returns the parsed value.
 
+### Type Display Property
+
+Custom type functions can include an optional `display` property that provides a user-friendly name for the type in help output. This is especially useful for complex types where the function name doesn't clearly describe what the type accepts.
+
+```ts
+// Custom type function that parses a comma-separated string into an array of strings
+const CommaSeparatedList = (value: string): string[] =>
+	value.split(",").map((item) => item.trim());
+
+// Add a display property for better help documentation
+CommaSeparatedList.display = "item1,item2,...";
+
+const cli = Cli()
+	.scriptName("custom-cli")
+	.description("A CLI using a custom type")
+	.version("1.0.0")
+	.command("list", "Display list", {
+		flags: {
+			items: {
+				type: CommaSeparatedList,
+				default: [] as string[],
+				description: "Comma-separated list of strings",
+			},
+		},
+	})
+	.on("list", (ctx) => {
+		console.log("Items:", ctx.flags.items);
+		//                              ^?
+	})
+	.parse();
+```
+
+The `display` property is used by the help system to show a more descriptive type name instead of the function name. For example, instead of showing "CommaSeparatedList" in the help output, it would show "item1,item2,...".
+
+### Basic Custom Type Example
+
 ```ts
 // Custom type function that parses a comma-separated string into an array of strings
 const CommaSeparatedList = (value: string): string[] =>
@@ -442,3 +478,45 @@ const cli = Cli()
 	})
 	.parse();
 ```
+
+### Using Custom Types with Parameters
+
+Custom type functions with display properties can also be used for parameters, providing better help documentation:
+
+```ts
+// Custom type function for parsing version numbers
+const Version = (value: string): string => {
+	if (!/^\d+\.\d+\.\d+$/.test(value)) {
+		throw new Error(`Invalid version format: ${value}. Expected format: x.y.z`);
+	}
+	return value;
+};
+
+// Add display property for help documentation
+Version.display = "x.y.z";
+
+const cli = Cli()
+	.scriptName("release-cli")
+	.description("Release management tool")
+	.version("1.0.0")
+	.command("publish", "Publish a new version", {
+		parameters: [
+			{
+				key: "<version>",
+				type: Version,
+				description: "Version number to publish",
+			},
+			{
+				key: "[channel]",
+				type: Types.Enum("stable", "beta", "alpha"),
+				description: "Release channel",
+			},
+		],
+	})
+	.on("publish", (ctx) => {
+		console.log(`Publishing version ${ctx.parameters.version} to ${ctx.parameters.channel || "stable"} channel`);
+	})
+	.parse();
+```
+
+In the help output, instead of showing "Version" as the type, it will show "x.y.z", making it clearer what format is expected.

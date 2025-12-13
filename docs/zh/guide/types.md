@@ -397,6 +397,42 @@ $ git-clone clone invalid
 
 你可以通过提供一个接受字符串参数并返回解析后的值的函数来创建自定义类型。
 
+### 类型显示属性
+
+自定义类型函数可以包含一个可选的 `display` 属性，该属性为帮助输出中的类型提供用户友好的名称。这对于函数名不能清楚描述类型接受内容的复杂类型特别有用。
+
+```ts
+// 自定义类型函数，将逗号分隔的字符串解析为字符串数组
+const CommaSeparatedList = (value: string): string[] =>
+	value.split(",").map((item) => item.trim());
+
+// 添加显示属性以获得更好的帮助文档
+CommaSeparatedList.display = "item1,item2,...";
+
+const cli = Cli()
+	.scriptName("custom-cli")
+	.description("使用自定义类型的 CLI")
+	.version("1.0.0")
+	.command("list", "显示列表", {
+		flags: {
+			items: {
+				type: CommaSeparatedList,
+				default: [] as string[],
+				description: "逗号分隔的字符串列表",
+			},
+		},
+	})
+	.on("list", (ctx) => {
+		console.log("Items:", ctx.flags.items);
+		//                              ^?
+	})
+	.parse();
+```
+
+`display` 属性被帮助系统用来显示更具描述性的类型名称，而不是函数名。例如，在帮助输出中，它不会显示 "CommaSeparatedList"，而是显示 "item1,item2,..."。
+
+### 基本自定义类型示例
+
 ```ts
 // 自定义类型函数，将逗号分隔的字符串解析为字符串数组
 const CommaSeparatedList = (value: string): string[] =>
