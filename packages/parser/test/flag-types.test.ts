@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { Enum } from "../src/flag-types";
+import { Enum, Range, Regex } from "../src/flag-types";
 
 describe("flag-types", () => {
 	describe("Enum", () => {
@@ -33,6 +33,60 @@ describe("flag-types", () => {
 			expect(format.display).toBe("only");
 			expect(format("only")).toBe("only");
 			expect(() => format("other")).toThrow();
+		});
+	});
+
+	describe("Range", () => {
+		it("should create a Range type function", () => {
+			const range = Range(1, 10);
+
+			expect(typeof range).toBe("function");
+			expect(range.display).toBe("1-10");
+		});
+
+		it("should validate valid range", () => {
+			const range = Range(1, 10);
+
+			expect(range("1")).toBe(1);
+			expect(range("5")).toBe(5);
+			expect(range("10")).toBe(10);
+		});
+
+		it("should throw an error for invalid range", () => {
+			const range = Range(1, 10);
+
+			expect(() => range("0")).toThrow(
+				"Invalid value: 0. Must be a number between 1 and 10",
+			);
+			expect(() => range("11")).toThrow(
+				"Invalid value: 11. Must be a number between 1 and 10",
+			);
+			expect(() => range("a")).toThrow(
+				"Invalid value: a. Must be a number between 1 and 10",
+			);
+		});
+	});
+
+	describe("Regex", () => {
+		it("should create a Regex type function", () => {
+			const regex = Regex(/^\d+$/);
+
+			expect(typeof regex).toBe("function");
+			expect(regex.display).toBe("/^\\d+$/");
+		});
+
+		it("should validate valid regex", () => {
+			const regex = Regex(/^\d+$/);
+
+			expect(regex("123")).toBe("123");
+		});
+
+		it("should throw an error for invalid regex", () => {
+			const regex = Regex(/^\d+$/);
+
+			expect(() => regex("a")).toThrow(
+				"Invalid value: a. Must match pattern: /^\\d+$/",
+			);
 		});
 	});
 });

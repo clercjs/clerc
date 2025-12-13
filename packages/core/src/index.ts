@@ -9,7 +9,6 @@ export {
 export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";
 export { resolveCommand } from "./commands";
-export * as Constraints from "./constraint";
 export * from "./errors";
 export * as Types from "./flag-types";
 export * from "./helpers";

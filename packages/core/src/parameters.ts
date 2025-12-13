@@ -1,5 +1,4 @@
 import { DOUBLE_DASH } from "@clerc/parser";
-import type { MaybeArray } from "@clerc/utils";
 import { camelCase } from "@clerc/utils";
 
 import { InvalidParametersError } from "./errors";
@@ -28,7 +27,7 @@ function _parseParameters(
 	definitions: readonly Parameter[],
 	parameters: string[],
 ): Record<string, any> {
-	const result: Record<string, MaybeArray<string>> = {};
+	const result: Record<string, any> = {};
 	let hasOptional = false;
 
 	for (const [i, definition] of definitions.entries()) {
@@ -73,17 +72,17 @@ function _parseParameters(
 			);
 		}
 
-		if (typeof definition !== "string" && definition.constraint) {
+		if (typeof definition !== "string" && definition.type) {
 			if (isVariadic) {
-				for (const v of value as string[]) {
-					definition.constraint(v);
-				}
-			} else if (value !== undefined) {
-				definition.constraint(value as string);
+				result[name] = (value as string[]).map((v) => definition.type!(v));
+			} else if (value === undefined) {
+				result[name] = value;
+			} else {
+				result[name] = definition.type(value as string);
 			}
+		} else {
+			result[name] = value;
 		}
-
-		result[name] = value;
 	}
 
 	return result;

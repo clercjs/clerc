@@ -1,4 +1,4 @@
-import type { FlagTypeFunction } from "@clerc/parser";
+import type { FlagTypeFunction } from "./types";
 
 /**
  * Creates a Enum type function that validates the input against allowed values.
@@ -26,6 +26,56 @@ export function Enum<T extends string>(...values: T[]): FlagTypeFunction<T> {
 	}) as FlagTypeFunction<T>;
 
 	fn.display = values.join(" | ");
+
+	return fn;
+}
+
+/**
+ * Creates a range type function that validates the input is a number within the specified range.
+ *
+ * @param min - The minimum acceptable value (inclusive)
+ * @param max - The maximum acceptable value (inclusive)
+ * @returns A FlagTypeFunction that validates the input value
+ * @throws {Error} If the value is not a number or is outside the specified range
+ */
+export function Range(min: number, max: number): FlagTypeFunction<number> {
+	const fn = ((value: string) => {
+		const num = Number(value);
+		if (Number.isNaN(num) || num < min || num > max) {
+			throw new Error(
+				`Invalid value: ${value}. Must be a number between ${min} and ${max}`,
+			);
+		}
+
+		return num;
+	}) as FlagTypeFunction<number>;
+	fn.display = `${min}-${max}`;
+
+	return fn;
+}
+
+/**
+ * Creates a regex type function that validates the input against the provided pattern.
+ *
+ * @param pattern - The regular expression pattern to validate against
+ * @param description - Optional description for display purposes
+ * @returns A FlagTypeFunction that validates the input value
+ * @throws {Error} If the value does not match the regex pattern
+ */
+export function Regex(
+	pattern: RegExp,
+	description?: string,
+): FlagTypeFunction<string> {
+	const fn = ((value: string) => {
+		if (!pattern.test(value)) {
+			throw new Error(
+				`Invalid value: ${value}. Must match pattern: ${pattern}`,
+			);
+		}
+
+		return value;
+	}) as FlagTypeFunction<string>;
+	fn.display = description ?? pattern.toString();
 
 	return fn;
 }

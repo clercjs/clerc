@@ -179,14 +179,13 @@ export class HelpRenderer {
 
 		const items = command.parameters.map((parameter) => {
 			const key = typeof parameter === "string" ? parameter : parameter.key;
-			const constraint =
-				typeof parameter === "string" ? undefined : parameter.constraint;
+			const type = typeof parameter === "string" ? undefined : parameter.type;
 			const description =
 				typeof parameter === "string" ? undefined : parameter.description;
 
 			return [
 				yc.blue(key),
-				constraint?.display ? yc.gray(constraint.display) : undefined,
+				type?.display ? yc.gray(type.display) : undefined,
 				description,
 			].filter(isTruthy);
 		});

@@ -1,15 +1,15 @@
 import { TestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Constraints } from "../src";
+import { Types } from "../src";
 
-describe("constraint", () => {
+describe("type", () => {
 	it("should validate enum", async () => {
 		const cli = TestBaseCli().command("test", "test command", {
 			parameters: [
 				{
 					key: "<value>",
-					constraint: Constraints.Enum("a", "b"),
+					type: Types.Enum("a", "b"),
 				},
 			],
 		});
@@ -26,7 +26,7 @@ describe("constraint", () => {
 			parameters: [
 				{
 					key: "<value>",
-					constraint: Constraints.Range(1, 10),
+					type: Types.Range(1, 10),
 				},
 			],
 		});
@@ -49,7 +49,7 @@ describe("constraint", () => {
 			parameters: [
 				{
 					key: "<value>",
-					constraint: Constraints.Regex(/^\d+$/),
+					type: Types.Regex(/^\d+$/),
 				},
 			],
 		});
@@ -60,32 +60,12 @@ describe("constraint", () => {
 		);
 	});
 
-	it("should validate custom", async () => {
-		const cli = TestBaseCli().command("test", "test command", {
-			parameters: [
-				{
-					key: "<value>",
-					constraint: Constraints.Custom(
-						(value) => value === "foo",
-						"foo",
-						(value) => `Custom error: ${value}`,
-					),
-				},
-			],
-		});
-
-		await expect(cli.parse({ argv: ["test", "foo"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "bar"] })).rejects.toThrow(
-			"Custom error: bar",
-		);
-	});
-
 	it("should validate variadic parameters", async () => {
 		const cli = TestBaseCli().command("test", "test command", {
 			parameters: [
 				{
 					key: "<value...>",
-					constraint: Constraints.Enum("a", "b"),
+					type: Types.Enum("a", "b"),
 				},
 			],
 		});

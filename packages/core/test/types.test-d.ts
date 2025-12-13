@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import { Clerc, Constraints, defineCommand } from "../src";
+import { Clerc, Types, defineCommand } from "../src";
 
 describe("core types", () => {
 	it("should infer required parameter", () => {
@@ -173,22 +173,20 @@ describe("core types", () => {
 			});
 	});
 
-	it("should infer parameters constraints", () => {
+	it("should infer parameters types", () => {
 		Clerc.create()
 			.command("test", "test", {
-				parameters: [{ key: "<foo>", constraint: Constraints.Enum("a", "b") }],
+				parameters: [{ key: "<foo>", type: Types.Enum("a", "b") }],
 			})
 			.on("test", (ctx) => {
 				expectTypeOf(ctx.parameters).toEqualTypeOf<{ foo: "a" | "b" }>();
 			});
 	});
 
-	it("should infer variadic parameters constraints", () => {
+	it("should infer variadic parameters types", () => {
 		Clerc.create()
 			.command("test", "test", {
-				parameters: [
-					{ key: "<foo...>", constraint: Constraints.Enum("a", "b") },
-				],
+				parameters: [{ key: "<foo...>", type: Types.Enum("a", "b") }],
 			})
 			.on("test", (ctx) => {
 				expectTypeOf(ctx.parameters).toEqualTypeOf<{ foo: ("a" | "b")[] }>();

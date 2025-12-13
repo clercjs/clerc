@@ -1,10 +1,5 @@
 import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
-import {
-	Clerc,
-	Constraints,
-	NoSuchCommandError,
-	friendlyErrorPlugin,
-} from "clerc";
+import { Clerc, NoSuchCommandError, Types, friendlyErrorPlugin } from "clerc";
 import * as kons from "kons";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mockConsole } from "vitest-console";
@@ -48,7 +43,7 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
-	it("should show parameter constraints", () => {
+	it("should show parameter types", () => {
 		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "Test command", {
@@ -56,11 +51,11 @@ describe("plugin-help", () => {
 					"<param>",
 					{
 						key: "<param2>",
-						constraint: Constraints.Enum("a", "b", "c"),
+						type: Types.Enum("a", "b", "c"),
 					},
 					{
 						key: "[range]",
-						constraint: Constraints.Range(1, 10),
+						type: Types.Range(1, 10),
 					},
 				],
 			})

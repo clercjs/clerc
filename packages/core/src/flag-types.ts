@@ -1,3 +1,1 @@
-import { Enum } from "@clerc/parser";
-
-export { Enum };
+export { Enum, Range, Regex } from "@clerc/parser";
