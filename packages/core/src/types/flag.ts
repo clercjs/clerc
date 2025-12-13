@@ -11,5 +11,5 @@ export type ClercFlagOptionsWithDescription = ClercFlagOptions & {
 };
 export type ClercFlagsDefinition = Record<
 	string,
-	ClercFlagOptionsWithDescription
+	ClercFlagOptionsWithDescription | FlagType
 >;

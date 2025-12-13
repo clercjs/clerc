@@ -47,6 +47,18 @@ describe("core types", () => {
 			});
 	});
 
+	it("should infer flag shorthand", () => {
+		Clerc.create()
+			.command("bar", "bar", {
+				flags: {
+					foo: String,
+				},
+			})
+			.on("bar", (ctx) => {
+				expectTypeOf(ctx.flags.foo).toEqualTypeOf<string | undefined>();
+			});
+	});
+
 	it("should infer global flags", () => {
 		Clerc.create()
 			.globalFlag("foo", "foo", {

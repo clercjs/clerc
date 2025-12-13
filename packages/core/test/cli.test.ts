@@ -144,6 +144,41 @@ describe("cli", () => {
 			.parse(["foo", "bar", "-c", "baz", "qux"]);
 	});
 
+	it("should allow flag type shorthand", () => {
+		TestBaseCli()
+			.command("foo", "foo", {
+				flags: {
+					str: String,
+					num: Number,
+					bool: Boolean,
+					arr: [String],
+				},
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.command.name).toBe("foo");
+				expect(ctx.flags).toStrictEqual({
+					str: "hello",
+					num: 42,
+					bool: true,
+					arr: ["a", "b", "c"],
+				});
+			})
+			.parse([
+				"foo",
+				"--str",
+				"hello",
+				"--num",
+				"42",
+				"--bool",
+				"--arr",
+				"a",
+				"--arr",
+				"b",
+				"--arr",
+				"c",
+			]);
+	});
+
 	it("should parse boolean flag", () => {
 		TestBaseCli()
 			.command("foo", "foo", {
