@@ -3,73 +3,73 @@
 exports[`clerc > should install plugins 1`] = `
 [
   [
-    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+    "[1mtest[22m v0.0.0 - test
 
-[1mUsage[22m
-  [35m$ test <command> [flags][39m
+[4m[1mUsage[22m[24m
+  $ test <command> [flags]
 
-[1mGlobal Flags[22m
-  [34m--version, -V[39m  [90mBoolean[39m  Prints current version  [90m[default: false][39m
-  [34m--help, -h[39m     [90mBoolean[39m  Show help               [90m[default: false][39m
+[4m[1mGlobal Flags[22m[24m
+  [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
+  [1m--help, -h[22m     [2mBoolean[22m  Show help               [2m[default: [1mfalse[22m[2m][22m
 
-[1mCommands[22m
-  [36mversion[39m  Prints current version
-  [36mhelp[39m     Show help
+[4m[1mCommands[22m[24m
+  [1mversion[22m  Prints current version
+  [1mhelp[22m     Show help
 
-[1mExamples[22m
-  $ test help              [33m-[39m  Show help
-  $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command
+[4m[1mExamples[22m[24m
+  $ test help              -  Show help
+  $ test help <command>    -  Show help for a specific command
+  $ test <command> --help  -  Show help for a specific command
 
-[1mNotes[22m
+[4m[1mNotes[22m[24m
   If no command is specified, show help for the CLI.
   If a command is specified, show help for the command.
   -h is an alias for --help.",
   ],
   [
-    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+    "[1mtest[22m v0.0.0 - test
 
-[1mUsage[22m
-  [35m$ test <command> [flags][39m
+[4m[1mUsage[22m[24m
+  $ test <command> [flags]
 
-[1mGlobal Flags[22m
-  [34m--version, -V[39m  [90mBoolean[39m  Prints current version  [90m[default: false][39m
-  [34m--help, -h[39m     [90mBoolean[39m  Show help               [90m[default: false][39m
+[4m[1mGlobal Flags[22m[24m
+  [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
+  [1m--help, -h[22m     [2mBoolean[22m  Show help               [2m[default: [1mfalse[22m[2m][22m
 
-[1mCommands[22m
-  [36mversion[39m  Prints current version
-  [36mhelp[39m     Show help
+[4m[1mCommands[22m[24m
+  [1mversion[22m  Prints current version
+  [1mhelp[22m     Show help
 
-[1mExamples[22m
-  $ test help              [33m-[39m  Show help
-  $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command
+[4m[1mExamples[22m[24m
+  $ test help              -  Show help
+  $ test help <command>    -  Show help for a specific command
+  $ test <command> --help  -  Show help for a specific command
 
-[1mNotes[22m
+[4m[1mNotes[22m[24m
   If no command is specified, show help for the CLI.
   If a command is specified, show help for the command.
   -h is an alias for --help.",
   ],
   [
-    "[32mtest[39m [33mv0.0.0[39m [33m-[39m test
+    "[1mtest[22m v0.0.0 - test
 
-[1mUsage[22m
-  [35m$ test <command> [flags][39m
+[4m[1mUsage[22m[24m
+  $ test <command> [flags]
 
-[1mGlobal Flags[22m
-  [34m--version, -V[39m  [90mBoolean[39m  Prints current version  [90m[default: false][39m
-  [34m--help, -h[39m     [90mBoolean[39m  Show help               [90m[default: false][39m
+[4m[1mGlobal Flags[22m[24m
+  [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
+  [1m--help, -h[22m     [2mBoolean[22m  Show help               [2m[default: [1mfalse[22m[2m][22m
 
-[1mCommands[22m
-  [36mversion[39m  Prints current version
-  [36mhelp[39m     Show help
+[4m[1mCommands[22m[24m
+  [1mversion[22m  Prints current version
+  [1mhelp[22m     Show help
 
-[1mExamples[22m
-  $ test help              [33m-[39m  Show help
-  $ test help <command>    [33m-[39m  Show help for a specific command
-  $ test <command> --help  [33m-[39m  Show help for a specific command
+[4m[1mExamples[22m[24m
+  $ test help              -  Show help
+  $ test help <command>    -  Show help for a specific command
+  $ test <command> --help  -  Show help for a specific command
 
-[1mNotes[22m
+[4m[1mNotes[22m[24m
   If no command is specified, show help for the CLI.
   If a command is specified, show help for the command.
   -h is an alias for --help.",

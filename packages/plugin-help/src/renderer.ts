@@ -141,7 +141,7 @@ export class HelpRenderer {
 			? ` ${yc.bold(command.name)}`
 			: "";
 		const headerLine = command
-			? `${_name}${formattedCommandName}`
+			? `${yc.dim(_name)}${formattedCommandName}`
 			: `${yc.bold(_name)} ${formatVersion(_version)}`;
 		const alias = command?.alias
 			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
