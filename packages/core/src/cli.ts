@@ -50,9 +50,7 @@ export class Clerc<
 > {
 	#argv: string[] = [];
 	#commands: CommandsMap = new Map();
-	#emitter = new LiteEmit<MakeEmitterEvents<Commands, GlobalFlags>>({
-		errorHandler: (error) => this.#handleError(error),
-	});
+	#emitter = new LiteEmit<MakeEmitterEvents<Commands, GlobalFlags>>();
 
 	#globalFlags = {} as GlobalFlags;
 	#store = {} as Partial<ContextStore>;
@@ -374,12 +372,12 @@ export class Clerc<
 
 		const emitInterceptor: Interceptor = {
 			enforce: "post",
-			handler: (ctx) => {
+			handler: async (ctx) => {
 				if (parametersError) {
 					throw parametersError;
 				}
 				if (command) {
-					this.#emitter.emit(command.name, ctx as any);
+					await this.#emitter.emit(command.name, ctx as any);
 				} else {
 					throw parametersToResolve.length > 0
 						? new NoSuchCommandError(parametersToResolve.join(" "))
