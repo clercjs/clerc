@@ -121,20 +121,21 @@ export const helpPlugin = ({
 				"If a command is specified, show help for the command.",
 				flag && "-h is an alias for --help.",
 			].filter(isTruthy);
-			
+
 			// Use getter to lazily evaluate examples when scriptName is available
-			const getGeneralHelpExamples = (): [string, string][] => [
-				command && [`$ ${cli._scriptName} help`, "Show help"],
-				command && [
-					`$ ${cli._scriptName} help <command>`,
-					"Show help for a specific command",
-				],
-				flag && [
-					`$ ${cli._scriptName} <command> --help`,
-					"Show help for a specific command",
-				],
-			].filter(isTruthy) as [string, string][];
-			
+			const getGeneralHelpExamples = (): [string, string][] =>
+				[
+					command && [`$ ${cli._scriptName} help`, "Show help"],
+					command && [
+						`$ ${cli._scriptName} help <command>`,
+						"Show help for a specific command",
+					],
+					flag && [
+						`$ ${cli._scriptName} <command> --help`,
+						"Show help for a specific command",
+					],
+				].filter(isTruthy) as [string, string][];
+
 			const effectiveNotes = notes ?? generalHelpNotes;
 			const getEffectiveExamples = () => examples ?? getGeneralHelpExamples();
 
