@@ -51,9 +51,9 @@ describe("parser", () => {
 	it("should parse aliases and short flags", () => {
 		const { flags } = parse(["-f", "-b", "baz", "-n", "123"], {
 			flags: {
-				foo: { type: Boolean, alias: "f" },
-				bar: { type: String, alias: "b" },
-				num: { type: Number, alias: "n" },
+				foo: { type: Boolean, short: "f" },
+				bar: { type: String, short: "b" },
+				num: { type: Number, short: "n" },
 			},
 		});
 
@@ -63,7 +63,7 @@ describe("parser", () => {
 	it("should parse counter flags", () => {
 		const { flags } = parse(["--verbose", "--verbose", "-v"], {
 			flags: {
-				verbose: { type: [Boolean], alias: "v" },
+				verbose: { type: [Boolean], short: "v" },
 				foo: [Boolean],
 			},
 		});
@@ -77,31 +77,31 @@ describe("parser", () => {
 		// -abval -> a=true, b=val
 		const result1 = parse(["-abc"], {
 			flags: {
-				a: { type: Boolean, alias: "a" },
-				b: { type: Boolean, alias: "b" },
-				c: { type: Boolean, alias: "c" },
+				aa: { type: Boolean, short: "a" },
+				bb: { type: Boolean, short: "b" },
+				cc: { type: Boolean, short: "c" },
 			},
 		});
 
-		expect(result1.flags).toEqual({ a: true, b: true, c: true });
+		expect(result1.flags).toEqual({ aa: true, bb: true, cc: true });
 
 		const result2 = parse(["-ab", "val"], {
 			flags: {
-				a: { type: Boolean, alias: "a" },
-				b: { type: String, alias: "b" },
+				aa: { type: Boolean, short: "a" },
+				bb: { type: String, short: "b" },
 			},
 		});
 
-		expect(result2.flags).toEqual({ a: true, b: "val" });
+		expect(result2.flags).toEqual({ aa: true, bb: "val" });
 
 		const result3 = parse(["-abval"], {
 			flags: {
-				a: { type: Boolean, alias: "a" },
-				b: { type: String, alias: "b" },
+				aa: { type: Boolean, short: "a" },
+				bb: { type: String, short: "b" },
 			},
 		});
 
-		expect(result3.flags).toEqual({ a: true, b: "val" });
+		expect(result3.flags).toEqual({ aa: true, bb: "val" });
 	});
 
 	it("should separate unknown flags and positional arguments", () => {
@@ -327,15 +327,15 @@ describe("parser", () => {
 					num: Number,
 					shouldNotBe: Boolean,
 					eq: String,
-					1: Boolean,
+					d1: { type: Boolean, short: "1" },
 					alias2: {
 						type: Boolean,
-						alias: "2",
+						short: "2",
 					},
-					3: Boolean,
-					4: Boolean,
+					d3: { type: Boolean, short: "3" },
+					d4: { type: Boolean, short: "4" },
 					string: String,
-					a: String,
+					aa: { type: String, short: "a" },
 					notGiven: String,
 				},
 			},
@@ -345,12 +345,12 @@ describe("parser", () => {
 			num: -1,
 			shouldNotBe: true,
 			eq: "",
-			1: true,
+			d1: true,
 			alias2: true,
-			3: true,
-			4: true,
+			d3: true,
+			d4: true,
 			string: "",
-			a: "",
+			aa: "",
 			notGiven: "",
 		});
 		expect(unknown).toEqual({});
@@ -399,12 +399,12 @@ describe("parser", () => {
 
 		// Stop parsing after N flags
 		let flagCount = 0;
-		const result3 = parse(["--a", "--b", "--c", "--d"], {
+		const result3 = parse(["--aa", "--bb", "--cc", "--dd"], {
 			flags: {
-				a: Boolean,
-				b: Boolean,
-				c: Boolean,
-				d: Boolean,
+				aa: Boolean,
+				bb: Boolean,
+				cc: Boolean,
+				dd: Boolean,
 			},
 			ignore: (type) => {
 				if (type === KNOWN_FLAG) {
@@ -417,8 +417,8 @@ describe("parser", () => {
 			},
 		});
 
-		expect(result3.flags).toEqual({ a: true, b: true, c: false, d: false });
-		expect(result3.ignored).toEqual(["--c", "--d"]);
+		expect(result3.flags).toEqual({ aa: true, bb: true, cc: false, dd: false });
+		expect(result3.ignored).toEqual(["--cc", "--dd"]);
 	});
 
 	it("should distinguish known and unknown flags in ignore callback", () => {

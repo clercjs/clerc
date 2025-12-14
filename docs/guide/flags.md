@@ -19,17 +19,17 @@ It's recommended to use camelCase for flag names as it will be interpreted as pa
 
 The flag type function can be any function that accepts a string and returns the parsed value. The default JavaScript constructors should cover most use cases: [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String), [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number), [Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean), etc.
 
-The flag description object can be used to store additional information about the flag, such as `alias`, `default`, and `description`. To accept multiple values for a flag, wrap the type function in an array.
+The flag description object can be used to store additional information about the flag, such as `short`, `default`, and `description`. To accept multiple values for a flag, wrap the type function in an array.
 
 All provided information will be used to generate better help documentation.
 
-## Flag Aliases
+## Flag Short Names
 
-Flag aliases allow users to use shorter or alternative names for flags. This is useful for providing convenient shortcuts for commonly used flags.
+Flag short names allow users to use single-character shortcuts for flags. This is useful for providing convenient shortcuts for commonly used flags.
 
-### Single Alias
+### Defining Short Names
 
-You can define a single alias for a flag using a string:
+You can define a single-character short name for a flag using the `short` property:
 
 ```ts
 const cli = Cli()
@@ -37,13 +37,13 @@ const cli = Cli()
 		flags: {
 			output: {
 				type: String,
-				alias: "o",
+				short: "o",
 				description: "Output directory",
 			},
 
 			verbose: {
 				type: Boolean,
-				alias: "v",
+				short: "v",
 				description: "Enable verbose output",
 			},
 		},
@@ -59,42 +59,14 @@ const cli = Cli()
 	.parse();
 ```
 
-### Multiple Aliases
+### Validation Rules
 
-You can define multiple aliases for a flag using an array:
+- Flag names must be at least 2 characters long
+- The `short` property must be exactly 1 character
 
-```ts
-const cli = Cli()
-	.command("config", "Configure the application", {
-		flags: {
-			config: {
-				type: String,
-				alias: ["c", "cfg"],
-				description: "Configuration file path",
-			},
+### Combined Short Names
 
-			format: {
-				type: String,
-				alias: ["f", "fmt"],
-				description: "Output format",
-			},
-		},
-	})
-	.on("config", (ctx) => {
-		// All of these work:
-		// $ node cli.mjs config --config file.json
-		// $ node cli.mjs config -c file.json
-		// $ node cli.mjs config -cfg file.json
-		// $ node cli.mjs config --format json
-		// $ node cli.mjs config -f json
-		// $ node cli.mjs config -fmt json
-	})
-	.parse();
-```
-
-### Combined Short Aliases
-
-When using short aliases (single characters), they can be combined together:
+When using short names (single characters), they can be combined together:
 
 ```ts
 const cli = Cli()
@@ -102,19 +74,19 @@ const cli = Cli()
 		flags: {
 			output: {
 				type: String,
-				alias: "o",
+				short: "o",
 				description: "Output file",
 			},
 
 			verbose: {
 				type: Boolean,
-				alias: "v",
+				short: "v",
 				description: "Verbose output",
 			},
 
 			recursive: {
 				type: Boolean,
-				alias: "r",
+				short: "r",
 				description: "Recursive mode",
 			},
 		},
@@ -153,7 +125,7 @@ const cli = Cli()
 			someNumber: {
 				// Wrap the type function in an array to allow multiple values
 				type: [Number],
-				alias: "n",
+				short: "n",
 				description: "Array of numbers. (e.g. -n 1 -n 2 -n 3)",
 			},
 

@@ -33,7 +33,7 @@ const cli = Cli()
 
 			message: {
 				type: String,
-				alias: "m",
+				short: "m",
 				description: "Greeting message",
 			},
 		},
@@ -66,7 +66,7 @@ const cli = Cli()
 
 			watch: {
 				type: Boolean,
-				alias: "w",
+				short: "w",
 				description: "Enable watch mode",
 			},
 		},
@@ -135,14 +135,14 @@ const cli = Cli()
 			// Use [String] to accept multiple string values
 			include: {
 				type: [String],
-				alias: "i",
+				short: "i",
 				description: "File patterns to include",
 			},
 
 			// Use [Number] to accept multiple numeric values
 			ports: {
 				type: [Number],
-				alias: "p",
+				short: "p",
 				description: "Ports to listen on",
 			},
 		},
@@ -172,7 +172,7 @@ const cli = Cli()
 			// [Boolean] type counts how many times the flag is used
 			verbose: {
 				type: [Boolean],
-				alias: "v",
+				short: "v",
 				description: "Verbosity level (-v, -vv, -vvv)",
 			},
 		},
@@ -205,7 +205,7 @@ const cli = Cli()
 		flags: {
 			define: {
 				type: Object,
-				alias: "d",
+				short: "d",
 				description: "Define environment variables",
 			},
 		},
@@ -467,7 +467,7 @@ const cli = Cli()
 			// Use [CommaSeparatedList] to accept multiple comma-separated lists
 			patterns: {
 				type: [CommaSeparatedList],
-				alias: "p",
+				short: "p",
 				description: "File patterns (comma-separated)",
 			},
 		},

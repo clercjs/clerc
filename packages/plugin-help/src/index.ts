@@ -202,7 +202,7 @@ export const helpPlugin = ({
 
 			if (flag) {
 				cli.globalFlag("help", "Show help", {
-					alias: "h",
+					short: "h",
 					type: Boolean,
 					default: false,
 				});
