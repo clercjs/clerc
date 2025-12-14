@@ -41,7 +41,7 @@ export const completionsPlugin = (): Plugin =>
 					parameters: [
 						{
 							key: "[shell]",
-							description: "Shell type (zsh, bash, fish, powershell)",
+							description: "Shell type",
 							type: supportedShellEnum,
 						},
 					],
