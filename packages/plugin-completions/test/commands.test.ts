@@ -1,19 +1,22 @@
+import t from "@bomb.sh/tab";
 import { TestBaseCli } from "@clerc/test-utils";
-import tabtab, { getShellFromEnv } from "@pnpm/tabtab";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { completionsPlugin } from "../src";
 
-vi.mock("@pnpm/tabtab", () => ({
+vi.mock("@bomb.sh/tab", () => ({
 	default: {
-		install: vi.fn(),
-		uninstall: vi.fn(),
-		getCompletionScript: vi.fn().mockResolvedValue("mock script"),
-		parseEnv: vi.fn(),
-		log: vi.fn(),
-		SUPPORTED_SHELLS: ["bash", "zsh", "fish"],
+		setup: vi.fn(),
+		parse: vi.fn(),
+		commands: new Map(),
+		options: new Map(),
+		arguments: new Map(),
+		completions: [],
+		command: vi.fn().mockReturnValue({
+			option: vi.fn(),
+		}),
+		option: vi.fn(),
 	},
-	getShellFromEnv: vi.fn(),
 }));
 
 describe("plugin-completions/commands", () => {
@@ -21,71 +24,29 @@ describe("plugin-completions/commands", () => {
 		vi.clearAllMocks();
 	});
 
-	describe("completions install", () => {
-		it("should install completions", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-
-			await cli.parse(["completions", "install", "--shell", "bash"]);
-
-			expect(tabtab.install).toHaveBeenCalledWith({
-				name: "test",
-				completer: "test",
-				shell: "bash",
-			});
-		});
-
-		it("should throw error if shell is missing", async () => {
-			await expect(async () => {
-				await TestBaseCli()
-					.use(completionsPlugin())
-					.parse(["completions", "install"]);
-			}).rejects.toThrow("Please specify the shell type");
-		});
-
-		it("should throw error if shell is unsupported", async () => {
-			await expect(async () => {
-				await TestBaseCli()
-					.use(completionsPlugin())
-					.parse(["completions", "install", "--shell", "invalid"]);
-			}).rejects.toThrowErrorMatchingInlineSnapshot(
-				"[Error: Invalid value: invalid. Must be one of: bash, zsh, fish]",
-			);
-		});
-	});
-
-	describe("completions uninstall", () => {
-		it("should uninstall completions", async () => {
-			const cli = TestBaseCli().use(completionsPlugin());
-
-			await cli.parse(["completions", "uninstall"]);
-
-			expect(tabtab.uninstall).toHaveBeenCalledWith({
-				name: "test",
-			});
-		});
-	});
-
 	describe("completions", () => {
-		it("should generate completion script", async () => {
-			const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		it("should setup completions with shell parameter", async () => {
 			const cli = TestBaseCli().use(completionsPlugin());
 
-			await cli.parse(["completions", "--shell", "bash"]);
+			await cli.parse(["completions", "bash"]);
 
-			expect(tabtab.getCompletionScript).toHaveBeenCalledWith({
-				name: "test",
-				completer: "test",
-				shell: "bash",
-			});
-			expect(consoleSpy).toHaveBeenCalledWith("mock script");
+			expect(t.setup).toHaveBeenCalledWith("test", "test", "bash");
+		});
 
-			consoleSpy.mockRestore();
+		it("should setup completions with shell flag", async () => {
+			const cli = TestBaseCli().use(completionsPlugin());
+
+			await cli.parse(["completions", "--shell", "zsh"]);
+
+			expect(t.setup).toHaveBeenCalledWith("test", "test", "zsh");
 		});
 
 		it("should throw error if shell is missing", async () => {
 			await expect(async () => {
 				await TestBaseCli().use(completionsPlugin()).parse(["completions"]);
-			}).rejects.toThrow("Please specify the shell type");
+			}).rejects.toThrow(
+				"Shell type is required. Please provide it via --shell flag or [shell] parameter.",
+			);
 		});
 
 		it("should throw error if shell is unsupported", async () => {
@@ -94,47 +55,28 @@ describe("plugin-completions/commands", () => {
 					.use(completionsPlugin())
 					.parse(["completions", "--shell", "invalid"]);
 			}).rejects.toThrowErrorMatchingInlineSnapshot(
-				"[Error: Invalid value: invalid. Must be one of: bash, zsh, fish]",
+				"[Error: Invalid value: invalid. Must be one of: zsh, bash, fish, powershell]",
 			);
 		});
 	});
 
-	describe("completion-server", () => {
-		it("should handle completion request", async () => {
+	describe("complete", () => {
+		it("should parse completion input", async () => {
 			const cli = TestBaseCli()
 				.use(completionsPlugin())
 				.command("commit", "Commit changes");
 
-			vi.mocked(tabtab.parseEnv).mockReturnValue({
-				complete: true,
-				words: ["test", "com"],
-				point: 8,
-				partial: "test com",
-				lastPartial: "com",
-				line: "test com",
-			} as any);
+			await cli.parse(["complete", "--", "test", "com"]);
 
-			vi.mocked(getShellFromEnv).mockReturnValue("bash");
-
-			await cli.parse(["completion-server"]);
-
-			expect(tabtab.log).toHaveBeenCalled();
-
-			const candidates = vi.mocked(tabtab.log).mock.calls[0][0] as any[];
-
-			expect(candidates.some((c) => c.name === "commit")).toBeTruthy();
+			expect(t.parse).toHaveBeenCalledWith(["test", "com"]);
 		});
 
-		it("should do nothing if not in completion mode", async () => {
+		it("should handle empty input", async () => {
 			const cli = TestBaseCli().use(completionsPlugin());
 
-			vi.mocked(tabtab.parseEnv).mockReturnValue({
-				complete: false,
-			} as any);
+			await cli.parse(["complete", "--"]);
 
-			await cli.parse(["completion-server"]);
-
-			expect(tabtab.log).not.toHaveBeenCalled();
+			expect(t.parse).toHaveBeenCalledWith([]);
 		});
 	});
 });

@@ -4,7 +4,7 @@ title: Completions Plugin
 
 # @clerc/plugin-completions
 
-A plugin that adds command-line auto-completion functionality to your CLI. Based on [@pnpm/tabtab](https://github.com/pnpm/tabtab)
+A plugin that adds command-line auto-completion functionality to your CLI. Based on [@bomb.sh/tab](https://github.com/bombshell-dev/tab).
 
 ## 📦 Installation
 
