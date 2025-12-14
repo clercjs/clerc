@@ -34,3 +34,17 @@ export type DeepPrettify<T, E = never> = ConditionalDeepPrettify<
 >;
 
 export type IsAny<T> = 0 extends 1 & T ? true : false;
+
+export type RequireExactlyOne<T, Keys extends keyof T = keyof T> = {
+	[K in Keys]-?: Required<Pick<T, K>> &
+		Partial<Record<Exclude<Keys, K>, never>>;
+}[Keys] &
+	Omit<T, Keys>;
+
+export type RequireExactlyOneOrNone<T, Keys extends keyof T = keyof T> =
+	| ({
+			[K in Keys]-?: Required<Pick<T, K>> &
+				Partial<Record<Exclude<Keys, K>, never>>;
+	  }[Keys] &
+			Omit<T, Keys>)
+	| (Partial<Record<Keys, never>> & Omit<T, Keys>);

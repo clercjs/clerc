@@ -1,4 +1,4 @@
-import type { IsAny, Prettify } from "@clerc/utils";
+import type { IsAny, Prettify, RequireExactlyOneOrNone } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
@@ -40,7 +40,17 @@ export type TypeValue<T = unknown> =
 	| TypeFunction<T>
 	| readonly [TypeFunction<T>];
 
-export interface BaseFlagOptions<T extends TypeValue = TypeValue> {
+type Foo = RequireExactlyOneOrNone<
+	{
+		/** The default value of the flag. */
+		default?: unknown;
+		/** Whether the flag is required. */
+		required?: boolean;
+	},
+	"default" | "required"
+>;
+
+export type BaseFlagOptions<T extends TypeValue = TypeValue> = Foo & {
 	/**
 	 * The type constructor or a function to convert the string value.
 	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
@@ -49,11 +59,7 @@ export interface BaseFlagOptions<T extends TypeValue = TypeValue> {
 	type: T;
 	/** Short flag alias (single character). */
 	short?: string;
-	/** The default value of the flag. */
-	default?: unknown;
-	/** Whether the flag is required. */
-	required?: boolean;
-}
+};
 export type FlagOptions =
 	| (BaseFlagOptions<BooleanConstructor> & {
 			/**
@@ -121,6 +127,8 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
 	unknown: Record<string, RawInputType>;
 	/** Arguments that were not parsed due to ignore callback. */
 	ignored: string[];
+	/** List of required flags that were not provided. */
+	missingRequiredFlags: string[];
 }
 
 type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {

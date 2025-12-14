@@ -73,6 +73,12 @@ export function buildConfigsAndAliases(
 				`${prefix} contains reserved characters, which are used as delimiters.`,
 			);
 		}
+
+		if (options.required && options.default !== undefined) {
+			throw new InvalidSchemaError(
+				`${prefix} cannot be both required and have a default value.`,
+			);
+		}
 	}
 
 	for (const [name, config] of Object.entries(flags)) {
