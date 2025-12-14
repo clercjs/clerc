@@ -154,11 +154,7 @@ export const completionsPlugin = (
 					const shell = getShellFromEnv(process.env);
 					const candidates = await getCompletion(cli, env);
 
-					const filtered = candidates.filter((c) =>
-						c.name.startsWith(env.lastPartial),
-					);
-
-					tabtab.log(filtered, shell);
+					tabtab.log(candidates, shell);
 				});
 
 			return cli;
