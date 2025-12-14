@@ -174,6 +174,62 @@ const cli = Cli()
 	.parse();
 ```
 
+## Required Flags
+
+To make a flag required, you can set the `required` property to `true` in the flag description object:
+
+```ts
+const cli = Cli()
+	.command("deploy", "Deploy the application", {
+		flags: {
+			env: {
+				type: String,
+				description: "Deployment environment",
+				required: true, // This flag is required
+			},
+		},
+	})
+	.on("deploy", (ctx) => {
+		ctx.flags.env; // This will always have a value
+		//        ^?
+	})
+	.parse();
+```
+
+## Default Values
+
+You can provide default values for flags using the `default` property in the flag description object:
+
+```ts
+const cli = Cli()
+	.command("serve", "Start the server", {
+		flags: {
+			port: {
+				type: Number,
+				description: "Port number",
+				default: 3000, // Default port is 3000
+			},
+		},
+	})
+	.on("serve", (ctx) => {
+		ctx.flags.port; // If not provided, this will be 3000
+		//        ^?
+	})
+	.parse();
+```
+
+:::warning
+If a flag is marked as `required` and also has a `default` value, an `InvalidSchemaError` will be thrown at runtime, and a type error will be raised during type checking.
+:::
+
 ## Flag Types
 
 For detailed information about flag types, including built-in basic types (String, Boolean, Array, Counter, Object) and advanced types (Enum, Range, Regex), as well as custom type definitions, see the [Types](./types) guide.
+
+```
+
+```
+
+```
+
+```

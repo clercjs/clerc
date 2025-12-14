@@ -122,6 +122,54 @@ const cli = Cli()
 	.parse();
 ```
 
+## 必需的选项
+
+要使选项成为必需的，可以在选项描述对象中将 `required` 属性设置为 `true`：
+
+```ts
+const cli = Cli()
+	.command("deploy", "部署应用程序", {
+		flags: {
+			env: {
+				type: String,
+				description: "部署环境",
+				required: true, // 这个选项是必需的
+			},
+		},
+	})
+	.on("deploy", (ctx) => {
+		ctx.flags.env; // 这将始终有一个值
+		//        ^?
+	})
+	.parse();
+```
+
+## 默认值
+
+你可以在选项描述对象中使用 `default` 属性为选项提供默认值：
+
+```ts
+const cli = Cli()
+	.command("serve", "启动服务器", {
+		flags: {
+			port: {
+				type: Number,
+				description: "端口号",
+				default: 3000, // 默认端口是 3000
+			},
+		},
+	})
+	.on("serve", (ctx) => {
+		ctx.flags.port; // 如果未提供，则默认为 3000
+		//        ^?
+	})
+	.parse();
+```
+
+:::warning
+如果一个标志被标记为 `required` 并且也有一个 `default` 值，那么在运行时会抛出一个 `InvalidSchemaError`，并且在类型检查期间会引发类型错误。
+:::
+
 ## 标志类型
 
 关于标志类型的详细信息，包括内置基础类型（String、Boolean、Array、Counter、Object）和高级类型（Enum、Range、Regex），以及自定义类型定义，请参阅[类型](./types)指南。
