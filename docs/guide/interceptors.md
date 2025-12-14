@@ -94,3 +94,7 @@ const cli = Clerc.create()
 ## Context Type
 
 The context type for interceptors is `InterceptorContext`, which is currently an alias for `BaseContext`, but provides better IDE type display. [See the context documentation](./context) for more information.
+
+## Behavior of Accessing Options and Arguments in Interceptors
+
+In interceptors, you can access `ctx.flags` and `ctx.parameters`. However, be aware that required flag and argument validation errors are only thrown before the command handler is called. This means that if you access a required flag in an interceptor and the user did not provide it, the flag will not be present in `ctx.flags`, and an error will only be thrown later when the command handler is invoked.
