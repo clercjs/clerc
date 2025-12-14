@@ -14,12 +14,15 @@ export const PACKAGES = Object.fromEntries(
 		.map((name) => {
 			const pkgPath = `../packages/${name}/package.json`;
 			if (!existsSync(pkgPath)) {
-				throw new Error(`Package.json not found for package: ${name}`);
+				console.error(`package.json not found for package: ${name}`);
+
+				return null;
 			}
 			const pkgJson = JSON.parse(readFileSync(pkgPath, "utf-8"));
 
 			return [name, pkgJson.name as string] as const;
 		})
+		.filter((x): x is [string, string] => !!x)
 		.toSorted(([a], [b]) => a.localeCompare(b)),
 );
 const tsconfig = "../tsconfig.json";
