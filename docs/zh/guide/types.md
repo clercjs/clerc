@@ -33,7 +33,7 @@ const cli = Cli()
 
 			message: {
 				type: String,
-				alias: "m",
+				short: "m",
 				description: "问候信息",
 			},
 		},
@@ -66,7 +66,7 @@ const cli = Cli()
 
 			watch: {
 				type: Boolean,
-				alias: "w",
+				short: "w",
 				description: "启用监视模式",
 			},
 		},
@@ -135,14 +135,14 @@ const cli = Cli()
 			// 使用 [String] 来接受多个字符串值
 			include: {
 				type: [String],
-				alias: "i",
+				short: "i",
 				description: "包含的文件模式",
 			},
 
 			// 使用 [Number] 来接受多个数字值
 			ports: {
 				type: [Number],
-				alias: "p",
+				short: "p",
 				description: "要监听的端口",
 			},
 		},
@@ -172,7 +172,7 @@ const cli = Cli()
 			// [Boolean] 类型会计数选项被使用的次数
 			verbose: {
 				type: [Boolean],
-				alias: "v",
+				short: "v",
 				description: "详细日志级别（-v, -vv, -vvv）",
 			},
 		},
@@ -205,7 +205,7 @@ const cli = Cli()
 		flags: {
 			define: {
 				type: Object,
-				alias: "d",
+				short: "d",
 				description: "定义环境变量",
 			},
 		},
@@ -467,7 +467,7 @@ const cli = Cli()
 			// 使用 [CommaSeparatedList] 来接受多个逗号分隔的列表
 			patterns: {
 				type: [CommaSeparatedList],
-				alias: "p",
+				short: "p",
 				description: "文件模式（逗号分隔）",
 			},
 		},

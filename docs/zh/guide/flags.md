@@ -19,17 +19,17 @@ _Clerc_ 的选项解析由 [`@clerc/parser`](https://github.com/clercjs/clerc/bl
 
 选项类型函数可以是任何接受字符串并返回解析后的值的函数。默认的 JavaScript 构造函数应该涵盖大多数用例：[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String)、[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number)、[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean) 等。
 
-选项描述对象可用于存储有关选项的其他信息，例如 `alias`、`default` 和 `description`。要接受选项的多个值，请将类型函数包装在数组中。
+选项描述对象可用于存储有关选项的其他信息，例如 `short`、`default` 和 `description`。要接受选项的多个值，请将类型函数包装在数组中。
 
 所有提供的信息将用于生成更好的帮助文档。
 
-## 选项别名
+## 选项短名称
 
-选项别名允许用户使用更短的或替代的名称来指定选项。这对于为常用的选项提供便捷的快捷方式很有用。
+选项短名称允许用户使用单个字符来指定选项。这对于为常用的选项提供便捷的快捷方式很有用。
 
-### 单个别名
+### 定义短名称
 
-你可以使用字符串为选项定义单个别名：
+你可以使用`short`属性为选项定义一个单字符的短名称：
 
 ```ts
 const cli = Cli()
@@ -37,13 +37,13 @@ const cli = Cli()
 		flags: {
 			output: {
 				type: String,
-				alias: "o",
+				short: "o",
 				description: "输出目录",
 			},
 
 			verbose: {
 				type: Boolean,
-				alias: "v",
+				short: "v",
 				description: "启用详细输出",
 			},
 		},
@@ -59,42 +59,14 @@ const cli = Cli()
 	.parse();
 ```
 
-### 多个别名
+### 验证规则
 
-你可以使用数组为选项定义多个别名：
+- flag名称必须至少包含2个字符
+- `short`属性必须恰好为1个字符
 
-```ts
-const cli = Cli()
-	.command("config", "配置应用", {
-		flags: {
-			config: {
-				type: String,
-				alias: ["c", "cfg"],
-				description: "配置文件路径",
-			},
+### 组合短名称
 
-			format: {
-				type: String,
-				alias: ["f", "fmt"],
-				description: "输出格式",
-			},
-		},
-	})
-	.on("config", (ctx) => {
-		// 所有这些都可以工作：
-		// $ node cli.mjs config --config file.json
-		// $ node cli.mjs config -c file.json
-		// $ node cli.mjs config -cfg file.json
-		// $ node cli.mjs config --format json
-		// $ node cli.mjs config -f json
-		// $ node cli.mjs config -fmt json
-	})
-	.parse();
-```
-
-### 组合短别名
-
-使用短别名（单个字符）时，它们可以组合在一起：
+使用短名称（单个字符）时，它们可以组合在一起：
 
 ```ts
 const cli = Cli()
@@ -102,19 +74,19 @@ const cli = Cli()
 		flags: {
 			output: {
 				type: String,
-				alias: "o",
+				short: "o",
 				description: "输出文件",
 			},
 
 			verbose: {
 				type: Boolean,
-				alias: "v",
+				short: "v",
 				description: "详细输出",
 			},
 
 			recursive: {
 				type: Boolean,
-				alias: "r",
+				short: "r",
 				description: "递归模式",
 			},
 		},

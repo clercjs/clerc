@@ -39,7 +39,7 @@ export const versionPlugin = ({
 			if (flag) {
 				cli
 					.globalFlag("version", "Prints current version", {
-						alias: "V",
+						short: "V",
 						type: Boolean,
 						default: false,
 					})

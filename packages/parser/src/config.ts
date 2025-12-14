@@ -1,5 +1,5 @@
 import type { PartialRequired } from "@clerc/utils";
-import { camelCase, looseIsArray, toArray } from "@clerc/utils";
+import { camelCase, looseIsArray } from "@clerc/utils";
 
 import { InvalidSchemaError } from "./errors";
 import type {
@@ -49,10 +49,23 @@ export function buildConfigsAndAliases(
 			);
 		}
 
+		// Validate flag name must be at least 2 characters
+		if (name.length < 2) {
+			throw new InvalidSchemaError(
+				`${prefix} name must be at least 2 characters long.`,
+			);
+		}
+
 		const names = [name];
 
-		if (options.alias) {
-			names.push(...toArray(options.alias));
+		// Validate short flag must be exactly 1 character
+		if (options.short) {
+			if (options.short.length !== 1) {
+				throw new InvalidSchemaError(
+					`${prefix} short flag must be exactly 1 character long.`,
+				);
+			}
+			names.push(options.short);
 		}
 
 		if (names.some(isNameInvalid)) {
@@ -69,13 +82,8 @@ export function buildConfigsAndAliases(
 		configs.set(name, normalized);
 		aliases.set(name, name);
 		aliases.set(camelCase(name), name);
-		if (normalized.alias) {
-			const list = Array.isArray(normalized.alias)
-				? normalized.alias
-				: [normalized.alias];
-			for (const a of list) {
-				aliases.set(a, name);
-			}
+		if (normalized.short) {
+			aliases.set(normalized.short, name);
 		}
 	}
 

@@ -25,11 +25,11 @@ describe("plugin-completions/complete", () => {
 			const cli = TestBaseCli()
 				.globalFlag("verbose", "Enable verbose mode", {
 					type: Boolean,
-					alias: "v",
+					short: "v",
 				})
 				.globalFlag("output", "Output file", {
 					type: String,
-					alias: "o",
+					short: "o",
 				})
 				.command("build", "Build the project", {
 					flags: {
@@ -155,7 +155,7 @@ describe("plugin-completions/complete", () => {
 			const cli = TestBaseCli()
 				.globalFlag("help", "Show help", {
 					type: Boolean,
-					alias: "h",
+					short: "h",
 				})
 				.command("test", "Test command");
 

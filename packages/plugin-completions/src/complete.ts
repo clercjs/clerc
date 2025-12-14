@@ -1,6 +1,6 @@
 import type { Clerc, ClercFlagsDefinition } from "@clerc/core";
 import { DOUBLE_DASH, normalizeFlagValue, resolveCommand } from "@clerc/core";
-import { formatFlagName, toArray } from "@clerc/utils";
+import { formatFlagName } from "@clerc/utils";
 import type { CompletionItem, ParseEnvResult } from "@pnpm/tabtab";
 
 function splitCommand(cmd: string) {
@@ -72,7 +72,10 @@ export async function getCompletion(
 		const candidates: CompletionItem[] = [];
 		for (const [name, def] of Object.entries(flags)) {
 			const normalized = normalizeFlagValue(def);
-			const names = [name, ...toArray(normalized.alias ?? [])];
+			const names = [name];
+			if (normalized.short) {
+				names.push(normalized.short);
+			}
 			for (const name of names) {
 				candidates.push({
 					name: formatFlagName(name),

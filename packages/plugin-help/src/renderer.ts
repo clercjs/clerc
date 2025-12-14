@@ -369,15 +369,11 @@ export class HelpRenderer {
 	private renderFlagItem(name: string, flag: ClercFlagDefinitionValue) {
 		flag = normalizeFlagValue(flag);
 		const flagName = formatFlagName(name);
-		const aliases = (
-			Array.isArray(flag.alias) ? flag.alias : flag.alias ? [flag.alias] : []
-		)
-			.map(formatFlagName)
-			.join(", ");
+		const shortFlag = flag.short ? formatFlagName(flag.short) : "";
 		const type = this._formatters.formatTypeValue(flag.type);
 
 		return [
-			yc.bold([flagName, aliases].filter(Boolean).join(", ")),
+			yc.bold([flagName, shortFlag].filter(Boolean).join(", ")),
 			yc.dim(type),
 			flag.description,
 			flag.default !== undefined &&
