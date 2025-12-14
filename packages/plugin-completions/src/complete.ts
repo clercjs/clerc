@@ -72,18 +72,12 @@ export async function getCompletion(
 		const candidates: CompletionItem[] = [];
 		for (const [name, def] of Object.entries(flags)) {
 			const normalized = normalizeFlagValue(def);
-			candidates.push({
-				name: formatFlagName(name),
-				description: normalized.description,
-			});
-			if (normalized.alias) {
-				const aliases = toArray(normalized.alias);
-				for (const alias of aliases) {
-					candidates.push({
-						name: formatFlagName(alias),
-						description: normalized.description,
-					});
-				}
+			const names = [name, ...toArray(normalized.alias ?? [])];
+			for (const name of names) {
+				candidates.push({
+					name: formatFlagName(name),
+					description: normalized.description,
+				});
 			}
 		}
 
