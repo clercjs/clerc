@@ -6,7 +6,7 @@ exports[`plugin-help > grouping > should display subcommands 1`] = `
     "[2mtest[22m [1mparent[22m - Parent command
 
 [4m[1mUsage[22m[24m
-  $ test parent [flags]
+  $ [2mtest[22m parent [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -19,7 +19,7 @@ exports[`plugin-help > grouping > should display subcommands 1`] = `
     "[2mtest[22m - Parent command
 
 [4m[1mUsage[22m[24m
-  $ test [flags]
+  $ [2mtest[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
@@ -33,7 +33,7 @@ exports[`plugin-help > grouping > should group command flags 1`] = `
     "[2mtest[22m [1mbuild[22m - Build project
 
 [4m[1mUsage[22m[24m
-  $ test build [flags]
+  $ [2mtest[22m build [2m[flags][22m
 
 [4m[1mFlags[22m[24m
   [1m--output[22m  [2mString[22m  Output directory
@@ -54,7 +54,7 @@ exports[`plugin-help > grouping > should group commands 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -89,7 +89,7 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help         [2m[default: [1mfalse[22m[2m][22m
@@ -121,7 +121,7 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -150,7 +150,7 @@ exports[`plugin-help > should format custom flag default with "display" property
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help                   [2m[default: [1mfalse[22m[2m][22m
@@ -178,7 +178,7 @@ exports[`plugin-help > should format custom flag type with "display" property 1`
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m      Show help                [2m[default: [1mfalse[22m[2m][22m
@@ -206,7 +206,7 @@ exports[`plugin-help > should not show commands placeholder when no commands exi
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test [flags]
+  $ [2mtest[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -228,7 +228,7 @@ exports[`plugin-help > should not show commands placeholder when only registered
     "[2mtest[22m
 
 [4m[1mUsage[22m[24m
-  $ test [flags]
+  $ [2mtest[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
@@ -242,7 +242,7 @@ exports[`plugin-help > should not show commands which set \`show\` to false 1`] 
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -269,7 +269,7 @@ exports[`plugin-help > should show --help 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -320,7 +320,7 @@ exports[`plugin-help > should show help 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -347,7 +347,7 @@ exports[`plugin-help > should show help when no command 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -374,10 +374,10 @@ exports[`plugin-help > should show parameter description 1`] = `
     "[2mtest[22m [1mtest[22m - Test command
 
 [4m[1mUsage[22m[24m
-  $ test test <param> [flags]
+  $ [2mtest[22m test <param> [2m[flags][22m
 
 [4m[1mParameters[22m[24m
-  [1m<param>[22m  string  Description for param
+  [1m<param>[22m  [2mstring[22m  Description for param
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
@@ -391,13 +391,13 @@ exports[`plugin-help > should show parameter types 1`] = `
     "[2mtest[22m [1mtest[22m - Test command
 
 [4m[1mUsage[22m[24m
-  $ test test <param> <param2> [range] [regex] [flags]
+  $ [2mtest[22m test <param> <param2> [range] [regex] [2m[flags][22m
 
 [4m[1mParameters[22m[24m
-  [1m<param>[22m   string
-  [1m<param2>[22m  a | b | c
-  [1m[range][22m   1 - 10
-  [1m[regex][22m   Regex: /^\\d+$/
+  [1m<param>[22m   [2mstring[22m
+  [1m<param2>[22m  [2ma | b | c[22m
+  [1m[range][22m   [2m1 - 10[22m
+  [1m[regex][22m   [2mRegex: /^\\d+$/[22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
@@ -411,7 +411,7 @@ exports[`plugin-help > should support flag shorthand 1`] = `
     "[2mtest[22m [1mtest[22m - Test command
 
 [4m[1mUsage[22m[24m
-  $ test test [flags]
+  $ [2mtest[22m test [2m[flags][22m
 
 [4m[1mFlags[22m[24m
   [1m--verbose[22m  [2mBoolean[22m
@@ -428,10 +428,10 @@ exports[`plugin-help > should support no description 1`] = `
     "[2mtest[22m [1mtest[22m
 
 [4m[1mUsage[22m[24m
-  $ test test <param> [flags]
+  $ [2mtest[22m test <param> [2m[flags][22m
 
 [4m[1mParameters[22m[24m
-  [1m<param>[22m  string
+  [1m<param>[22m  [2mstring[22m
 
 [4m[1mFlags[22m[24m
   [1m--flag[22m  [2mBoolean[22m
@@ -449,7 +449,7 @@ exports[`plugin-help > should support optional description for command 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
@@ -477,7 +477,7 @@ exports[`plugin-help > should support optional description for global flag 1`] =
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help              [2m[default: [1mfalse[22m[2m][22m
@@ -505,7 +505,7 @@ exports[`plugin-help > should use [] as placeholder when root command exists 1`]
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test [command] [flags]
+  $ [2mtest[22m [2m[command][22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m

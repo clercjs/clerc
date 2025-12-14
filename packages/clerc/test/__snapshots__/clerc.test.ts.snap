@@ -6,7 +6,7 @@ exports[`clerc > should install plugins 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
@@ -30,7 +30,7 @@ exports[`clerc > should install plugins 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
@@ -54,7 +54,7 @@ exports[`clerc > should install plugins 1`] = `
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
-  $ test <command> [flags]
+  $ [2mtest[22m [2m<command>[22m [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--version, -V[22m  [2mBoolean[22m  Prints current version  [2m[default: [1mfalse[22m[2m][22m
