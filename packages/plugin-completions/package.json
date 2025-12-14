@@ -45,6 +45,7 @@
 		"access": "public"
 	},
 	"dependencies": {
+		"@bomb.sh/tab": "^0.0.10",
 		"@pnpm/tabtab": "^0.5.4"
 	},
 	"devDependencies": {

@@ -1,8 +1,8 @@
-import type { Plugin } from "@clerc/core";
-import { Types, definePlugin } from "@clerc/core";
-import tabtab, { getShellFromEnv } from "@pnpm/tabtab";
+import { writeFileSync } from "node:fs";
 
-import { getCompletion } from "./complete";
+import t from "@bomb.sh/tab";
+import type { ClercFlagsDefinition, Plugin } from "@clerc/core";
+import { Types, definePlugin, normalizeFlagValue } from "@clerc/core";
 
 declare module "@clerc/core" {
 	export interface CommandCustomOptions {
@@ -22,8 +22,8 @@ declare module "@clerc/core" {
 
 export interface CompletionsPluginOptions {
 	/**
-	 * Whether to register the `completions install` and `completions uninstall` commands.
-	 * @default true
+	 * @deprecated `tab` does not require install/uninstall management commands.
+	 * This option is kept for backward compatibility and has no effect.
 	 */
 	managementCommands?: boolean;
 }
@@ -33,73 +33,102 @@ export const completionsPlugin = (
 ): Plugin =>
 	definePlugin({
 		setup: (cli) => {
-			const { managementCommands = true } = options;
+			// kept for backwards compatibility; no longer used
+			void options;
 
 			cli.store.help?.addGroup({
 				commands: [["completions", "Completions"]],
 			});
 
-			const supportedShellEnum = Types.Enum(...tabtab.SUPPORTED_SHELLS);
+			const supportedShellEnum = Types.Enum(
+				"zsh",
+				"bash",
+				"fish",
+				"powershell",
+			);
 
-			if (managementCommands) {
-				cli
-					.command("completions install", "Install shell completions", {
-						help: {
-							group: "completions",
-						},
-						flags: {
-							shell: {
-								description: "Shell type",
-								type: supportedShellEnum,
-							},
-						},
-						parameters: [
-							{
-								key: "[shell]",
-								description: "Shell type",
-								type: supportedShellEnum,
-							},
-						],
-					})
-					.on("completions install", async (ctx) => {
-						const shell = ctx.parameters.shell ?? ctx.flags.shell;
-						if (!shell) {
-							throw new Error(
-								"Please specify the shell type via the --shell flag or the [shell] parameter.",
-							);
-						}
-						if (!tabtab.SUPPORTED_SHELLS.includes(shell)) {
-							throw new Error(
-								`Unsupported shell: ${shell}. Supported shells are: ${tabtab.SUPPORTED_SHELLS.join(
-									", ",
-								)}.`,
-							);
-						}
-						await tabtab.install({
-							name: cli._scriptName,
-							completer: cli._scriptName,
-							shell,
-						});
-					});
+			function resetTab() {
+				// `t` is a singleton. Clear previous state to avoid duplicates across invocations.
+				t.commands.clear();
+				t.options.clear();
+				t.arguments.clear();
+				t.completions = [];
+			}
 
-				cli
-					.command("completions uninstall", "Uninstall shell completions", {
-						help: {
-							group: "completions",
-						},
-					})
-					.on("completions uninstall", async () => {
-						await tabtab.uninstall({
-							name: cli._scriptName,
-						});
-					});
+			function pickShortAlias(value: unknown): string | undefined {
+				if (!value) {
+					return;
+				}
+				const aliases = Array.isArray(value) ? value : [value];
+				for (const a of aliases) {
+					if (typeof a === "string" && a.length === 1) {
+						return a;
+					}
+				}
+			}
+
+			function isBooleanType(type: unknown): boolean {
+				if (!type) {
+					return true;
+				}
+				if (type === Boolean) {
+					return true;
+				}
+				if (Array.isArray(type) && type.length === 1 && type[0] === Boolean) {
+					return true;
+				}
+
+				return false;
+			}
+
+			function buildTabModel() {
+				resetTab();
+
+				// Global flags
+				for (const [flagName, def] of Object.entries(
+					cli._globalFlags as ClercFlagsDefinition,
+				)) {
+					const normalized = normalizeFlagValue(def);
+					const desc = normalized.description ?? "";
+					t.option(flagName, desc);
+				}
+
+				// Commands + command-level flags
+				for (const cmd of cli._commands.values()) {
+					if (cmd.completions?.show === false) {
+						continue;
+					}
+
+					const command = t.command(cmd.name, cmd.description ?? "");
+					const flags = cmd.flags ?? {};
+					for (const [flagName, def] of Object.entries(flags)) {
+						const normalized =
+							typeof def === "function" || Array.isArray(def)
+								? { type: def }
+								: def;
+						const short = pickShortAlias((normalized as any).alias);
+						const desc = (normalized as any).description ?? "";
+						const boolean = isBooleanType((normalized as any).type);
+						if (boolean) {
+							if (short) {
+								command.option(flagName, desc, short);
+							} else {
+								command.option(flagName, desc);
+							}
+						} else {
+							function handler() {}
+							if (short) {
+								command.option(flagName, desc, handler as any, short);
+							} else {
+								command.option(flagName, desc, handler as any);
+							}
+						}
+					}
+				}
 			}
 
 			cli
-				.command("completions", "Generate completions script", {
-					help: {
-						group: "completions",
-					},
+				.command("complete", "Generate shell completion scripts", {
 					flags: {
 						shell: {
 							description: "Shell type",
@@ -109,52 +138,33 @@ export const completionsPlugin = (
 					parameters: [
 						{
 							key: "[shell]",
-							description: "Shell type",
+							description: "Shell type (zsh, bash, fish, powershell)",
 							type: supportedShellEnum,
 						},
+						"--",
 					],
 				})
-				.on("completions", async (ctx) => {
-					const shell = ctx.parameters.shell ?? ctx.flags.shell;
-					if (!shell) {
-						throw new Error(
-							"Please specify the shell type via the --shell flag or the [shell] parameter.",
-						);
-					}
-					if (!tabtab.SUPPORTED_SHELLS.includes(shell)) {
-						throw new Error(
-							`Unsupported shell: ${shell}. Supported shells are: ${tabtab.SUPPORTED_SHELLS.join(
-								", ",
-							)}.`,
-						);
-					}
-					const script = await tabtab.getCompletionScript({
-						name: cli._scriptName,
-						completer: cli._scriptName,
-						shell,
-					});
-					console.log(script);
-				});
+				.on("complete", async (ctx) => {
+					const extra = ctx.rawParsed.doubleDash ?? [];
+					writeFileSync(
+						"debug.txt",
+						`extra: ${JSON.stringify(extra)}\nctx.flags.shell: ${ctx.flags.shell}\nctx.parameters.shell: ${ctx.parameters.shell}\n`,
+						{ flag: "a" },
+					);
 
-			cli
-				.command("completion-server", "Handle completions", {
-					help: {
-						show: false,
-					},
-					completions: {
-						show: false,
-					},
-				})
-				.on("completion-server", async () => {
-					const env = tabtab.parseEnv(process.env);
-					if (!env.complete) {
+					const shell = ctx.parameters.shell ?? ctx.flags.shell;
+
+					buildTabModel();
+
+					if (shell) {
+						// Generate shell script
+						t.setup(cli._name, "node src/a.mjs", shell);
+
 						return;
 					}
 
-					const shell = getShellFromEnv(process.env);
-					const candidates = await getCompletion(cli, env);
-
-					tabtab.log(candidates, shell);
+					// Completion request (everything after `--`)
+					t.parse(extra);
 				});
 
 			return cli;
