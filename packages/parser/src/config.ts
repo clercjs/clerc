@@ -1,5 +1,5 @@
 import type { PartialRequired } from "@clerc/utils";
-import { camelCase, looseIsArray, toArray } from "@clerc/utils";
+import { camelCase, looseIsArray } from "@clerc/utils";
 
 import { InvalidSchemaError } from "./errors";
 import type {

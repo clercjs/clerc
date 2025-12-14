@@ -1,4 +1,4 @@
-import type { IsAny, MaybeArray, Prettify } from "@clerc/utils";
+import type { IsAny, Prettify } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
