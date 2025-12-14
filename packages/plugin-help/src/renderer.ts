@@ -163,7 +163,7 @@ export class HelpRenderer {
 		const { _scriptName } = this._cli;
 		const command = this._command;
 
-		let usage = `$ ${_scriptName}`;
+		let usage = `$ ${yc.dim(_scriptName)}`;
 
 		if (command) {
 			if (command.name) {
@@ -177,7 +177,9 @@ export class HelpRenderer {
 				this._cli._commands.size > 0 &&
 				!(this._cli._commands.has("") && this._cli._commands.size === 1) // Not root command only case
 			) {
-				usage += this._cli._commands.has("") ? " [command]" : " <command>";
+				usage += this._cli._commands.has("")
+					? ` ${yc.dim("[command]")}`
+					: ` ${yc.dim("<command>")}`;
 			}
 		}
 
@@ -185,7 +187,7 @@ export class HelpRenderer {
 			(command?.flags && !objectIsEmpty(command.flags)) ||
 			!objectIsEmpty(this._globalFlags)
 		) {
-			usage += " [flags]";
+			usage += ` ${yc.dim("[flags]")}`;
 		}
 
 		return {
