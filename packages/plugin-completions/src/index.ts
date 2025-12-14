@@ -57,7 +57,7 @@ export const completionsPlugin = (): Plugin =>
 
 					buildTabModel(cli._globalFlags, cli._commands);
 
-					t.setup(cli._name, "node src/a.mjs complete", shell);
+					t.setup(cli._scriptName, cli._scriptName, shell);
 				});
 
 			cli
