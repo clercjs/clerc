@@ -163,7 +163,7 @@ export class HelpRenderer {
 		const { _scriptName } = this._cli;
 		const command = this._command;
 
-		let usage = `$ ${yc.dim(_scriptName)}`;
+		let usage = `$ ${_scriptName}`;
 
 		if (command) {
 			if (command.name) {
