@@ -5,7 +5,7 @@ import type {
 	Command,
 	CommandsMap,
 } from "@clerc/core";
-import { normalizeFlagValue } from "@clerc/core";
+import { DOUBLE_DASH, normalizeFlagValue } from "@clerc/core";
 import {
 	formatFlagName,
 	formatVersion,
@@ -202,19 +202,21 @@ export class HelpRenderer {
 			return;
 		}
 
-		const items = command.parameters.map((parameter) => {
-			const key = typeof parameter === "string" ? parameter : parameter.key;
-			const type = typeof parameter === "string" ? undefined : parameter.type;
-			const formattedType = type
-				? this._formatters.formatTypeValue(type)
-				: "string";
-			const description =
-				typeof parameter === "string" ? undefined : parameter.description;
+		const items = command.parameters
+			.filter((p) => p !== DOUBLE_DASH)
+			.map((parameter) => {
+				const key = typeof parameter === "string" ? parameter : parameter.key;
+				const type = typeof parameter === "string" ? undefined : parameter.type;
+				const formattedType = type
+					? this._formatters.formatTypeValue(type)
+					: "string";
+				const description =
+					typeof parameter === "string" ? undefined : parameter.description;
 
-			return [yc.bold(key), yc.dim(formattedType), description].filter(
-				isTruthy,
-			);
-		});
+				return [yc.bold(key), yc.dim(formattedType), description].filter(
+					isTruthy,
+				);
+			});
 
 		return {
 			title: "Parameters",
