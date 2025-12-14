@@ -61,6 +61,7 @@ describe("plugin-help", () => {
 						key: "[regex]",
 						type: Types.Regex(/^\d+$/),
 					},
+					"--",
 				],
 			})
 			.parse(["test", "--help"]);

@@ -391,7 +391,7 @@ exports[`plugin-help > should show parameter types 1`] = `
     "[2mtest[22m [1mtest[22m - Test command
 
 [4m[1mUsage[22m[24m
-  $ test test <param> <param2> [range] [regex] [2m[flags][22m
+  $ test test <param> <param2> [range] [regex] -- [2m[flags][22m
 
 [4m[1mParameters[22m[24m
   [1m<param>[22m   [2mstring[22m
