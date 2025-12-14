@@ -175,7 +175,7 @@ export class HelpRenderer {
 		} else {
 			if (
 				this._cli._commands.size > 0 &&
-				!(this._cli._commands.has("") && this._cli._commands.size === 1)
+				!(this._cli._commands.has("") && this._cli._commands.size === 1) // Not root command only case
 			) {
 				usage += this._cli._commands.has("") ? " [command]" : " <command>";
 			}
