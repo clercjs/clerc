@@ -30,3 +30,10 @@ export class InvalidParametersError extends Error {
 		super(message);
 	}
 }
+
+export class MissingRequiredFlagError extends Error {
+	constructor(flags: string[]) {
+		const s = flags.length > 1 ? "s" : "";
+		super(`Missing required flag${s}: ${flags.join(", ")}`);
+	}
+}

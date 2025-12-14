@@ -1,7 +1,6 @@
 import { camelCase, resolveValue } from "@clerc/utils";
 
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
-import { MissingRequiredFlagError } from "./errors";
 import { iterateArgs } from "./iterator";
 import type {
 	FlagsDefinition,
@@ -151,6 +150,7 @@ export function createParser<T extends FlagsDefinition>(
 			raw: args,
 			unknown: {},
 			ignored: [],
+			missingRequiredFlags: [],
 		};
 
 		iterateArgs(
@@ -298,7 +298,7 @@ export function createParser<T extends FlagsDefinition>(
 				else if (config.type === Boolean) {
 					result.flags[key] = false;
 				} else if (config.required) {
-					throw new MissingRequiredFlagError(key);
+					result.missingRequiredFlags.push(key);
 				}
 			}
 		}

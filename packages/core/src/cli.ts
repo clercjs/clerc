@@ -7,6 +7,7 @@ import { LiteEmit } from "lite-emit";
 import { resolveCommand } from "./commands";
 import {
 	InvalidCommandError,
+	MissingRequiredFlagError,
 	MissingRequiredMetadataError,
 	NoCommandSpecifiedError,
 	NoSuchCommandError,
@@ -371,6 +372,9 @@ export class Clerc<
 		const emitInterceptor: Interceptor = {
 			enforce: "post",
 			handler: async (ctx) => {
+				if (parsed.missingRequiredFlags.length > 0) {
+					throw new MissingRequiredFlagError(parsed.missingRequiredFlags);
+				}
 				if (parametersError) {
 					throw parametersError;
 				}

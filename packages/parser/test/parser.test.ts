@@ -459,29 +459,25 @@ describe("parser", () => {
 		).toThrow(InvalidSchemaError);
 	});
 
-	it("should throw on missing required flags", () => {
-		expect(() =>
+	it('should push to "missingRequiredFlags" on missing required flags', () => {
+		const { missingRequiredFlags } = parse([], {
+			flags: {
+				req1: { type: String, required: true },
+				req2: { type: Number, required: true },
+				opt: { type: Boolean },
+			},
+		});
+
+		expect(missingRequiredFlags).toEqual(["req1", "req2"]);
+	});
+
+	it("should throw on used required and default on the same flag", () => {
+		expect(() => {
 			parse([], {
 				flags: {
-					req: { type: String, required: true },
+					req: { type: String, required: true, default: "default" },
 				},
-			}),
-		).toThrow("Missing required flag: req");
-
-		const { flags } = parse(["--req", "val"], {
-			flags: {
-				req: { type: String, required: true },
-			},
-		});
-
-		expect(flags).toEqual({ req: "val" });
-
-		const { flags: flags2 } = parse([], {
-			flags: {
-				req: { type: String, required: true, default: "default" },
-			},
-		});
-
-		expect(flags2).toEqual({ req: "default" });
+			});
+		}).toThrow(InvalidSchemaError);
 	});
 });
