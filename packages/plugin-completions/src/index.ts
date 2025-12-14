@@ -141,6 +141,9 @@ export const completionsPlugin = (
 					help: {
 						show: false,
 					},
+					completions: {
+						show: false,
+					},
 				})
 				.on("completion-server", async () => {
 					const env = tabtab.parseEnv(process.env);

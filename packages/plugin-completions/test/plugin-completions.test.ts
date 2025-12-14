@@ -34,12 +34,13 @@ describe("plugin-completions", () => {
 		expect(completionsCmd?.flags?.shell).toBeDefined();
 	});
 
-	it("should have completion-server command hidden from help", () => {
+	it("should have completion-server command hidden from help and completion itself", () => {
 		const cli = TestBaseCli().use(completionsPlugin());
 		const completionServerCmd = cli._commands.get("completion-server");
 
 		expect(completionServerCmd).toBeDefined();
 		expect(completionServerCmd?.help?.show).toBeFalsy();
+		expect(completionServerCmd?.completions?.show).toBeFalsy();
 	});
 
 	it("should support command completions options", () => {
