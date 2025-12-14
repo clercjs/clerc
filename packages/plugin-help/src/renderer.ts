@@ -369,19 +369,20 @@ export class HelpRenderer {
 
 	private renderFlagItem(name: string, flag: ClercFlagDefinitionValue) {
 		flag = normalizeFlagValue(flag);
-		const flagName = formatFlagName(name);
-		const shortFlag = flag.short ? formatFlagName(flag.short) : "";
+		let flagName = formatFlagName(name);
+		if (flag.short) {
+			flagName += `, ${formatFlagName(flag.short)}`;
+		}
 		const type = this._formatters.formatTypeValue(flag.type);
-
-		return [
-			yc.bold([flagName, shortFlag].filter(Boolean).join(", ")),
-			yc.dim(type),
-			flag.description,
+		const default_ =
 			flag.default !== undefined &&
-				yc.dim(
-					`[default: ${yc.bold(this._formatters.formatFlagDefault(flag.default))}]`,
-				),
-		].filter(isTruthy);
+			yc.dim(
+				`[default: ${yc.bold(this._formatters.formatFlagDefault(flag.default))}]`,
+			);
+
+		return [yc.bold(flagName), yc.dim(type), flag.description, default_].filter(
+			isTruthy,
+		);
 	}
 
 	private renderGroupedFlags(
