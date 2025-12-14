@@ -41,9 +41,9 @@
 Install clerc, and create a file named `cli.mjs`:
 
 ```ts
-import { Clerc } from "clerc";
+import { Cli } from "clerc";
 
-Clerc.create() // Create a new Clerc instance
+Cli.create() // Create a new Clerc instance with help and version plugins installed
 	.scriptName("foo") // CLI Script Name
 	.description("A foo CLI") // CLI Description
 	.version("0.0.0") // CLI Version
