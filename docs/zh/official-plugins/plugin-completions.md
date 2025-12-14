@@ -4,7 +4,7 @@ title: 自动补全插件
 
 # @clerc/plugin-completions
 
-为您的 CLI 添加命令行自动补全功能的插件。基于 [@pnpm/tabtab](https://github.com/pnpm/tabtab)
+为您的 CLI 添加命令行自动补全功能的插件。基于 [@bomb.sh/tab](https://github.com/bombshell-dev/tab)
 
 ## 📦 安装
 
