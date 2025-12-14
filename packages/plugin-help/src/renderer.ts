@@ -203,14 +203,15 @@ export class HelpRenderer {
 		const items = command.parameters.map((parameter) => {
 			const key = typeof parameter === "string" ? parameter : parameter.key;
 			const type = typeof parameter === "string" ? undefined : parameter.type;
+			const formattedType = type
+				? this._formatters.formatTypeValue(type)
+				: "string";
 			const description =
 				typeof parameter === "string" ? undefined : parameter.description;
 
-			return [
-				yc.bold(key),
-				type ? this._formatters.formatTypeValue(type) : "string",
-				description,
-			].filter(isTruthy);
+			return [yc.bold(key), yc.dim(formattedType), description].filter(
+				isTruthy,
+			);
 		});
 
 		return {
