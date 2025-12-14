@@ -215,12 +215,12 @@ describe("plugin-help", () => {
 				)
 				.globalFlag("verbose", "Enable verbose output", {
 					type: Boolean,
-					alias: "v",
+					short: "v",
 					help: { group: "output" },
 				})
 				.globalFlag("quiet", "Suppress output", {
 					type: Boolean,
-					alias: "q",
+					short: "q",
 					help: { group: "output" },
 				})
 				.globalFlag("config", "Config file path", {

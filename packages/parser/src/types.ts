@@ -47,8 +47,8 @@ export interface BaseFlagOptions<T extends TypeValue = TypeValue> {
 	 * e.g., String, Number, [String], (val) => val.split(',')
 	 */
 	type: T;
-	/** Aliases for the flag. */
-	alias?: MaybeArray<string>;
+	/** Short flag alias (single character). */
+	short?: string;
 	/** The default value of the flag. */
 	default?: unknown;
 	/** Whether the flag is required. */
