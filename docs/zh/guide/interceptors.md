@@ -19,7 +19,7 @@ const cli = Clerc.create()
 	.interceptor(async (ctx, next) => {
 		console.log("在 foo 之前");
 		// 您可以访问上下文
-		console.log(ctx.resolved); // 匹配到对应的命令了吗？
+		console.log(!!ctx.command); // 匹配到对应的命令了吗？
 		await next(); // 调用 next 继续执行
 		console.log("在 foo 之后");
 	})
@@ -47,7 +47,7 @@ const cli = Clerc.create()
 		handler: async (ctx, next) => {
 			console.log("在 foo 之前");
 			// 您可以访问上下文
-			console.log(ctx.resolved); // 匹配到对应的命令了吗？
+			console.log(!!ctx.command); // 匹配到对应的命令了吗？
 			await next(); // 调用 next 继续执行
 			console.log("在 foo 之后");
 		},
@@ -74,7 +74,7 @@ const cli = Clerc.create()
 	.interceptor(async (ctx, next) => {
 		console.log("在 foo 之前");
 		// 您可以访问上下文
-		console.log(ctx.resolved); // 匹配到对应的命令了吗？
+		console.log(!!ctx.command); // 匹配到对应的命令了吗？
 		await next(); // 调用 next 继续执行
 		console.log("在 foo 之后");
 	})

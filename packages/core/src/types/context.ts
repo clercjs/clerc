@@ -19,13 +19,11 @@ export interface BaseContext<
 	C extends Command = Command,
 	GF extends ClercFlagsDefinition = {},
 > {
-	resolved: boolean;
 	command?: C;
 	calledAs?: string;
 	parameters: InferParameters<NonNullable<C["parameters"]>>;
 	flags: InferFlagsWithGlobal<C, GF>;
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
-	missingParameters: boolean;
 	store: Partial<ContextStore>;
 }

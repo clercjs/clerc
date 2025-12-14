@@ -20,7 +20,6 @@ export interface BaseContext<
 	flags: InferFlagsWithGlobal<C, GF>;
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
-	missingParameters: boolean;
 	store: Partial<ContextStore>;
 }
 ```
@@ -32,6 +31,5 @@ export interface BaseContext<
 - `flags`: An object containing the parsed flag values. It will be an empty object if no command was matched.
 - `ignored`: A string array containing arguments that were not parsed.
 - `rawParsed`: An object containing the raw parsing result, including detailed information about all parameters and flags. ParsedResult
-- `missingParameters`: A boolean value indicating whether required parameters are missing.
 
 The context for `handler` is a specialization of `BaseContext`. Its `resolved` property is always `true`, and the `command` property is always the current command object, and `calledAs` also always has a value.

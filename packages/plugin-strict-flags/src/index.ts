@@ -9,7 +9,7 @@ export const strictFlagsPlugin = (): Plugin =>
 		setup: (cli) => {
 			cli.interceptor(async (ctx, next) => {
 				const keys = Object.keys(ctx.rawParsed.unknown);
-				if (!ctx.resolved || keys.length === 0) {
+				if (!ctx.command || keys.length === 0) {
 					await next();
 				} else {
 					const error =

@@ -21,7 +21,7 @@ const cli = Clerc.create()
 	.interceptor(async (ctx, next) => {
 		console.log("Before foo");
 		// You can access the context
-		console.log(ctx.resolved); // Was a matching command found?
+		console.log(!!ctx.command); // Was a matching command found?
 		await next(); // Call next to continue execution
 		console.log("After foo");
 	})
@@ -49,7 +49,7 @@ const cli = Clerc.create()
 		handler: async (ctx, next) => {
 			console.log("Before foo");
 			// You can access the context
-			console.log(ctx.resolved); // Was a matching command found?
+			console.log(!!ctx.command); // Was a matching command found?
 			await next(); // Call next to continue execution
 			console.log("After foo");
 		},
@@ -76,7 +76,7 @@ const cli = Clerc.create()
 	.interceptor(async (ctx, next) => {
 		console.log("Before foo");
 		// You can access the context
-		console.log(ctx.resolved); // Was a matching command found?
+		console.log(!!ctx.command); // Was a matching command found?
 		await next(); // Call next to continue execution
 		console.log("After foo");
 	})

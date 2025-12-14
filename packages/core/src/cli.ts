@@ -359,14 +359,12 @@ export class Clerc<
 		}
 
 		const context: BaseContext<Command, GlobalFlags> = {
-			resolved: !!command,
 			command,
 			calledAs,
 			parameters,
 			flags: parsed.flags,
 			ignored: parsed.ignored,
 			rawParsed: parsed,
-			missingParameters: !!parametersError,
 			store: { ...this.#store },
 		};
 

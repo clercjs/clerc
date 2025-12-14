@@ -20,7 +20,6 @@ export interface BaseContext<
 	flags: InferFlagsWithGlobal<C, GF>;
 	ignored: string[];
 	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
-	missingParameters: boolean;
 	store: Partial<ContextStore>;
 }
 ```
@@ -32,7 +31,6 @@ export interface BaseContext<
 - `flags`：一个对象，包含解析后的选项值。如果没有匹配到命令，则为空对象。
 - `ignored`：一个字符串数组，包含未被解析的参数。
 - `rawParsed`：包含原始解析结果的对象，包括所有参数和选项的详细信息。ParsedResult
-- `missingParameters`：一个布尔值，指示是否缺少必需的参数。
 - `store`：一个共享存储对象，可用于在 CLI 应用程序的不同部分之间存储数据。
 
 `handler` 的上下文是 `BaseContext` 的一个特化。它的 `resolved` 属性始终为 `true`，并且 `command` 属性始终为当前命令对象，`calledAs` 也始终有值。
