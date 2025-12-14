@@ -23,17 +23,11 @@ export const versionPlugin = ({
 }: VersionPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) => {
-			const formattedVersion = formatVersion(cli._version);
 			if (command) {
 				cli
-					.command("version", "Prints current version", {
-						// TODO
-						// help: {
-						// 	notes: [t("version.notes.1")!],
-						// },
-					})
+					.command("version", "Prints current version", {})
 					.on("version", () => {
-						console.log(formattedVersion);
+						console.log(formatVersion(cli._version));
 					});
 			}
 			if (flag) {
@@ -47,7 +41,7 @@ export const versionPlugin = ({
 						enforce: "pre",
 						handler: async (ctx, next) => {
 							if (ctx.flags.version) {
-								console.log(formattedVersion);
+								console.log(formatVersion(cli._version));
 							} else {
 								await next();
 							}
