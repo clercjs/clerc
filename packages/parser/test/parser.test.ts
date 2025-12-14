@@ -475,6 +475,7 @@ describe("parser", () => {
 		expect(() => {
 			parse([], {
 				flags: {
+					// @ts-expect-error Testing invalid schema
 					req: { type: String, required: true, default: "default" },
 				},
 			});
