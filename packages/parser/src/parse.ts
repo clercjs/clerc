@@ -33,7 +33,7 @@ export function createParser<T extends FlagsDefinition>(
 	} = resolveParserOptions(options);
 	const { configs, aliases } = buildConfigsAndAliases(delimiters, flagsConfig);
 
-	function resolve(name: string) {
+	function resolve(name: string, isShortFlag = false) {
 		const dotIdx = name.indexOf(".");
 		const rootName = dotIdx === -1 ? name : name.slice(0, dotIdx);
 
@@ -46,6 +46,11 @@ export function createParser<T extends FlagsDefinition>(
 		}
 
 		const config = configs.get(key)!;
+
+		// Don't resolve short aliases when processing long flags (--h should not match short: 'h')
+		if (!isShortFlag && config.short === rootName) {
+			return undefined;
+		}
 
 		return {
 			key,
@@ -97,10 +102,10 @@ export function createParser<T extends FlagsDefinition>(
 
 		// Check if it's a digit
 		if (isDigit(secondChar)) {
-			const isAlias = secondChar !== 45; // not '--'
-			const name = isAlias ? arg[1] : arg.slice(2);
+			const isShortFlag = secondChar !== 45; // not '--'
+			const name = isShortFlag ? arg[1] : arg.slice(2);
 
-			return !!resolve(name);
+			return !!resolve(name, isShortFlag);
 		}
 
 		// Check for double dash
@@ -118,7 +123,7 @@ export function createParser<T extends FlagsDefinition>(
 
 		if (secondChar === 45) {
 			const { rawName } = splitNameAndValue(arg.slice(2), delimiters);
-			if (resolve(rawName)) {
+			if (resolve(rawName, false)) {
 				return true;
 			}
 			if (resolveNegated(rawName)) {
@@ -128,13 +133,9 @@ export function createParser<T extends FlagsDefinition>(
 			return false;
 		}
 
-		if (isDigit(secondChar)) {
-			return true;
-		}
-
 		const chars = arg.slice(1);
 		for (const char of chars) {
-			if (!resolve(char)) {
+			if (!resolve(char, true)) {
 				return false;
 			}
 		}
@@ -183,15 +184,15 @@ export function createParser<T extends FlagsDefinition>(
 					return;
 				}
 
-				const isAlias = !current.startsWith(DOUBLE_DASH);
-				const chars = current.slice(isAlias ? 1 : 2);
+				const isShortFlag = !current.startsWith(DOUBLE_DASH);
+				const chars = current.slice(isShortFlag ? 1 : 2);
 
 				// -abc
-				if (isAlias) {
+				if (isShortFlag) {
 					const charsLen = chars.length;
 					for (let j = 0; j < charsLen; j++) {
 						const char = chars[j];
-						const resolved = resolve(char);
+						const resolved = resolve(char, true);
 
 						if (!resolved) {
 							result.unknown[char] = true;

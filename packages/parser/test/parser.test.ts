@@ -481,4 +481,39 @@ describe("parser", () => {
 			});
 		}).toThrow(InvalidSchemaError);
 	});
+
+	it("should not resolve short flags as long flags", () => {
+		// --h should be unknown, not help
+		// -h should be help
+		const result1 = parse(["--h"], {
+			flags: {
+				help: { type: Boolean, short: "h" },
+			},
+		});
+
+		expect(result1.flags).toEqual({ help: false });
+		expect(result1.unknown).toEqual({ h: true });
+
+		const result2 = parse(["-h"], {
+			flags: {
+				help: { type: Boolean, short: "h" },
+			},
+		});
+
+		expect(result2.flags).toEqual({ help: true });
+
+		const types: string[] = [];
+		parse(["--h", "-h"], {
+			flags: {
+				help: { type: Boolean, short: "h" },
+			},
+			ignore: (type, arg) => {
+				types.push(`${arg}:${type}`);
+
+				return false;
+			},
+		});
+
+		expect(types).toEqual(["--h:unknown-flag", "-h:known-flag"]);
+	});
 });
