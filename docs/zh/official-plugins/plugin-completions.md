@@ -57,26 +57,20 @@ const cli = Clerc.create()
 
 ```bash
 # 生成 Bash 的自动补全脚本
-$ node my-cli completions bash
+$ my-cli completions bash
 
 # 直接执行以启用自动补全
 # PowerShell
-node my-cli completions pwsh | Out-String | Invoke-Expression
+$ my-cli completions powershell | Out-String | Invoke-Expression
 
 # Bash
-eval "$(node my-cli completions bash)"
+$ eval "$(my-cli completions bash)"
 
 # Zsh
-eval "$(node my-cli completions zsh)"
+$ eval "$(my-cli completions zsh)"
 
 # 你也可以用 --shell 参数指定 Shell 类型
-eval "$(node my-cli completions --shell bash)"
-
-# 或者直接安装
-$ node my-cli completions install bash
-
-# 卸载
-$ node my-cli completions uninstall
+$ eval "$(my-cli completions --shell bash)"
 ```
 
 ## 📝 功能特性
@@ -88,28 +82,20 @@ $ node my-cli completions uninstall
 - 命令名称补全
 - 选项名称补全
 
+### 补全逻辑
+
+```sh
+$ my-cli <TAB> # 补全可用的命令
+$ my-cli command <TAB> # 补全 command 的子命令
+$ my-cli -<TAB> # 补全所有全局的短名，如 -h, -V
+$ my-cli --<TAB> # 补全所有全局选项
+$ my-cli command -<TAB> # 补全 command 所有选项的短名，如 -h, -V，以及全局选项
+$ my-cli command --<TAB> # 补全 command 的所有可用选项，包括全局选项
+```
+
 ### 支持的 Shell
 
 - **Bash** - Linux 和 macOS 默认 Shell
 - **Zsh** - macOS Catalina 及以上版本默认 Shell
 - **Fish** - 现代 Shell
-- **PowerShell**(pwsh) - Windows 默认 Shell
-
-## 🎨 自定义配置
-
-### 高级配置
-
-```ts
-import { completionsPlugin } from "@clerc/plugin-completions"; // 或者直接从 clerc 导入
-
-const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(
-		completionsPlugin({
-			managementCommands: false, // 不生成安装/卸载命令
-		}),
-	)
-	.parse();
-```
+- **PowerShell** - Windows 默认 Shell
