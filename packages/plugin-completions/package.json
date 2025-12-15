@@ -1,6 +1,6 @@
 {
 	"name": "@clerc/plugin-completions",
-	"version": "1.0.0-beta.25",
+	"version": "1.0.0-beta.26",
 	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
 	"type": "module",
 	"description": "Clerc plugin completions",
@@ -26,6 +26,9 @@
 	"sideEffects": false,
 	"exports": {
 		".": "./dist/index.js"
+	},
+	"bin": {
+		"my-cli": "./src/a.mjs"
 	},
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
