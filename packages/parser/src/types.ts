@@ -40,7 +40,7 @@ export type TypeValue<T = unknown> =
 	| TypeFunction<T>
 	| readonly [TypeFunction<T>];
 
-type Foo = RequireExactlyOneOrNone<
+type FlagRequiredOrDefault = RequireExactlyOneOrNone<
 	{
 		/** The default value of the flag. */
 		default?: unknown;
@@ -50,16 +50,17 @@ type Foo = RequireExactlyOneOrNone<
 	"default" | "required"
 >;
 
-export type BaseFlagOptions<T extends TypeValue = TypeValue> = Foo & {
-	/**
-	 * The type constructor or a function to convert the string value.
-	 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
-	 * e.g., String, Number, [String], (val) => val.split(',')
-	 */
-	type: T;
-	/** Short flag alias (single character). */
-	short?: string;
-};
+export type BaseFlagOptions<T extends TypeValue = TypeValue> =
+	FlagRequiredOrDefault & {
+		/**
+		 * The type constructor or a function to convert the string value.
+		 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
+		 * e.g., String, Number, [String], (val) => val.split(',')
+		 */
+		type: T;
+		/** Short flag alias (single character). */
+		short?: string;
+	};
 export type FlagOptions =
 	| (BaseFlagOptions<BooleanConstructor> & {
 			/**
