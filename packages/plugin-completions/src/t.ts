@@ -34,8 +34,12 @@ export function buildTabModel(
 			continue;
 		}
 
-		const command = t.command(cmd.name, cmd.description ?? "");
-		registerGlobalFlags(globalFlags, command);
+		let command: Command = t;
+
+		if (cmd.name !== "") {
+			command = t.command(cmd.name, cmd.description ?? "");
+			registerGlobalFlags(globalFlags, command);
+		}
 
 		for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
 			const normalized = normalizeFlagValue(def);
