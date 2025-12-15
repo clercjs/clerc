@@ -3,11 +3,13 @@ title: Completions Plugin
 ---
 
 # @clerc/plugin-completions
+
 A plugin to add command-line autocompletion functionality to your CLI, based on [@bomb.sh/tab](https://github.com/bombshell-dev/tab).
 
 ## 📦 Installation
 
 :::code-group
+
 ```sh [npm]
 $ npm install @clerc/plugin-completions
 ```
@@ -19,6 +21,7 @@ $ yarn add @clerc/plugin-completions
 ```sh [pnpm]
 $ pnpm add @clerc/plugin-completions
 ```
+
 :::
 
 ## 🚀 Usage
@@ -73,7 +76,9 @@ $ eval "$(my-cli completions --shell bash)"
 ## 📝 Features
 
 ### Automatic Completion Script Generation
+
 The plugin automatically generates a full autocompletion script for your CLI, supporting:
+
 - Command name autocompletion
 - Option name autocompletion
 
