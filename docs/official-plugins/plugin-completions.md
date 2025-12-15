@@ -3,13 +3,11 @@ title: Completions Plugin
 ---
 
 # @clerc/plugin-completions
-
-A plugin that adds command-line auto-completion functionality to your CLI. Based on [@bomb.sh/tab](https://github.com/bombshell-dev/tab).
+A plugin to add command-line autocompletion functionality to your CLI, based on [@bomb.sh/tab](https://github.com/bombshell-dev/tab).
 
 ## 📦 Installation
 
 :::code-group
-
 ```sh [npm]
 $ npm install @clerc/plugin-completions
 ```
@@ -21,7 +19,6 @@ $ yarn add @clerc/plugin-completions
 ```sh [pnpm]
 $ pnpm add @clerc/plugin-completions
 ```
-
 :::
 
 ## 🚀 Usage
@@ -30,7 +27,7 @@ $ pnpm add @clerc/plugin-completions
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
-// or import directly from clerc
+// Or import directly from clerc
 import { completionsPlugin } from "clerc";
 ```
 
@@ -41,12 +38,12 @@ const cli = Clerc.create()
 	.scriptName("my-cli")
 	.description("My CLI application")
 	.version("1.0.0")
-	.use(completionsPlugin()) // Add auto-completion plugin
-	.command("start", "Start service")
+	.use(completionsPlugin()) // Add the autocompletion plugin
+	.command("start", "Start the service")
 	.on("start", (ctx) => {
 		console.log("Service started");
 	})
-	.command("stop", "Stop service")
+	.command("stop", "Stop the service")
 	.on("stop", (ctx) => {
 		console.log("Service stopped");
 	})
@@ -56,58 +53,44 @@ const cli = Clerc.create()
 ### Running Effect
 
 ```bash
-# Generate auto-completion script for Bash
-$ node my-cli completions bash
+# Generate autocompletion script for Bash
+$ my-cli completions bash
 
-# Execute directly to enable auto-completion
+# Execute directly to enable autocompletion
 # PowerShell
-node my-cli completions pwsh | Out-String | Invoke-Expression
+$ my-cli completions powershell | Out-String | Invoke-Expression
 
 # Bash
-eval "$(node my-cli completions bash)"
+$ eval "$(my-cli completions bash)"
 
 # Zsh
-eval "$(node my-cli completions zsh)"
+$ eval "$(my-cli completions zsh)"
 
 # You can also specify the shell type with the --shell parameter
-eval "$(node my-cli completions --shell bash)"
-
-# Or install directly
-$ node my-cli completions install bash
-
-# Uninstall
-$ node my-cli completions uninstall
+$ eval "$(my-cli completions --shell bash)"
 ```
 
 ## 📝 Features
 
-### Auto-generate Completion Scripts
+### Automatic Completion Script Generation
+The plugin automatically generates a full autocompletion script for your CLI, supporting:
+- Command name autocompletion
+- Option name autocompletion
 
-The plugin automatically generates complete auto-completion scripts for your CLI, supporting:
+### Completion Logic
 
-- Command name completion
-- Option name completion
+```sh
+$ my-cli <TAB> # Complete available commands
+$ my-cli command <TAB> # Complete subcommands of the specified command
+$ my-cli -<TAB> # Complete all global short options, e.g., -h, -V
+$ my-cli --<TAB> # Complete all global long options
+$ my-cli command -<TAB> # Complete short options for the specified command (including global options), e.g., -h, -V
+$ my-cli command --<TAB> # Complete all available options for the specified command, including global options
+```
 
 ### Supported Shells
 
 - **Bash** - Default shell for Linux and macOS
-- **Zsh** - Default shell for macOS Catalina and later
-- **Fish** - Modern shell
-- **PowerShell**(pwsh) - Default shell for Windows
-
-## 🎨 Custom Configuration
-
-### Advanced Configuration
-
-```ts
-const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(
-		completionsPlugin({
-			managementCommands: false, // Don't generate install/uninstall commands
-		}),
-	)
-	.parse();
-```
+- **Zsh** - Default shell for macOS Catalina and later versions
+- **Fish** - A modern shell
+- **PowerShell** - Default shell for Windows
