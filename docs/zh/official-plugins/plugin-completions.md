@@ -76,6 +76,7 @@ $ eval "$(my-cli completions --shell bash)"
 ## 📝 功能特性
 
 ### 自动生成补全脚本
+
 插件会自动为您的 CLI 生成完整的自动补全脚本，支持：
 
 - 命令名称补全
