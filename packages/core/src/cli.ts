@@ -195,7 +195,7 @@ export class Clerc<
 	public command<
 		Name extends string,
 		const Parameters extends readonly Parameter[],
-		Flags extends ClercFlagsDefinition = {},
+		Flags extends ClercFlagsDefinition,
 	>(
 		command: CommandWithHandler<Name, Parameters, Flags>,
 	): Clerc<
@@ -205,7 +205,7 @@ export class Clerc<
 	public command<
 		Name extends string,
 		const Parameters extends readonly Parameter[],
-		Flags extends ClercFlagsDefinition = {},
+		Flags extends ClercFlagsDefinition,
 	>(
 		name: Name extends keyof Commands
 			? // type info
@@ -219,7 +219,7 @@ export class Clerc<
 	public command<
 		Name extends string,
 		const Parameters extends readonly Parameter[],
-		Flags extends ClercFlagsDefinition = {},
+		Flags extends ClercFlagsDefinition,
 	>(
 		name: Name extends keyof Commands
 			? // type info
