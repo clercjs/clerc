@@ -79,18 +79,18 @@ $ eval "$(my-cli completions --shell bash)"
 
 The plugin automatically generates a full autocompletion script for your CLI, supporting:
 
-- Command name autocompletion
-- Option name autocompletion
+- Command autocompletion
+- Flag autocompletion
 
 ### Completion Logic
 
 ```sh
 $ my-cli <TAB> # Complete available commands
 $ my-cli command <TAB> # Complete subcommands of the specified command
-$ my-cli -<TAB> # Complete all global short options, e.g., -h, -V
-$ my-cli --<TAB> # Complete all global long options
-$ my-cli command -<TAB> # Complete short options for the specified command (including global options), e.g., -h, -V
-$ my-cli command --<TAB> # Complete all available options for the specified command, including global options
+$ my-cli -<TAB> # Complete all global short flags, e.g., -h, -V
+$ my-cli --<TAB> # Complete all global long flags
+$ my-cli command -<TAB> # Complete short flags for the specified command (including global flags), e.g., -h, -V
+$ my-cli command --<TAB> # Complete all available flags for the specified command, including global flags
 ```
 
 ### Supported Shells
