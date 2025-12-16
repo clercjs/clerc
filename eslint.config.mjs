@@ -13,4 +13,11 @@ export default so1ve(
 			"no-console": "off",
 		},
 	},
+	{
+		files: ["packages/*/src/**"],
+		ignores: ["packages/test-utils/**"],
+		rules: {
+			"no-restricted-imports": ["error", "clerc"],
+		},
+	},
 );
