@@ -17,7 +17,12 @@ function registerGlobalFlags(
 	for (const [flagName, def] of Object.entries(globalFlags)) {
 		const normalized = normalizeFlagValue(def);
 		const desc = normalized.description ?? "";
-		tc.option(flagName, desc, normalized.short);
+		const isBoolean = normalized.type === Boolean;
+		if (isBoolean) {
+			tc.option(flagName, desc, normalized.short);
+		} else {
+			tc.option(flagName, desc, () => {}, normalized.short);
+		}
 	}
 }
 
@@ -44,7 +49,12 @@ export function buildTabModel(
 		for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
 			const normalized = normalizeFlagValue(def);
 			const desc = normalized.description ?? "";
-			command.option(flagName, desc, normalized.short);
+			const isBoolean = normalized.type === Boolean;
+			if (isBoolean) {
+				command.option(flagName, desc, normalized.short);
+			} else {
+				command.option(flagName, desc, () => {}, normalized.short);
+			}
 		}
 	}
 }
