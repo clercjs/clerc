@@ -1,4 +1,4 @@
-import type { OptionHandler } from "@bomb.sh/tab";
+import type { Command as TabCommand, OptionHandler } from "@bomb.sh/tab";
 import t from "@bomb.sh/tab";
 import type { Plugin } from "@clerc/core";
 import { Types, definePlugin } from "@clerc/core";
@@ -17,6 +17,10 @@ declare module "@clerc/core" {
 			 * @default true
 			 */
 			show?: boolean;
+			/**
+			 * Handler to provide custom completions for the command.
+			 */
+			handler?: (command: TabCommand) => void;
 		};
 	}
 	export interface FlagCustomOptions {

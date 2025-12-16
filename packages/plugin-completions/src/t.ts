@@ -62,6 +62,8 @@ export function buildTabModel(
 			registerGlobalFlags(globalFlags, command);
 		}
 
+		cmd.completions?.handler?.(command);
+
 		for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
 			registerFlag(command, flagName, def);
 		}
