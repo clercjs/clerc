@@ -25,15 +25,10 @@ function registerFlag(
 ): void {
 	const normalized = normalizeFlagValue(def);
 	const desc = normalized.description ?? "";
-	if (normalized.type === Boolean) {
-		tc.option(flagName, desc, undefined, normalized.short);
+	if (normalized.type === Boolean || !normalized.completions?.handler) {
+		tc.option(flagName, desc, normalized.short);
 	} else {
-		tc.option(
-			flagName,
-			desc,
-			normalized.completions?.handler,
-			normalized.short,
-		);
+		tc.option(flagName, desc, normalized.completions.handler, normalized.short);
 	}
 }
 
