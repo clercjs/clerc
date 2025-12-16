@@ -81,9 +81,13 @@ export interface HelpPluginOptions {
 	 */
 	examples?: [string, string][];
 	/**
-	 * A banner to show before the help output.
+	 * Header to show before the help output.
 	 */
-	banner?: string;
+	header?: string;
+	/**
+	 * Footer to show after the help output.
+	 */
+	footer?: string;
 	/**
 	 * Custom formatters for rendering help.
 	 */
@@ -103,7 +107,8 @@ export const helpPlugin = ({
 	showHelpWhenNoCommandSpecified = true,
 	notes,
 	examples,
-	banner,
+	header,
+	footer,
 	formatters,
 	groups = {},
 }: HelpPluginOptions = {}): Plugin =>
@@ -140,10 +145,13 @@ export const helpPlugin = ({
 			const getEffectiveExamples = () => examples ?? getGeneralHelpExamples();
 
 			function printHelp(s: string) {
-				if (banner) {
-					console.log(banner);
+				if (header) {
+					console.log(header);
 				}
 				console.log(s);
+				if (footer) {
+					console.log(footer);
+				}
 			}
 
 			const renderer = new HelpRenderer(

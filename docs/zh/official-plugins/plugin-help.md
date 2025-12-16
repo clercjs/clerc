@@ -180,7 +180,8 @@ const cli = Clerc.create()
 				["my-cli --help", "显示帮助信息"],
 				["my-cli hello", "执行问候命令"],
 			],
-			banner: "欢迎使用 My CLI 应用程序！", // 自定义横幅
+			header: "欢迎使用 My CLI 应用程序！", // 自定义头部信息
+			footer: "感谢使用 My CLI 应用程序！", // 自定义尾部信息
 			formatters: {
 				// 自定义类型格式化函数
 				formatTypeValue: (type) => {

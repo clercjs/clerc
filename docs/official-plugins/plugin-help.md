@@ -183,7 +183,8 @@ const cli = Clerc.create()
 				["my-cli --help", "Show help information"],
 				["my-cli hello", "Execute greeting command"],
 			],
-			banner: "Welcome to My CLI application!", // Custom banner
+			header: "Welcome to My CLI application!", // Custom header
+			footer: "Thank you for using My CLI application!", // Custom footer
 			formatters: {
 				// Custom type formatting functions
 				formatTypeValue: (type) => {
