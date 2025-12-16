@@ -25,10 +25,13 @@ function registerFlag(
 ): void {
 	const normalized = normalizeFlagValue(def);
 	const desc = normalized.description ?? "";
-	if (normalized.type === Boolean || !normalized.completions?.handler) {
+	if (normalized.type === Boolean) {
 		tc.option(flagName, desc, normalized.short);
 	} else {
-		tc.option(flagName, desc, normalized.completions.handler, normalized.short);
+		// idk why put async here, but whatever tab itself also writes it like this:
+		// https://github.com/bombshell-dev/tab/blob/56ead3243f14bfb7d841aa203773cdce8bf932b2/src/cac.ts#L109
+		const handler = normalized.completions?.handler ?? (async () => {});
+		tc.option(flagName, desc, handler, normalized.short);
 	}
 }
 
