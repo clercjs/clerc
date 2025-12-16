@@ -4,7 +4,7 @@ import type { LiteralUnion } from "@clerc/utils";
 import { toArray } from "@clerc/utils";
 import { LiteEmit } from "lite-emit";
 
-import { resolveCommand } from "./commands";
+import { resolveCommand } from "./command";
 import {
 	InvalidCommandError,
 	MissingRequiredFlagError,
@@ -13,7 +13,7 @@ import {
 	NoSuchCommandError,
 } from "./errors";
 import { compose } from "./interceptor";
-import { getParametersToResolve, parseParameters } from "./parameters";
+import { getParametersToResolve, parseParameters } from "./parameter";
 import { platformArgv } from "./platform";
 import type {
 	BaseContext,
@@ -29,7 +29,7 @@ import type {
 	ErrorHandler,
 	Interceptor,
 	MakeEmitterEvents,
-	Parameter,
+	ParameterDefinitionValue,
 	Plugin,
 } from "./types";
 
@@ -194,7 +194,7 @@ export class Clerc<
 
 	public command<
 		Name extends string,
-		const Parameters extends readonly Parameter[],
+		const Parameters extends readonly ParameterDefinitionValue[],
 		Flags extends ClercFlagsDefinition,
 	>(
 		command: CommandWithHandler<Name, Parameters, Flags>,
@@ -204,7 +204,7 @@ export class Clerc<
 	>;
 	public command<
 		Name extends string,
-		const Parameters extends readonly Parameter[],
+		const Parameters extends readonly ParameterDefinitionValue[],
 		Flags extends ClercFlagsDefinition,
 	>(
 		name: Name extends keyof Commands
@@ -218,7 +218,7 @@ export class Clerc<
 	>;
 	public command<
 		Name extends string,
-		const Parameters extends readonly Parameter[],
+		const Parameters extends readonly ParameterDefinitionValue[],
 		Flags extends ClercFlagsDefinition,
 	>(
 		name: Name extends keyof Commands

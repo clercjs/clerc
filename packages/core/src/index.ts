@@ -8,11 +8,12 @@ export {
 } from "@clerc/parser";
 export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";
-export { resolveCommand } from "./commands";
+export { resolveCommand } from "./command";
 export * from "./errors";
 export * as Types from "./flag-types";
 export * from "./helpers";
 export { createStopAtFirstParameter } from "./ignore";
+export { extractParameterInfo } from "./parameter";
 export { definePlugin } from "./plugin";
 export type * from "./types";
-export { normalizeFlagValue } from "./utils";
+export { normalizeFlagValue, normalizeParameterValue } from "./utils";

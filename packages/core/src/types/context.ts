@@ -2,7 +2,7 @@ import type { InferFlags, ParsedResult } from "@clerc/parser";
 
 import type { Command } from "./command";
 import type { ClercFlagsDefinition } from "./flag";
-import type { InferParameters } from "./parameters";
+import type { InferParameters } from "./parameter";
 
 type AddStringIndex<T> = T & Record<string, any>;
 

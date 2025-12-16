@@ -2,7 +2,7 @@ import { DOUBLE_DASH } from "@clerc/parser";
 import { camelCase } from "@clerc/utils";
 
 import { InvalidParametersError } from "./errors";
-import type { Parameter } from "./types/parameters";
+import type { ParameterDefinitionValue } from "./types/parameter";
 
 export function getParametersToResolve(argv: string[]): string[] {
 	const parameters: string[] = [];
@@ -23,8 +23,27 @@ const isParameterDefinitionBracketsValid = (definition: string): boolean =>
 	(definition.startsWith("<") && definition.endsWith(">")) ||
 	(definition.startsWith("[") && definition.endsWith("]"));
 
+interface ParameterInfo {
+	name: string;
+	isRequired: boolean;
+	isVariadic: boolean;
+}
+
+export function extractParameterInfo(key: string): ParameterInfo {
+	const match = key.match(PARAMETER_REGEX);
+	if (!match || !isParameterDefinitionBracketsValid(key)) {
+		throw new InvalidParametersError(`Invalid parameter definition: ${key}`);
+	}
+
+	return {
+		name: camelCase(match[2]),
+		isRequired: key.startsWith("<"),
+		isVariadic: !!match[3],
+	};
+}
+
 function _parseParameters(
-	definitions: readonly Parameter[],
+	definitions: readonly ParameterDefinitionValue[],
 	parameters: string[],
 ): Record<string, any> {
 	const result: Record<string, any> = {};
@@ -33,16 +52,8 @@ function _parseParameters(
 	for (const [i, definition] of definitions.entries()) {
 		const definitionKey =
 			typeof definition === "string" ? definition : definition.key;
-		const match = definitionKey.match(PARAMETER_REGEX);
-		if (!match || !isParameterDefinitionBracketsValid(definitionKey)) {
-			throw new InvalidParametersError(
-				`Invalid parameter definition: ${definitionKey}`,
-			);
-		}
-
-		const name = camelCase(match[2]);
-		const isVariadic = !!match[3];
-		const isRequired = definitionKey.startsWith("<");
+		const { name, isRequired, isVariadic } =
+			extractParameterInfo(definitionKey);
 
 		if (name in result) {
 			throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
@@ -89,7 +100,7 @@ function _parseParameters(
 }
 
 export function parseParameters(
-	definitions: readonly Parameter[],
+	definitions: readonly ParameterDefinitionValue[],
 	parameters: string[],
 	doubleDashParameters: string[],
 ): Record<string, any> {

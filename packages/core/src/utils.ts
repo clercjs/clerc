@@ -1,6 +1,11 @@
 import { looseIsArray } from "@clerc/utils";
-import type { ClercFlagDefinitionValue, ClercFlagOptions } from "clerc";
 import { IS_DENO, IS_ELECTRON, IS_NODE } from "is-platform";
+
+import type { ClercFlagDefinitionValue, ClercFlagOptions } from "./types/flag";
+import type {
+	ParameterDefinitionValue,
+	ParameterOptions,
+} from "./types/parameter";
 
 export const resolveArgv = (): string[] =>
 	IS_NODE
@@ -14,3 +19,8 @@ export const normalizeFlagValue = (
 	flag: ClercFlagDefinitionValue,
 ): ClercFlagOptions =>
 	typeof flag === "function" || looseIsArray(flag) ? { type: flag } : flag;
+
+export const normalizeParameterValue = (
+	parameter: ParameterDefinitionValue,
+): ParameterOptions =>
+	typeof parameter === "string" ? { key: parameter } : parameter;
