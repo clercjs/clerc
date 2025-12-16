@@ -1,5 +1,5 @@
 {
-	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.experimental.useTsgo": true,
 	"files.exclude": {
 		"**/*.tsbuildinfo": true
 	},
