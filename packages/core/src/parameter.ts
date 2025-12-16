@@ -1,9 +1,9 @@
 import { DOUBLE_DASH } from "@clerc/parser";
 import { camelCase } from "@clerc/utils";
-import { normalizeParameterValue } from "clerc";
 
 import { InvalidParametersError } from "./errors";
 import type { ParameterDefinitionValue } from "./types/parameter";
+import { normalizeParameterValue } from "./utils";
 
 export function getParametersToResolve(argv: string[]): string[] {
 	const parameters: string[] = [];

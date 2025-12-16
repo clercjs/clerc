@@ -1,4 +1,6 @@
-import type { Clerc, GroupsOptions } from "clerc";
+import type { Clerc } from "@clerc/core";
+
+import type { GroupsOptions } from "./types";
 
 declare module "@clerc/core" {
 	export interface ContextStore {
