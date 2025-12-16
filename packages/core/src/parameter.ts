@@ -1,5 +1,6 @@
 import { DOUBLE_DASH } from "@clerc/parser";
 import { camelCase } from "@clerc/utils";
+import { normalizeParameterValue } from "clerc";
 
 import { InvalidParametersError } from "./errors";
 import type { ParameterDefinitionValue } from "./types/parameter";
@@ -49,11 +50,11 @@ function _parseParameters(
 	const result: Record<string, any> = {};
 	let hasOptional = false;
 
-	for (const [i, definition] of definitions.entries()) {
-		const definitionKey =
-			typeof definition === "string" ? definition : definition.key;
-		const { name, isRequired, isVariadic } =
-			extractParameterInfo(definitionKey);
+	for (const [i, def] of definitions.entries()) {
+		const normalized = normalizeParameterValue(def);
+		const { name, isRequired, isVariadic } = extractParameterInfo(
+			normalized.key,
+		);
 
 		if (name in result) {
 			throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
@@ -83,13 +84,13 @@ function _parseParameters(
 			);
 		}
 
-		if (typeof definition !== "string" && definition.type) {
+		if (normalized.type) {
 			if (isVariadic) {
-				result[name] = (value as string[]).map((v) => definition.type!(v));
+				result[name] = (value as string[]).map((v) => normalized.type!(v));
 			} else if (value === undefined) {
 				result[name] = value;
 			} else {
-				result[name] = definition.type(value as string);
+				result[name] = normalized.type(value as string);
 			}
 		} else {
 			result[name] = value;
