@@ -18,6 +18,19 @@ declare module "@clerc/core" {
 			show?: boolean;
 		};
 	}
+	export interface FlagCustomOptions {
+		/**
+		 * Completions options for the flag.
+		 */
+		completions?: {
+			/**
+			 * Whether to show the flag in completions output.
+			 *
+			 * @default true
+			 */
+			show?: boolean;
+		};
+	}
 }
 
 export const completionsPlugin = (): Plugin =>

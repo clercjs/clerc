@@ -48,6 +48,9 @@ export function buildTabModel(
 
 		for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
 			const normalized = normalizeFlagValue(def);
+			if (normalized.completions?.show === false) {
+				continue;
+			}
 			const desc = normalized.description ?? "";
 			const isBoolean = normalized.type === Boolean;
 			if (isBoolean) {
