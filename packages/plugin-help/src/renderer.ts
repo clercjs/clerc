@@ -312,18 +312,18 @@ export class HelpRenderer {
 		return body;
 	}
 
-	public renderAvailableSubcommands(parentCommandName: string): string {
+	public renderAvailableSubcommands(parentCommandName: string): string | null {
 		const subcommands = this.getSubcommands(parentCommandName);
 
 		if (subcommands.size === 0) {
-			return "";
+			return null;
 		}
 
 		const prefix = `${parentCommandName} `;
 		const body = this.buildGroupedCommandsBody(subcommands, prefix);
 
 		if (body.length === 0) {
-			return "";
+			return null;
 		}
 
 		const sections: Section[] = [
