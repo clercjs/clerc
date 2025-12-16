@@ -14,8 +14,10 @@ vi.mock("@bomb.sh/tab", () => ({
 		completions: [],
 		command: vi.fn().mockReturnValue({
 			option: vi.fn(),
+			argument: vi.fn(),
 		}),
 		option: vi.fn(),
+		argument: vi.fn(),
 	},
 }));
 
