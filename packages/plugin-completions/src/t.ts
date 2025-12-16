@@ -1,11 +1,15 @@
-import type { Command } from "@bomb.sh/tab";
+import type { Command as TabCommand } from "@bomb.sh/tab";
 import t from "@bomb.sh/tab";
 import type {
 	ClercFlagDefinitionValue,
 	ClercFlagsDefinition,
 	CommandsMap,
-} from "clerc";
-import { normalizeFlagValue } from "clerc";
+} from "@clerc/core";
+import {
+	extractParameterInfo,
+	normalizeFlagValue,
+	normalizeParameterValue,
+} from "@clerc/core";
 
 export function resetTab(): void {
 	t.commands.clear();
@@ -15,7 +19,7 @@ export function resetTab(): void {
 }
 
 function registerFlag(
-	tc: Command,
+	tc: TabCommand,
 	flagName: string,
 	def: ClercFlagDefinitionValue,
 ): void {
@@ -35,7 +39,7 @@ function registerFlag(
 
 function registerGlobalFlags(
 	globalFlags: ClercFlagsDefinition,
-	tc: Command,
+	tc: TabCommand,
 ): void {
 	for (const [flagName, def] of Object.entries(globalFlags)) {
 		registerFlag(tc, flagName, def);
@@ -55,7 +59,7 @@ export function buildTabModel(
 			continue;
 		}
 
-		let command: Command = t;
+		let command: TabCommand = t;
 
 		if (cmd.name !== "") {
 			command = t.command(cmd.name, cmd.description ?? "");
@@ -63,6 +67,12 @@ export function buildTabModel(
 		}
 
 		cmd.completions?.handler?.(command);
+
+		for (const def of cmd.parameters ?? []) {
+			const normalized = normalizeParameterValue(def);
+			const { name, isVariadic } = extractParameterInfo(normalized.key);
+			command.argument(name, normalized.completions?.handler, isVariadic);
+		}
 
 		for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
 			registerFlag(command, flagName, def);
