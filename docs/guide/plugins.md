@@ -51,7 +51,7 @@ export const myPlugin = definePlugin({
 
 ## Extending Custom Option Types
 
-If your plugin needs to add custom types for commands or options, you can use the following method:
+If your plugin needs to add custom types for commands, flags or parameters, you can use the following method:
 
 ```ts
 declare module "@clerc/core" {
@@ -62,6 +62,11 @@ declare module "@clerc/core" {
 
 	// For adding custom types to options
 	export interface FlagCustomOptions {
+		foo: string;
+	}
+
+	// For adding custom types to parameters
+	export interface ParameterCustomOptions {
 		foo: string;
 	}
 }

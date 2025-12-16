@@ -51,7 +51,7 @@ export const myPlugin = definePlugin({
 
 ## 拓展选项类型
 
-如果你的插件需要为命令或选项添加自定义类型，可以使用如下方法：
+如果你的插件需要为命令、选项或参数添加自定义类型，可以使用如下方法：
 
 ```ts
 declare module "@clerc/core" {
@@ -62,6 +62,11 @@ declare module "@clerc/core" {
 
 	// 为选项添加自定义类型
 	export interface FlagCustomOptions {
+		foo: string;
+	}
+
+	// 为参数添加自定义类型
+	export interface ParameterCustomOptions {
 		foo: string;
 	}
 }

@@ -1,6 +1,8 @@
 import type { TypeFunction } from "@clerc/parser";
 import type { CamelCase, Prettify, UnionToIntersection } from "@clerc/utils";
 
+export declare interface ParameterCustomOptions {}
+
 type InferStringParameter<T extends string, Type = string> = T extends
 	| `<${infer Name extends string}...>`
 	| `[${infer Name extends string}...]`
@@ -25,9 +27,9 @@ export type InferParameters<T extends readonly Parameter[]> =
 		? Prettify<UnionToIntersection<InferParameter<U>>>
 		: never;
 
-export interface ParameterDefinition {
+export type ParameterDefinition = {
 	key: string;
 	description?: string;
 	type?: TypeFunction;
-}
+} & ParameterCustomOptions;
 export type Parameter = string | ParameterDefinition;
