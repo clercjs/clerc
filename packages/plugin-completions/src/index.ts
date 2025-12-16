@@ -1,3 +1,4 @@
+import type { OptionHandler } from "@bomb.sh/tab";
 import t from "@bomb.sh/tab";
 import type { Plugin } from "@clerc/core";
 import { Types, definePlugin } from "@clerc/core";
@@ -29,6 +30,10 @@ declare module "@clerc/core" {
 			 * @default true
 			 */
 			show?: boolean;
+			/**
+			 * Handler to provide custom completions for the flag.
+			 */
+			handler?: OptionHandler;
 		};
 	}
 }
