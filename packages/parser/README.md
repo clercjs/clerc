@@ -1,5 +1,7 @@
 # @clerc/parser
 
+[![NPM version](https://img.shields.io/npm/v/@clerc/parser?color=a1b858&label=)](https://www.npmjs.com/package/@clerc/parser)
+
 A powerful, lightweight, and flexible command-line arguments parser.
 
 ## Installation
