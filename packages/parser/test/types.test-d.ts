@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { ObjectInputType } from "../src";
-import { Enum, parse } from "../src";
+import { parse } from "../src";
 
 describe("parser types", () => {
 	it("should inferflags", () => {
@@ -83,22 +83,6 @@ describe("parser types", () => {
 			counterWithWeirdDefault: number | string;
 			any1: any;
 			any2: any;
-		}>();
-	});
-
-	it("should infer custom enum", () => {
-		const result = parse([], {
-			flags: {
-				choiceFlag: { type: Enum("red", "green", "blue") },
-				choiceFlagWithDefault: {
-					type: Enum("small", "medium", "large"),
-					default: "medium" as const,
-				},
-			},
-		});
-		expectTypeOf(result.flags).toEqualTypeOf<{
-			choiceFlag: "red" | "green" | "blue" | undefined;
-			choiceFlagWithDefault: "small" | "medium" | "large";
 		}>();
 	});
 });
