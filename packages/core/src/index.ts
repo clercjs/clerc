@@ -1,3 +1,4 @@
+export * as Types from "@clerc/advanced-types";
 export type * as Parser from "@clerc/parser";
 export {
 	DOUBLE_DASH,
@@ -10,7 +11,6 @@ export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";
 export { resolveCommand } from "./command";
 export * from "./errors";
-export * as Types from "./flag-types";
 export * from "./helpers";
 export { createStopAtFirstParameter } from "./ignore";
 export { extractParameterInfo } from "./parameter";

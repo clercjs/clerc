@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Enum, Range, Regex } from "../src/flag-types";
+import { Enum, Range, Regex } from "../src";
+import { FlagValidationError } from "../src/errors";
 
 describe("flag-types", () => {
 	describe("Enum", () => {
@@ -25,6 +26,7 @@ describe("flag-types", () => {
 			expect(() => format("invalid")).toThrow(
 				"Invalid value: invalid. Must be one of: json, yaml, xml",
 			);
+			expect(() => format("invalid")).toThrow(FlagValidationError);
 		});
 
 		it("should handle single choice", () => {
@@ -64,6 +66,7 @@ describe("flag-types", () => {
 			expect(() => range("a")).toThrow(
 				"Invalid value: a. Must be a number between 1 and 10",
 			);
+			expect(() => range("a")).toThrow(FlagValidationError);
 		});
 	});
 
@@ -87,6 +90,7 @@ describe("flag-types", () => {
 			expect(() => regex("a")).toThrow(
 				"Invalid value: a. Must match pattern: /^\\d+$/",
 			);
+			expect(() => regex("a")).toThrow(FlagValidationError);
 		});
 	});
 });

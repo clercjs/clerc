@@ -1,5 +1,9 @@
 import type { TypeFunction } from "@clerc/parser";
 
+import { FlagValidationError } from "./errors";
+
+export * from "./errors";
+
 /**
  * Creates a Enum type function that validates the input against allowed values.
  * The display name will be formatted as "value1 | value2 | ..." for help output.
@@ -17,7 +21,7 @@ import type { TypeFunction } from "@clerc/parser";
 export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
 	const fn = ((value: string) => {
 		if (!values.includes(value as any)) {
-			throw new Error(
+			throw new FlagValidationError(
 				`Invalid value: ${value}. Must be one of: ${values.join(", ")}`,
 			);
 		}
@@ -42,7 +46,7 @@ export function Range(min: number, max: number): TypeFunction<number> {
 	const fn = ((value: string) => {
 		const num = Number(value);
 		if (Number.isNaN(num) || num < min || num > max) {
-			throw new Error(
+			throw new FlagValidationError(
 				`Invalid value: ${value}. Must be a number between ${min} and ${max}`,
 			);
 		}
@@ -68,7 +72,7 @@ export function Regex(
 ): TypeFunction<string> {
 	const fn = ((value: string) => {
 		if (!pattern.test(value)) {
-			throw new Error(
+			throw new FlagValidationError(
 				`Invalid value: ${value}. Must match pattern: ${pattern}`,
 			);
 		}

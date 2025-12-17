@@ -1,18 +1,17 @@
 {
-	"name": "@clerc/core",
+	"name": "@clerc/advanced-types",
 	"version": "1.0.0-beta.28",
 	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
 	"type": "module",
-	"description": "Clerc core",
+	"description": "Clerc advanced types",
 	"keywords": [
 		"args",
 		"arguments",
 		"argv",
 		"clerc",
-		"cli",
-		"terminal"
+		"cli"
 	],
-	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/core#readme",
+	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/advanced-types#readme",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/clercjs/clerc.git",
@@ -42,14 +41,5 @@
 	],
 	"publishConfig": {
 		"access": "public"
-	},
-	"dependencies": {
-		"@clerc/advanced-types": "workspace:*",
-		"@clerc/parser": "workspace:*",
-		"lite-emit": "^4.0.0"
-	},
-	"devDependencies": {
-		"@clerc/utils": "workspace:*",
-		"is-platform": "^1.0.0"
 	}
 }

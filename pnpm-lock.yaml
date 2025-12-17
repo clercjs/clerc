@@ -126,6 +126,8 @@ importers:
         specifier: catalog:docs
         version: 3.1.8(typescript@5.9.3)
 
+  packages/advanced-types: {}
+
   packages/clerc:
     dependencies:
       '@clerc/core':
@@ -152,8 +154,11 @@ importers:
 
   packages/core:
     dependencies:
+      '@clerc/advanced-types':
+        specifier: workspace:*
+        version: link:../advanced-types
       '@clerc/parser':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../parser
       lite-emit:
         specifier: ^4.0.0

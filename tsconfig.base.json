@@ -14,6 +14,7 @@
 		"skipDefaultLibCheck": true,
 		"skipLibCheck": true,
 		"paths": {
+			"@clerc/advanced-types": ["./packages/advanced-types/src/index.ts"],
 			"@clerc/core": ["./packages/core/src/index.ts"],
 			"@clerc/parser": ["./packages/parser/src/index.ts"],
 			"@clerc/plugin-completions": [
