@@ -7,11 +7,9 @@ A powerful, lightweight, and flexible command-line arguments parser.
 ## Installation
 
 ```bash
-npm install @clerc/parser
-# or
-yarn add @clerc/parser
-# or
-pnpm add @clerc/parser
+$ npm install @clerc/parser
+$ yarn add @clerc/parser
+$ pnpm add @clerc/parser
 ```
 
 ## Usage
@@ -362,3 +360,7 @@ BENCH  Summary
     3.85x faster than nopt
     27.11x faster than yargs-parser
 ```
+
+## 📝 License
+
+[MIT](../../LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)
