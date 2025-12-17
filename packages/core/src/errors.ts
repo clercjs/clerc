@@ -13,11 +13,7 @@ export class NoCommandSpecifiedError extends Error {
 	}
 }
 
-export class InvalidCommandError extends Error {
-	constructor(message: string) {
-		super(message);
-	}
-}
+export class InvalidCommandError extends Error {}
 
 export class MissingRequiredMetadataError extends Error {
 	constructor(metadataName: string) {
@@ -25,11 +21,7 @@ export class MissingRequiredMetadataError extends Error {
 	}
 }
 
-export class InvalidParametersError extends Error {
-	constructor(message: string) {
-		super(message);
-	}
-}
+export class InvalidParametersError extends Error {}
 
 export class MissingRequiredFlagError extends Error {
 	constructor(flags: string[]) {
