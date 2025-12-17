@@ -1,30 +1,40 @@
-import t from "@bomb.sh/tab";
+import { RootCommand } from "@bomb.sh/tab";
 import { TestBaseCli } from "@clerc/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { completionsPlugin } from "../src";
 
+const mockSetup = vi.fn();
+const mockParse = vi.fn();
+const mockCommand = vi.fn().mockReturnValue({
+	option: vi.fn(),
+	argument: vi.fn(),
+});
+const mockOption = vi.fn();
+const mockArgument = vi.fn();
+
 vi.mock("@bomb.sh/tab", () => ({
-	default: {
-		setup: vi.fn(),
-		parse: vi.fn(),
-		commands: new Map(),
-		options: new Map(),
-		arguments: new Map(),
-		completions: [],
-		command: vi.fn().mockReturnValue({
-			option: vi.fn(),
-			argument: vi.fn(),
-		}),
-		option: vi.fn(),
-		argument: vi.fn(),
-	},
+	RootCommand: vi.fn(
+		class {
+			public setup = mockSetup;
+			public parse = mockParse;
+			public commands = new Map();
+			public options = new Map();
+			public arguments = new Map();
+			public completions = [];
+			public command = mockCommand;
+			public option = mockOption;
+			public argument = mockArgument;
+		},
+	),
 }));
 
 describe("plugin-completions/commands", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
+
+	const t = new RootCommand();
 
 	describe("completions", () => {
 		it("should setup completions with shell parameter", async () => {

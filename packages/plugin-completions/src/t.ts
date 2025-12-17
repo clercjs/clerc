@@ -1,5 +1,4 @@
-import type { Command as TabCommand } from "@bomb.sh/tab";
-import t from "@bomb.sh/tab";
+import type { Command as TabCommand, RootCommand } from "@bomb.sh/tab";
 import type {
 	ClercFlagDefinitionValue,
 	ClercFlagsDefinition,
@@ -10,13 +9,6 @@ import {
 	normalizeFlagValue,
 	normalizeParameterValue,
 } from "@clerc/core";
-
-export function resetTab(): void {
-	t.commands.clear();
-	t.options.clear();
-	t.arguments.clear();
-	t.completions = [];
-}
 
 function registerFlag(
 	tc: TabCommand,
@@ -45,11 +37,10 @@ function registerGlobalFlags(
 }
 
 export function buildTabModel(
+	t: RootCommand,
 	globalFlags: ClercFlagsDefinition,
 	commands: CommandsMap,
 ): void {
-	resetTab();
-
 	registerGlobalFlags(globalFlags, t);
 
 	for (const cmd of commands.values()) {

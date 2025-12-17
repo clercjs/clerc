@@ -3,7 +3,7 @@ import type {
 	Command as TabCommand,
 	OptionHandler,
 } from "@bomb.sh/tab";
-import t from "@bomb.sh/tab";
+import { RootCommand } from "@bomb.sh/tab";
 import type { Plugin } from "@clerc/core";
 import { Types, definePlugin } from "@clerc/core";
 
@@ -60,6 +60,8 @@ declare module "@clerc/core" {
 export const completionsPlugin = (): Plugin =>
 	definePlugin({
 		setup: (cli) => {
+			const t = new RootCommand();
+
 			const supportedShellEnum = Types.Enum(
 				"zsh",
 				"bash",
@@ -92,7 +94,7 @@ export const completionsPlugin = (): Plugin =>
 						);
 					}
 
-					buildTabModel(cli._globalFlags, cli._commands);
+					buildTabModel(t, cli._globalFlags, cli._commands);
 
 					t.setup(cli._scriptName, cli._scriptName, shell);
 				});
@@ -104,7 +106,7 @@ export const completionsPlugin = (): Plugin =>
 					parameters: ["--", "[input...]"],
 				})
 				.on("complete", async (ctx) => {
-					buildTabModel(cli._globalFlags, cli._commands);
+					buildTabModel(t, cli._globalFlags, cli._commands);
 
 					const { input } = ctx.parameters;
 					t.parse(input);
