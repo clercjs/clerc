@@ -1,8 +1,6 @@
 {
 	"typescript.experimental.useTsgo": true,
-	"files.exclude": {
-		"**/*.tsbuildinfo": true
-	},
+	"typescript.native-preview.tsdk": "./node_modules/@typescript/native-preview",
 	"files.associations": {
 		"*.md": "markdown"
 	}

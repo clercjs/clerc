@@ -32,7 +32,7 @@
 		"@so1ve/eslint-config": "^3.19.0",
 		"@so1ve/prettier-config": "^3.19.0",
 		"@types/node": "^24.10.1",
-		"@typescript/native-preview": "7.0.0-dev.20251211.1",
+		"@typescript/native-preview": "7.0.0-dev.20251217.1",
 		"@vitest/coverage-istanbul": "^4.0.15",
 		"@vitest/ui": "^4.0.15",
 		"bumpp": "^10.3.2",
