@@ -226,8 +226,9 @@ export class HelpRenderer {
 		}
 
 		const items = command.parameters
+			// Use `parameter` here on purpose since we allow only string format for `--`
+			.filter((parameter) => parameter !== DOUBLE_DASH)
 			.map(normalizeParameterValue)
-			.filter((parameter) => parameter.key !== DOUBLE_DASH)
 			.map(({ key, type, description }) => {
 				const formattedType = type
 					? this._formatters.formatTypeValue(type)
