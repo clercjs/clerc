@@ -200,6 +200,64 @@ exports[`plugin-help > should format custom flag type with "display" property 1`
 ]
 `;
 
+exports[`plugin-help > should handle optional double dash 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [--] [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [--] [optional] [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  [1m[optional][22m  [2mstring[22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > should hide double dash in parameters section 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [--] [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [--] [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
 exports[`plugin-help > should not show commands placeholder when no commands exist 1`] = `
 [
   [
@@ -391,7 +449,7 @@ exports[`plugin-help > should show parameter types 1`] = `
     "[2mtest[22m [1mtest[22m - Test command
 
 [4m[1mUsage[22m[24m
-  $ test test <param> <param2> [range] [regex] -- [2m[flags][22m
+  $ test test <param> <param2> [range] [regex] [--] [2m[flags][22m
 
 [4m[1mParameters[22m[24m
   [1m<param>[22m   [2mstring[22m
