@@ -69,6 +69,28 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should hide double dash in parameters section", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: [
+					{
+						key: "--",
+					},
+				],
+			})
+			.parse(["test", "--help"]);
+
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: ["--"],
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should show parameter description", () => {
 		TestBaseCli()
 			.use(helpPlugin())

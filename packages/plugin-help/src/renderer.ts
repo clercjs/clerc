@@ -5,7 +5,11 @@ import type {
 	Command,
 	CommandsMap,
 } from "@clerc/core";
-import { DOUBLE_DASH, normalizeFlagValue } from "@clerc/core";
+import {
+	DOUBLE_DASH,
+	normalizeFlagValue,
+	normalizeParameterValue,
+} from "@clerc/core";
 import {
 	formatFlagName,
 	formatVersion,
@@ -203,15 +207,12 @@ export class HelpRenderer {
 		}
 
 		const items = command.parameters
-			.filter((p) => p !== DOUBLE_DASH)
-			.map((parameter) => {
-				const key = typeof parameter === "string" ? parameter : parameter.key;
-				const type = typeof parameter === "string" ? undefined : parameter.type;
+			.map(normalizeParameterValue)
+			.filter((parameter) => parameter.key !== DOUBLE_DASH)
+			.map(({ key, type, description }) => {
 				const formattedType = type
 					? this._formatters.formatTypeValue(type)
 					: "string";
-				const description =
-					typeof parameter === "string" ? undefined : parameter.description;
 
 				return [yc.bold(key), yc.dim(formattedType), description].filter(
 					isTruthy,
