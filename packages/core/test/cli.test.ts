@@ -1,7 +1,7 @@
 import { TestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { InvalidParametersError, defineCommand } from "../src";
+import { defineCommand } from "../src";
 
 describe("cli", () => {
 	it("should parse", () => {
@@ -181,7 +181,9 @@ describe("cli", () => {
 					parameters: ["--", "<required>"],
 				})
 				.parse(["foo", "--"]),
-		).rejects.toThrow(InvalidParametersError);
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			"[Error: Missing required parameter: required]",
+		);
 
 		TestBaseCli()
 			.command("foo", "foo", {
