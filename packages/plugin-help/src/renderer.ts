@@ -174,7 +174,23 @@ export class HelpRenderer {
 				usage += ` ${command.name}`;
 			}
 			if (command.parameters) {
-				usage += ` ${command.parameters.map((p) => (typeof p === "string" ? p : p.key)).join(" ")}`;
+				const doubleDashIndex = command.parameters.indexOf(DOUBLE_DASH);
+				const hasRequiredAfterDoubleDash =
+					doubleDashIndex !== -1 &&
+					command.parameters.slice(doubleDashIndex + 1).some((p) => {
+						const key = typeof p === "string" ? p : p.key;
+
+						return key.startsWith("<");
+					});
+				const items = command.parameters.map((p) => {
+					let key = typeof p === "string" ? p : p.key;
+					if (key === DOUBLE_DASH) {
+						key = hasRequiredAfterDoubleDash ? DOUBLE_DASH : `[${DOUBLE_DASH}]`;
+					}
+
+					return key;
+				});
+				usage += ` ${items.join(" ")}`;
 			}
 		} else {
 			if (

@@ -91,6 +91,33 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should handle optional double dash", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: [
+					{
+						key: "--",
+					},
+				],
+			})
+			.parse(["test", "--help"]);
+
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				parameters: [
+					{
+						key: "--",
+					},
+					"[optional]",
+				],
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	it("should show parameter description", () => {
 		TestBaseCli()
 			.use(helpPlugin())
