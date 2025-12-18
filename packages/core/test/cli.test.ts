@@ -1,7 +1,7 @@
 import { TestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { defineCommand } from "../src";
+import { InvalidParametersError, defineCommand } from "../src";
 
 describe("cli", () => {
 	it("should parse", () => {
@@ -145,6 +145,52 @@ describe("cli", () => {
 				expect(ctx.parameters.optional).toStrictEqual(["bar", "baz", "qux"]);
 			})
 			.parse(["foo", "bar", "-c", "baz", "qux"]);
+	});
+
+	it("should parse double dash", () => {
+		TestBaseCli()
+			.command("foo", "foo", {
+				parameters: ["--", "[optional]"],
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.rawParsed).toMatchInlineSnapshot(`
+					{
+					  "doubleDash": [
+					    "bar",
+					  ],
+					  "flags": {},
+					  "ignored": [],
+					  "missingRequiredFlags": [],
+					  "parameters": [],
+					  "raw": [
+					    "--",
+					    "bar",
+					  ],
+					  "unknown": {},
+					}
+				`);
+				expect(ctx.parameters.optional).toStrictEqual("bar");
+			})
+			.parse(["foo", "--", "bar"]);
+	});
+
+	it("should handle required double dash", async () => {
+		await expect(
+			TestBaseCli()
+				.command("foo", "foo", {
+					parameters: ["--", "<required>"],
+				})
+				.parse(["foo", "--"]),
+		).rejects.toThrow(InvalidParametersError);
+
+		TestBaseCli()
+			.command("foo", "foo", {
+				parameters: ["--", "<required>"],
+			})
+			.on("foo", (ctx) => {
+				expect(ctx.parameters.required).toBe("bar");
+			})
+			.parse(["foo", "--", "bar"]);
 	});
 
 	it("should allow flag type shorthand", () => {
