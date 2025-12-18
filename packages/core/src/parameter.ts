@@ -105,6 +105,7 @@ export function parseParameters(
 	parameters: string[],
 	doubleDashParameters: string[],
 ): Record<string, any> {
+	// Use `definitions` without normalization here on purpose since we allow only string format for `--`
 	const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
 
 	if (doubleDashIndex === -1) {

@@ -101,6 +101,14 @@ The `--` indicates that all arguments after it should be passed to the _script_ 
 
 You can specify `--` in the `parameters` array to parse flag terminator arguments.
 
+:::warning
+
+You can only define one `--` parameter in the `parameters` array. If multiple `--` parameters are defined, only the first one will be considered, and the rest will be ignored.
+
+You can only define `--` in string format; defining it as a parameter object will not work.
+
+:::
+
 Example:
 
 ```ts

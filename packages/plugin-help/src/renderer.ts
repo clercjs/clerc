@@ -177,14 +177,17 @@ export class HelpRenderer {
 				const doubleDashIndex = command.parameters.indexOf(DOUBLE_DASH);
 				const hasRequiredAfterDoubleDash =
 					doubleDashIndex !== -1 &&
-					command.parameters.slice(doubleDashIndex + 1).some((p) => {
-						const key = typeof p === "string" ? p : p.key;
+					command.parameters.slice(doubleDashIndex + 1).some((parameter) => {
+						const key =
+							typeof parameter === "string" ? parameter : parameter.key;
 
 						return key.startsWith("<");
 					});
-				const items = command.parameters.map((p) => {
-					let key = typeof p === "string" ? p : p.key;
-					if (key === DOUBLE_DASH) {
+				const items = command.parameters.map((parameter) => {
+					let key = typeof parameter === "string" ? parameter : parameter.key;
+
+					// Use `parameter` here on purpose since we allow only string format for `--`
+					if (parameter === DOUBLE_DASH) {
 						key = hasRequiredAfterDoubleDash ? DOUBLE_DASH : `[${DOUBLE_DASH}]`;
 					}
 

@@ -73,11 +73,7 @@ describe("plugin-help", () => {
 		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "Test command", {
-				parameters: [
-					{
-						key: "--",
-					},
-				],
+				parameters: ["--"],
 			})
 			.parse(["test", "--help"]);
 
@@ -95,23 +91,14 @@ describe("plugin-help", () => {
 		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "Test command", {
-				parameters: [
-					{
-						key: "--",
-					},
-				],
+				parameters: ["--"],
 			})
 			.parse(["test", "--help"]);
 
 		TestBaseCli()
 			.use(helpPlugin())
 			.command("test", "Test command", {
-				parameters: [
-					{
-						key: "--",
-					},
-					"[optional]",
-				],
+				parameters: ["--", "[optional]"],
 			})
 			.parse(["test", "--help"]);
 
