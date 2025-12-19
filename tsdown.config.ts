@@ -10,5 +10,11 @@ export default defineConfig({
 		oxc: true,
 	},
 	fixedExtension: false,
-	external: [/^@clerc\//],
+	external(id) {
+		if (id === "@clerc/advanced-types") {
+			return false;
+		}
+
+		return id.startsWith("@clerc/");
+	},
 });

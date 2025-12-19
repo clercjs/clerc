@@ -44,12 +44,12 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@clerc/advanced-types": "workspace:*",
 		"@clerc/parser": "workspace:*",
 		"@clerc/utils": "workspace:*",
 		"lite-emit": "^4.0.0"
 	},
 	"devDependencies": {
+		"@clerc/advanced-types": "workspace:*",
 		"is-platform": "^1.0.0"
 	}
 }

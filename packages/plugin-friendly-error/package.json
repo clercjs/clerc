@@ -44,11 +44,9 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"dependencies": {
-		"kons": "^0.7.1"
-	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*"
+		"@clerc/core": "workspace:*",
+		"kons": "^0.7.1"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

@@ -47,10 +47,8 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"dependencies": {
-		"@bomb.sh/tab": "^0.0.10"
-	},
 	"devDependencies": {
+		"@bomb.sh/tab": "^0.0.10",
 		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {

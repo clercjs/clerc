@@ -158,9 +158,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@clerc/advanced-types':
-        specifier: workspace:*
-        version: link:../advanced-types
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
@@ -171,6 +168,9 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
     devDependencies:
+      '@clerc/advanced-types':
+        specifier: workspace:*
+        version: link:../advanced-types
       is-platform:
         specifier: ^1.0.0
         version: 1.0.0
@@ -210,24 +210,22 @@ importers:
         version: 22.0.0
 
   packages/plugin-completions:
-    dependencies:
+    devDependencies:
       '@bomb.sh/tab':
         specifier: ^0.0.10
         version: 0.0.10(cac@6.7.14)(citty@0.1.6)
-    devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
 
   packages/plugin-friendly-error:
-    dependencies:
-      kons:
-        specifier: ^0.7.1
-        version: 0.7.1
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      kons:
+        specifier: ^0.7.1
+        version: 0.7.1
 
   packages/plugin-help:
     dependencies:
@@ -262,13 +260,13 @@ importers:
       '@uttr/tint':
         specifier: ^0.1.3
         version: 0.1.3
-      fastest-levenshtein:
-        specifier: ^1.0.16
-        version: 1.0.16
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
+      fastest-levenshtein:
+        specifier: ^1.0.16
+        version: 1.0.16
 
   packages/plugin-strict-flags:
     dependencies:
