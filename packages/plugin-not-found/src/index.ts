@@ -4,8 +4,8 @@ import {
 	NoSuchCommandError,
 	definePlugin,
 } from "@clerc/core";
+import * as tint from "@uttr/tint";
 import didyoumean from "didyoumean2";
-import * as yc from "yoctocolors";
 
 export const notFoundPlugin = (): Plugin =>
 	definePlugin({
@@ -37,10 +37,10 @@ export const notFoundPlugin = (): Plugin =>
 
 						const { commandName } = e;
 						const closestCommandName = didyoumean(commandName, commandKeys);
-						let text = `Command "${yc.strikethrough(commandName)}" not found.`;
+						let text = `Command "${tint.strikethrough(commandName)}" not found.`;
 
 						if (hasCommands && closestCommandName) {
-							text += `\nDid you mean "${yc.bold(closestCommandName)}"?`;
+							text += `\nDid you mean "${tint.bold(closestCommandName)}"?`;
 						} else if (!hasCommands) {
 							text += "\nNo commands registered.";
 						}

@@ -17,9 +17,9 @@ import {
 	objectIsEmpty,
 	toArray,
 } from "@clerc/utils";
+import * as tint from "@uttr/tint";
 import stringWidth from "string-width";
 import textTable from "text-table";
-import * as yc from "yoctocolors";
 
 import type { Formatters, GroupsOptions } from "./types";
 import { formatCommandName } from "./utils";
@@ -114,7 +114,7 @@ export class HelpRenderer {
 					return body;
 				}
 
-				return `${yc.underline(yc.bold(section.title))}\n${body
+				return `${tint.underline.bold(section.title)}\n${body
 					.split("\n")
 					.map(withIndent)
 					.join("\n")}`;
@@ -142,16 +142,16 @@ export class HelpRenderer {
 		const command = this._command;
 		const description = command ? command.description : _description;
 		const formattedCommandName = command?.name
-			? ` ${yc.bold(command.name)}`
+			? ` ${tint.bold(command.name)}`
 			: "";
 		const headerLine = command
-			? `${yc.dim(_name)}${formattedCommandName}`
-			: `${yc.bold(_name)} ${formatVersion(_version)}`;
+			? `${tint.dim(_name)}${formattedCommandName}`
+			: `${tint.bold(_name)} ${formatVersion(_version)}`;
 		const alias = command?.alias
 			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
 					command.alias,
 				)
-					.map((a) => yc.bold(a))
+					.map((a) => tint.bold(a))
 					.join(", ")}`
 			: undefined;
 
@@ -201,8 +201,8 @@ export class HelpRenderer {
 				!(this._cli._commands.has("") && this._cli._commands.size === 1) // Not root command only case
 			) {
 				usage += this._cli._commands.has("")
-					? ` ${yc.dim("[command]")}`
-					: ` ${yc.dim("<command>")}`;
+					? ` ${tint.dim("[command]")}`
+					: ` ${tint.dim("<command>")}`;
 			}
 		}
 
@@ -210,7 +210,7 @@ export class HelpRenderer {
 			(command?.flags && !objectIsEmpty(command.flags)) ||
 			!objectIsEmpty(this._globalFlags)
 		) {
-			usage += ` ${yc.dim("[flags]")}`;
+			usage += ` ${tint.dim("[flags]")}`;
 		}
 
 		return {
@@ -234,7 +234,7 @@ export class HelpRenderer {
 					? this._formatters.formatTypeValue(type)
 					: "string";
 
-				return [yc.bold(key), yc.dim(formattedType), description].filter(
+				return [tint.bold(key), tint.dim(formattedType), description].filter(
 					isTruthy,
 				);
 			});
@@ -280,7 +280,7 @@ export class HelpRenderer {
 			const group = command.help?.group;
 			validateGroup(group, this._commandGroups, "command", command.name);
 
-			const commandName = yc.bold(
+			const commandName = tint.bold(
 				formatCommandName(command.name.slice(prefix.length)),
 			);
 			const aliases = command.alias
@@ -325,7 +325,7 @@ export class HelpRenderer {
 				if (body.length > 0) {
 					body.push("");
 				}
-				body.push(`${yc.dim(name)}`);
+				body.push(`${tint.dim(name)}`);
 				body.push(...splitTable(items).map(withIndent));
 			}
 		}
@@ -349,7 +349,7 @@ export class HelpRenderer {
 
 		const sections: Section[] = [
 			{
-				body: `${this._cli._name} ${yc.bold(parentCommandName)} not found`,
+				body: `${this._cli._name} ${tint.bold(parentCommandName)} not found`,
 			},
 			{
 				title: "Available Subcommands",
@@ -401,13 +401,16 @@ export class HelpRenderer {
 		const type = this._formatters.formatTypeValue(flag.type);
 		const default_ =
 			flag.default !== undefined &&
-			yc.dim(
-				`[default: ${yc.bold(this._formatters.formatFlagDefault(flag.default))}]`,
+			tint.dim(
+				`[default: ${tint.bold(this._formatters.formatFlagDefault(flag.default))}]`,
 			);
 
-		return [yc.bold(flagName), yc.dim(type), flag.description, default_].filter(
-			isTruthy,
-		);
+		return [
+			tint.bold(flagName),
+			tint.dim(type),
+			flag.description,
+			default_,
+		].filter(isTruthy);
 	}
 
 	private renderGroupedFlags(
@@ -448,7 +451,7 @@ export class HelpRenderer {
 				if (body.length > 0) {
 					body.push("");
 				}
-				body.push(`${yc.dim(name)}`);
+				body.push(`${tint.dim(name)}`);
 				body.push(...splitTable(items).map(withIndent));
 			}
 		}
