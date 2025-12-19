@@ -1,6 +1,6 @@
 {
 	"name": "@clerc/plugin-version",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
 	"type": "module",
 	"description": "Clerc plugin version",
