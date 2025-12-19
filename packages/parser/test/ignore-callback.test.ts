@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	KNOWN_FLAG,
-	PARAMETER,
-	UNKNOWN_FLAG,
-	parse,
-} from "../src";
+import { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG, parse } from "../src";
 
 describe("parser - ignore callback", () => {
 	it("should support ignore callback to stop parsing", () => {

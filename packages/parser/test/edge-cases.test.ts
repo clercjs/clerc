@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	InvalidSchemaError,
-	parse,
-} from "../src";
+import { InvalidSchemaError, parse } from "../src";
 
 describe("parser - edge cases", () => {
 	it("should throw on invalid schema", () => {
