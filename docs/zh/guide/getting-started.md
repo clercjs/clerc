@@ -46,8 +46,8 @@ $ pnpm add clerc
 import { Cli } from "clerc";
 
 Cli() // 创建一个新的 CLI，内置帮助和版本插件
-	.name("foo") // 可选，CLI 名称，用于生成帮助文本
-	.scriptName("foo") // CLI 脚本名称
+	.name("foo") // 可选，CLI 可读名称
+	.scriptName("foo") // CLI 脚本名称 (用于运行 CLI 的命令)
 	.description("一个 foo CLI") // CLI 描述
 	.version("0.0.0") // CLI 版本
 	.command(

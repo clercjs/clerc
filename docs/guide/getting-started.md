@@ -46,8 +46,8 @@ Install clerc, and create a file named `cli.mjs`:
 import { Cli } from "clerc";
 
 Cli() // Create a new CLI with help and version plugins
-	.name("foo") // Optional, CLI name, used to generate help text
-	.scriptName("foo") // CLI script name
+	.name("foo") // Optional, CLI readable name
+	.scriptName("foo") // CLI script name (the command used to run the CLI)
 	.description("A foo CLI") // CLI description
 	.version("0.0.0") // CLI version
 	.command(
