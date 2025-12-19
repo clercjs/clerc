@@ -241,6 +241,8 @@ export const helpPlugin = ({
 							ctx.rawParsed.parameters.length === 0; // and no command supplied, means no root command defined
 
 						if (shouldShowHelp) {
+							const text = "No command specified. Showing help:\n";
+							console.log(text);
 							printHelp(renderer.render());
 						} else {
 							await next();
