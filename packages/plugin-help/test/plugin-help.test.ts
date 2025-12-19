@@ -213,6 +213,26 @@ describe("plugin-help", () => {
 		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
 	});
 
+	it("should show examples and notes", () => {
+		TestBaseCli()
+			.use(helpPlugin())
+			.command("test", "Test command", {
+				help: {
+					examples: [
+						["$ cli test --foo", "Run test with foo"],
+						["$ cli test --bar", "Run test with bar"],
+					],
+					notes: [
+						"This is a note for the test command.",
+						"Another note for users to read.",
+					],
+				},
+			})
+			.parse(["test", "--help"]);
+
+		expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+	});
+
 	describe("grouping", () => {
 		it("should group commands", () => {
 			TestBaseCli()

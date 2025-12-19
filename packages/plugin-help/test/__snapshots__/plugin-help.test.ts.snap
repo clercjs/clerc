@@ -72,17 +72,7 @@ exports[`plugin-help > grouping > should group commands 1`] = `
     [1mbuild[22m  Build project
   
   [2mUtility Commands[22m
-    [1mclean[22m  Clean build artifacts
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+    [1mclean[22m  Clean build artifacts",
   ],
 ]
 `;
@@ -108,17 +98,7 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
     [1m--quiet, -q[22m    [2mBoolean[22m  Suppress output
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -141,17 +121,7 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
 [4m[1mCommands[22m[24m
   [1mhelp[22m   Show help
   [1minit[22m   Initialize project
-  [1mbuild[22m  Build project
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mbuild[22m  Build project",
   ],
 ]
 `;
@@ -169,17 +139,7 @@ exports[`plugin-help > should format custom flag default with "display" property
   [1m--custom[22m    [2mString[22m   A flag with custom default  [2m[default: [1mcustom-default[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -197,17 +157,7 @@ exports[`plugin-help > should format custom flag type with "display" property 1`
   [1m--custom[22m    [2mcustom-type[22m  A flag with custom type
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -279,15 +229,7 @@ exports[`plugin-help > should not show commands placeholder when no commands exi
   $ test [2m[flags][22m
 
 [4m[1mGlobal Flags[22m[24m
-  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
-
-[4m[1mExamples[22m[24m
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
 ]
 `;
@@ -322,17 +264,7 @@ exports[`plugin-help > should not show commands which set \`show\` to false 1`] 
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -349,17 +281,7 @@ exports[`plugin-help > should show --help 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -388,6 +310,28 @@ exports[`plugin-help > should show available subcommands when parent command doe
 ]
 `;
 
+exports[`plugin-help > should show examples and notes 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mExamples[22m[24m
+  $ cli test --foo  -  Run test with foo
+  $ cli test --bar  -  Run test with bar
+
+[4m[1mNotes[22m[24m
+  This is a note for the test command.
+  Another note for users to read.",
+  ],
+]
+`;
+
 exports[`plugin-help > should show help 1`] = `
 [
   [
@@ -400,17 +344,7 @@ exports[`plugin-help > should show help 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -431,17 +365,7 @@ exports[`plugin-help > should show help when no command 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -534,17 +458,7 @@ exports[`plugin-help > should support optional description for command 1`] = `
 
 [4m[1mCommands[22m[24m
   [1mhelp[22m  Show help
-  [1mtest[22m
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mtest[22m",
   ],
 ]
 `;
@@ -562,17 +476,7 @@ exports[`plugin-help > should support optional description for global flag 1`] =
   [1m--verbose[22m   [2mBoolean[22m  Enable verbose output
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m  Show help",
   ],
 ]
 `;
@@ -590,17 +494,7 @@ exports[`plugin-help > should use [] as placeholder when root command exists 1`]
 
 [4m[1mCommands[22m[24m
   [1m(root)[22m  Root command
-  [1mhelp[22m    Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m    Show help",
   ],
 ]
 `;

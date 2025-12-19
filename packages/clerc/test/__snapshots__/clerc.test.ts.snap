@@ -18,17 +18,7 @@ exports[`clerc > should install plugins 1`] = `
 
 [4m[1mCommands[22m[24m
   [1mversion[22m  Prints current version
-  [1mhelp[22m     Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m     Show help",
   ],
   [
     "[1mtest[22m v0.0.0 - test
@@ -42,17 +32,7 @@ exports[`clerc > should install plugins 1`] = `
 
 [4m[1mCommands[22m[24m
   [1mversion[22m  Prints current version
-  [1mhelp[22m     Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m     Show help",
   ],
   [
     "[1mtest[22m v0.0.0 - test
@@ -66,17 +46,7 @@ exports[`clerc > should install plugins 1`] = `
 
 [4m[1mCommands[22m[24m
   [1mversion[22m  Prints current version
-  [1mhelp[22m     Show help
-
-[4m[1mExamples[22m[24m
-  $ test help              -  Show help
-  $ test help <command>    -  Show help for a specific command
-  $ test <command> --help  -  Show help for a specific command
-
-[4m[1mNotes[22m[24m
-  If no command is specified, show help for the CLI.
-  If a command is specified, show help for the command.
-  -h is an alias for --help.",
+  [1mhelp[22m     Show help",
   ],
   [
     "v0.0.0",
