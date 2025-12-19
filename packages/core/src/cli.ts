@@ -192,6 +192,7 @@ export class Clerc<
 		}
 	}
 
+	public command(commands: readonly CommandWithHandler<any, any, any>[]): this;
 	public command<
 		Name extends string,
 		const Parameters extends readonly ParameterDefinitionValue[],
@@ -232,19 +233,26 @@ export class Clerc<
 		GlobalFlags
 	>;
 	public command(
-		nameOrCommandObject: any,
+		nameOrCommandObjectOrCommandArray: any,
 		descriptionOrOptions?: any,
 		options?: any,
 	): any {
+		if (Array.isArray(nameOrCommandObjectOrCommandArray)) {
+			for (const command of nameOrCommandObjectOrCommandArray) {
+				this.command(command);
+			}
+
+			return this;
+		}
 		const isDescription = typeof descriptionOrOptions === "string";
 		const command =
-			typeof nameOrCommandObject === "string"
+			typeof nameOrCommandObjectOrCommandArray === "string"
 				? {
-						name: nameOrCommandObject,
+						name: nameOrCommandObjectOrCommandArray,
 						description: isDescription ? descriptionOrOptions : undefined,
 						...(isDescription ? options : descriptionOrOptions),
 					}
-				: nameOrCommandObject;
+				: nameOrCommandObjectOrCommandArray;
 
 		const aliases = toArray(command?.alias ?? []);
 

@@ -138,4 +138,162 @@ describe("commands", () => {
 				.parse(["bar"]),
 		).resolves.not.toThrow();
 	});
+
+	it("should register multiple commands with array form", () => {
+		let fooCount = 0;
+		let barCount = 0;
+		let bazCount = 0;
+
+		const commands = [
+			{
+				name: "foo",
+				description: "foo command",
+				handler: () => {
+					fooCount++;
+				},
+			},
+			{
+				name: "bar",
+				description: "bar command",
+				flags: {
+					test: {
+						type: Boolean,
+						default: false,
+					},
+				},
+				handler: () => {
+					barCount++;
+				},
+			},
+			{
+				name: "baz",
+				description: "baz command",
+				parameters: ["<param>"],
+				handler: () => {
+					bazCount++;
+				},
+			},
+		];
+
+		TestBaseCli().command(commands).parse(["foo"]);
+
+		expect(fooCount).toBe(1);
+		expect(barCount).toBe(0);
+		expect(bazCount).toBe(0);
+
+		TestBaseCli().command(commands).parse(["bar"]);
+
+		expect(fooCount).toBe(1);
+		expect(barCount).toBe(1);
+		expect(bazCount).toBe(0);
+
+		TestBaseCli().command(commands).parse(["baz", "test"]);
+
+		expect(fooCount).toBe(1);
+		expect(barCount).toBe(1);
+		expect(bazCount).toBe(1);
+	});
+
+	it("should register multiple commands with array form using defineCommand", () => {
+		let count1 = 0;
+		let count2 = 0;
+
+		const commands = [
+			defineCommand(
+				{
+					name: "cmd1",
+					description: "Command 1",
+				},
+				() => {
+					count1++;
+				},
+			),
+			defineCommand(
+				{
+					name: "cmd2",
+					description: "Command 2",
+					flags: {
+						flag: {
+							type: Boolean,
+							default: false,
+						},
+					},
+				},
+				() => {
+					count2++;
+				},
+			),
+		];
+
+		TestBaseCli().command(commands).parse(["cmd1"]);
+
+		expect(count1).toBe(1);
+		expect(count2).toBe(0);
+
+		TestBaseCli().command(commands).parse(["cmd2"]);
+
+		expect(count1).toBe(1);
+		expect(count2).toBe(1);
+	});
+
+	it("should handle mixed command registration with array form", () => {
+		let singleCount = 0;
+		let arrayCount1 = 0;
+		let arrayCount2 = 0;
+
+		const arrayCommands = [
+			{
+				name: "array1",
+				description: "Array command 1",
+				handler: () => {
+					arrayCount1++;
+				},
+			},
+			{
+				name: "array2",
+				description: "Array command 2",
+				handler: () => {
+					arrayCount2++;
+				},
+			},
+		];
+
+		const cli = TestBaseCli()
+			.command("single", "Single command")
+			.on("single", () => {
+				singleCount++;
+			})
+			.command(arrayCommands);
+
+		cli.parse(["single"]);
+		cli.parse(["array1"]);
+		cli.parse(["array2"]);
+
+		expect(singleCount).toBe(1);
+		expect(arrayCount1).toBe(1);
+		expect(arrayCount2).toBe(1);
+	});
+
+	it("should handle empty command array", () => {
+		const cli = TestBaseCli().command([]);
+
+		expect(cli._commands.size).toBe(0);
+	});
+
+	it("should throw error when registering duplicate commands in array", () => {
+		const commands = [
+			{
+				name: "duplicate",
+				description: "First command",
+			},
+			{
+				name: "duplicate",
+				description: "Second command",
+			},
+		];
+
+		expect(() => {
+			TestBaseCli().command(commands);
+		}).toThrow('Command with name "duplicate" already exists.');
+	});
 });

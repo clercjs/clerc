@@ -312,6 +312,46 @@ const cli = Cli()
 	.parse();
 ```
 
+## 多个命令
+
+你可以通过将一个使用 `defineCommand` 创建的命令数组数组传递给 `command()` 方法来一次注册多个命令。
+
+```ts
+import { defineCommand } from "clerc";
+
+const commandA = defineCommand(
+	{
+		name: "foo",
+		description: "Foo 命令",
+	},
+	(ctx) => {
+		console.log("执行 Foo 命令");
+	},
+);
+const commandB = defineCommand(
+	{
+		name: "bar",
+		description: "Bar 命令",
+		flags: {
+			flag: {
+				type: Boolean,
+				default: false,
+			},
+		},
+	},
+	(ctx) => {
+		console.log("执行 Bar 命令");
+	},
+);
+
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("一个简单的 CLI")
+	.version("1.0.0")
+	.command([commandA, commandB])
+	.parse();
+```
+
 ## 高级用法
 
 为了将处理程序与 cli 定义分离，可以使用 `defineCommand` 实用函数：

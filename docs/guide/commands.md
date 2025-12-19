@@ -235,6 +235,46 @@ const cli = Cli()
 	.parse();
 ```
 
+## Multiple Commands
+
+You can register multiple commands at once by passing an array of command created by `defineCommand` to the `command()` method.
+
+```ts
+import { defineCommand } from "clerc";
+
+const commandA = defineCommand(
+	{
+		name: "foo",
+		description: "Foo command",
+	},
+	(ctx) => {
+		console.log("Foo command executed");
+	},
+);
+const commandB = defineCommand(
+	{
+		name: "bar",
+		description: "Bar command",
+		flags: {
+			flag: {
+				type: Boolean,
+				default: false,
+			},
+		},
+	},
+	(ctx) => {
+		console.log("Bar command executed");
+	},
+);
+
+const cli = Cli()
+	.scriptName("foo-cli")
+	.description("A simple CLI")
+	.version("1.0.0")
+	.command([commandA, commandB])
+	.parse();
+```
+
 ## Advanced Usage
 
 To separate the handler from the cli definition, you can use the `defineCommand` utility function:
