@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { Types } from "../src";
 
-describe("type", () => {
+describe("parameter type", () => {
 	it("should validate enum", async () => {
 		const cli = TestBaseCli().command("test", "test command", {
 			parameters: [
