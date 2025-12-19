@@ -349,7 +349,7 @@ export class HelpRenderer {
 
 		const sections: Section[] = [
 			{
-				body: `${this._cli._name} ${tint.bold(parentCommandName)} not found`,
+				body: `${this._cli._scriptName} ${tint.bold(parentCommandName)} not found`,
 			},
 			{
 				title: "Available Subcommands",
