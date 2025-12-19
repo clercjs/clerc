@@ -11,3 +11,4 @@ jobs:
     uses: so1ve/workflows/.github/workflows/conventional-ci.yml@v1
     with:
       test: pnpm run test:all
+      build-for-test: false
