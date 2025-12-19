@@ -9,7 +9,6 @@ export default defineConfig({
 	dts: {
 		oxc: true,
 	},
-	clean: true,
 	fixedExtension: false,
 	external: ["@clerc/core"],
 });
