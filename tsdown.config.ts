@@ -10,5 +10,5 @@ export default defineConfig({
 		oxc: true,
 	},
 	fixedExtension: false,
-	external: ["@clerc/core"],
+	external: [/^@clerc\//],
 });

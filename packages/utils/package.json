@@ -44,8 +44,5 @@
 	],
 	"publishConfig": {
 		"access": "public"
-	},
-	"peerDependencies": {
-		"@clerc/core": "*"
 	}
 }

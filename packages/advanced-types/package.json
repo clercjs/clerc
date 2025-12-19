@@ -41,5 +41,11 @@
 	],
 	"publishConfig": {
 		"access": "public"
+	},
+	"devDependencies": {
+		"@clerc/parser": "workspace:*"
+	},
+	"peerDependencies": {
+		"@clerc/parser": "*"
 	}
 }

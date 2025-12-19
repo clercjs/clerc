@@ -46,8 +46,10 @@
 	"publishConfig": {
 		"access": "public"
 	},
+	"dependencies": {
+		"@clerc/utils": "workspace:*"
+	},
 	"devDependencies": {
-		"@clerc/utils": "workspace:*",
 		"@types/minimist": "^1.2.5",
 		"@types/nopt": "^3.0.32",
 		"@types/yargs-parser": "^21.0.3",

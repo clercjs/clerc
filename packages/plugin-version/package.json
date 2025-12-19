@@ -44,9 +44,11 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"devDependencies": {
-		"@clerc/core": "workspace:*",
+	"dependencies": {
 		"@clerc/utils": "workspace:*"
+	},
+	"devDependencies": {
+		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

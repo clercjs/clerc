@@ -49,8 +49,7 @@
 		"didyoumean2": "^7.0.4"
 	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*",
-		"@clerc/utils": "workspace:*"
+		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

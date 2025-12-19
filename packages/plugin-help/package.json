@@ -45,6 +45,7 @@
 		"access": "public"
 	},
 	"dependencies": {
+		"@clerc/utils": "workspace:*",
 		"@uttr/tint": "^0.1.3",
 		"string-width": "^8.1.0",
 		"text-table": "^0.2.0"
@@ -52,7 +53,6 @@
 	"devDependencies": {
 		"@clerc/core": "workspace:*",
 		"@clerc/parser": "workspace:*",
-		"@clerc/utils": "workspace:*",
 		"@types/text-table": "^0.2.5",
 		"kons": "^0.7.1"
 	},

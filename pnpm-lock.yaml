@@ -126,7 +126,11 @@ importers:
         specifier: catalog:docs
         version: 3.1.8(typescript@5.9.3)
 
-  packages/advanced-types: {}
+  packages/advanced-types:
+    devDependencies:
+      '@clerc/parser':
+        specifier: workspace:*
+        version: link:../parser
 
   packages/clerc:
     dependencies:
@@ -160,22 +164,23 @@ importers:
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
       lite-emit:
         specifier: ^4.0.0
         version: 4.0.0
     devDependencies:
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
       is-platform:
         specifier: ^1.0.0
         version: 1.0.0
 
   packages/parser:
-    devDependencies:
+    dependencies:
       '@clerc/utils':
         specifier: workspace:*
         version: link:../utils
+    devDependencies:
       '@types/minimist':
         specifier: ^1.2.5
         version: 1.2.5
@@ -213,21 +218,22 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/plugin-friendly-error:
     dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
       kons:
         specifier: ^0.7.1
         version: 0.7.1
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/plugin-help:
     dependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@uttr/tint':
         specifier: ^0.1.3
         version: 0.1.3
@@ -244,9 +250,6 @@ importers:
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@types/text-table':
         specifier: ^0.2.5
         version: 0.2.5
@@ -266,27 +269,26 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/plugin-strict-flags:
+    dependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/plugin-version:
+    dependencies:
+      '@clerc/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      '@clerc/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/test-utils:
     dependencies:
@@ -297,11 +299,7 @@ importers:
         specifier: workspace:*
         version: link:../clerc
 
-  packages/utils:
-    dependencies:
-      '@clerc/core':
-        specifier: '*'
-        version: 0.44.0
+  packages/utils: {}
 
 packages:
 
@@ -410,14 +408,6 @@ packages:
         optional: true
       commander:
         optional: true
-
-  '@clerc/core@0.44.0':
-    resolution: {integrity: sha512-o8RgXNcMRoHRujSw9OPDMxqrmoNk7HG0XAZkjZgOrSyIfRXCf85VLyHGBT3XmaOrPEGY964h02ZxMVFdp8RnNQ==}
-
-  '@clerc/utils@0.44.0':
-    resolution: {integrity: sha512-//1zl8UgVhv1NbqsRoCWWci0Y9uBxzAVn8TqoKZchDywGQNZWK6vQI/Ms9uGe3+PZTDXedoXbVjklOINcVC2aA==}
-    peerDependencies:
-      '@clerc/core': '*'
 
   '@docsearch/css@4.3.2':
     resolution: {integrity: sha512-K3Yhay9MgkBjJJ0WEL5MxnACModX9xuNt3UlQQkDEDZJZ0+aeWKtOkxHNndMRkMBnHdYvQjxkm6mdlneOtU1IQ==}
@@ -3161,9 +3151,6 @@ packages:
   linkify-it@5.0.0:
     resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
 
-  lite-emit@2.3.0:
-    resolution: {integrity: sha512-QMPrnwPho7lfkzZUN3a0RJ/oiwpt464eXf6aVh1HGOYh+s7Utu78q3FcFbW59c8TNWWQaz9flKN1cEb8dmxD+g==}
-
   lite-emit@4.0.0:
     resolution: {integrity: sha512-8krVeIZLS7JbkXz4R9xYziqHcxga6UgmomVWb45g21aB4M8qzDwr7FTEW3PJa80PTUASXeqbfipveKCB5YZdug==}
 
@@ -4129,13 +4116,6 @@ packages:
     resolution: {integrity: sha512-tLq3bSNx+xSpwvAJnzrK0Ep5CLNWjvFTOp71URMaAEWBfRb9nnJiBoUe0tF8bI4ZFO3omgBR6NvnbzVUT3Ly4g==}
     engines: {node: '>=14.16'}
 
-  type-fest@4.41.0:
-    resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
-    engines: {node: '>=16'}
-
-  type-flag@3.0.0:
-    resolution: {integrity: sha512-3YaYwMseXCAhBB14RXW5cRQfJQlEknS6i4C8fCfeUdS3ihG9EdccdR9kt3vP73ZdeTGmPb4bZtkDn5XMIn1DLA==}
-
   type-flag@4.0.3:
     resolution: {integrity: sha512-YA09cL07U7hSV+/doSfKl+RkIZ2olCnevZsVgAuyBUG3h2ROf9Oh2vmbq5Rf26aA9/qu9RtStuc7ap5PC6k/vw==}
 
@@ -4649,19 +4629,6 @@ snapshots:
     optionalDependencies:
       cac: 6.7.14
       citty: 0.1.6
-
-  '@clerc/core@0.44.0':
-    dependencies:
-      '@clerc/utils': 0.44.0(@clerc/core@0.44.0)
-      defu: 6.1.4
-      is-platform: 1.0.0
-      lite-emit: 2.3.0
-      type-fest: 4.41.0
-      type-flag: 3.0.0
-
-  '@clerc/utils@0.44.0(@clerc/core@0.44.0)':
-    dependencies:
-      '@clerc/core': 0.44.0
 
   '@docsearch/css@4.3.2': {}
 
@@ -7515,8 +7482,6 @@ snapshots:
     dependencies:
       uc.micro: 2.1.0
 
-  lite-emit@2.3.0: {}
-
   lite-emit@4.0.0: {}
 
   load-plugin@6.0.3:
@@ -8750,10 +8715,6 @@ snapshots:
       prelude-ls: 1.2.1
 
   type-fest@3.13.1: {}
-
-  type-fest@4.41.0: {}
-
-  type-flag@3.0.0: {}
 
   type-flag@4.0.3: {}
 

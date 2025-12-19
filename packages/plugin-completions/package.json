@@ -51,8 +51,7 @@
 		"@bomb.sh/tab": "^0.0.10"
 	},
 	"devDependencies": {
-		"@clerc/core": "workspace:*",
-		"@clerc/utils": "workspace:*"
+		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"
