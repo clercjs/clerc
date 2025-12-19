@@ -25,4 +25,26 @@ describe("plugin-not-found", () => {
 			Did you mean "[1mfoo[22m"?]
 		`);
 	});
+
+	it("should not show closest command when distance is above threshold", async () => {
+		await expect(async () => {
+			await TestBaseCli()
+				.use(notFoundPlugin())
+				.command("fooasdf", "foo command")
+				.parse(["f"]);
+		}).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Command "[9mf[29m" not found.]`,
+		);
+	});
+
+	it("should read custom threshold", async () => {
+		await expect(async () => {
+			await TestBaseCli()
+				.use(notFoundPlugin({ distanceThreshold: 1 }))
+				.command("fooasdf", "foo command")
+				.parse(["fooas"]);
+		}).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Command "[9mfooas[29m" not found.]`,
+		);
+	});
 });

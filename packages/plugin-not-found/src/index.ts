@@ -5,9 +5,20 @@ import {
 	definePlugin,
 } from "@clerc/core";
 import * as tint from "@uttr/tint";
-import didyoumean from "didyoumean2";
+import { closest, distance } from "fastest-levenshtein";
 
-export const notFoundPlugin = (): Plugin =>
+export interface NotFoundPluginOptions {
+	/**
+	 * Distance threshold for suggesting commands.
+	 *
+	 * @default 5
+	 */
+	distanceThreshold?: number;
+}
+
+export const notFoundPlugin = ({
+	distanceThreshold = 5,
+}: NotFoundPluginOptions = {}): Plugin =>
 	definePlugin({
 		setup: (cli) =>
 			cli.interceptor({
@@ -36,7 +47,14 @@ export const notFoundPlugin = (): Plugin =>
 						}
 
 						const { commandName } = e;
-						const closestCommandName = didyoumean(commandName, commandKeys);
+						let closestCommandName: string | undefined = closest(
+							commandName,
+							commandKeys,
+						);
+						const dist = distance(commandName, closestCommandName);
+						if (dist > distanceThreshold) {
+							closestCommandName = undefined;
+						}
 						let text = `Command "${tint.strikethrough(commandName)}" not found.`;
 
 						if (hasCommands && closestCommandName) {
