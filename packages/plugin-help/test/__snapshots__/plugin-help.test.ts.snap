@@ -16,7 +16,7 @@ exports[`plugin-help > grouping > should display subcommands 1`] = `
   [1mchild2[22m  Second child command",
   ],
   [
-    "[2mtest[22m - Parent command
+    "[1mtest[22m - Parent command
 
 [4m[1mUsage[22m[24m
   $ test [2m[flags][22m
@@ -50,6 +50,10 @@ exports[`plugin-help > grouping > should group command flags 1`] = `
 
 exports[`plugin-help > grouping > should group commands 1`] = `
 [
+  [
+    "No command specified. Showing help:
+",
+  ],
   [
     "[1mtest[22m v0.0.0 - test
 
@@ -86,6 +90,10 @@ exports[`plugin-help > grouping > should group commands 1`] = `
 exports[`plugin-help > grouping > should group global flags 1`] = `
 [
   [
+    "No command specified. Showing help:
+",
+  ],
+  [
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
@@ -117,6 +125,10 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
 
 exports[`plugin-help > grouping > should not add group headers when no groups defined 1`] = `
 [
+  [
+    "No command specified. Showing help:
+",
+  ],
   [
     "[1mtest[22m v0.0.0 - test
 
@@ -283,7 +295,7 @@ exports[`plugin-help > should not show commands placeholder when no commands exi
 exports[`plugin-help > should not show commands placeholder when only registered root command 1`] = `
 [
   [
-    "[2mtest[22m
+    "[1mtest[22m
 
 [4m[1mUsage[22m[24m
   $ test [2m[flags][22m
@@ -296,6 +308,10 @@ exports[`plugin-help > should not show commands placeholder when only registered
 
 exports[`plugin-help > should not show commands which set \`show\` to false 1`] = `
 [
+  [
+    "No command specified. Showing help:
+",
+  ],
   [
     "[1mtest[22m v0.0.0 - test
 
@@ -401,6 +417,10 @@ exports[`plugin-help > should show help 1`] = `
 
 exports[`plugin-help > should show help when no command 1`] = `
 [
+  [
+    "No command specified. Showing help:
+",
+  ],
   [
     "[1mtest[22m v0.0.0 - test
 

@@ -3,6 +3,10 @@
 exports[`clerc > should install plugins 1`] = `
 [
   [
+    "No command specified. Showing help:
+",
+  ],
+  [
     "[1mtest[22m v0.0.0 - test
 
 [4m[1mUsage[22m[24m
