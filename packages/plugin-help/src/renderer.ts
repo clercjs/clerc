@@ -138,15 +138,18 @@ export class HelpRenderer {
 	}
 
 	private renderHeader() {
-		const { _name, _version, _description } = this._cli;
+		const { _scriptName, _version, _description } = this._cli;
 		const command = this._command;
 		const description = command ? command.description : _description;
+		const isRoot = !command || command.name === "";
+		const formattedScriptName = isRoot
+			? tint.bold(_scriptName)
+			: tint.dim(_scriptName);
 		const formattedCommandName = command?.name
 			? ` ${tint.bold(command.name)}`
 			: "";
-		const headerLine = command
-			? `${tint.dim(_name)}${formattedCommandName}`
-			: `${tint.bold(_name)} ${formatVersion(_version)}`;
+		const formattedVersion = command ? "" : ` ${formatVersion(_version)}`;
+		const headerLine = `${formattedScriptName}${formattedCommandName}${formattedVersion}`;
 		const alias = command?.alias
 			? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
 					command.alias,
