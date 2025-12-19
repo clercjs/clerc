@@ -19,15 +19,15 @@ describe("interceptors", () => {
 		let count = 0;
 		TestBaseCli()
 			.command("foo", "foo")
-			.interceptor((_ctx, next) => {
-				next();
+			.interceptor(async (_ctx, next) => {
+				await next();
 			})
-			.interceptor((ctx, next) => {
+			.interceptor(async (ctx, next) => {
 				expect(ctx.command?.name).toBe("foo");
 				expect(ctx.parameters).toMatchInlineSnapshot("{}");
 				expect(ctx.flags).toStrictEqual({});
 
-				next();
+				await next();
 			})
 			.on("foo", () => {
 				count++;
