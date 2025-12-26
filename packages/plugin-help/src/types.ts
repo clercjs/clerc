@@ -6,9 +6,9 @@ export interface Formatters {
 }
 
 /**
- * A group definition as a tuple of [key, displayName].
- * The key is used in help options to assign items to groups.
- * The displayName is shown in the help output.
+ * A group definition as a tuple of [key, displayName]. The key is used in help
+ * options to assign items to groups. The displayName is shown in the help
+ * output.
  */
 export type GroupDefinition = [key: string, name: string];
 
@@ -17,18 +17,15 @@ export type GroupDefinition = [key: string, name: string];
  */
 export interface GroupsOptions {
 	/**
-	 * Groups for commands.
-	 * Each group is defined as `[key, name]`.
+	 * Groups for commands. Each group is defined as `[key, name]`.
 	 */
 	commands?: GroupDefinition[];
 	/**
-	 * Groups for command-specific flags.
-	 * Each group is defined as `[key, name]`.
+	 * Groups for command-specific flags. Each group is defined as `[key, name]`.
 	 */
 	flags?: GroupDefinition[];
 	/**
-	 * Groups for global flags.
-	 * Each group is defined as `[key, name]`.
+	 * Groups for global flags. Each group is defined as `[key, name]`.
 	 */
 	globalFlags?: GroupDefinition[];
 }

@@ -23,10 +23,10 @@ describe("flag-types", () => {
 		it("should throw an error for invalid enum", () => {
 			const format = Enum("json", "yaml", "xml");
 
-			expect(() => format("invalid")).toThrow(
+			expect(() => format("invalid")).toThrowError(
 				"Invalid value: invalid. Must be one of: json, yaml, xml",
 			);
-			expect(() => format("invalid")).toThrow(FlagValidationError);
+			expect(() => format("invalid")).toThrowError(FlagValidationError);
 		});
 
 		it("should handle single choice", () => {
@@ -34,7 +34,7 @@ describe("flag-types", () => {
 
 			expect(format.display).toBe("only");
 			expect(format("only")).toBe("only");
-			expect(() => format("other")).toThrow();
+			expect(() => format("other")).toThrowError();
 		});
 	});
 
@@ -57,16 +57,16 @@ describe("flag-types", () => {
 		it("should throw an error for invalid range", () => {
 			const range = Range(1, 10);
 
-			expect(() => range("0")).toThrow(
+			expect(() => range("0")).toThrowError(
 				"Invalid value: 0. Must be a number between 1 and 10",
 			);
-			expect(() => range("11")).toThrow(
+			expect(() => range("11")).toThrowError(
 				"Invalid value: 11. Must be a number between 1 and 10",
 			);
-			expect(() => range("a")).toThrow(
+			expect(() => range("a")).toThrowError(
 				"Invalid value: a. Must be a number between 1 and 10",
 			);
-			expect(() => range("a")).toThrow(FlagValidationError);
+			expect(() => range("a")).toThrowError(FlagValidationError);
 		});
 	});
 
@@ -87,10 +87,10 @@ describe("flag-types", () => {
 		it("should throw an error for invalid regex", () => {
 			const regex = Regex(/^\d+$/);
 
-			expect(() => regex("a")).toThrow(
+			expect(() => regex("a")).toThrowError(
 				"Invalid value: a. Must match pattern: /^\\d+$/",
 			);
-			expect(() => regex("a")).toThrow(FlagValidationError);
+			expect(() => regex("a")).toThrowError(FlagValidationError);
 		});
 	});
 });

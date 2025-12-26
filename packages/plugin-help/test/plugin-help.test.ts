@@ -321,8 +321,8 @@ describe("plugin-help", () => {
 		});
 
 		it("should throw error for undefined group", async () => {
-			await expect(async () => {
-				await TestBaseCli()
+			await expect(
+				TestBaseCli()
 					.use(
 						helpPlugin({
 							groups: {
@@ -333,8 +333,8 @@ describe("plugin-help", () => {
 					.command("init", "Initialize project", {
 						help: { group: "undefined-group" },
 					})
-					.parse([]);
-			}).rejects.toThrowErrorMatchingInlineSnapshot(
+					.parse([]),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
 				`[Error: Unknown command group "undefined-group" for "init". Available groups: core]`,
 			);
 		});
@@ -369,13 +369,13 @@ describe("plugin-help", () => {
 	});
 
 	it("should throw error when command not found", async () => {
-		await expect(async () => {
-			await TestBaseCli().use(helpPlugin()).parse(["not-exist", "--help"]);
-		}).rejects.toThrow(NoSuchCommandError);
+		await expect(
+			TestBaseCli().use(helpPlugin()).parse(["not-exist", "--help"]),
+		).rejects.toThrowError(NoSuchCommandError);
 
-		await expect(async () => {
-			await TestBaseCli().use(helpPlugin()).parse(["help", "not-exist"]);
-		}).rejects.toThrow(NoSuchCommandError);
+		await expect(
+			TestBaseCli().use(helpPlugin()).parse(["help", "not-exist"]),
+		).rejects.toThrowError(NoSuchCommandError);
 	});
 
 	it("should show available subcommands when parent command does not exist", () => {
@@ -399,12 +399,12 @@ describe("plugin-help", () => {
 	});
 
 	it("should still throw error when no subcommands exist for non-existent command", async () => {
-		await expect(async () => {
-			await TestBaseCli()
+		await expect(
+			TestBaseCli()
 				.use(helpPlugin())
 				.command("other", "Other command")
-				.parse(["help", "not-exist"]);
-		}).rejects.toThrow(NoSuchCommandError);
+				.parse(["help", "not-exist"]),
+		).rejects.toThrowError(NoSuchCommandError);
 	});
 
 	it("should work with friendly-error", async () => {
@@ -415,7 +415,7 @@ describe("plugin-help", () => {
 				.parse(["not-exist", "--help"]);
 
 			expect(spy.mock.calls).toMatchSnapshot();
-		}).not.toThrow();
+		}).not.toThrowError();
 	});
 
 	it('should format custom flag type with "display" property', () => {

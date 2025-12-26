@@ -6,17 +6,19 @@ export * from "./errors";
 
 /**
  * Creates a Enum type function that validates the input against allowed values.
- * The display name will be formatted as "value1 | value2 | ..." for help output.
+ * The display name will be formatted as "value1 | value2 | ..." for help
+ * output.
+ *
+ * @example
+ *
+ * ```typescript
+ * const format = Enum(["json", "yaml", "xml"]);
+ * // Help output will show: json | yaml | xml
+ * ```
  *
  * @param values - Array of allowed string values
  * @returns A TypeFunction that validates and returns the input value
  * @throws {Error} If the value is not in the allowed values list
- *
- * @example
- * ```typescript
- * const format = Enum(['json', 'yaml', 'xml']);
- * // Help output will show: json | yaml | xml
- * ```
  */
 export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
 	const fn = ((value: string) => {
@@ -35,12 +37,14 @@ export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
 }
 
 /**
- * Creates a range type function that validates the input is a number within the specified range.
+ * Creates a range type function that validates the input is a number within the
+ * specified range.
  *
  * @param min - The minimum acceptable value (inclusive)
  * @param max - The maximum acceptable value (inclusive)
  * @returns A TypeFunction that validates the input value
- * @throws {Error} If the value is not a number or is outside the specified range
+ * @throws {Error} If the value is not a number or is outside the specified
+ *   range
  */
 export function Range(min: number, max: number): TypeFunction<number> {
 	const fn = ((value: string) => {
@@ -59,7 +63,8 @@ export function Range(min: number, max: number): TypeFunction<number> {
 }
 
 /**
- * Creates a regex type function that validates the input against the provided pattern.
+ * Creates a regex type function that validates the input against the provided
+ * pattern.
  *
  * @param pattern - The regular expression pattern to validate against
  * @param description - Optional description for display purposes

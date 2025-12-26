@@ -45,11 +45,11 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@uttr/tint": "^0.1.3"
+		"@uttr/tint": "catalog:cli"
 	},
 	"devDependencies": {
 		"@clerc/core": "workspace:*",
-		"fastest-levenshtein": "^1.0.16"
+		"fastest-levenshtein": "catalog:cli"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

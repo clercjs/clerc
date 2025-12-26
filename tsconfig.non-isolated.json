@@ -4,15 +4,15 @@
 		"allowImportingTsExtensions": true
 	},
 	"include": [
+		"changelogithub.config.ts",
 		"examples",
-		"test",
-		"packages/*/test",
 		"packages/*/bench",
 		"packages/*/src",
+		"packages/*/test",
 		"packages/*/tsdown.config.ts",
+		"packages/parser/bench/bench.bench.ts",
+		"test",
 		"tsdown.config.ts",
-		"changelogithub.config.ts",
-		"vite.config.ts",
-		"packages/parser/bench/bench.bench.ts"
+		"vite.config.ts"
 	]
 }

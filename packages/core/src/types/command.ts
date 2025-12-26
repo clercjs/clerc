@@ -17,7 +17,8 @@ export interface CommandOptions<
 	flags?: Flags;
 
 	/**
-	 * A callback function to conditionally stop parsing. When it returns true, parsing stops and remaining arguments are preserved in ignored.
+	 * A callback function to conditionally stop parsing. When it returns true,
+	 * parsing stops and remaining arguments are preserved in ignored.
 	 */
 	ignore?: IgnoreFunction;
 }

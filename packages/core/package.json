@@ -46,10 +46,10 @@
 	"dependencies": {
 		"@clerc/parser": "workspace:*",
 		"@clerc/utils": "workspace:*",
-		"lite-emit": "^4.0.0"
+		"lite-emit": "catalog:cli"
 	},
 	"devDependencies": {
 		"@clerc/advanced-types": "workspace:*",
-		"is-platform": "^1.0.0"
+		"is-platform": "catalog:cli"
 	}
 }

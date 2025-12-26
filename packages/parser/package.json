@@ -50,14 +50,14 @@
 		"@clerc/utils": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/minimist": "^1.2.5",
-		"@types/nopt": "^3.0.32",
-		"@types/yargs-parser": "^21.0.3",
-		"args-tokens": "^0.23.0",
-		"minimist": "^1.2.8",
-		"mri": "^1.2.0",
-		"nopt": "^9.0.0",
-		"type-flag": "^4.0.3",
-		"yargs-parser": "^22.0.0"
+		"@types/minimist": "catalog:cli",
+		"@types/nopt": "catalog:cli",
+		"@types/yargs-parser": "catalog:cli",
+		"args-tokens": "catalog:cli",
+		"minimist": "catalog:cli",
+		"mri": "catalog:cli",
+		"nopt": "catalog:cli",
+		"type-flag": "catalog:cli",
+		"yargs-parser": "catalog:cli"
 	}
 }

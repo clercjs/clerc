@@ -126,6 +126,6 @@ describe("parser - basic flags", () => {
 					req: { type: String, required: true, default: "default" },
 				},
 			});
-		}).toThrow(InvalidSchemaError);
+		}).toThrowError(InvalidSchemaError);
 	});
 });

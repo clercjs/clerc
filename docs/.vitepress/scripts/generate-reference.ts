@@ -6,6 +6,7 @@ import { Application } from "typedoc";
 
 const LANGUAGES = ["zh"];
 const IGNORED_PACKAGES = ["test-utils"];
+
 export const PACKAGES = Object.fromEntries(
 	readdirSync("../packages", { withFileTypes: true })
 		.filter((dirent) => dirent.isDirectory())
@@ -25,6 +26,7 @@ export const PACKAGES = Object.fromEntries(
 		.filter((x): x is [string, string] => !!x)
 		.toSorted(([a], [b]) => a.localeCompare(b)),
 );
+
 const tsconfig = "../tsconfig.json";
 
 if (import.meta.main) {

@@ -7,6 +7,7 @@ export type LiteralUnion<LiteralType, BaseType> =
 export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
+
 type Primitive = null | undefined | string | number | boolean | symbol | bigint;
 type BuiltIns = Primitive | void | Date | RegExp;
 type NonRecursiveType =
@@ -27,6 +28,7 @@ type ConditionalDeepPrettify<T, E = never, I = unknown> = T extends E
 	: T extends I
 		? { [TypeKey in keyof T]: ConditionalDeepPrettify<T[TypeKey], E, I> }
 		: T;
+
 export type DeepPrettify<T, E = never> = ConditionalDeepPrettify<
 	T,
 	E | NonRecursiveType | MapsSetsOrArrays,

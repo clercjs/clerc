@@ -14,9 +14,13 @@ describe("parameter type", () => {
 			],
 		});
 
-		await expect(cli.parse({ argv: ["test", "a"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "b"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "c"] })).rejects.toThrow(
+		await expect(
+			cli.parse({ argv: ["test", "a"] }),
+		).resolves.not.toThrowError();
+		await expect(
+			cli.parse({ argv: ["test", "b"] }),
+		).resolves.not.toThrowError();
+		await expect(cli.parse({ argv: ["test", "c"] })).rejects.toThrowError(
 			"Invalid value: c. Must be one of: a, b",
 		);
 	});
@@ -31,15 +35,19 @@ describe("parameter type", () => {
 			],
 		});
 
-		await expect(cli.parse({ argv: ["test", "1"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "10"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "0"] })).rejects.toThrow(
+		await expect(
+			cli.parse({ argv: ["test", "1"] }),
+		).resolves.not.toThrowError();
+		await expect(
+			cli.parse({ argv: ["test", "10"] }),
+		).resolves.not.toThrowError();
+		await expect(cli.parse({ argv: ["test", "0"] })).rejects.toThrowError(
 			"Invalid value: 0. Must be a number between 1 and 10",
 		);
-		await expect(cli.parse({ argv: ["test", "11"] })).rejects.toThrow(
+		await expect(cli.parse({ argv: ["test", "11"] })).rejects.toThrowError(
 			"Invalid value: 11. Must be a number between 1 and 10",
 		);
-		await expect(cli.parse({ argv: ["test", "a"] })).rejects.toThrow(
+		await expect(cli.parse({ argv: ["test", "a"] })).rejects.toThrowError(
 			"Invalid value: a. Must be a number between 1 and 10",
 		);
 	});
@@ -54,8 +62,10 @@ describe("parameter type", () => {
 			],
 		});
 
-		await expect(cli.parse({ argv: ["test", "123"] })).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "a"] })).rejects.toThrow(
+		await expect(
+			cli.parse({ argv: ["test", "123"] }),
+		).resolves.not.toThrowError();
+		await expect(cli.parse({ argv: ["test", "a"] })).rejects.toThrowError(
 			"Invalid value: a. Must match pattern: /^\\d+$/",
 		);
 	});
@@ -72,8 +82,8 @@ describe("parameter type", () => {
 
 		await expect(
 			cli.parse({ argv: ["test", "a", "b"] }),
-		).resolves.not.toThrow();
-		await expect(cli.parse({ argv: ["test", "a", "c"] })).rejects.toThrow(
+		).resolves.not.toThrowError();
+		await expect(cli.parse({ argv: ["test", "a", "c"] })).rejects.toThrowError(
 			"Invalid value: c. Must be one of: a, b",
 		);
 	});

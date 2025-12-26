@@ -17,19 +17,20 @@ export type FlagDefaultValue<T = unknown> = T | FlagDefaultValueFunction<T>;
 export interface TypeFunction<T = unknown> {
 	(value: string): T;
 	/**
-	 * Optional display name for the type, useful in help output.
-	 * If provided, this will be shown instead of the function name.
+	 * Optional display name for the type, useful in help output. If provided,
+	 * this will be shown instead of the function name.
 	 */
 	display?: string;
 }
 
 /**
- * A callback function to conditionally stop parsing.
- * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
+ * A callback function to conditionally stop parsing. When it returns true,
+ * parsing stops and remaining arguments are preserved in `ignored`.
  *
- * @param type - The type of the current argument: 'known-flag' or 'unknown-flag' for flags, 'parameter' for positional arguments
+ * @param type - The type of the current argument: 'known-flag' or
+ *   'unknown-flag' for flags, 'parameter' for positional arguments
  * @param arg - The current argument being processed
- * @returns true to stop parsing, false to continue
+ * @returns True to stop parsing, false to continue
  */
 export type IgnoreFunction = (
 	type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG | typeof PARAMETER,
@@ -42,9 +43,13 @@ export type TypeValue<T = unknown> =
 
 type FlagRequiredOrDefault = RequireExactlyOneOrNone<
 	{
-		/** The default value of the flag. */
+		/**
+		 * The default value of the flag.
+		 */
 		default?: unknown;
-		/** Whether the flag is required. */
+		/**
+		 * Whether the flag is required.
+		 */
 		required?: boolean;
 	},
 	"default" | "required"
@@ -53,20 +58,23 @@ type FlagRequiredOrDefault = RequireExactlyOneOrNone<
 export type BaseFlagOptions<T extends TypeValue = TypeValue> =
 	FlagRequiredOrDefault & {
 		/**
-		 * The type constructor or a function to convert the string value.
-		 * To support multiple occurrences of a flag (e.g., --file a --file b), wrap the type in an array: [String], [Number].
-		 * e.g., String, Number, [String], (val) => val.split(',')
+		 * The type constructor or a function to convert the string value. To
+		 * support multiple occurrences of a flag (e.g., --file a --file b), wrap
+		 * the type in an array: [String], [Number]. e.g., String, Number, [String],
+		 * (val) => val.split(',')
 		 */
 		type: T;
-		/** Short flag alias (single character). */
+		/**
+		 * Short flag alias (single character).
+		 */
 		short?: string;
 	};
 export type FlagOptions =
 	| (BaseFlagOptions<BooleanConstructor> & {
 			/**
 			 * Whether to enable the `--no-<flag>` syntax to set the value to false.
-			 * Only useful for boolean flags.
-			 * When set on a non-boolean flag, a type error will be shown.
+			 * Only useful for boolean flags. When set on a non-boolean flag, a type
+			 * error will be shown.
 			 *
 			 * @default true
 			 */
@@ -83,22 +91,22 @@ export type FlagsDefinition = Record<string, FlagDefinitionValue>;
  */
 export interface ParserOptions<T extends FlagsDefinition = {}> {
 	/**
-	 * Detailed configuration for flags.
-	 * Supports the full object syntax or a type constructor as a shorthand.
-	 * The key is the flag name (e.g., "file" for "--file").
+	 * Detailed configuration for flags. Supports the full object syntax or a type
+	 * constructor as a shorthand. The key is the flag name (e.g., "file" for
+	 * "--file").
 	 */
 	flags?: T;
 
 	/**
 	 * Delimiters to split flag names and values.
 	 *
-	 * @default ['=', ':']
+	 * @default ["=", ":"]
 	 */
 	delimiters?: string[];
 
 	/**
-	 * A callback function to conditionally stop parsing.
-	 * When it returns true, parsing stops and remaining arguments are preserved in `ignored`.
+	 * A callback function to conditionally stop parsing. When it returns true,
+	 * parsing stops and remaining arguments are preserved in `ignored`.
 	 */
 	ignore?: IgnoreFunction;
 }
@@ -110,25 +118,38 @@ export interface ObjectInputType {
 
 /**
  * The parsed result.
+ *
  * @template TFlags The specific flags type inferred from ParserOptions.
  */
 export interface ParsedResult<TFlags extends Record<string, any>> {
-	/** Positional arguments or commands. */
+	/**
+	 * Positional arguments or commands.
+	 */
 	parameters: string[];
-	/** Arguments after the `--` delimiter. */
+	/**
+	 * Arguments after the `--` delimiter.
+	 */
 	doubleDash: string[];
 	/**
-	 * The parsed flags.
-	 * This is a strongly-typed object whose structure is inferred from the `flags` configuration in ParserOptions.
+	 * The parsed flags. This is a strongly-typed object whose structure is
+	 * inferred from the `flags` configuration in ParserOptions.
 	 */
 	flags: TFlags;
-	/** The raw command-line arguments. */
+	/**
+	 * The raw command-line arguments.
+	 */
 	raw: string[];
-	/** Unknown flags encountered during parsing. */
+	/**
+	 * Unknown flags encountered during parsing.
+	 */
 	unknown: Record<string, RawInputType>;
-	/** Arguments that were not parsed due to ignore callback. */
+	/**
+	 * Arguments that were not parsed due to ignore callback.
+	 */
 	ignored: string[];
-	/** List of required flags that were not provided. */
+	/**
+	 * List of required flags that were not provided.
+	 */
 	missingRequiredFlags: string[];
 }
 
@@ -175,8 +196,8 @@ type _InferFlags<T extends FlagsDefinition> = {
 };
 
 /**
- * An advanced utility type that infers the exact type of the `flags` object in the parsed result,
- * based on the provided `flags` configuration object T.
+ * An advanced utility type that infers the exact type of the `flags` object in
+ * the parsed result, based on the provided `flags` configuration object T.
  *
  * @template T The type of the flags configuration object.
  */

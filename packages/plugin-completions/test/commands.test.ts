@@ -54,19 +54,19 @@ describe("plugin-completions/commands", () => {
 		});
 
 		it("should throw error if shell is missing", async () => {
-			await expect(async () => {
-				await TestBaseCli().use(completionsPlugin()).parse(["completions"]);
-			}).rejects.toThrow(
+			await expect(
+				TestBaseCli().use(completionsPlugin()).parse(["completions"]),
+			).rejects.toThrowError(
 				"Shell type is required. Please provide it via --shell flag or [shell] parameter.",
 			);
 		});
 
 		it("should throw error if shell is unsupported", async () => {
-			await expect(async () => {
-				await TestBaseCli()
+			await expect(
+				TestBaseCli()
 					.use(completionsPlugin())
-					.parse(["completions", "--shell", "invalid"]);
-			}).rejects.toThrowErrorMatchingInlineSnapshot(
+					.parse(["completions", "--shell", "invalid"]),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
 				"[Error: Invalid value: invalid. Must be one of: zsh, bash, fish, powershell]",
 			);
 		});

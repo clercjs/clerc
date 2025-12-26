@@ -30,10 +30,8 @@ export const notFoundPlugin = ({
 						await next();
 					} catch (e: any) {
 						if (
-							!(
-								e instanceof NoSuchCommandError ||
-								e instanceof NoCommandSpecifiedError
-							)
+							!(e instanceof NoSuchCommandError) &&
+							!(e instanceof NoCommandSpecifiedError)
 						) {
 							throw e;
 						}

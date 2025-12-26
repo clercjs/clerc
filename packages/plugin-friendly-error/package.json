@@ -46,7 +46,7 @@
 	},
 	"devDependencies": {
 		"@clerc/core": "workspace:*",
-		"kons": "^0.7.1"
+		"kons": "catalog:cli"
 	},
 	"peerDependencies": {
 		"@clerc/core": "*"

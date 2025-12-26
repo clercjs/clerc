@@ -10,8 +10,7 @@ export type InterceptorContext<
 > = DeepPrettify<BaseContext<C, GF>>;
 
 /**
- * Function to call the next interceptor in the chain.
- * **MUST** be awaited.
+ * Function to call the next interceptor in the chain. **MUST** be awaited.
  */
 export type InterceptorNext = () => void | Promise<void>;
 
@@ -21,8 +20,7 @@ export type InterceptorHandler<
 > = (
 	context: InterceptorContext<C, GF>,
 	/**
-	 * Function to call the next interceptor in the chain.
-	 * **MUST** be awaited.
+	 * Function to call the next interceptor in the chain. **MUST** be awaited.
 	 */
 	next: InterceptorNext,
 ) => void | Promise<void>;

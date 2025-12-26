@@ -11,7 +11,7 @@ describe("parser - edge cases", () => {
 					invalid: { type: [String, Number] },
 				},
 			}),
-		).toThrow(InvalidSchemaError);
+		).toThrowError(InvalidSchemaError);
 
 		expect(() =>
 			parse([], {
@@ -19,7 +19,7 @@ describe("parser - edge cases", () => {
 					" space": { type: String },
 				},
 			}),
-		).toThrow(InvalidSchemaError);
+		).toThrowError(InvalidSchemaError);
 
 		expect(() =>
 			parse([], {
@@ -27,7 +27,7 @@ describe("parser - edge cases", () => {
 					":colon": { type: String },
 				},
 			}),
-		).toThrow(InvalidSchemaError);
+		).toThrowError(InvalidSchemaError);
 
 		expect(() =>
 			parse([], {
@@ -35,7 +35,7 @@ describe("parser - edge cases", () => {
 					".dot": { type: String },
 				},
 			}),
-		).toThrow(InvalidSchemaError);
+		).toThrowError(InvalidSchemaError);
 
 		expect(() =>
 			parse([], {
@@ -43,7 +43,7 @@ describe("parser - edge cases", () => {
 					"=eq": { type: String },
 				},
 			}),
-		).toThrow(InvalidSchemaError);
+		).toThrowError(InvalidSchemaError);
 	});
 
 	it("should handle edge cases", () => {

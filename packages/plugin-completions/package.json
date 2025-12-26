@@ -48,7 +48,7 @@
 		"access": "public"
 	},
 	"devDependencies": {
-		"@bomb.sh/tab": "^0.0.10",
+		"@bomb.sh/tab": "catalog:cli",
 		"@clerc/core": "workspace:*"
 	},
 	"peerDependencies": {

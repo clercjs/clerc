@@ -12,8 +12,8 @@ export type { GroupDefinition, GroupsOptions } from "./types";
 
 export interface HelpOptions {
 	/**
-	 * The group this item belongs to.
-	 * The group must be defined in the `groups` option of `helpPlugin()`.
+	 * The group this item belongs to. The group must be defined in the `groups`
+	 * option of `helpPlugin()`.
 	 */
 	group?: string;
 }
@@ -30,8 +30,8 @@ export interface CommandHelpOptions extends HelpOptions {
 	 */
 	notes?: string[];
 	/**
-	 * Examples to show in the help output.
-	 * Each example is a tuple of `[command, description]`.
+	 * Examples to show in the help output. Each example is a tuple of `[command,
+	 * description]`.
 	 */
 	examples?: [string, string][];
 }
@@ -76,8 +76,8 @@ export interface HelpPluginOptions {
 	 */
 	notes?: string[];
 	/**
-	 * Examples to show in the help output.
-	 * Each example is a tuple of `[command, description]`.
+	 * Examples to show in the help output. Each example is a tuple of `[command,
+	 * description]`.
 	 */
 	examples?: [string, string][];
 	/**
@@ -93,10 +93,10 @@ export interface HelpPluginOptions {
 	 */
 	formatters?: Partial<Formatters>;
 	/**
-	 * Group definitions for commands and flags.
-	 * Groups allow organizing commands and flags into logical sections in help output.
-	 * Each group is defined as `[key, name]` where `key` is the identifier used in help options
-	 * and `name` is the display name shown in help output.
+	 * Group definitions for commands and flags. Groups allow organizing commands
+	 * and flags into logical sections in help output. Each group is defined as
+	 * `[key, name]` where `key` is the identifier used in help options and `name`
+	 * is the display name shown in help output.
 	 */
 	groups?: GroupsOptions;
 }
