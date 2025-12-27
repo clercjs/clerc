@@ -43,6 +43,7 @@ catalogs:
     tsdown: "^0.18.3"
     typescript: "^5.9.3"
     vite: "^7.2.6"
+    vite-tsconfig-paths: "^6.0.3"
     vitest: "^4.0.15"
     vitest-console: "^0.2.1"
   docs:

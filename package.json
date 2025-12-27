@@ -43,6 +43,7 @@
 		"tsdown": "catalog:dev",
 		"typescript": "catalog:dev",
 		"vite": "catalog:dev",
+		"vite-tsconfig-paths": "catalog:dev",
 		"vitest": "catalog:dev",
 		"vitest-console": "catalog:dev"
 	}
