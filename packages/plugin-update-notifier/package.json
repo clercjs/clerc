@@ -1,18 +1,21 @@
 {
-  "name": "clerc",
+  "name": "@clerc/plugin-update-notifier",
   "version": "1.0.3",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
-  "description": "Clerc: The full-featured cli library.",
+  "description": "Clerc plugin for checking CLI updates",
   "keywords": [
     "args",
     "arguments",
     "argv",
     "clerc",
+    "clerc-plugin",
     "cli",
-    "terminal"
+    "terminal",
+    "update",
+    "notifier"
   ],
-  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/clerc#readme",
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-update-notifier#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clercjs/clerc.git",
@@ -37,13 +40,13 @@
     "access": "public"
   },
   "dependencies": {
+    "update-notifier": "catalog:cli"
+  },
+  "devDependencies": {
     "@clerc/core": "workspace:*",
-    "@clerc/plugin-completions": "workspace:*",
-    "@clerc/plugin-friendly-error": "workspace:*",
-    "@clerc/plugin-help": "workspace:*",
-    "@clerc/plugin-not-found": "workspace:*",
-    "@clerc/plugin-strict-flags": "workspace:*",
-    "@clerc/plugin-update-notifier": "workspace:*",
-    "@clerc/plugin-version": "workspace:*"
+    "@types/update-notifier": "catalog:cli"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
   }
 }
