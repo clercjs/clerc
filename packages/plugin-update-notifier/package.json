@@ -39,12 +39,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "update-notifier": "catalog:cli"
-  },
   "devDependencies": {
     "@clerc/core": "workspace:*",
-    "@types/update-notifier": "catalog:cli"
+    "@types/update-notifier": "catalog:cli",
+    "update-notifier": "catalog:cli"
   },
   "peerDependencies": {
     "@clerc/core": "*"

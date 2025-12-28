@@ -396,10 +396,6 @@ importers:
         version: link:../core
 
   packages/plugin-update-notifier:
-    dependencies:
-      update-notifier:
-        specifier: catalog:cli
-        version: 7.3.1
     devDependencies:
       '@clerc/core':
         specifier: workspace:*
@@ -407,6 +403,9 @@ importers:
       '@types/update-notifier':
         specifier: catalog:cli
         version: 6.0.8
+      update-notifier:
+        specifier: catalog:cli
+        version: 7.3.1
 
   packages/plugin-version:
     dependencies:
