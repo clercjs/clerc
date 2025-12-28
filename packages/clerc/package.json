@@ -1,6 +1,6 @@
 {
   "name": "clerc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
   "description": "Clerc: The full-featured cli library.",
