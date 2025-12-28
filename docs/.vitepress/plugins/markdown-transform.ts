@@ -1,7 +1,5 @@
 import type { Plugin } from "vitepress";
 
-const TAB_SIZE = 2;
-
 // @keep-sorted
 export const clercImports = [
   "Clerc",
@@ -22,14 +20,15 @@ export const MarkdownTransform = (): Plugin => ({
       return;
     }
 
-    return code
-      .replace(/```(ts|typescript)([^\n]*)\n/g, (match, lang, attrs) => {
+    return code.replace(
+      /```(ts|typescript)([^\n]*)\n/g,
+      (match, lang, attrs) => {
         if (!attrs.includes("twoslash")) {
           attrs += " twoslash";
         }
 
         return `\`\`\`${lang}${attrs}\n// @include: imports\n`;
-      })
-      .replace(/\t/g, " ".repeat(TAB_SIZE));
+      },
+    );
   },
 });
