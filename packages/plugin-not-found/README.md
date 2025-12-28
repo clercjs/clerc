@@ -2,23 +2,9 @@
 
 [![NPM version](https://img.shields.io/npm/v/@clerc/plugin-not-found?color=a1b858&label=)](https://www.npmjs.com/package/@clerc/plugin-not-found)
 
-Clerc plugin to show friendly error message when command not found.
+## Documenation
 
-## 📦 Installation
-
-```bash
-$ npm install @clerc/plugin-not-found
-$ yarn add @clerc/plugin-not-found
-$ pnpm add @clerc/plugin-not-found
-```
-
-## 🚀 Usage
-
-```ts
-import { notFoundPlugin } from "@clerc/plugin-not-found";
-
-cli.use(notFoundPlugin());
-```
+Read the [documentation](https://clerc.so1ve.dev/official-plugins/plugin-not-found.html) for more details.
 
 ## 📝 License
 

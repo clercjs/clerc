@@ -2,23 +2,9 @@
 
 [![NPM version](https://img.shields.io/npm/v/@clerc/plugin-strict-flags?color=a1b858&label=)](https://www.npmjs.com/package/@clerc/plugin-strict-flags)
 
-Clerc plugin to throw error when unknown flags are passed.
+## Documenation
 
-## 📦 Installation
-
-```bash
-$ npm install @clerc/plugin-strict-flags
-$ yarn add @clerc/plugin-strict-flags
-$ pnpm add @clerc/plugin-strict-flags
-```
-
-## 🚀 Usage
-
-```ts
-import { strictFlagsPlugin } from "@clerc/plugin-strict-flags";
-
-cli.use(strictFlagsPlugin());
-```
+Read the [documentation](https://clerc.so1ve.dev/official-plugins/plugin-strict-flags.html) for more details.
 
 ## 📝 License
 

@@ -2,7 +2,9 @@
 
 [![NPM version](https://img.shields.io/npm/v/clerc?color=a1b858&label=)](https://www.npmjs.com/package/clerc)
 
-See [Clerc](https://github.com/clercjs/clerc) for documentation.
+## Documenation
+
+Read the [documentation](https://clerc.so1ve.dev) for more details.
 
 ## 📝 License
 

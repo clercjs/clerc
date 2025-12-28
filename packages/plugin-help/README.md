@@ -2,23 +2,9 @@
 
 [![NPM version](https://img.shields.io/npm/v/@clerc/plugin-help?color=a1b858&label=)](https://www.npmjs.com/package/@clerc/plugin-help)
 
-Clerc plugin to add help command to your cli.
+## Documenation
 
-## 📦 Installation
-
-```bash
-$ npm install @clerc/plugin-help
-$ yarn add @clerc/plugin-help
-$ pnpm add @clerc/plugin-help
-```
-
-## 🚀 Usage
-
-```ts
-import { helpPlugin } from "@clerc/plugin-help";
-
-cli.use(helpPlugin());
-```
+Read the [documentation](https://clerc.so1ve.dev/official-plugins/plugin-help.html) for more details.
 
 ## 📝 License
 
