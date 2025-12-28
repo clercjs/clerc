@@ -9,4 +9,4 @@ export const TestCli = () =>
   Cli().scriptName("test").description("test").version("0.0.0");
 
 export const getConsoleMock = (method: keyof Console) =>
-  vi.mocked(console[method]);
+  vi.mocked(console[method])!;
