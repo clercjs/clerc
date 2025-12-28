@@ -21,19 +21,19 @@ export * from "./errors";
  * @throws {Error} If the value is not in the allowed values list
  */
 export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
-	const fn = ((value: string) => {
-		if (!values.includes(value as any)) {
-			throw new FlagValidationError(
-				`Invalid value: ${value}. Must be one of: ${values.join(", ")}`,
-			);
-		}
+  const fn = ((value: string) => {
+    if (!values.includes(value as any)) {
+      throw new FlagValidationError(
+        `Invalid value: ${value}. Must be one of: ${values.join(", ")}`,
+      );
+    }
 
-		return value;
-	}) as TypeFunction<T>;
+    return value;
+  }) as TypeFunction<T>;
 
-	fn.display = values.join(" | ");
+  fn.display = values.join(" | ");
 
-	return fn;
+  return fn;
 }
 
 /**
@@ -47,19 +47,19 @@ export function Enum<T extends string>(...values: T[]): TypeFunction<T> {
  *   range
  */
 export function Range(min: number, max: number): TypeFunction<number> {
-	const fn = ((value: string) => {
-		const num = Number(value);
-		if (Number.isNaN(num) || num < min || num > max) {
-			throw new FlagValidationError(
-				`Invalid value: ${value}. Must be a number between ${min} and ${max}`,
-			);
-		}
+  const fn = ((value: string) => {
+    const num = Number(value);
+    if (Number.isNaN(num) || num < min || num > max) {
+      throw new FlagValidationError(
+        `Invalid value: ${value}. Must be a number between ${min} and ${max}`,
+      );
+    }
 
-		return num;
-	}) as TypeFunction<number>;
-	fn.display = `${min} - ${max}`;
+    return num;
+  }) as TypeFunction<number>;
+  fn.display = `${min} - ${max}`;
 
-	return fn;
+  return fn;
 }
 
 /**
@@ -72,19 +72,19 @@ export function Range(min: number, max: number): TypeFunction<number> {
  * @throws {Error} If the value does not match the regex pattern
  */
 export function Regex(
-	pattern: RegExp,
-	description?: string,
+  pattern: RegExp,
+  description?: string,
 ): TypeFunction<string> {
-	const fn = ((value: string) => {
-		if (!pattern.test(value)) {
-			throw new FlagValidationError(
-				`Invalid value: ${value}. Must match pattern: ${pattern}`,
-			);
-		}
+  const fn = ((value: string) => {
+    if (!pattern.test(value)) {
+      throw new FlagValidationError(
+        `Invalid value: ${value}. Must match pattern: ${pattern}`,
+      );
+    }
 
-		return value;
-	}) as TypeFunction<string>;
-	fn.display = description ?? `Regex: ${pattern.toString()}`;
+    return value;
+  }) as TypeFunction<string>;
+  fn.display = description ?? `Regex: ${pattern.toString()}`;
 
-	return fn;
+  return fn;
 }

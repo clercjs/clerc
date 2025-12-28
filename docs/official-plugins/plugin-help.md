@@ -46,15 +46,15 @@ import { helpPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(helpPlugin()) // Add help plugin
-	.command("hello", "Greeting command")
-	.on("hello", (ctx) => {
-		console.log("Hello, World!");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(helpPlugin()) // Add help plugin
+  .command("hello", "Greeting command")
+  .on("hello", (ctx) => {
+    console.log("Hello, World!");
+  })
+  .parse();
 ```
 
 ## Running Effect
@@ -91,45 +91,45 @@ The help plugin supports organizing commands and flags into logical groups using
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			groups: {
-				commands: [
-					["dev", "Development Commands"],
-					["build", "Build Commands"],
-					["test", "Testing Commands"],
-				],
-				flags: [
-					["input", "Input Options"],
-					["output", "Output Options"],
-					["config", "Configuration Options"],
-				],
-				globalFlags: [
-					["help", "Help Options"],
-					["version", "Version Options"],
-				],
-			},
-		}),
-	)
-	.command("dev", "Start development server", {
-		help: {
-			group: "dev", // Assign to "dev" group
-		},
-	})
-	.command("build", "Build the application", {
-		help: {
-			group: "build", // Assign to "build" group
-		},
-	})
-	.command("test", "Run tests", {
-		help: {
-			group: "test", // Assign to "test" group
-		},
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      groups: {
+        commands: [
+          ["dev", "Development Commands"],
+          ["build", "Build Commands"],
+          ["test", "Testing Commands"],
+        ],
+        flags: [
+          ["input", "Input Options"],
+          ["output", "Output Options"],
+          ["config", "Configuration Options"],
+        ],
+        globalFlags: [
+          ["help", "Help Options"],
+          ["version", "Version Options"],
+        ],
+      },
+    }),
+  )
+  .command("dev", "Start development server", {
+    help: {
+      group: "dev", // Assign to "dev" group
+    },
+  })
+  .command("build", "Build the application", {
+    help: {
+      group: "build", // Assign to "build" group
+    },
+  })
+  .command("test", "Run tests", {
+    help: {
+      group: "test", // Assign to "test" group
+    },
+  })
+  .parse();
 ```
 
 ### Custom Command Help
@@ -138,27 +138,27 @@ You can set the `help` option to customize the help information for each command
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(helpPlugin())
-	.command("deploy", "Deploy command", {
-		help: {
-			showInHelp: true, // Show this command in help
-			notes: [
-				"This is a command for deploying applications.",
-				"You can use different options to control deployment behavior.",
-			],
-			examples: [
-				["my-cli deploy --env production", "Deploy to production environment"],
-				[
-					"my-cli deploy --env staging --force",
-					"Deploy to staging environment and force execution",
-				],
-			],
-		},
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(helpPlugin())
+  .command("deploy", "Deploy command", {
+    help: {
+      showInHelp: true, // Show this command in help
+      notes: [
+        "This is a command for deploying applications.",
+        "You can use different options to control deployment behavior.",
+      ],
+      examples: [
+        ["my-cli deploy --env production", "Deploy to production environment"],
+        [
+          "my-cli deploy --env staging --force",
+          "Deploy to staging environment and force execution",
+        ],
+      ],
+    },
+  })
+  .parse();
 ```
 
 ### Plugin Options
@@ -167,37 +167,37 @@ You can customize the behavior of the help plugin by passing options:
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			command: true, // Enable help command
-			flag: true, // Enable --help global option
-			showHelpWhenNoCommandSpecified: true, // Show help when no command is specified
-			notes: [
-				"Welcome to my CLI application!",
-				"Use --help to see available commands and options.",
-			],
-			examples: [
-				["my-cli --help", "Show help information"],
-				["my-cli hello", "Execute greeting command"],
-			],
-			header: "Welcome to My CLI application!", // Custom header
-			footer: "Thank you for using My CLI application!", // Custom footer
-			formatters: {
-				// Custom type formatting functions
-				formatTypeValue: (type) => {
-					if (typeof type === "function") {
-						return type.name;
-					}
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      command: true, // Enable help command
+      flag: true, // Enable --help global option
+      showHelpWhenNoCommandSpecified: true, // Show help when no command is specified
+      notes: [
+        "Welcome to my CLI application!",
+        "Use --help to see available commands and options.",
+      ],
+      examples: [
+        ["my-cli --help", "Show help information"],
+        ["my-cli hello", "Execute greeting command"],
+      ],
+      header: "Welcome to My CLI application!", // Custom header
+      footer: "Thank you for using My CLI application!", // Custom footer
+      formatters: {
+        // Custom type formatting functions
+        formatTypeValue: (type) => {
+          if (typeof type === "function") {
+            return type.name;
+          }
 
-					return `Array<${type[0].name}>`;
-				},
-			},
-		}),
-	)
-	.parse();
+          return `Array<${type[0].name}>`;
+        },
+      },
+    }),
+  )
+  .parse();
 ```
 
 ### Using cli.store.help
@@ -206,43 +206,43 @@ The help plugin also provides a shared API that allows you to dynamically modify
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			groups: {
-				commands: [
-					["dev", "Development Commands"],
-					["build", "Build Commands"],
-				],
-				flags: [
-					["input", "Input Options"],
-					["output", "Output Options"],
-				],
-			},
-		}),
-	)
-	.command("dev", "Start development server", {
-		help: {
-			group: "dev", // Assign to the "dev" group
-		},
-	})
-	.command("build", "Build the application", {
-		help: {
-			group: "build", // Assign to the "build" group
-		},
-	})
-	.on("dev", (ctx) => {
-		console.log("Development server started");
-	})
-	.on("build", (ctx) => {
-		console.log("Application built");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      groups: {
+        commands: [
+          ["dev", "Development Commands"],
+          ["build", "Build Commands"],
+        ],
+        flags: [
+          ["input", "Input Options"],
+          ["output", "Output Options"],
+        ],
+      },
+    }),
+  )
+  .command("dev", "Start development server", {
+    help: {
+      group: "dev", // Assign to the "dev" group
+    },
+  })
+  .command("build", "Build the application", {
+    help: {
+      group: "build", // Assign to the "build" group
+    },
+  })
+  .on("dev", (ctx) => {
+    console.log("Development server started");
+  })
+  .on("build", (ctx) => {
+    console.log("Application built");
+  })
+  .parse();
 
 cli.store.help.addGroup({
-	commands: [["test", "Test"]],
+  commands: [["test", "Test"]],
 });
 ```
 

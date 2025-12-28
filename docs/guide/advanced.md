@@ -16,7 +16,7 @@ Alternatively, you can also pass an argument object:
 
 ```ts
 Cli().parse({
-	argv: ["greet"],
+  argv: ["greet"],
 });
 ```
 
@@ -26,7 +26,7 @@ Sometimes you may want to parse commands and flags without immediately executing
 
 ```ts
 const result = Cli().parse({
-	run: false, // Parse only, do not execute
+  run: false, // Parse only, do not execute
 });
 ```
 

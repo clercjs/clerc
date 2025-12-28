@@ -38,28 +38,28 @@ import { strictFlagsPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(strictFlagsPlugin()) // Add strict flags plugin
-	.command("start", "Start service", {
-		flags: {
-			port: {
-				type: Number,
-				description: "Service port",
-				default: 3000,
-			},
-			host: {
-				type: String,
-				description: "Service host",
-				default: "localhost",
-			},
-		},
-	})
-	.on("start", (ctx) => {
-		console.log(`Starting service on ${ctx.flags.host}:${ctx.flags.port}`);
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(strictFlagsPlugin()) // Add strict flags plugin
+  .command("start", "Start service", {
+    flags: {
+      port: {
+        type: Number,
+        description: "Service port",
+        default: 3000,
+      },
+      host: {
+        type: String,
+        description: "Service host",
+        default: "localhost",
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    console.log(`Starting service on ${ctx.flags.host}:${ctx.flags.port}`);
+  })
+  .parse();
 ```
 
 ### Running Effect

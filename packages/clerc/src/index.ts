@@ -6,4 +6,4 @@ import { versionPlugin } from "@clerc/plugin-version";
 export * from "./re-exports";
 
 export const Cli = (options?: CreateOptions): Clerc =>
-	Clerc.create(options).use(versionPlugin()).use(helpPlugin());
+  Clerc.create(options).use(versionPlugin()).use(helpPlugin());

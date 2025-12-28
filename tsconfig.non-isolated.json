@@ -1,18 +1,18 @@
 {
-	"extends": "./tsconfig.base.json",
-	"compilerOptions": {
-		"allowImportingTsExtensions": true
-	},
-	"include": [
-		"changelogithub.config.ts",
-		"examples",
-		"packages/*/bench",
-		"packages/*/src",
-		"packages/*/test",
-		"packages/*/tsdown.config.ts",
-		"packages/parser/bench/bench.bench.ts",
-		"test",
-		"tsdown.config.ts",
-		"vite.config.ts"
-	]
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "changelogithub.config.ts",
+    "examples",
+    "packages/*/bench",
+    "packages/*/src",
+    "packages/*/test",
+    "packages/*/tsdown.config.ts",
+    "packages/parser/bench/bench.bench.ts",
+    "test",
+    "tsdown.config.ts",
+    "vite.config.ts"
+  ]
 }

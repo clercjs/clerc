@@ -10,17 +10,17 @@ In both `handler` and `interceptor`, the first parameter received is a context o
 
 ```ts
 export interface BaseContext<
-	C extends Command = Command,
-	GF extends ClercFlagsDefinition = {},
+  C extends Command = Command,
+  GF extends ClercFlagsDefinition = {},
 > {
-	resolved: boolean;
-	command?: C;
-	calledAs?: string;
-	parameters: InferParameters<NonNullable<C["parameters"]>>;
-	flags: InferFlagsWithGlobal<C, GF>;
-	ignored: string[];
-	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
-	store: Partial<ContextStore>;
+  resolved: boolean;
+  command?: C;
+  calledAs?: string;
+  parameters: InferParameters<NonNullable<C["parameters"]>>;
+  flags: InferFlagsWithGlobal<C, GF>;
+  ignored: string[];
+  rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
+  store: Partial<ContextStore>;
 }
 ```
 

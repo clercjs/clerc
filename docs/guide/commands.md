@@ -8,14 +8,14 @@ title: Commands
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command")
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", "A foo command")
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 This creates a CLI application named `foo-cli` with a command called `foo`. When the user runs `foo-cli foo`, the CLI will output "It works!".
@@ -26,40 +26,40 @@ The description parameter is optional. You can omit it if you don't need to docu
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", {
-		// No description, pass options directly
-		flags: {
-			output: {
-				type: String,
-				description: "Output file",
-			},
-		},
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", {
+    // No description, pass options directly
+    flags: {
+      output: {
+        type: String,
+        description: "Output file",
+      },
+    },
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 Alternatively, you can use the traditional syntax with a description:
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command", {
-		flags: {
-			output: {
-				type: String,
-				description: "Output file",
-			},
-		},
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", "A foo command", {
+    flags: {
+      output: {
+        type: String,
+        description: "Output file",
+      },
+    },
+  })
+  .parse();
 ```
 
 ## Aliases
@@ -74,16 +74,16 @@ You can define a single alias for a command using a string:
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command", {
-		alias: "f",
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", "A foo command", {
+    alias: "f",
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 Now both `foo-cli foo` and `foo-cli f` will output "It works!".
@@ -94,16 +94,16 @@ You can define multiple aliases for a command using an array:
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command", {
-		alias: ["f", "bar", "baz"],
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", "A foo command", {
+    alias: ["f", "bar", "baz"],
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 Now `foo-cli foo`, `foo-cli f`, `foo-cli bar`, and `foo-cli baz` all work the same way.
@@ -114,26 +114,26 @@ Now `foo-cli foo`, `foo-cli f`, `foo-cli bar`, and `foo-cli baz` all work the sa
 
 ```ts
 const cli = Cli()
-	.scriptName("git")
-	.command("status", "Show working tree status", {
-		alias: "st",
-	})
-	.on("status", (ctx) => {
-		console.log("On branch main...");
-	})
-	.command("commit", "Record changes to repository", {
-		alias: ["ci", "com"],
-	})
-	.on("commit", (ctx) => {
-		console.log("Committing changes...");
-	})
-	.command("checkout", "Switch branches or restore files", {
-		alias: "co",
-	})
-	.on("checkout", (ctx) => {
-		console.log("Checking out...");
-	})
-	.parse();
+  .scriptName("git")
+  .command("status", "Show working tree status", {
+    alias: "st",
+  })
+  .on("status", (ctx) => {
+    console.log("On branch main...");
+  })
+  .command("commit", "Record changes to repository", {
+    alias: ["ci", "com"],
+  })
+  .on("commit", (ctx) => {
+    console.log("Committing changes...");
+  })
+  .command("checkout", "Switch branches or restore files", {
+    alias: "co",
+  })
+  .on("checkout", (ctx) => {
+    console.log("Checking out...");
+  })
+  .parse();
 ```
 
 Usage:
@@ -153,14 +153,14 @@ You can define subcommands by using spaces in the command name:
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("parent child", "A subcommand")
-	.on("parent child", (ctx) => {
-		console.log("Subcommand was called!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("parent child", "A subcommand")
+  .on("parent child", (ctx) => {
+    console.log("Subcommand was called!");
+  })
+  .parse();
 ```
 
 ## Root Command
@@ -169,14 +169,14 @@ You can define a root command (a command with no name) to handle cases when no s
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("", "Root command")
-	.on("", (ctx) => {
-		console.log("Root command was called!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("", "Root command")
+  .on("", (ctx) => {
+    console.log("Root command was called!");
+  })
+  .parse();
 ```
 
 ## Parameters
@@ -205,34 +205,34 @@ import { PARAMETER } from "clerc";
 let encounteredParameter = false;
 
 const cli = Cli()
-	.scriptName("deno")
-	.description("Deno CLI")
-	.version("1.0.0")
-	.command("run", "Run script", {
-		flags: {
-			allowRead: {
-				type: Boolean,
-				description: "Allow file system read",
-			},
-		},
-		parameters: ["<script>", "[args...]"],
-		ignore: (type) => {
-			if (type === PARAMETER && !encounteredParameter) {
-				encounteredParameter = true;
+  .scriptName("deno")
+  .description("Deno CLI")
+  .version("1.0.0")
+  .command("run", "Run script", {
+    flags: {
+      allowRead: {
+        type: Boolean,
+        description: "Allow file system read",
+      },
+    },
+    parameters: ["<script>", "[args...]"],
+    ignore: (type) => {
+      if (type === PARAMETER && !encounteredParameter) {
+        encounteredParameter = true;
 
-				return false; // Don't ignore the first parameter (script name)
-			}
+        return false; // Don't ignore the first parameter (script name)
+      }
 
-			// Ignore the rest of the parameters
-			return encounteredParameter;
-		},
-	})
-	.on("run", (ctx) => {
-		// Handle script execution
-		ctx.ignored; // => ["--flag"]
-		//	^?
-	})
-	.parse();
+      // Ignore the rest of the parameters
+      return encounteredParameter;
+    },
+  })
+  .on("run", (ctx) => {
+    // Handle script execution
+    ctx.ignored; // => ["--flag"]
+    //	^?
+  })
+  .parse();
 ```
 
 ## Multiple Commands
@@ -243,36 +243,36 @@ You can register multiple commands at once by passing an array of command create
 import { defineCommand } from "clerc";
 
 const commandA = defineCommand(
-	{
-		name: "foo",
-		description: "Foo command",
-	},
-	(ctx) => {
-		console.log("Foo command executed");
-	},
+  {
+    name: "foo",
+    description: "Foo command",
+  },
+  (ctx) => {
+    console.log("Foo command executed");
+  },
 );
 const commandB = defineCommand(
-	{
-		name: "bar",
-		description: "Bar command",
-		flags: {
-			flag: {
-				type: Boolean,
-				default: false,
-			},
-		},
-	},
-	(ctx) => {
-		console.log("Bar command executed");
-	},
+  {
+    name: "bar",
+    description: "Bar command",
+    flags: {
+      flag: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  },
+  (ctx) => {
+    console.log("Bar command executed");
+  },
 );
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command([commandA, commandB])
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command([commandA, commandB])
+  .parse();
 ```
 
 ## Advanced Usage
@@ -283,21 +283,21 @@ To separate the handler from the cli definition, you can use the `defineCommand`
 import { defineCommand } from "clerc";
 
 const command = defineCommand({
-	name: "test",
-	description: "Test",
-	flags: {},
-	parameters: [],
-	handler: (ctx) => {
-		// Handler
-	},
+  name: "test",
+  description: "Test",
+  flags: {},
+  parameters: [],
+  handler: (ctx) => {
+    // Handler
+  },
 });
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command(command)
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command(command)
+  .parse();
 ```
 
 ## Lazy Loading
@@ -310,37 +310,37 @@ You can implement lazy loading by using dynamic imports (`await import()`) withi
 
 ```ts
 const cli = Cli()
-	.scriptName("app")
-	.description("An application with lazy loading")
-	.version("1.0.0")
-	.command("build", "Build the project", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "Build for production",
-			},
-		},
-	})
-	.on("build", async (ctx) => {
-		// Handler is only loaded when the command is invoked
-		const { buildProject } = await import("./handlers/build.js");
-		await buildProject(ctx);
-	})
-	.command("deploy", "Deploy the application", {
-		flags: {
-			environment: {
-				type: String,
-				default: "staging",
-				description: "Target environment",
-			},
-		},
-	})
-	.on("deploy", async (ctx) => {
-		// Another handler loaded lazily
-		const { deploy } = await import("./handlers/deploy.js");
-		await deploy(ctx);
-	})
-	.parse();
+  .scriptName("app")
+  .description("An application with lazy loading")
+  .version("1.0.0")
+  .command("build", "Build the project", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "Build for production",
+      },
+    },
+  })
+  .on("build", async (ctx) => {
+    // Handler is only loaded when the command is invoked
+    const { buildProject } = await import("./handlers/build.js");
+    await buildProject(ctx);
+  })
+  .command("deploy", "Deploy the application", {
+    flags: {
+      environment: {
+        type: String,
+        default: "staging",
+        description: "Target environment",
+      },
+    },
+  })
+  .on("deploy", async (ctx) => {
+    // Another handler loaded lazily
+    const { deploy } = await import("./handlers/deploy.js");
+    await deploy(ctx);
+  })
+  .parse();
 ```
 
 ### Lazy Loading with defineCommand
@@ -351,23 +351,23 @@ You can also combine lazy loading with the `defineCommand` utility:
 import { defineCommand } from "clerc";
 
 const command = defineCommand({
-	name: "migrate",
-	description: "Run database migrations",
-	flags: {},
-	parameters: [],
-	handler: async (ctx) => {
-		// Handler loaded only when command is invoked
-		const { runMigrations } = await import("./handlers/migrate.js");
-		await runMigrations(ctx);
-	},
+  name: "migrate",
+  description: "Run database migrations",
+  flags: {},
+  parameters: [],
+  handler: async (ctx) => {
+    // Handler loaded only when command is invoked
+    const { runMigrations } = await import("./handlers/migrate.js");
+    await runMigrations(ctx);
+  },
 });
 
 const cli = Cli()
-	.scriptName("app")
-	.description("Application with lazy-loaded commands")
-	.version("1.0.0")
-	.command(command)
-	.parse();
+  .scriptName("app")
+  .description("Application with lazy-loaded commands")
+  .version("1.0.0")
+  .command(command)
+  .parse();
 ```
 
 ### Benefits
@@ -395,11 +395,11 @@ project/
 
 ```ts
 export async function buildProject(ctx) {
-	if (ctx.flags.production) {
-		console.log("Building for production...");
-	} else {
-		console.log("Building for development...");
-	}
+  if (ctx.flags.production) {
+    console.log("Building for production...");
+  } else {
+    console.log("Building for development...");
+  }
 }
 ```
 
@@ -407,29 +407,29 @@ export async function buildProject(ctx) {
 
 ```ts
 const cli = Cli()
-	.scriptName("app")
-	.version("1.0.0")
-	.command("build", "Build the project", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "Build for production",
-			},
-		},
-	})
-	.on("build", async (ctx) => {
-		const { buildProject } = await import("./handlers/build.js");
-		await buildProject(ctx);
-	})
-	.command("dev", "Start development server", {})
-	.on("dev", async (ctx) => {
-		const { startDev } = await import("./handlers/dev.js");
-		await startDev(ctx);
-	})
-	.command("deploy", "Deploy application")
-	.on("deploy", async (ctx) => {
-		const { deploy } = await import("./handlers/deploy.js");
-		await deploy(ctx);
-	})
-	.parse();
+  .scriptName("app")
+  .version("1.0.0")
+  .command("build", "Build the project", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "Build for production",
+      },
+    },
+  })
+  .on("build", async (ctx) => {
+    const { buildProject } = await import("./handlers/build.js");
+    await buildProject(ctx);
+  })
+  .command("dev", "Start development server", {})
+  .on("dev", async (ctx) => {
+    const { startDev } = await import("./handlers/dev.js");
+    await startDev(ctx);
+  })
+  .command("deploy", "Deploy application")
+  .on("deploy", async (ctx) => {
+    const { deploy } = await import("./handlers/deploy.js");
+    await deploy(ctx);
+  })
+  .parse();
 ```

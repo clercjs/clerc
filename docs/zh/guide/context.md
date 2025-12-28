@@ -10,17 +10,17 @@ title: 上下文
 
 ```ts
 export interface BaseContext<
-	C extends Command = Command,
-	GF extends ClercFlagsDefinition = {},
+  C extends Command = Command,
+  GF extends ClercFlagsDefinition = {},
 > {
-	resolved: boolean;
-	command?: C;
-	calledAs?: string;
-	parameters: InferParameters<NonNullable<C["parameters"]>>;
-	flags: InferFlagsWithGlobal<C, GF>;
-	ignored: string[];
-	rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
-	store: Partial<ContextStore>;
+  resolved: boolean;
+  command?: C;
+  calledAs?: string;
+  parameters: InferParameters<NonNullable<C["parameters"]>>;
+  flags: InferFlagsWithGlobal<C, GF>;
+  ignored: string[];
+  rawParsed: ParsedResult<InferFlagsWithGlobal<C, GF>>;
+  store: Partial<ContextStore>;
 }
 ```
 
@@ -43,32 +43,32 @@ export interface BaseContext<
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(helpPlugin())
-	.command("config", "配置应用程序")
-	.on("config", (ctx) => {
-		// 存储配置数据
-		ctx.store.config = {
-			apiUrl: "https://api.example.com",
-			timeout: 5000,
-		};
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(helpPlugin())
+  .command("config", "配置应用程序")
+  .on("config", (ctx) => {
+    // 存储配置数据
+    ctx.store.config = {
+      apiUrl: "https://api.example.com",
+      timeout: 5000,
+    };
 
-		console.log("配置已保存");
-	})
-	.command("status", "显示应用程序状态")
-	.on("status", (ctx) => {
-		// 访问存储的配置数据
-		const config = ctx.store.config;
-		if (config) {
-			console.log(`API URL: ${config.apiUrl}`);
-			console.log(`超时时间: ${config.timeout}ms`);
-		} else {
-			console.log("未找到配置");
-		}
-	})
-	.parse();
+    console.log("配置已保存");
+  })
+  .command("status", "显示应用程序状态")
+  .on("status", (ctx) => {
+    // 访问存储的配置数据
+    const config = ctx.store.config;
+    if (config) {
+      console.log(`API URL: ${config.apiUrl}`);
+      console.log(`超时时间: ${config.timeout}ms`);
+    } else {
+      console.log("未找到配置");
+    }
+  })
+  .parse();
 
 // 也可以通过 cli.store 访问存储
 const config = cli.store.config;
@@ -86,15 +86,15 @@ const config = cli.store.config;
 ```ts
 // 在插件中
 declare module "@clerc/core" {
-	export interface ContextStore {
-		help: {
-			addGroup: (options: GroupsOptions) => void;
-		};
-	}
+  export interface ContextStore {
+    help: {
+      addGroup: (options: GroupsOptions) => void;
+    };
+  }
 }
 
 cli.store.help.addGroup({
-	commands: [["custom", "自定义命令"]],
+  commands: [["custom", "自定义命令"]],
 });
 ```
 

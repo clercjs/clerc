@@ -1,54 +1,54 @@
 {
-	"name": "@clerc/plugin-friendly-error",
-	"version": "1.0.3",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"type": "module",
-	"description": "Clerc plugin friendly error",
-	"keywords": [
-		"args",
-		"arguments",
-		"argv",
-		"clerc",
-		"clerc-plugin",
-		"cli",
-		"terminal"
-	],
-	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-friendly-error#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/clercjs/clerc.git",
-		"directory": "/"
-	},
-	"bugs": {
-		"url": "https://github.com/clercjs/clerc/issues"
-	},
-	"license": "MIT",
-	"sideEffects": false,
-	"exports": {
-		".": "./dist/index.mjs"
-	},
-	"main": "./dist/index.mjs",
-	"module": "./dist/index.mjs",
-	"types": "dist/index.d.ts",
-	"typesVersions": {
-		"*": {
-			"*": [
-				"./dist/*",
-				"./dist/index.d.ts"
-			]
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"devDependencies": {
-		"@clerc/core": "workspace:*",
-		"kons": "catalog:cli"
-	},
-	"peerDependencies": {
-		"@clerc/core": "*"
-	}
+  "name": "@clerc/plugin-friendly-error",
+  "version": "1.0.3",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Clerc plugin friendly error",
+  "keywords": [
+    "args",
+    "arguments",
+    "argv",
+    "clerc",
+    "clerc-plugin",
+    "cli",
+    "terminal"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-friendly-error#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@clerc/core": "workspace:*",
+    "kons": "catalog:cli"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
+  }
 }

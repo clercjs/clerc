@@ -38,15 +38,15 @@ import { notFoundPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(notFoundPlugin()) // Add not found plugin
-	.command("start", "Start service")
-	.on("start", (ctx) => {
-		console.log("Service started");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(notFoundPlugin()) // Add not found plugin
+  .command("start", "Start service")
+  .on("start", (ctx) => {
+    console.log("Service started");
+  })
+  .parse();
 ```
 
 ### Running Effect

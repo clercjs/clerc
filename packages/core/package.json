@@ -1,55 +1,55 @@
 {
-	"name": "@clerc/core",
-	"version": "1.0.3",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"type": "module",
-	"description": "Clerc core",
-	"keywords": [
-		"args",
-		"arguments",
-		"argv",
-		"clerc",
-		"cli",
-		"terminal"
-	],
-	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/core#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/clercjs/clerc.git",
-		"directory": "/"
-	},
-	"bugs": {
-		"url": "https://github.com/clercjs/clerc/issues"
-	},
-	"license": "MIT",
-	"sideEffects": false,
-	"exports": {
-		".": "./dist/index.mjs"
-	},
-	"main": "./dist/index.mjs",
-	"module": "./dist/index.mjs",
-	"types": "dist/index.d.ts",
-	"typesVersions": {
-		"*": {
-			"*": [
-				"./dist/*",
-				"./dist/index.d.ts"
-			]
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"dependencies": {
-		"@clerc/parser": "workspace:*",
-		"@clerc/utils": "workspace:*",
-		"lite-emit": "catalog:cli"
-	},
-	"devDependencies": {
-		"@clerc/advanced-types": "workspace:*",
-		"is-platform": "catalog:cli"
-	}
+  "name": "@clerc/core",
+  "version": "1.0.3",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Clerc core",
+  "keywords": [
+    "args",
+    "arguments",
+    "argv",
+    "clerc",
+    "cli",
+    "terminal"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@clerc/parser": "workspace:*",
+    "@clerc/utils": "workspace:*",
+    "lite-emit": "catalog:cli"
+  },
+  "devDependencies": {
+    "@clerc/advanced-types": "workspace:*",
+    "is-platform": "catalog:cli"
+  }
 }

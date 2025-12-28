@@ -38,16 +38,16 @@ import { friendlyErrorPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(friendlyErrorPlugin()) // 添加友好错误插件
-	.command("start", "启动服务")
-	.on("start", (ctx) => {
-		// 模拟一个错误
-		throw new Error("服务启动失败");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(friendlyErrorPlugin()) // 添加友好错误插件
+  .command("start", "启动服务")
+  .on("start", (ctx) => {
+    // 模拟一个错误
+    throw new Error("服务启动失败");
+  })
+  .parse();
 ```
 
 ### 运行效果

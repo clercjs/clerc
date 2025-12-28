@@ -38,28 +38,28 @@ import { strictFlagsPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(strictFlagsPlugin()) // 添加严格选项插件
-	.command("start", "启动服务", {
-		flags: {
-			port: {
-				type: Number,
-				description: "服务端口",
-				default: 3000,
-			},
-			host: {
-				type: String,
-				description: "服务主机",
-				default: "localhost",
-			},
-		},
-	})
-	.on("start", (ctx) => {
-		console.log(`在 ${ctx.flags.host}:${ctx.flags.port} 启动服务`);
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(strictFlagsPlugin()) // 添加严格选项插件
+  .command("start", "启动服务", {
+    flags: {
+      port: {
+        type: Number,
+        description: "服务端口",
+        default: 3000,
+      },
+      host: {
+        type: String,
+        description: "服务主机",
+        default: "localhost",
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    console.log(`在 ${ctx.flags.host}:${ctx.flags.port} 启动服务`);
+  })
+  .parse();
 ```
 
 ### 运行效果

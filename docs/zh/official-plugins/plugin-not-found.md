@@ -38,15 +38,15 @@ import { notFoundPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(notFoundPlugin()) // 添加命令未找到插件
-	.command("start", "启动服务")
-	.on("start", (ctx) => {
-		console.log("服务已启动");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(notFoundPlugin()) // 添加命令未找到插件
+  .command("start", "启动服务")
+  .on("start", (ctx) => {
+    console.log("服务已启动");
+  })
+  .parse();
 ```
 
 ### 运行效果

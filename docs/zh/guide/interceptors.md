@@ -12,18 +12,18 @@ title: 拦截器
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令")
-	.interceptor(async (ctx, next) => {
-		console.log("在 foo 之前");
-		// 您可以访问上下文
-		console.log(!!ctx.command); // 匹配到对应的命令了吗？
-		await next(); // 调用 next 继续执行
-		console.log("在 foo 之后");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令")
+  .interceptor(async (ctx, next) => {
+    console.log("在 foo 之前");
+    // 您可以访问上下文
+    console.log(!!ctx.command); // 匹配到对应的命令了吗？
+    await next(); // 调用 next 继续执行
+    console.log("在 foo 之后");
+  })
+  .parse();
 ```
 
 :::warning
@@ -38,21 +38,21 @@ const cli = Clerc.create()
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令")
-	.interceptor({
-		enforce: "normal", // 默认值，或者 "pre", "post"
-		handler: async (ctx, next) => {
-			console.log("在 foo 之前");
-			// 您可以访问上下文
-			console.log(!!ctx.command); // 匹配到对应的命令了吗？
-			await next(); // 调用 next 继续执行
-			console.log("在 foo 之后");
-		},
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令")
+  .interceptor({
+    enforce: "normal", // 默认值，或者 "pre", "post"
+    handler: async (ctx, next) => {
+      console.log("在 foo 之前");
+      // 您可以访问上下文
+      console.log(!!ctx.command); // 匹配到对应的命令了吗？
+      await next(); // 调用 next 继续执行
+      console.log("在 foo 之后");
+    },
+  })
+  .parse();
 ```
 
 因此，执行顺序如下：
@@ -67,21 +67,21 @@ const cli = Clerc.create()
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令")
-	.interceptor(async (ctx, next) => {
-		console.log("在 foo 之前");
-		// 您可以访问上下文
-		console.log(!!ctx.command); // 匹配到对应的命令了吗？
-		await next(); // 调用 next 继续执行
-		console.log("在 foo 之后");
-	})
-	.on("foo", (ctx) => {
-		console.log("它运行了！");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令")
+  .interceptor(async (ctx, next) => {
+    console.log("在 foo 之前");
+    // 您可以访问上下文
+    console.log(!!ctx.command); // 匹配到对应的命令了吗？
+    await next(); // 调用 next 继续执行
+    console.log("在 foo 之后");
+  })
+  .on("foo", (ctx) => {
+    console.log("它运行了！");
+  })
+  .parse();
 
 // 输出结果为：
 // 在 foo 之前

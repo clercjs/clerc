@@ -33,30 +33,30 @@ You can define a single-character short name for a flag using the `short` proper
 
 ```ts
 const cli = Cli()
-	.command("build", "Build the project", {
-		flags: {
-			output: {
-				type: String,
-				short: "o",
-				description: "Output directory",
-			},
+  .command("build", "Build the project", {
+    flags: {
+      output: {
+        type: String,
+        short: "o",
+        description: "Output directory",
+      },
 
-			verbose: {
-				type: Boolean,
-				short: "v",
-				description: "Enable verbose output",
-			},
-		},
-	})
-	.on("build", (ctx) => {
-		// $ node cli.mjs build --output dist
-		// $ node cli.mjs build -o dist
-		// Both work the same way
-		// $ node cli.mjs build --verbose
-		// $ node cli.mjs build -v
-		// Both enable verbose output
-	})
-	.parse();
+      verbose: {
+        type: Boolean,
+        short: "v",
+        description: "Enable verbose output",
+      },
+    },
+  })
+  .on("build", (ctx) => {
+    // $ node cli.mjs build --output dist
+    // $ node cli.mjs build -o dist
+    // Both work the same way
+    // $ node cli.mjs build --verbose
+    // $ node cli.mjs build -v
+    // Both enable verbose output
+  })
+  .parse();
 ```
 
 ### Validation Rules
@@ -70,34 +70,34 @@ When using short names (single characters), they can be combined together:
 
 ```ts
 const cli = Cli()
-	.command("compress", "Compress files", {
-		flags: {
-			output: {
-				type: String,
-				short: "o",
-				description: "Output file",
-			},
+  .command("compress", "Compress files", {
+    flags: {
+      output: {
+        type: String,
+        short: "o",
+        description: "Output file",
+      },
 
-			verbose: {
-				type: Boolean,
-				short: "v",
-				description: "Verbose output",
-			},
+      verbose: {
+        type: Boolean,
+        short: "v",
+        description: "Verbose output",
+      },
 
-			recursive: {
-				type: Boolean,
-				short: "r",
-				description: "Recursive mode",
-			},
-		},
-	})
-	.on("compress", (ctx) => {
-		// $ node cli.mjs compress -vrh input.zip
-		// Is equivalent to:
-		// $ node cli.mjs compress -v -r -h input.zip
-		// Which sets: verbose = true, recursive = true, and passes "input.zip" as a parameter
-	})
-	.parse();
+      recursive: {
+        type: Boolean,
+        short: "r",
+        description: "Recursive mode",
+      },
+    },
+  })
+  .on("compress", (ctx) => {
+    // $ node cli.mjs compress -vrh input.zip
+    // Is equivalent to:
+    // $ node cli.mjs compress -v -r -h input.zip
+    // Which sets: verbose = true, recursive = true, and passes "input.zip" as a parameter
+  })
+  .parse();
 ```
 
 ## Basic Usage
@@ -106,50 +106,50 @@ const cli = Cli()
 // $ node ./foo-cli.mjs echo --some-boolean --some-string hello --some-number 1 -n 2
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("echo", "Echo", {
-		flags: {
-			someBoolean: {
-				type: Boolean,
-				description: "Some boolean flag",
-			},
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("echo", "Echo", {
+    flags: {
+      someBoolean: {
+        type: Boolean,
+        description: "Some boolean flag",
+      },
 
-			someString: {
-				type: String,
-				description: "Some string flag",
-				default: "n/a",
-			},
+      someString: {
+        type: String,
+        description: "Some string flag",
+        default: "n/a",
+      },
 
-			someNumber: {
-				// Wrap the type function in an array to allow multiple values
-				type: [Number],
-				short: "n",
-				description: "Array of numbers. (e.g. -n 1 -n 2 -n 3)",
-			},
+      someNumber: {
+        // Wrap the type function in an array to allow multiple values
+        type: [Number],
+        short: "n",
+        description: "Array of numbers. (e.g. -n 1 -n 2 -n 3)",
+      },
 
-			object: {
-				type: Object,
-				description: "An object flag. (e.g. --object.key value)",
-			},
+      object: {
+        type: Object,
+        description: "An object flag. (e.g. --object.key value)",
+      },
 
-			counter: {
-				type: [Boolean],
-				description: "A counter flag. (e.g. -c -c -c)",
-			},
-		},
-	})
-	.on("echo", (ctx) => {
-		ctx.flags;
-		//	^?
-		ctx.flags.someBoolean; // => true
-		ctx.flags.someString; // => "hello"
-		ctx.flags.someNumber; // => [1, 2]
-		ctx.flags.object; // => { key: "value" }
-		ctx.flags.counter; // => 2
-	})
-	.parse();
+      counter: {
+        type: [Boolean],
+        description: "A counter flag. (e.g. -c -c -c)",
+      },
+    },
+  })
+  .on("echo", (ctx) => {
+    ctx.flags;
+    //	^?
+    ctx.flags.someBoolean; // => true
+    ctx.flags.someString; // => "hello"
+    ctx.flags.someNumber; // => [1, 2]
+    ctx.flags.object; // => { key: "value" }
+    ctx.flags.counter; // => 2
+  })
+  .parse();
 ```
 
 ## Flag Description
@@ -158,20 +158,20 @@ The `description` property is optional and can be omitted if you don't need to d
 
 ```ts
 const cli = Cli()
-	.command("build", "Build the project", {
-		flags: {
-			verbose: {
-				type: Boolean,
-				// description is optional
-			},
+  .command("build", "Build the project", {
+    flags: {
+      verbose: {
+        type: Boolean,
+        // description is optional
+      },
 
-			output: {
-				type: String,
-				description: "Output directory", // or include it for better documentation
-			},
-		},
-	})
-	.parse();
+      output: {
+        type: String,
+        description: "Output directory", // or include it for better documentation
+      },
+    },
+  })
+  .parse();
 ```
 
 ## Required Flags
@@ -180,20 +180,20 @@ To make a flag required, you can set the `required` property to `true` in the fl
 
 ```ts
 const cli = Cli()
-	.command("deploy", "Deploy the application", {
-		flags: {
-			env: {
-				type: String,
-				description: "Deployment environment",
-				required: true, // This flag is required
-			},
-		},
-	})
-	.on("deploy", (ctx) => {
-		ctx.flags.env; // This will always have a value
-		//        ^?
-	})
-	.parse();
+  .command("deploy", "Deploy the application", {
+    flags: {
+      env: {
+        type: String,
+        description: "Deployment environment",
+        required: true, // This flag is required
+      },
+    },
+  })
+  .on("deploy", (ctx) => {
+    ctx.flags.env; // This will always have a value
+    //        ^?
+  })
+  .parse();
 ```
 
 ## Default Values
@@ -202,20 +202,20 @@ You can provide default values for flags using the `default` property in the fla
 
 ```ts
 const cli = Cli()
-	.command("serve", "Start the server", {
-		flags: {
-			port: {
-				type: Number,
-				description: "Port number",
-				default: 3000, // Default port is 3000
-			},
-		},
-	})
-	.on("serve", (ctx) => {
-		ctx.flags.port; // If not provided, this will be 3000
-		//        ^?
-	})
-	.parse();
+  .command("serve", "Start the server", {
+    flags: {
+      port: {
+        type: Number,
+        description: "Port number",
+        default: 3000, // Default port is 3000
+      },
+    },
+  })
+  .on("serve", (ctx) => {
+    ctx.flags.port; // If not provided, this will be 3000
+    //        ^?
+  })
+  .parse();
 ```
 
 :::warning

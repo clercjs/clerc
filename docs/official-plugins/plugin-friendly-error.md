@@ -38,16 +38,16 @@ import { friendlyErrorPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(friendlyErrorPlugin()) // Add friendly error plugin
-	.command("start", "Start service")
-	.on("start", (ctx) => {
-		// Simulate an error
-		throw new Error("Service failed to start");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(friendlyErrorPlugin()) // Add friendly error plugin
+  .command("start", "Start service")
+  .on("start", (ctx) => {
+    // Simulate an error
+    throw new Error("Service failed to start");
+  })
+  .parse();
 ```
 
 ### Running Effect

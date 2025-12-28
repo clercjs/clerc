@@ -26,24 +26,24 @@ title: 参数
 // $ node ./foo-cli.mjs a b c d
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("foo", "A foo command", {
-		parameters: [
-			"<required parameter>",
-			"[optional parameter]",
-			"[optional spread...]",
-		],
-	})
-	.on("foo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.requiredParameter; // => "a"
-		ctx.parameters.optionalParameter; // => "b"
-		ctx.parameters.optionalSpread; // => ["c", "d"]
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("foo", "A foo command", {
+    parameters: [
+      "<required parameter>",
+      "[optional parameter]",
+      "[optional spread...]",
+    ],
+  })
+  .on("foo", (ctx) => {
+    ctx.parameters;
+    //  ^?
+    ctx.parameters.requiredParameter; // => "a"
+    ctx.parameters.optionalParameter; // => "b"
+    ctx.parameters.optionalSpread; // => ["c", "d"]
+  })
+  .parse();
 ```
 
 ## 参数对象
@@ -57,26 +57,26 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("config-cli")
-	.description("Configuration tool")
-	.version("1.0.0")
-	.command("set", "Set a configuration value", {
-		parameters: [
-			{
-				key: "<key>",
-				description: "Configuration key name",
-			},
-			{
-				key: "<value>",
-				description: "Configuration value",
-				type: String,
-			},
-		],
-	})
-	.on("set", (ctx) => {
-		console.log(`Setting ${ctx.parameters.key} to ${ctx.parameters.value}`);
-	})
-	.parse();
+  .scriptName("config-cli")
+  .description("Configuration tool")
+  .version("1.0.0")
+  .command("set", "Set a configuration value", {
+    parameters: [
+      {
+        key: "<key>",
+        description: "Configuration key name",
+      },
+      {
+        key: "<value>",
+        description: "Configuration value",
+        type: String,
+      },
+    ],
+  })
+  .on("set", (ctx) => {
+    console.log(`Setting ${ctx.parameters.key} to ${ctx.parameters.value}`);
+  })
+  .parse();
 ```
 
 ## 参数类型
@@ -115,17 +115,17 @@ $ npm run <script> -- <script arguments>
 // $ node ./foo-cli.mjs echo -- hello world
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("A simple CLI")
-	.version("1.0.0")
-	.command("echo", "Echo", {
-		parameters: ["<script>", "--", "[arguments...]"],
-	})
-	.on("echo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.script; // => "echo"
-		ctx.parameters.arguments; // => ["hello", "world"]
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("A simple CLI")
+  .version("1.0.0")
+  .command("echo", "Echo", {
+    parameters: ["<script>", "--", "[arguments...]"],
+  })
+  .on("echo", (ctx) => {
+    ctx.parameters;
+    //  ^?
+    ctx.parameters.script; // => "echo"
+    ctx.parameters.arguments; // => ["hello", "world"]
+  })
+  .parse();
 ```

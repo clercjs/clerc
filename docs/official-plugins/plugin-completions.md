@@ -38,19 +38,19 @@ import { completionsPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(completionsPlugin()) // Add the autocompletion plugin
-	.command("start", "Start the service")
-	.on("start", (ctx) => {
-		console.log("Service started");
-	})
-	.command("stop", "Stop the service")
-	.on("stop", (ctx) => {
-		console.log("Service stopped");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(completionsPlugin()) // Add the autocompletion plugin
+  .command("start", "Start the service")
+  .on("start", (ctx) => {
+    console.log("Service started");
+  })
+  .command("stop", "Stop the service")
+  .on("stop", (ctx) => {
+    console.log("Service stopped");
+  })
+  .parse();
 ```
 
 ### Running Effect

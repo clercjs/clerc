@@ -1,21 +1,21 @@
 {
-	"compilerOptions": {
-		"composite": true,
-		"target": "ESNext",
-		"lib": ["ESNext"],
-		"moduleDetection": "force",
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
-		"resolveJsonModule": true,
-		"strict": true,
-		"strictNullChecks": true,
-		"noEmit": true,
-		"esModuleInterop": true,
-		"skipDefaultLibCheck": true,
-		"skipLibCheck": true,
-		"paths": {
-			"@clerc/*": ["./packages/*/src/index.ts"],
-			"clerc": ["./packages/clerc/src/index.ts"]
-		}
-	}
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "moduleDetection": "force",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@clerc/*": ["./packages/*/src/index.ts"],
+      "clerc": ["./packages/clerc/src/index.ts"]
+    }
+  }
 }

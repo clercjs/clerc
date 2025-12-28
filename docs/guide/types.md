@@ -23,30 +23,30 @@ The `String` type is used for flags and parameters that accept string values. Th
 
 ```ts
 const cli = Cli()
-	.command("greet", "Greet someone", {
-		flags: {
-			name: {
-				type: String,
-				description: "User name",
-				default: "World",
-			},
+  .command("greet", "Greet someone", {
+    flags: {
+      name: {
+        type: String,
+        description: "User name",
+        default: "World",
+      },
 
-			message: {
-				type: String,
-				short: "m",
-				description: "Greeting message",
-			},
-		},
-	})
-	.on("greet", (ctx) => {
-		console.log(`${ctx.flags.message}, ${ctx.flags.name}!`);
-		// $ node cli.mjs greet --name John --message Hello
-		// Hello, John!
-		// $ node cli.mjs greet --message Hello
-		// ctx.flags.message => "Hello"
-		// ctx.flags.name => "World" (uses default value)
-	})
-	.parse();
+      message: {
+        type: String,
+        short: "m",
+        description: "Greeting message",
+      },
+    },
+  })
+  .on("greet", (ctx) => {
+    console.log(`${ctx.flags.message}, ${ctx.flags.name}!`);
+    // $ node cli.mjs greet --name John --message Hello
+    // Hello, John!
+    // $ node cli.mjs greet --message Hello
+    // ctx.flags.message => "Hello"
+    // ctx.flags.name => "World" (uses default value)
+  })
+  .parse();
 ```
 
 ### Boolean Type
@@ -57,30 +57,30 @@ The `Boolean` type is used for creating boolean switch flags. By default, simply
 
 ```ts
 const cli = Cli()
-	.command("build", "Build the project", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "Build for production",
-			},
+  .command("build", "Build the project", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "Build for production",
+      },
 
-			watch: {
-				type: Boolean,
-				short: "w",
-				description: "Enable watch mode",
-			},
-		},
-	})
-	.on("build", (ctx) => {
-		// $ node cli.mjs build --production --watch
-		ctx.flags.production; // => true
-		ctx.flags.watch; // => true
+      watch: {
+        type: Boolean,
+        short: "w",
+        description: "Enable watch mode",
+      },
+    },
+  })
+  .on("build", (ctx) => {
+    // $ node cli.mjs build --production --watch
+    ctx.flags.production; // => true
+    ctx.flags.watch; // => true
 
-		// $ node cli.mjs build
-		ctx.flags.production; // => false
-		ctx.flags.watch; // => false
-	})
-	.parse();
+    // $ node cli.mjs build
+    ctx.flags.production; // => false
+    ctx.flags.watch; // => false
+  })
+  .parse();
 ```
 
 #### Boolean's Negatable Property
@@ -89,37 +89,37 @@ The Boolean type supports a `negatable` property that allows you to decide wheth
 
 ```ts
 const cli = Cli()
-	.command("start", "Start the application", {
-		flags: {
-			color: {
-				type: Boolean,
-				negatable: true, // default
-				description: "Enable color output",
-				default: true,
-			},
+  .command("start", "Start the application", {
+    flags: {
+      color: {
+        type: Boolean,
+        negatable: true, // default
+        description: "Enable color output",
+        default: true,
+      },
 
-			cache: {
-				type: Boolean,
-				negatable: false, // disable negation form
-				description: "Enable caching",
-				default: true,
-			},
-		},
-	})
-	.on("start", (ctx) => {
-		// $ node cli.mjs start
-		ctx.flags.color; // => true
-		ctx.flags.cache; // => true
+      cache: {
+        type: Boolean,
+        negatable: false, // disable negation form
+        description: "Enable caching",
+        default: true,
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    // $ node cli.mjs start
+    ctx.flags.color; // => true
+    ctx.flags.cache; // => true
 
-		// $ node cli.mjs start --no-color --no-cache
-		ctx.flags.color; // => false
-		ctx.flags.cache; // => true
+    // $ node cli.mjs start --no-color --no-cache
+    ctx.flags.color; // => false
+    ctx.flags.cache; // => true
 
-		// You must use --cache=false to disable caching
-		// $ node cli.mjs start --cache=false
-		ctx.flags.cache; // => false
-	})
-	.parse();
+    // You must use --cache=false to disable caching
+    // $ node cli.mjs start --cache=false
+    ctx.flags.cache; // => false
+  })
+  .parse();
 ```
 
 ### Array Type
@@ -130,33 +130,33 @@ The `Array` type is used for flags and parameters that accept multiple values. D
 
 ```ts
 const cli = Cli()
-	.command("copy", "Copy files", {
-		flags: {
-			// Use [String] to accept multiple string values
-			include: {
-				type: [String],
-				short: "i",
-				description: "File patterns to include",
-			},
+  .command("copy", "Copy files", {
+    flags: {
+      // Use [String] to accept multiple string values
+      include: {
+        type: [String],
+        short: "i",
+        description: "File patterns to include",
+      },
 
-			// Use [Number] to accept multiple numeric values
-			ports: {
-				type: [Number],
-				short: "p",
-				description: "Ports to listen on",
-			},
-		},
-	})
-	.on("copy", (ctx) => {
-		// $ node cli.mjs copy -i "*.js" -i "*.ts" -p 3000 -p 3001
-		ctx.flags.include; // => ["*.js", "*.ts"]
-		ctx.flags.ports; // => [3000, 3001]
+      // Use [Number] to accept multiple numeric values
+      ports: {
+        type: [Number],
+        short: "p",
+        description: "Ports to listen on",
+      },
+    },
+  })
+  .on("copy", (ctx) => {
+    // $ node cli.mjs copy -i "*.js" -i "*.ts" -p 3000 -p 3001
+    ctx.flags.include; // => ["*.js", "*.ts"]
+    ctx.flags.ports; // => [3000, 3001]
 
-		// $ node cli.mjs copy
-		ctx.flags.include; // => []
-		ctx.flags.ports; // => []
-	})
-	.parse();
+    // $ node cli.mjs copy
+    ctx.flags.include; // => []
+    ctx.flags.ports; // => []
+  })
+  .parse();
 ```
 
 ### Counter Type
@@ -167,30 +167,30 @@ The counter type is used to count how many times a flag is specified. This can b
 
 ```ts
 const cli = Cli()
-	.command("log", "Display logs", {
-		flags: {
-			// [Boolean] type counts how many times the flag is used
-			verbose: {
-				type: [Boolean],
-				short: "v",
-				description: "Verbosity level (-v, -vv, -vvv)",
-			},
-		},
-	})
-	.on("log", (ctx) => {
-		// $ node cli.mjs log -v
-		ctx.flags.verbose; // => 1
+  .command("log", "Display logs", {
+    flags: {
+      // [Boolean] type counts how many times the flag is used
+      verbose: {
+        type: [Boolean],
+        short: "v",
+        description: "Verbosity level (-v, -vv, -vvv)",
+      },
+    },
+  })
+  .on("log", (ctx) => {
+    // $ node cli.mjs log -v
+    ctx.flags.verbose; // => 1
 
-		// $ node cli.mjs log -vvv
-		ctx.flags.verbose; // => 3
+    // $ node cli.mjs log -vvv
+    ctx.flags.verbose; // => 3
 
-		// $ node cli.mjs log -v -v -v
-		ctx.flags.verbose; // => 3
+    // $ node cli.mjs log -v -v -v
+    ctx.flags.verbose; // => 3
 
-		// $ node cli.mjs log
-		ctx.flags.verbose; // => 0
-	})
-	.parse();
+    // $ node cli.mjs log
+    ctx.flags.verbose; // => 0
+  })
+  .parse();
 ```
 
 ### Object Type
@@ -201,23 +201,23 @@ The `Object` type is used for flags that accept key-value pairs. Use dots or oth
 
 ```ts
 const cli = Cli()
-	.command("config", "Configure the application", {
-		flags: {
-			define: {
-				type: Object,
-				short: "d",
-				description: "Define environment variables",
-			},
-		},
-	})
-	.on("config", (ctx) => {
-		// $ node cli.mjs config --define.apiUrl http://api.example.com --define.debug
-		ctx.flags.define; // => { apiUrl: "http://api.example.com", debug: true }
+  .command("config", "Configure the application", {
+    flags: {
+      define: {
+        type: Object,
+        short: "d",
+        description: "Define environment variables",
+      },
+    },
+  })
+  .on("config", (ctx) => {
+    // $ node cli.mjs config --define.apiUrl http://api.example.com --define.debug
+    ctx.flags.define; // => { apiUrl: "http://api.example.com", debug: true }
 
-		// $ node cli.mjs config
-		ctx.flags.define; // => {}
-	})
-	.parse();
+    // $ node cli.mjs config
+    ctx.flags.define; // => {}
+  })
+  .parse();
 ```
 
 :::info
@@ -246,29 +246,29 @@ These type functions can be used for both flags and parameters, allowing you to 
 import { Types } from "clerc";
 
 Cli()
-	.command("serve", "Start the server", {
-		flags: {
-			mode: {
-				type: Types.Enum("development", "production", "test"),
-				default: "development" as const,
-				description: "Set the application mode",
-			},
-		},
-		parameters: [
-			{
-				key: "[port]",
-				type: Types.Range(1024, 65_535),
-				description: "Port number",
-			},
-		],
-	})
-	.on("serve", (ctx) => {
-		ctx.flags.mode;
-		//        ^?
-		ctx.parameters.port;
-		//             ^?
-	})
-	.parse();
+  .command("serve", "Start the server", {
+    flags: {
+      mode: {
+        type: Types.Enum("development", "production", "test"),
+        default: "development" as const,
+        description: "Set the application mode",
+      },
+    },
+    parameters: [
+      {
+        key: "[port]",
+        type: Types.Range(1024, 65_535),
+        description: "Port number",
+      },
+    ],
+  })
+  .on("serve", (ctx) => {
+    ctx.flags.mode;
+    //        ^?
+    ctx.parameters.port;
+    //             ^?
+  })
+  .parse();
 ```
 
 ### Enum Type
@@ -279,32 +279,32 @@ Restrict flag or parameter values to a predefined set of options:
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("build-cli")
-	.description("Build tool")
-	.version("1.0.0")
-	.command("config", "Configure build settings", {
-		flags: {
-			format: {
-				type: Types.Enum("json", "yaml", "toml"),
-				description: "Output format",
-			},
-		},
-		parameters: [
-			{
-				key: "<setting>",
-				type: Types.Enum("output", "target", "format"),
-				description: "Setting name",
-			},
-			{
-				key: "<value>",
-				description: "Setting value",
-			},
-		],
-	})
-	.on("config", (ctx) => {
-		console.log(`Setting ${ctx.parameters.setting} = ${ctx.parameters.value}`);
-	})
-	.parse();
+  .scriptName("build-cli")
+  .description("Build tool")
+  .version("1.0.0")
+  .command("config", "Configure build settings", {
+    flags: {
+      format: {
+        type: Types.Enum("json", "yaml", "toml"),
+        description: "Output format",
+      },
+    },
+    parameters: [
+      {
+        key: "<setting>",
+        type: Types.Enum("output", "target", "format"),
+        description: "Setting name",
+      },
+      {
+        key: "<value>",
+        description: "Setting value",
+      },
+    ],
+  })
+  .on("config", (ctx) => {
+    console.log(`Setting ${ctx.parameters.setting} = ${ctx.parameters.value}`);
+  })
+  .parse();
 ```
 
 Usage:
@@ -324,29 +324,29 @@ Restrict numeric values to a specific range and convert to numbers:
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("server-cli")
-	.description("Server management tool")
-	.version("1.0.0")
-	.command("start", "Start the server", {
-		flags: {
-			port: {
-				type: Types.Range(1024, 65_535),
-				description: "Port number",
-			},
-		},
-		parameters: [
-			{
-				key: "[timeout]",
-				type: Types.Range(1, 3600),
-				description: "Timeout in seconds",
-			},
-		],
-	})
-	.on("start", (ctx) => {
-		const port = ctx.flags.port ?? 3000;
-		console.log(`Starting server on port ${port}`);
-	})
-	.parse();
+  .scriptName("server-cli")
+  .description("Server management tool")
+  .version("1.0.0")
+  .command("start", "Start the server", {
+    flags: {
+      port: {
+        type: Types.Range(1024, 65_535),
+        description: "Port number",
+      },
+    },
+    parameters: [
+      {
+        key: "[timeout]",
+        type: Types.Range(1, 3600),
+        description: "Timeout in seconds",
+      },
+    ],
+  })
+  .on("start", (ctx) => {
+    const port = ctx.flags.port ?? 3000;
+    console.log(`Starting server on port ${port}`);
+  })
+  .parse();
 ```
 
 Usage:
@@ -366,22 +366,22 @@ Validate values against a regular expression pattern:
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("git-clone")
-	.description("Clone repository")
-	.version("1.0.0")
-	.command("clone", "Clone a repository", {
-		parameters: [
-			{
-				key: "<repo>",
-				type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
-				description: "Repository in owner/repo format",
-			},
-		],
-	})
-	.on("clone", (ctx) => {
-		console.log(`Cloning ${ctx.parameters.repo}`);
-	})
-	.parse();
+  .scriptName("git-clone")
+  .description("Clone repository")
+  .version("1.0.0")
+  .command("clone", "Clone a repository", {
+    parameters: [
+      {
+        key: "<repo>",
+        type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
+        description: "Repository in owner/repo format",
+      },
+    ],
+  })
+  .on("clone", (ctx) => {
+    console.log(`Cloning ${ctx.parameters.repo}`);
+  })
+  .parse();
 ```
 
 Usage:
@@ -404,29 +404,29 @@ Custom type functions can include an optional `display` property that provides a
 ```ts
 // Custom type function that parses a comma-separated string into an array of strings
 const CommaSeparatedList = (value: string): string[] =>
-	value.split(",").map((item) => item.trim());
+  value.split(",").map((item) => item.trim());
 
 // Add a display property for better help documentation
 CommaSeparatedList.display = "item1,item2,...";
 
 const cli = Cli()
-	.scriptName("custom-cli")
-	.description("A CLI using a custom type")
-	.version("1.0.0")
-	.command("list", "Display list", {
-		flags: {
-			items: {
-				type: CommaSeparatedList,
-				default: [] as string[],
-				description: "Comma-separated list of strings",
-			},
-		},
-	})
-	.on("list", (ctx) => {
-		console.log("Items:", ctx.flags.items);
-		//                              ^?
-	})
-	.parse();
+  .scriptName("custom-cli")
+  .description("A CLI using a custom type")
+  .version("1.0.0")
+  .command("list", "Display list", {
+    flags: {
+      items: {
+        type: CommaSeparatedList,
+        default: [] as string[],
+        description: "Comma-separated list of strings",
+      },
+    },
+  })
+  .on("list", (ctx) => {
+    console.log("Items:", ctx.flags.items);
+    //                              ^?
+  })
+  .parse();
 ```
 
 The `display` property is used by the help system to show a more descriptive type name instead of the function name. For example, instead of showing "CommaSeparatedList" in the help output, it would show "item1,item2,...".
@@ -436,47 +436,47 @@ The `display` property is used by the help system to show a more descriptive typ
 ```ts
 // Custom type function that parses a comma-separated string into an array of strings
 const CommaSeparatedList = (value: string): string[] =>
-	value.split(",").map((item) => item.trim());
+  value.split(",").map((item) => item.trim());
 
 const cli = Cli()
-	.scriptName("custom-cli")
-	.description("A CLI using a custom type")
-	.version("1.0.0")
-	.command("list", "Display list", {
-		flags: {
-			items: {
-				type: CommaSeparatedList,
-				default: [] as string[],
-				description: "Comma-separated list of strings",
-			},
-		},
-	})
-	.on("list", (ctx) => {
-		console.log("Items:", ctx.flags.items);
-		//                              ^?
-	})
-	.parse();
+  .scriptName("custom-cli")
+  .description("A CLI using a custom type")
+  .version("1.0.0")
+  .command("list", "Display list", {
+    flags: {
+      items: {
+        type: CommaSeparatedList,
+        default: [] as string[],
+        description: "Comma-separated list of strings",
+      },
+    },
+  })
+  .on("list", (ctx) => {
+    console.log("Items:", ctx.flags.items);
+    //                              ^?
+  })
+  .parse();
 ```
 
 Custom type functions can also be used with array syntax to accept multiple values:
 
 ```ts
 const cli = Cli()
-	.command("process", "Process files", {
-		flags: {
-			// Use [CommaSeparatedList] to accept multiple comma-separated lists
-			patterns: {
-				type: [CommaSeparatedList],
-				short: "p",
-				description: "File patterns (comma-separated)",
-			},
-		},
-	})
-	.on("process", (ctx) => {
-		// $ node cli.mjs process -p "*.js,*.ts" -p "src/**"
-		ctx.flags.patterns; // => [["*.js", "*.ts"], ["src/**"]]
-	})
-	.parse();
+  .command("process", "Process files", {
+    flags: {
+      // Use [CommaSeparatedList] to accept multiple comma-separated lists
+      patterns: {
+        type: [CommaSeparatedList],
+        short: "p",
+        description: "File patterns (comma-separated)",
+      },
+    },
+  })
+  .on("process", (ctx) => {
+    // $ node cli.mjs process -p "*.js,*.ts" -p "src/**"
+    ctx.flags.patterns; // => [["*.js", "*.ts"], ["src/**"]]
+  })
+  .parse();
 ```
 
 ### Using Custom Types with Parameters
@@ -486,40 +486,40 @@ Custom type functions with display properties can also be used for parameters, p
 ```ts
 // Custom type function for parsing version numbers
 function Version(value: string): string {
-	if (!/^\d+\.\d+\.\d+$/.test(value)) {
-		throw new Error(`Invalid version format: ${value}. Expected format: x.y.z`);
-	}
+  if (!/^\d+\.\d+\.\d+$/.test(value)) {
+    throw new Error(`Invalid version format: ${value}. Expected format: x.y.z`);
+  }
 
-	return value;
+  return value;
 }
 
 // Add display property for help documentation
 Version.display = "x.y.z";
 
 const cli = Cli()
-	.scriptName("release-cli")
-	.description("Release management tool")
-	.version("1.0.0")
-	.command("publish", "Publish a new version", {
-		parameters: [
-			{
-				key: "<version>",
-				type: Version,
-				description: "Version number to publish",
-			},
-			{
-				key: "[channel]",
-				type: Types.Enum("stable", "beta", "alpha"),
-				description: "Release channel",
-			},
-		],
-	})
-	.on("publish", (ctx) => {
-		console.log(
-			`Publishing version ${ctx.parameters.version} to ${ctx.parameters.channel || "stable"} channel`,
-		);
-	})
-	.parse();
+  .scriptName("release-cli")
+  .description("Release management tool")
+  .version("1.0.0")
+  .command("publish", "Publish a new version", {
+    parameters: [
+      {
+        key: "<version>",
+        type: Version,
+        description: "Version number to publish",
+      },
+      {
+        key: "[channel]",
+        type: Types.Enum("stable", "beta", "alpha"),
+        description: "Release channel",
+      },
+    ],
+  })
+  .on("publish", (ctx) => {
+    console.log(
+      `Publishing version ${ctx.parameters.version} to ${ctx.parameters.channel || "stable"} channel`,
+    );
+  })
+  .parse();
 ```
 
 In the help output, instead of showing "Version" as the type, it will show "x.y.z", making it clearer what format is expected.

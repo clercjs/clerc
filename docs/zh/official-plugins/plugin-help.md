@@ -46,15 +46,15 @@ import { helpPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(helpPlugin()) // 添加帮助插件
-	.command("hello", "问候命令")
-	.on("hello", (ctx) => {
-		console.log("Hello, World!");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(helpPlugin()) // 添加帮助插件
+  .command("hello", "问候命令")
+  .on("hello", (ctx) => {
+    console.log("Hello, World!");
+  })
+  .parse();
 ```
 
 ## 运行效果
@@ -91,45 +91,45 @@ $ node my-cli help hello
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			groups: {
-				commands: [
-					["dev", "开发命令"],
-					["build", "构建命令"],
-					["test", "测试命令"],
-				],
-				flags: [
-					["input", "输入选项"],
-					["output", "输出选项"],
-					["config", "配置选项"],
-				],
-				globalFlags: [
-					["help", "帮助选项"],
-					["version", "版本选项"],
-				],
-			},
-		}),
-	)
-	.command("dev", "启动开发服务器", {
-		help: {
-			group: "dev", // 分配到 "dev" 组
-		},
-	})
-	.command("build", "构建应用程序", {
-		help: {
-			group: "build", // 分配到 "build" 组
-		},
-	})
-	.command("test", "运行测试", {
-		help: {
-			group: "test", // 分配到 "test" 组
-		},
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      groups: {
+        commands: [
+          ["dev", "开发命令"],
+          ["build", "构建命令"],
+          ["test", "测试命令"],
+        ],
+        flags: [
+          ["input", "输入选项"],
+          ["output", "输出选项"],
+          ["config", "配置选项"],
+        ],
+        globalFlags: [
+          ["help", "帮助选项"],
+          ["version", "版本选项"],
+        ],
+      },
+    }),
+  )
+  .command("dev", "启动开发服务器", {
+    help: {
+      group: "dev", // 分配到 "dev" 组
+    },
+  })
+  .command("build", "构建应用程序", {
+    help: {
+      group: "build", // 分配到 "build" 组
+    },
+  })
+  .command("test", "运行测试", {
+    help: {
+      group: "test", // 分配到 "test" 组
+    },
+  })
+  .parse();
 ```
 
 ### 自定义命令帮助信息
@@ -138,24 +138,24 @@ const cli = Clerc.create()
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(helpPlugin())
-	.command("deploy", "部署命令", {
-		help: {
-			showInHelp: true, // 在帮助信息中显示此命令
-			notes: [
-				"这是一个用于部署应用程序的命令。",
-				"你可以使用不同的选项来控制部署行为。",
-			],
-			examples: [
-				["my-cli deploy --env production", "部署到生产环境"],
-				["my-cli deploy --env staging --force", "部署到暂存环境并强制执行"],
-			],
-		},
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(helpPlugin())
+  .command("deploy", "部署命令", {
+    help: {
+      showInHelp: true, // 在帮助信息中显示此命令
+      notes: [
+        "这是一个用于部署应用程序的命令。",
+        "你可以使用不同的选项来控制部署行为。",
+      ],
+      examples: [
+        ["my-cli deploy --env production", "部署到生产环境"],
+        ["my-cli deploy --env staging --force", "部署到暂存环境并强制执行"],
+      ],
+    },
+  })
+  .parse();
 ```
 
 ### 插件选项
@@ -164,37 +164,37 @@ const cli = Clerc.create()
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			command: true, // 启用 help 命令
-			flag: true, // 启用 --help 全局选项
-			showHelpWhenNoCommandSpecified: true, // 当没有指定命令时显示帮助信息
-			notes: [
-				"欢迎使用我的 CLI 应用程序！",
-				"使用 --help 查看可用命令和选项。",
-			],
-			examples: [
-				["my-cli --help", "显示帮助信息"],
-				["my-cli hello", "执行问候命令"],
-			],
-			header: "欢迎使用 My CLI 应用程序！", // 自定义头部信息
-			footer: "感谢使用 My CLI 应用程序！", // 自定义尾部信息
-			formatters: {
-				// 自定义类型格式化函数
-				formatTypeValue: (type) => {
-					if (typeof type === "function") {
-						return type.name;
-					}
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      command: true, // 启用 help 命令
+      flag: true, // 启用 --help 全局选项
+      showHelpWhenNoCommandSpecified: true, // 当没有指定命令时显示帮助信息
+      notes: [
+        "欢迎使用我的 CLI 应用程序！",
+        "使用 --help 查看可用命令和选项。",
+      ],
+      examples: [
+        ["my-cli --help", "显示帮助信息"],
+        ["my-cli hello", "执行问候命令"],
+      ],
+      header: "欢迎使用 My CLI 应用程序！", // 自定义头部信息
+      footer: "感谢使用 My CLI 应用程序！", // 自定义尾部信息
+      formatters: {
+        // 自定义类型格式化函数
+        formatTypeValue: (type) => {
+          if (typeof type === "function") {
+            return type.name;
+          }
 
-					return `Array<${type[0].name}>`;
-				},
-			},
-		}),
-	)
-	.parse();
+          return `Array<${type[0].name}>`;
+        },
+      },
+    }),
+  )
+  .parse();
 ```
 
 ### 使用 cli.store.help
@@ -203,43 +203,43 @@ const cli = Clerc.create()
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(
-		helpPlugin({
-			groups: {
-				commands: [
-					["dev", "开发命令"],
-					["build", "构建命令"],
-				],
-				flags: [
-					["input", "输入选项"],
-					["output", "输出选项"],
-				],
-			},
-		}),
-	)
-	.command("dev", "启动开发服务器", {
-		help: {
-			group: "dev", // 分配到 "dev" 组
-		},
-	})
-	.command("build", "构建应用程序", {
-		help: {
-			group: "build", // 分配到 "build" 组
-		},
-	})
-	.on("dev", (ctx) => {
-		console.log("开发服务器已启动");
-	})
-	.on("build", (ctx) => {
-		console.log("应用程序已构建");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(
+    helpPlugin({
+      groups: {
+        commands: [
+          ["dev", "开发命令"],
+          ["build", "构建命令"],
+        ],
+        flags: [
+          ["input", "输入选项"],
+          ["output", "输出选项"],
+        ],
+      },
+    }),
+  )
+  .command("dev", "启动开发服务器", {
+    help: {
+      group: "dev", // 分配到 "dev" 组
+    },
+  })
+  .command("build", "构建应用程序", {
+    help: {
+      group: "build", // 分配到 "build" 组
+    },
+  })
+  .on("dev", (ctx) => {
+    console.log("开发服务器已启动");
+  })
+  .on("build", (ctx) => {
+    console.log("应用程序已构建");
+  })
+  .parse();
 
 cli.store.help.addGroup({
-	commands: [["test", "测试命令"]],
+  commands: [["test", "测试命令"]],
 });
 ```
 

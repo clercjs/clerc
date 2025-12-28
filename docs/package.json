@@ -1,23 +1,23 @@
 {
-	"name": "clerc-docs",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"build": "pnpm generate && vitepress build",
-		"dev": "vitepress dev",
-		"generate": "node .vitepress/scripts/generate-reference.ts",
-		"preview": "vitepress preview",
-		"typecheck": "vue-tsc"
-	},
-	"devDependencies": {
-		"@shikijs/vitepress-twoslash": "catalog:docs",
-		"oxc-minify": "catalog:docs",
-		"typedoc": "catalog:docs",
-		"typedoc-plugin-markdown": "catalog:docs",
-		"typedoc-vitepress-theme": "catalog:docs",
-		"unocss": "catalog:docs",
-		"vitepress": "catalog:docs",
-		"vitepress-plugin-group-icons": "catalog:docs",
-		"vue-tsc": "catalog:docs"
-	}
+  "name": "clerc-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm generate && vitepress build",
+    "dev": "vitepress dev",
+    "generate": "node .vitepress/scripts/generate-reference.ts",
+    "preview": "vitepress preview",
+    "typecheck": "vue-tsc"
+  },
+  "devDependencies": {
+    "@shikijs/vitepress-twoslash": "catalog:docs",
+    "oxc-minify": "catalog:docs",
+    "typedoc": "catalog:docs",
+    "typedoc-plugin-markdown": "catalog:docs",
+    "typedoc-vitepress-theme": "catalog:docs",
+    "unocss": "catalog:docs",
+    "vitepress": "catalog:docs",
+    "vitepress-plugin-group-icons": "catalog:docs",
+    "vue-tsc": "catalog:docs"
+  }
 }

@@ -18,18 +18,18 @@ title: 插件
 import { definePlugin } from "clerc";
 
 const plugin = definePlugin({
-	setup: (cli) =>
-		cli.command("foo", "一个 foo 命令").on("foo", (ctx) => {
-			console.log("It works!");
-		}),
+  setup: (cli) =>
+    cli.command("foo", "一个 foo 命令").on("foo", (ctx) => {
+      console.log("It works!");
+    }),
 });
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.use(plugin)
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .use(plugin)
+  .parse();
 ```
 
 ## 开发方法
@@ -40,12 +40,12 @@ const cli = Cli()
 import { definePlugin } from "clerc";
 
 export const myPlugin = definePlugin({
-	setup: (cli) => {
-		// 在这里对 cli 进行扩展
-		return cli.command("bar", "一个 bar 命令").on("bar", (ctx) => {
-			console.log("Bar command executed!");
-		});
-	},
+  setup: (cli) => {
+    // 在这里对 cli 进行扩展
+    return cli.command("bar", "一个 bar 命令").on("bar", (ctx) => {
+      console.log("Bar command executed!");
+    });
+  },
 });
 ```
 
@@ -55,20 +55,20 @@ export const myPlugin = definePlugin({
 
 ```ts
 declare module "@clerc/core" {
-	// 为命令添加自定义类型
-	export interface CommandCustomOptions {
-		foo: string;
-	}
+  // 为命令添加自定义类型
+  export interface CommandCustomOptions {
+    foo: string;
+  }
 
-	// 为选项添加自定义类型
-	export interface FlagCustomOptions {
-		foo: string;
-	}
+  // 为选项添加自定义类型
+  export interface FlagCustomOptions {
+    foo: string;
+  }
 
-	// 为参数添加自定义类型
-	export interface ParameterCustomOptions {
-		foo: string;
-	}
+  // 为参数添加自定义类型
+  export interface ParameterCustomOptions {
+    foo: string;
+  }
 }
 ```
 

@@ -10,16 +10,16 @@ Clerc supports registering an error handler function to handle errors that occur
 
 ```ts
 Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.errorHandler((error: any) => {
-		console.error("An error occurred:", error.message);
-		// You can perform other actions as needed, such as logging the error or cleaning up resources
-	})
-	.command("run", "Run the application")
-	.on("run", (ctx) => {
-		throw new Error("Testing error handling");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .errorHandler((error: any) => {
+    console.error("An error occurred:", error.message);
+    // You can perform other actions as needed, such as logging the error or cleaning up resources
+  })
+  .command("run", "Run the application")
+  .on("run", (ctx) => {
+    throw new Error("Testing error handling");
+  })
+  .parse();
 ```

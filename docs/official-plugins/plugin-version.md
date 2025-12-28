@@ -46,11 +46,11 @@ import { versionPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("My CLI application")
-	.version("1.0.0")
-	.use(versionPlugin()) // Add version plugin
-	.parse();
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(versionPlugin()) // Add version plugin
+  .parse();
 ```
 
 ## Running Effect

@@ -1,9 +1,9 @@
 {
-	"extends": "../tsconfig.base.json",
-	"compilerOptions": {
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"types": ["vitepress/client"]
-	},
-	"include": [".vitepress/**/*.ts", ".vitepress/**/*.vue", "uno.config.ts"]
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "types": ["vitepress/client"]
+  },
+  "include": [".vitepress/**/*.ts", ".vitepress/**/*.vue", "uno.config.ts"]
 }

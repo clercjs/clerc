@@ -5,41 +5,41 @@ import { mockConsole } from "vitest-console";
 import { versionPlugin } from "../src";
 
 describe("plugin-version", () => {
-	const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
+  const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
 
-	afterEach(clearConsole);
+  afterEach(clearConsole);
 
-	afterAll(restoreConsole);
+  afterAll(restoreConsole);
 
-	it("should show version command output", () => {
-		TestBaseCli().use(versionPlugin()).parse(["version"]);
+  it("should show version command output", () => {
+    TestBaseCli().use(versionPlugin()).parse(["version"]);
 
-		expect(console).toHaveLoggedWith("v0.0.0");
-	});
+    expect(console).toHaveLoggedWith("v0.0.0");
+  });
 
-	it("should show version flag output", () => {
-		TestBaseCli().use(versionPlugin()).parse(["--version"]);
+  it("should show version flag output", () => {
+    TestBaseCli().use(versionPlugin()).parse(["--version"]);
 
-		expect(console).toHaveLoggedWith("v0.0.0");
-	});
+    expect(console).toHaveLoggedWith("v0.0.0");
+  });
 
-	it('should be able to disable command with "command: false"', async () => {
-		await expect(
-			TestBaseCli()
-				.use(versionPlugin({ command: false }))
-				.parse(["version"]),
-		).rejects.toThrowError('No such command: "version".');
+  it('should be able to disable command with "command: false"', async () => {
+    await expect(
+      TestBaseCli()
+        .use(versionPlugin({ command: false }))
+        .parse(["version"]),
+    ).rejects.toThrowError('No such command: "version".');
 
-		expect(console).not.toHaveLogged();
-	});
+    expect(console).not.toHaveLogged();
+  });
 
-	it('should be able to disable flag with "flag: false"', async () => {
-		await expect(
-			TestBaseCli()
-				.use(versionPlugin({ flag: false }))
-				.parse(["--version"]),
-		).rejects.toThrowError("No command specified.");
+  it('should be able to disable flag with "flag: false"', async () => {
+    await expect(
+      TestBaseCli()
+        .use(versionPlugin({ flag: false }))
+        .parse(["--version"]),
+    ).rejects.toThrowError("No command specified.");
 
-		expect(console).not.toHaveLogged();
-	});
+    expect(console).not.toHaveLogged();
+  });
 });

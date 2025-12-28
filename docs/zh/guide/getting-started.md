@@ -46,23 +46,23 @@ $ pnpm add clerc
 import { Cli } from "clerc";
 
 Cli() // 创建一个新的 CLI，内置帮助和版本插件
-	.name("foo") // 可选，CLI 可读名称
-	.scriptName("foo") // CLI 脚本名称 (用于运行 CLI 的命令)
-	.description("一个 foo CLI") // CLI 描述
-	.version("0.0.0") // CLI 版本
-	.command(
-		"bar", // 命令名称
-		"A bar command", // 命令描述
-	)
-	.on(
-		"bar",
-		(
-			_ctx, // 命令上下文，但我们还没有使用它
-		) => {
-			console.log("Hello, world from Clerc.js!");
-		},
-	)
-	.parse(); // 解析参数并运行！
+  .name("foo") // 可选，CLI 可读名称
+  .scriptName("foo") // CLI 脚本名称 (用于运行 CLI 的命令)
+  .description("一个 foo CLI") // CLI 描述
+  .version("0.0.0") // CLI 版本
+  .command(
+    "bar", // 命令名称
+    "A bar command", // 命令描述
+  )
+  .on(
+    "bar",
+    (
+      _ctx, // 命令上下文，但我们还没有使用它
+    ) => {
+      console.log("Hello, world from Clerc.js!");
+    },
+  )
+  .parse(); // 解析参数并运行！
 ```
 
 然后运行：`node cli.mjs bar`。它应该在您的 shell 中输出：`Hello, world from Clerc.js!`

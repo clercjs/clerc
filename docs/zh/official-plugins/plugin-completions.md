@@ -38,19 +38,19 @@ import { completionsPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(completionsPlugin()) // 添加自动补全插件
-	.command("start", "启动服务")
-	.on("start", (ctx) => {
-		console.log("服务已启动");
-	})
-	.command("stop", "停止服务")
-	.on("stop", (ctx) => {
-		console.log("服务已停止");
-	})
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(completionsPlugin()) // 添加自动补全插件
+  .command("start", "启动服务")
+  .on("start", (ctx) => {
+    console.log("服务已启动");
+  })
+  .command("stop", "停止服务")
+  .on("stop", (ctx) => {
+    console.log("服务已停止");
+  })
+  .parse();
 ```
 
 ### 运行效果

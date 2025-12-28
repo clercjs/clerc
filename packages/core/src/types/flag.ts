@@ -3,7 +3,7 @@ import type { FlagOptions, TypeValue } from "@clerc/parser";
 export declare interface FlagCustomOptions {}
 
 export type ClercFlagOptions = FlagOptions & {
-	description?: string;
+  description?: string;
 } & FlagCustomOptions;
 
 export type ClercFlagDefinitionValue = ClercFlagOptions | TypeValue;

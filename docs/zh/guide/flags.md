@@ -33,30 +33,30 @@ _Clerc_ 的选项解析由 [`@clerc/parser`](https://github.com/clercjs/clerc/bl
 
 ```ts
 const cli = Cli()
-	.command("build", "构建项目", {
-		flags: {
-			output: {
-				type: String,
-				short: "o",
-				description: "输出目录",
-			},
+  .command("build", "构建项目", {
+    flags: {
+      output: {
+        type: String,
+        short: "o",
+        description: "输出目录",
+      },
 
-			verbose: {
-				type: Boolean,
-				short: "v",
-				description: "启用详细输出",
-			},
-		},
-	})
-	.on("build", (ctx) => {
-		// $ node cli.mjs build --output dist
-		// $ node cli.mjs build -o dist
-		// 两者的工作方式相同
-		// $ node cli.mjs build --verbose
-		// $ node cli.mjs build -v
-		// 两者都启用详细输出
-	})
-	.parse();
+      verbose: {
+        type: Boolean,
+        short: "v",
+        description: "启用详细输出",
+      },
+    },
+  })
+  .on("build", (ctx) => {
+    // $ node cli.mjs build --output dist
+    // $ node cli.mjs build -o dist
+    // 两者的工作方式相同
+    // $ node cli.mjs build --verbose
+    // $ node cli.mjs build -v
+    // 两者都启用详细输出
+  })
+  .parse();
 ```
 
 ### 验证规则
@@ -70,34 +70,34 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("compress", "压缩文件", {
-		flags: {
-			output: {
-				type: String,
-				short: "o",
-				description: "输出文件",
-			},
+  .command("compress", "压缩文件", {
+    flags: {
+      output: {
+        type: String,
+        short: "o",
+        description: "输出文件",
+      },
 
-			verbose: {
-				type: Boolean,
-				short: "v",
-				description: "详细输出",
-			},
+      verbose: {
+        type: Boolean,
+        short: "v",
+        description: "详细输出",
+      },
 
-			recursive: {
-				type: Boolean,
-				short: "r",
-				description: "递归模式",
-			},
-		},
-	})
-	.on("compress", (ctx) => {
-		// $ node cli.mjs compress -vrh input.zip
-		// 等同于：
-		// $ node cli.mjs compress -v -r -h input.zip
-		// 这设置了：verbose = true，recursive = true，并将 "input.zip" 作为参数传递
-	})
-	.parse();
+      recursive: {
+        type: Boolean,
+        short: "r",
+        description: "递归模式",
+      },
+    },
+  })
+  .on("compress", (ctx) => {
+    // $ node cli.mjs compress -vrh input.zip
+    // 等同于：
+    // $ node cli.mjs compress -v -r -h input.zip
+    // 这设置了：verbose = true，recursive = true，并将 "input.zip" 作为参数传递
+  })
+  .parse();
 ```
 
 ## 标志描述
@@ -106,20 +106,20 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("build", "构建项目", {
-		flags: {
-			verbose: {
-				type: Boolean,
-				// 描述是可选的
-			},
+  .command("build", "构建项目", {
+    flags: {
+      verbose: {
+        type: Boolean,
+        // 描述是可选的
+      },
 
-			output: {
-				type: String,
-				description: "输出目录", // 或包含它以获得更好的文档
-			},
-		},
-	})
-	.parse();
+      output: {
+        type: String,
+        description: "输出目录", // 或包含它以获得更好的文档
+      },
+    },
+  })
+  .parse();
 ```
 
 ## 必需的选项
@@ -128,20 +128,20 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("deploy", "部署应用程序", {
-		flags: {
-			env: {
-				type: String,
-				description: "部署环境",
-				required: true, // 这个选项是必需的
-			},
-		},
-	})
-	.on("deploy", (ctx) => {
-		ctx.flags.env; // 这将始终有一个值
-		//        ^?
-	})
-	.parse();
+  .command("deploy", "部署应用程序", {
+    flags: {
+      env: {
+        type: String,
+        description: "部署环境",
+        required: true, // 这个选项是必需的
+      },
+    },
+  })
+  .on("deploy", (ctx) => {
+    ctx.flags.env; // 这将始终有一个值
+    //        ^?
+  })
+  .parse();
 ```
 
 ## 默认值
@@ -150,20 +150,20 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("serve", "启动服务器", {
-		flags: {
-			port: {
-				type: Number,
-				description: "端口号",
-				default: 3000, // 默认端口是 3000
-			},
-		},
-	})
-	.on("serve", (ctx) => {
-		ctx.flags.port; // 如果未提供，则默认为 3000
-		//        ^?
-	})
-	.parse();
+  .command("serve", "启动服务器", {
+    flags: {
+      port: {
+        type: Number,
+        description: "端口号",
+        default: 3000, // 默认端口是 3000
+      },
+    },
+  })
+  .on("serve", (ctx) => {
+    ctx.flags.port; // 如果未提供，则默认为 3000
+    //        ^?
+  })
+  .parse();
 ```
 
 :::warning

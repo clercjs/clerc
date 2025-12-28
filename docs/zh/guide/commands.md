@@ -10,14 +10,14 @@ title: 命令
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令")
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令")
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 这将创建一个名为 `foo-cli` 的 CLI 应用程序，其中包含一个名为 `foo` 的命令。当用户运行 `foo-cli foo` 时，CLI 将输出 "It works!"。
@@ -28,40 +28,40 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", {
-		// 无描述，直接传递选项
-		flags: {
-			output: {
-				type: String,
-				description: "输出文件",
-			},
-		},
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", {
+    // 无描述，直接传递选项
+    flags: {
+      output: {
+        type: String,
+        description: "输出文件",
+      },
+    },
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 或者，你也可以使用带有描述的传统语法：
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令", {
-		flags: {
-			output: {
-				type: String,
-				description: "输出文件",
-			},
-		},
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令", {
+    flags: {
+      output: {
+        type: String,
+        description: "输出文件",
+      },
+    },
+  })
+  .parse();
 ```
 
 ## 别名
@@ -76,16 +76,16 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令", {
-		alias: "f",
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令", {
+    alias: "f",
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 现在 `foo-cli foo` 和 `foo-cli f` 都会输出 "It works!"。
@@ -96,16 +96,16 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令", {
-		alias: ["f", "bar", "baz"],
-	})
-	.on("foo", (ctx) => {
-		console.log("It works!");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令", {
+    alias: ["f", "bar", "baz"],
+  })
+  .on("foo", (ctx) => {
+    console.log("It works!");
+  })
+  .parse();
 ```
 
 现在 `foo-cli foo`、`foo-cli f`、`foo-cli bar` 和 `foo-cli baz` 都以相同的方式工作。
@@ -116,26 +116,26 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("git")
-	.command("status", "显示工作树状态", {
-		alias: "st",
-	})
-	.on("status", (ctx) => {
-		console.log("在分支 main 上...");
-	})
-	.command("commit", "记录对存储库的更改", {
-		alias: ["ci", "com"],
-	})
-	.on("commit", (ctx) => {
-		console.log("提交更改...");
-	})
-	.command("checkout", "切换分支或恢复文件", {
-		alias: "co",
-	})
-	.on("checkout", (ctx) => {
-		console.log("检出中...");
-	})
-	.parse();
+  .scriptName("git")
+  .command("status", "显示工作树状态", {
+    alias: "st",
+  })
+  .on("status", (ctx) => {
+    console.log("在分支 main 上...");
+  })
+  .command("commit", "记录对存储库的更改", {
+    alias: ["ci", "com"],
+  })
+  .on("commit", (ctx) => {
+    console.log("提交更改...");
+  })
+  .command("checkout", "切换分支或恢复文件", {
+    alias: "co",
+  })
+  .on("checkout", (ctx) => {
+    console.log("检出中...");
+  })
+  .parse();
 ```
 
 使用：
@@ -155,14 +155,14 @@ $ git co
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("parent child", "一个子命令")
-	.on("parent child", (ctx) => {
-		console.log("子命令被调用了！");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("parent child", "一个子命令")
+  .on("parent child", (ctx) => {
+    console.log("子命令被调用了！");
+  })
+  .parse();
 ```
 
 ## 根命令
@@ -171,14 +171,14 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("", "根命令")
-	.on("", (ctx) => {
-		console.log("根命令被调用了！");
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("", "根命令")
+  .on("", (ctx) => {
+    console.log("根命令被调用了！");
+  })
+  .parse();
 ```
 
 ## 参数
@@ -205,24 +205,24 @@ const cli = Cli()
 // $ node ./foo-cli.mjs a b c d
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("foo", "一个 foo 命令", {
-		parameters: [
-			"<required parameter>",
-			"[optional parameter]",
-			"[optional spread...]",
-		],
-	})
-	.on("foo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.requiredParameter; // => "a"
-		ctx.parameters.optionalParameter; // => "b"
-		ctx.parameters.optionalSpread; // => ["c", "d"]
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("foo", "一个 foo 命令", {
+    parameters: [
+      "<required parameter>",
+      "[optional parameter]",
+      "[optional spread...]",
+    ],
+  })
+  .on("foo", (ctx) => {
+    ctx.parameters;
+    //  ^?
+    ctx.parameters.requiredParameter; // => "a"
+    ctx.parameters.optionalParameter; // => "b"
+    ctx.parameters.optionalSpread; // => ["c", "d"]
+  })
+  .parse();
 ```
 
 ### 结束标志
@@ -245,19 +245,19 @@ $ npm run <script> -- <script arguments>
 // $ node ./foo-cli.mjs echo -- hello world
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command("echo", "回显", {
-		parameters: ["<script>", "--", "[arguments...]"],
-	})
-	.on("echo", (ctx) => {
-		ctx.parameters;
-		//  ^?
-		ctx.parameters.script; // => "echo"
-		ctx.parameters.arguments; // => ["hello", "world"]
-	})
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command("echo", "回显", {
+    parameters: ["<script>", "--", "[arguments...]"],
+  })
+  .on("echo", (ctx) => {
+    ctx.parameters;
+    //  ^?
+    ctx.parameters.script; // => "echo"
+    ctx.parameters.arguments; // => ["hello", "world"]
+  })
+  .parse();
 ```
 
 ## 选项
@@ -282,34 +282,34 @@ import { PARAMETER } from "clerc";
 let encounteredParameter = false;
 
 const cli = Cli()
-	.scriptName("deno")
-	.description("Deno CLI")
-	.version("1.0.0")
-	.command("run", "运行脚本", {
-		flags: {
-			allowRead: {
-				type: Boolean,
-				description: "允许读取文件系统",
-			},
-		},
-		parameters: ["<script>", "[args...]"],
-		ignore: (type) => {
-			if (type === PARAMETER && !encounteredParameter) {
-				encounteredParameter = true;
+  .scriptName("deno")
+  .description("Deno CLI")
+  .version("1.0.0")
+  .command("run", "运行脚本", {
+    flags: {
+      allowRead: {
+        type: Boolean,
+        description: "允许读取文件系统",
+      },
+    },
+    parameters: ["<script>", "[args...]"],
+    ignore: (type) => {
+      if (type === PARAMETER && !encounteredParameter) {
+        encounteredParameter = true;
 
-				return false; // 不要忽略第一个参数（脚本名称）
-			}
+        return false; // 不要忽略第一个参数（脚本名称）
+      }
 
-			// 忽略其余的参数
-			return encounteredParameter;
-		},
-	})
-	.on("run", (ctx) => {
-		// 处理脚本运行
-		ctx.ignored; // => ["--flag"]
-		//	^?
-	})
-	.parse();
+      // 忽略其余的参数
+      return encounteredParameter;
+    },
+  })
+  .on("run", (ctx) => {
+    // 处理脚本运行
+    ctx.ignored; // => ["--flag"]
+    //	^?
+  })
+  .parse();
 ```
 
 ## 多个命令
@@ -320,36 +320,36 @@ const cli = Cli()
 import { defineCommand } from "clerc";
 
 const commandA = defineCommand(
-	{
-		name: "foo",
-		description: "Foo 命令",
-	},
-	(ctx) => {
-		console.log("执行 Foo 命令");
-	},
+  {
+    name: "foo",
+    description: "Foo 命令",
+  },
+  (ctx) => {
+    console.log("执行 Foo 命令");
+  },
 );
 const commandB = defineCommand(
-	{
-		name: "bar",
-		description: "Bar 命令",
-		flags: {
-			flag: {
-				type: Boolean,
-				default: false,
-			},
-		},
-	},
-	(ctx) => {
-		console.log("执行 Bar 命令");
-	},
+  {
+    name: "bar",
+    description: "Bar 命令",
+    flags: {
+      flag: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  },
+  (ctx) => {
+    console.log("执行 Bar 命令");
+  },
 );
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command([commandA, commandB])
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command([commandA, commandB])
+  .parse();
 ```
 
 ## 高级用法
@@ -360,21 +360,21 @@ const cli = Cli()
 import { defineCommand } from "clerc";
 
 const command = defineCommand({
-	name: "test",
-	description: "测试",
-	flags: {},
-	parameters: [],
-	handler: (ctx) => {
-		// 处理程序
-	},
+  name: "test",
+  description: "测试",
+  flags: {},
+  parameters: [],
+  handler: (ctx) => {
+    // 处理程序
+  },
 });
 
 const cli = Cli()
-	.scriptName("foo-cli")
-	.description("一个简单的 CLI")
-	.version("1.0.0")
-	.command(command)
-	.parse();
+  .scriptName("foo-cli")
+  .description("一个简单的 CLI")
+  .version("1.0.0")
+  .command(command)
+  .parse();
 ```
 
 ## 懒加载
@@ -387,37 +387,37 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.scriptName("app")
-	.description("一个带有懒加载的应用程序")
-	.version("1.0.0")
-	.command("build", "构建项目", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "为生产环境构建",
-			},
-		},
-	})
-	.on("build", async (ctx) => {
-		// 处理器仅在调用命令时加载
-		const { buildProject } = await import("./handlers/build.js");
-		await buildProject(ctx);
-	})
-	.command("deploy", "部署应用程序", {
-		flags: {
-			environment: {
-				type: String,
-				default: "staging",
-				description: "目标环境",
-			},
-		},
-	})
-	.on("deploy", async (ctx) => {
-		// 另一个懒加载的处理器
-		const { deploy } = await import("./handlers/deploy.js");
-		await deploy(ctx);
-	})
-	.parse();
+  .scriptName("app")
+  .description("一个带有懒加载的应用程序")
+  .version("1.0.0")
+  .command("build", "构建项目", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "为生产环境构建",
+      },
+    },
+  })
+  .on("build", async (ctx) => {
+    // 处理器仅在调用命令时加载
+    const { buildProject } = await import("./handlers/build.js");
+    await buildProject(ctx);
+  })
+  .command("deploy", "部署应用程序", {
+    flags: {
+      environment: {
+        type: String,
+        default: "staging",
+        description: "目标环境",
+      },
+    },
+  })
+  .on("deploy", async (ctx) => {
+    // 另一个懒加载的处理器
+    const { deploy } = await import("./handlers/deploy.js");
+    await deploy(ctx);
+  })
+  .parse();
 ```
 
 ### 使用 defineCommand 的懒加载
@@ -428,23 +428,23 @@ const cli = Cli()
 import { defineCommand } from "clerc";
 
 const command = defineCommand({
-	name: "migrate",
-	description: "运行数据库迁移",
-	flags: {},
-	parameters: [],
-	handler: async (ctx) => {
-		// 处理器仅在调用命令时加载
-		const { runMigrations } = await import("./handlers/migrate.js");
-		await runMigrations(ctx);
-	},
+  name: "migrate",
+  description: "运行数据库迁移",
+  flags: {},
+  parameters: [],
+  handler: async (ctx) => {
+    // 处理器仅在调用命令时加载
+    const { runMigrations } = await import("./handlers/migrate.js");
+    await runMigrations(ctx);
+  },
 });
 
 const cli = Cli()
-	.scriptName("app")
-	.description("带有懒加载命令的应用程序")
-	.version("1.0.0")
-	.command(command)
-	.parse();
+  .scriptName("app")
+  .description("带有懒加载命令的应用程序")
+  .version("1.0.0")
+  .command(command)
+  .parse();
 ```
 
 ### 优势
@@ -472,11 +472,11 @@ project/
 
 ```ts
 export async function buildProject(ctx) {
-	if (ctx.flags.production) {
-		console.log("为生产环境构建...");
-	} else {
-		console.log("为开发环境构建...");
-	}
+  if (ctx.flags.production) {
+    console.log("为生产环境构建...");
+  } else {
+    console.log("为开发环境构建...");
+  }
 }
 ```
 
@@ -484,29 +484,29 @@ export async function buildProject(ctx) {
 
 ```ts
 const cli = Cli()
-	.scriptName("app")
-	.version("1.0.0")
-	.command("build", "构建项目", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "为生产环境构建",
-			},
-		},
-	})
-	.on("build", async (ctx) => {
-		const { buildProject } = await import("./handlers/build.js");
-		await buildProject(ctx);
-	})
-	.command("dev", "启动开发服务器", {})
-	.on("dev", async (ctx) => {
-		const { startDev } = await import("./handlers/dev.js");
-		await startDev(ctx);
-	})
-	.command("deploy", "部署应用程序")
-	.on("deploy", async (ctx) => {
-		const { deploy } = await import("./handlers/deploy.js");
-		await deploy(ctx);
-	})
-	.parse();
+  .scriptName("app")
+  .version("1.0.0")
+  .command("build", "构建项目", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "为生产环境构建",
+      },
+    },
+  })
+  .on("build", async (ctx) => {
+    const { buildProject } = await import("./handlers/build.js");
+    await buildProject(ctx);
+  })
+  .command("dev", "启动开发服务器", {})
+  .on("dev", async (ctx) => {
+    const { startDev } = await import("./handlers/dev.js");
+    await startDev(ctx);
+  })
+  .command("deploy", "部署应用程序")
+  .on("deploy", async (ctx) => {
+    const { deploy } = await import("./handlers/deploy.js");
+    await deploy(ctx);
+  })
+  .parse();
 ```

@@ -23,30 +23,30 @@ Clerc 支持标准的 JavaScript 类型构造函数以处理常见的用例：
 
 ```ts
 const cli = Cli()
-	.command("greet", "问候某人", {
-		flags: {
-			name: {
-				type: String,
-				description: "用户名",
-				default: "世界",
-			},
+  .command("greet", "问候某人", {
+    flags: {
+      name: {
+        type: String,
+        description: "用户名",
+        default: "世界",
+      },
 
-			message: {
-				type: String,
-				short: "m",
-				description: "问候信息",
-			},
-		},
-	})
-	.on("greet", (ctx) => {
-		console.log(`${ctx.flags.message}, ${ctx.flags.name}!`);
-		// $ node cli.mjs greet --name 张三 --message 你好
-		// 你好, 张三!
-		// $ node cli.mjs greet --message 你好
-		// ctx.flags.message => "你好"
-		// ctx.flags.name => "世界" (使用默认值)
-	})
-	.parse();
+      message: {
+        type: String,
+        short: "m",
+        description: "问候信息",
+      },
+    },
+  })
+  .on("greet", (ctx) => {
+    console.log(`${ctx.flags.message}, ${ctx.flags.name}!`);
+    // $ node cli.mjs greet --name 张三 --message 你好
+    // 你好, 张三!
+    // $ node cli.mjs greet --message 你好
+    // ctx.flags.message => "你好"
+    // ctx.flags.name => "世界" (使用默认值)
+  })
+  .parse();
 ```
 
 ### Boolean 类型
@@ -57,30 +57,30 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("build", "构建项目", {
-		flags: {
-			production: {
-				type: Boolean,
-				description: "构建生产版本",
-			},
+  .command("build", "构建项目", {
+    flags: {
+      production: {
+        type: Boolean,
+        description: "构建生产版本",
+      },
 
-			watch: {
-				type: Boolean,
-				short: "w",
-				description: "启用监视模式",
-			},
-		},
-	})
-	.on("build", (ctx) => {
-		// $ node cli.mjs build --production --watch
-		ctx.flags.production; // => true
-		ctx.flags.watch; // => true
+      watch: {
+        type: Boolean,
+        short: "w",
+        description: "启用监视模式",
+      },
+    },
+  })
+  .on("build", (ctx) => {
+    // $ node cli.mjs build --production --watch
+    ctx.flags.production; // => true
+    ctx.flags.watch; // => true
 
-		// $ node cli.mjs build
-		ctx.flags.production; // => false
-		ctx.flags.watch; // => false
-	})
-	.parse();
+    // $ node cli.mjs build
+    ctx.flags.production; // => false
+    ctx.flags.watch; // => false
+  })
+  .parse();
 ```
 
 #### Boolean 的 Negatable 属性
@@ -89,37 +89,37 @@ Boolean 类型支持 `negatable` 属性，允许你决定是否启用否定选�
 
 ```ts
 const cli = Cli()
-	.command("start", "启动应用", {
-		flags: {
-			color: {
-				type: Boolean,
-				negatable: true, // 默认
-				description: "启用彩色输出",
-				default: true,
-			},
+  .command("start", "启动应用", {
+    flags: {
+      color: {
+        type: Boolean,
+        negatable: true, // 默认
+        description: "启用彩色输出",
+        default: true,
+      },
 
-			cache: {
-				type: Boolean,
-				negatable: false, // 禁用否定形式
-				description: "启用缓存",
-				default: true,
-			},
-		},
-	})
-	.on("start", (ctx) => {
-		// $ node cli.mjs start
-		ctx.flags.color; // => true
-		ctx.flags.cache; // => true
+      cache: {
+        type: Boolean,
+        negatable: false, // 禁用否定形式
+        description: "启用缓存",
+        default: true,
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    // $ node cli.mjs start
+    ctx.flags.color; // => true
+    ctx.flags.cache; // => true
 
-		// $ node cli.mjs start --no-color --no-cache
-		ctx.flags.color; // => false
-		ctx.flags.cache; // => true
+    // $ node cli.mjs start --no-color --no-cache
+    ctx.flags.color; // => false
+    ctx.flags.cache; // => true
 
-		// 必须使用 --cache=false 来禁用缓存
-		// $ node cli.mjs start --cache=false
-		ctx.flags.cache; // => false
-	})
-	.parse();
+    // 必须使用 --cache=false 来禁用缓存
+    // $ node cli.mjs start --cache=false
+    ctx.flags.cache; // => false
+  })
+  .parse();
 ```
 
 ### Array 类型
@@ -130,33 +130,33 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("copy", "复制文件", {
-		flags: {
-			// 使用 [String] 来接受多个字符串值
-			include: {
-				type: [String],
-				short: "i",
-				description: "包含的文件模式",
-			},
+  .command("copy", "复制文件", {
+    flags: {
+      // 使用 [String] 来接受多个字符串值
+      include: {
+        type: [String],
+        short: "i",
+        description: "包含的文件模式",
+      },
 
-			// 使用 [Number] 来接受多个数字值
-			ports: {
-				type: [Number],
-				short: "p",
-				description: "要监听的端口",
-			},
-		},
-	})
-	.on("copy", (ctx) => {
-		// $ node cli.mjs copy -i "*.js" -i "*.ts" -p 3000 -p 3001
-		ctx.flags.include; // => ["*.js", "*.ts"]
-		ctx.flags.ports; // => [3000, 3001]
+      // 使用 [Number] 来接受多个数字值
+      ports: {
+        type: [Number],
+        short: "p",
+        description: "要监听的端口",
+      },
+    },
+  })
+  .on("copy", (ctx) => {
+    // $ node cli.mjs copy -i "*.js" -i "*.ts" -p 3000 -p 3001
+    ctx.flags.include; // => ["*.js", "*.ts"]
+    ctx.flags.ports; // => [3000, 3001]
 
-		// $ node cli.mjs copy
-		ctx.flags.include; // => []
-		ctx.flags.ports; // => []
-	})
-	.parse();
+    // $ node cli.mjs copy
+    ctx.flags.include; // => []
+    ctx.flags.ports; // => []
+  })
+  .parse();
 ```
 
 ### 计数器类型
@@ -167,30 +167,30 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("log", "显示日志", {
-		flags: {
-			// [Boolean] 类型会计数选项被使用的次数
-			verbose: {
-				type: [Boolean],
-				short: "v",
-				description: "详细日志级别（-v, -vv, -vvv）",
-			},
-		},
-	})
-	.on("log", (ctx) => {
-		// $ node cli.mjs log -v
-		ctx.flags.verbose; // => 1
+  .command("log", "显示日志", {
+    flags: {
+      // [Boolean] 类型会计数选项被使用的次数
+      verbose: {
+        type: [Boolean],
+        short: "v",
+        description: "详细日志级别（-v, -vv, -vvv）",
+      },
+    },
+  })
+  .on("log", (ctx) => {
+    // $ node cli.mjs log -v
+    ctx.flags.verbose; // => 1
 
-		// $ node cli.mjs log -vvv
-		ctx.flags.verbose; // => 3
+    // $ node cli.mjs log -vvv
+    ctx.flags.verbose; // => 3
 
-		// $ node cli.mjs log -v -v -v
-		ctx.flags.verbose; // => 3
+    // $ node cli.mjs log -v -v -v
+    ctx.flags.verbose; // => 3
 
-		// $ node cli.mjs log
-		ctx.flags.verbose; // => 0
-	})
-	.parse();
+    // $ node cli.mjs log
+    ctx.flags.verbose; // => 0
+  })
+  .parse();
 ```
 
 ### Object 类型
@@ -201,23 +201,23 @@ const cli = Cli()
 
 ```ts
 const cli = Cli()
-	.command("config", "配置应用", {
-		flags: {
-			define: {
-				type: Object,
-				short: "d",
-				description: "定义环境变量",
-			},
-		},
-	})
-	.on("config", (ctx) => {
-		// $ node cli.mjs config --define.apiUrl http://api.example.com --define.debug
-		ctx.flags.define; // => { apiUrl: "http://api.example.com", debug: true }
+  .command("config", "配置应用", {
+    flags: {
+      define: {
+        type: Object,
+        short: "d",
+        description: "定义环境变量",
+      },
+    },
+  })
+  .on("config", (ctx) => {
+    // $ node cli.mjs config --define.apiUrl http://api.example.com --define.debug
+    ctx.flags.define; // => { apiUrl: "http://api.example.com", debug: true }
 
-		// $ node cli.mjs config
-		ctx.flags.define; // => {}
-	})
-	.parse();
+    // $ node cli.mjs config
+    ctx.flags.define; // => {}
+  })
+  .parse();
 ```
 
 :::info
@@ -246,29 +246,29 @@ Clerc 提供了一些内置的高级类型函数，方便处理常见的需求�
 import { Types } from "clerc";
 
 Cli()
-	.command("serve", "启动服务器", {
-		flags: {
-			mode: {
-				type: Types.Enum("development", "production", "test"),
-				default: "development" as const,
-				description: "设置应用程序模式",
-			},
-		},
-		parameters: [
-			{
-				key: "[port]",
-				type: Types.Range(1024, 65_535),
-				description: "端口号",
-			},
-		],
-	})
-	.on("serve", (ctx) => {
-		ctx.flags.mode;
-		//        ^?
-		ctx.parameters.port;
-		//             ^?
-	})
-	.parse();
+  .command("serve", "启动服务器", {
+    flags: {
+      mode: {
+        type: Types.Enum("development", "production", "test"),
+        default: "development" as const,
+        description: "设置应用程序模式",
+      },
+    },
+    parameters: [
+      {
+        key: "[port]",
+        type: Types.Range(1024, 65_535),
+        description: "端口号",
+      },
+    ],
+  })
+  .on("serve", (ctx) => {
+    ctx.flags.mode;
+    //        ^?
+    ctx.parameters.port;
+    //             ^?
+  })
+  .parse();
 ```
 
 ### Enum 类型
@@ -279,32 +279,32 @@ Cli()
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("build-cli")
-	.description("构建工具")
-	.version("1.0.0")
-	.command("config", "配置构建设置", {
-		flags: {
-			format: {
-				type: Types.Enum("json", "yaml", "toml"),
-				description: "输出格式",
-			},
-		},
-		parameters: [
-			{
-				key: "<setting>",
-				type: Types.Enum("output", "target", "format"),
-				description: "设置名称",
-			},
-			{
-				key: "<value>",
-				description: "设置值",
-			},
-		],
-	})
-	.on("config", (ctx) => {
-		console.log(`设置 ${ctx.parameters.setting} = ${ctx.parameters.value}`);
-	})
-	.parse();
+  .scriptName("build-cli")
+  .description("构建工具")
+  .version("1.0.0")
+  .command("config", "配置构建设置", {
+    flags: {
+      format: {
+        type: Types.Enum("json", "yaml", "toml"),
+        description: "输出格式",
+      },
+    },
+    parameters: [
+      {
+        key: "<setting>",
+        type: Types.Enum("output", "target", "format"),
+        description: "设置名称",
+      },
+      {
+        key: "<value>",
+        description: "设置值",
+      },
+    ],
+  })
+  .on("config", (ctx) => {
+    console.log(`设置 ${ctx.parameters.setting} = ${ctx.parameters.value}`);
+  })
+  .parse();
 ```
 
 使用方法：
@@ -324,29 +324,29 @@ $ build-cli config --format invalid value
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("server-cli")
-	.description("服务器管理工具")
-	.version("1.0.0")
-	.command("start", "启动服务器", {
-		flags: {
-			port: {
-				type: Types.Range(1024, 65_535),
-				description: "端口号",
-			},
-		},
-		parameters: [
-			{
-				key: "[timeout]",
-				type: Types.Range(1, 3600),
-				description: "超时时间（秒）",
-			},
-		],
-	})
-	.on("start", (ctx) => {
-		const port = ctx.flags.port ?? 3000;
-		console.log(`在端口 ${port} 启动服务器`);
-	})
-	.parse();
+  .scriptName("server-cli")
+  .description("服务器管理工具")
+  .version("1.0.0")
+  .command("start", "启动服务器", {
+    flags: {
+      port: {
+        type: Types.Range(1024, 65_535),
+        description: "端口号",
+      },
+    },
+    parameters: [
+      {
+        key: "[timeout]",
+        type: Types.Range(1, 3600),
+        description: "超时时间（秒）",
+      },
+    ],
+  })
+  .on("start", (ctx) => {
+    const port = ctx.flags.port ?? 3000;
+    console.log(`在端口 ${port} 启动服务器`);
+  })
+  .parse();
 ```
 
 使用方法：
@@ -366,22 +366,22 @@ $ server-cli start --port 100
 import { Types } from "clerc";
 
 const cli = Cli()
-	.scriptName("git-clone")
-	.description("克隆仓库")
-	.version("1.0.0")
-	.command("clone", "克隆一个仓库", {
-		parameters: [
-			{
-				key: "<repo>",
-				type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
-				description: "格式为 owner/repo 的仓库",
-			},
-		],
-	})
-	.on("clone", (ctx) => {
-		console.log(`克隆 ${ctx.parameters.repo}`);
-	})
-	.parse();
+  .scriptName("git-clone")
+  .description("克隆仓库")
+  .version("1.0.0")
+  .command("clone", "克隆一个仓库", {
+    parameters: [
+      {
+        key: "<repo>",
+        type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
+        description: "格式为 owner/repo 的仓库",
+      },
+    ],
+  })
+  .on("clone", (ctx) => {
+    console.log(`克隆 ${ctx.parameters.repo}`);
+  })
+  .parse();
 ```
 
 使用方法：
@@ -404,29 +404,29 @@ $ git-clone clone invalid
 ```ts
 // 自定义类型函数，将逗号分隔的字符串解析为字符串数组
 const CommaSeparatedList = (value: string): string[] =>
-	value.split(",").map((item) => item.trim());
+  value.split(",").map((item) => item.trim());
 
 // 添加显示属性以获得更好的帮助文档
 CommaSeparatedList.display = "item1,item2,...";
 
 const cli = Cli()
-	.scriptName("custom-cli")
-	.description("使用自定义类型的 CLI")
-	.version("1.0.0")
-	.command("list", "显示列表", {
-		flags: {
-			items: {
-				type: CommaSeparatedList,
-				default: [] as string[],
-				description: "逗号分隔的字符串列表",
-			},
-		},
-	})
-	.on("list", (ctx) => {
-		console.log("Items:", ctx.flags.items);
-		//                              ^?
-	})
-	.parse();
+  .scriptName("custom-cli")
+  .description("使用自定义类型的 CLI")
+  .version("1.0.0")
+  .command("list", "显示列表", {
+    flags: {
+      items: {
+        type: CommaSeparatedList,
+        default: [] as string[],
+        description: "逗号分隔的字符串列表",
+      },
+    },
+  })
+  .on("list", (ctx) => {
+    console.log("Items:", ctx.flags.items);
+    //                              ^?
+  })
+  .parse();
 ```
 
 `display` 属性被帮助系统用来显示更具描述性的类型名称，而不是函数名。例如，在帮助输出中，它不会显示 "CommaSeparatedList"，而是显示 "item1,item2,..."。
@@ -436,45 +436,45 @@ const cli = Cli()
 ```ts
 // 自定义类型函数，将逗号分隔的字符串解析为字符串数组
 const CommaSeparatedList = (value: string): string[] =>
-	value.split(",").map((item) => item.trim());
+  value.split(",").map((item) => item.trim());
 
 const cli = Cli()
-	.scriptName("custom-cli")
-	.description("使用自定义类型的 CLI")
-	.version("1.0.0")
-	.command("list", "显示列表", {
-		flags: {
-			items: {
-				type: CommaSeparatedList,
-				default: [] as string[],
-				description: "逗号分隔的字符串列表",
-			},
-		},
-	})
-	.on("list", (ctx) => {
-		console.log("Items:", ctx.flags.items);
-		//                              ^?
-	})
-	.parse();
+  .scriptName("custom-cli")
+  .description("使用自定义类型的 CLI")
+  .version("1.0.0")
+  .command("list", "显示列表", {
+    flags: {
+      items: {
+        type: CommaSeparatedList,
+        default: [] as string[],
+        description: "逗号分隔的字符串列表",
+      },
+    },
+  })
+  .on("list", (ctx) => {
+    console.log("Items:", ctx.flags.items);
+    //                              ^?
+  })
+  .parse();
 ```
 
 自定义类型函数也可以与数组语法一起使用，以接受多个值：
 
 ```ts
 const cli = Cli()
-	.command("process", "处理文件", {
-		flags: {
-			// 使用 [CommaSeparatedList] 来接受多个逗号分隔的列表
-			patterns: {
-				type: [CommaSeparatedList],
-				short: "p",
-				description: "文件模式（逗号分隔）",
-			},
-		},
-	})
-	.on("process", (ctx) => {
-		// $ node cli.mjs process -p "*.js,*.ts" -p "src/**"
-		ctx.flags.patterns; // => [["*.js", "*.ts"], ["src/**"]]
-	})
-	.parse();
+  .command("process", "处理文件", {
+    flags: {
+      // 使用 [CommaSeparatedList] 来接受多个逗号分隔的列表
+      patterns: {
+        type: [CommaSeparatedList],
+        short: "p",
+        description: "文件模式（逗号分隔）",
+      },
+    },
+  })
+  .on("process", (ctx) => {
+    // $ node cli.mjs process -p "*.js,*.ts" -p "src/**"
+    ctx.flags.patterns; // => [["*.js", "*.ts"], ["src/**"]]
+  })
+  .parse();
 ```

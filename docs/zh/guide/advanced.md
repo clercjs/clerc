@@ -16,7 +16,7 @@ Cli().parse(["node", "my-cli", "greet"]); // 传入自定义参数数组
 
 ```ts
 Cli().parse({
-	argv: ["greet"],
+  argv: ["greet"],
 });
 ```
 
@@ -26,7 +26,7 @@ Cli().parse({
 
 ```ts
 const result = Cli().parse({
-	run: false, // 仅解析，不执行
+  run: false, // 仅解析，不执行
 });
 ```
 

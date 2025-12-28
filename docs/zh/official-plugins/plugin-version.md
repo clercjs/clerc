@@ -46,11 +46,11 @@ import { versionPlugin } from "clerc";
 
 ```ts
 const cli = Clerc.create()
-	.scriptName("my-cli")
-	.description("我的 CLI 应用程序")
-	.version("1.0.0")
-	.use(versionPlugin()) // 添加版本插件
-	.parse();
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(versionPlugin()) // 添加版本插件
+  .parse();
 ```
 
 ## 运行效果

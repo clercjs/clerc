@@ -1,5 +1,5 @@
 import type { Clerc } from "../cli";
 
 export interface Plugin {
-	setup: (cli: Clerc) => void;
+  setup: (cli: Clerc) => void;
 }

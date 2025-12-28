@@ -20,18 +20,18 @@ The core of this package is the `parse` function. It takes an array of arguments
 import { parse } from "@clerc/parser";
 
 const { flags, parameters, unknown } = parse(process.argv.slice(2), {
-	flags: {
-		// Define your flags here
-		port: {
-			type: Number,
-			alias: "p",
-			default: 8080,
-		},
-		help: {
-			type: Boolean,
-			alias: "h",
-		},
-	},
+  flags: {
+    // Define your flags here
+    port: {
+      type: Number,
+      alias: "p",
+      default: 8080,
+    },
+    help: {
+      type: Boolean,
+      alias: "h",
+    },
+  },
 });
 
 console.log("Flags:", flags);
@@ -81,11 +81,11 @@ Supports `Boolean`, `String`, and `Number`.
 
 ```typescript
 const { flags } = parse(["--bool", "--str", "hello", "--num", "42"], {
-	flags: {
-		bool: { type: Boolean },
-		str: { type: String },
-		num: { type: Number },
-	},
+  flags: {
+    bool: { type: Boolean },
+    str: { type: String },
+    num: { type: Number },
+  },
 });
 // flags: { bool: true, str: "hello", num: 42 }
 ```
@@ -96,10 +96,10 @@ Use `alias` to define short or alternative names for flags.
 
 ```typescript
 const { flags } = parse(["-b", "-s", "hello"], {
-	flags: {
-		bool: { type: Boolean, alias: "b" },
-		str: { type: String, alias: "s" },
-	},
+  flags: {
+    bool: { type: Boolean, alias: "b" },
+    str: { type: String, alias: "s" },
+  },
 });
 // flags: { bool: true, str: "hello" }
 ```
@@ -112,17 +112,17 @@ const { flags } = parse(["-b", "-s", "hello"], {
 ```typescript
 // Array of strings
 const { flags: arrayFlags } = parse(["--arr", "a", "--arr", "b"], {
-	flags: {
-		arr: { type: [String] },
-	},
+  flags: {
+    arr: { type: [String] },
+  },
 });
 // arrayFlags: { arr: ["a", "b"] }
 
 // Counter
 const { flags: counterFlags } = parse(["-vvv"], {
-	flags: {
-		verbose: { type: [Boolean], alias: "v" },
-	},
+  flags: {
+    verbose: { type: [Boolean], alias: "v" },
+  },
 });
 // counterFlags: { verbose: 3 }
 ```
@@ -134,27 +134,27 @@ Multiple boolean short flags can be combined. The last flag in the group can tak
 ```typescript
 // -abc => a=true, b=true, c=true
 const { flags: merged } = parse(["-abc"], {
-	flags: {
-		a: Boolean,
-		b: Boolean,
-		c: Boolean,
-	},
+  flags: {
+    a: Boolean,
+    b: Boolean,
+    c: Boolean,
+  },
 });
 // merged: { a: true, b: true, c: true }
 
 // -ab val => a=true, b="val"
 const { flags: withValue } = parse(["-ab", "val"], {
-	flags: {
-		a: Boolean,
-		b: String,
-	},
+  flags: {
+    a: Boolean,
+    b: String,
+  },
 });
 // or -abval, b is not boolean
 const { flags: withValue } = parse(["-abval"], {
-	flags: {
-		a: Boolean,
-		b: String,
-	},
+  flags: {
+    a: Boolean,
+    b: String,
+  },
 });
 // withValue: { a: true, b: "val" }
 ```
@@ -165,11 +165,11 @@ Provide a `default` value for flags that are not present.
 
 ```typescript
 const { flags } = parse([], {
-	flags: {
-		str: { type: String, default: "default" },
-		num: { type: Number, default: 123 },
-		fn: { type: String, default: () => "computed" },
-	},
+  flags: {
+    str: { type: String, default: "default" },
+    num: { type: Number, default: 123 },
+    fn: { type: String, default: () => "computed" },
+  },
 });
 // flags: { str: "default", num: 123, fn: "computed" }
 ```
@@ -189,14 +189,14 @@ If you want to disable this behavior, set `negatable: false` in the flag configu
 
 ```typescript
 const { flags, unknown } = parse(
-	["--no-cache", "--no-ssl=false", "--no-disable-negate"],
-	{
-		flags: {
-			cache: { type: Boolean, default: true },
-			ssl: { type: Boolean, default: true },
-			disableNegate: { type: Boolean, negatable: false, default: true },
-		},
-	},
+  ["--no-cache", "--no-ssl=false", "--no-disable-negate"],
+  {
+    flags: {
+      cache: { type: Boolean, default: true },
+      ssl: { type: Boolean, default: true },
+      disableNegate: { type: Boolean, negatable: false, default: true },
+    },
+  },
 );
 // flags: { cache: false, ssl: true, disableNegate: true }
 // unknown: { noDisableNegate: true }
@@ -209,21 +209,21 @@ You can provide a custom function to the `type` property for advanced parsing lo
 ```typescript
 // Let's limit port between 1 and 65535
 const { flags } = parse(["--port", "8080"], {
-	flags: {
-		port: {
-			type: (value: string) => {
-				const parsed = Number.parseInt(value, 10);
-				if (Number.isNaN(parsed)) {
-					throw new TypeError("Port must be a number!");
-				}
-				if (parsed < 1 || parsed > 65_535) {
-					throw new Error("Port must be between 1 and 65535!");
-				}
+  flags: {
+    port: {
+      type: (value: string) => {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isNaN(parsed)) {
+          throw new TypeError("Port must be a number!");
+        }
+        if (parsed < 1 || parsed > 65_535) {
+          throw new Error("Port must be between 1 and 65535!");
+        }
 
-				return parsed;
-			},
-		},
-	},
+        return parsed;
+      },
+    },
+  },
 });
 // flags: { port: 8080 }
 ```
@@ -234,12 +234,12 @@ Define flags with `Object` type to parse dot-notation arguments into a nested ob
 
 ```typescript
 const { flags } = parse(
-	["--config.port", "8080", "--config.host", "localhost"],
-	{
-		flags: {
-			config: { type: Object },
-		},
-	},
+  ["--config.port", "8080", "--config.host", "localhost"],
+  {
+    flags: {
+      config: { type: Object },
+    },
+  },
 );
 // flags: { config: { port: "8080", host: "localhost" } }
 ```
@@ -248,21 +248,21 @@ Multi-level nesting is also supported.
 
 ```typescript
 const { flags } = parse(
-	[
-		"--db.host",
-		"localhost",
-		"--db.port",
-		"5432",
-		"--db.credentials.user",
-		"admin",
-		"--db.credentials.password",
-		"secret",
-	],
-	{
-		flags: {
-			db: { type: Object },
-		},
-	},
+  [
+    "--db.host",
+    "localhost",
+    "--db.port",
+    "5432",
+    "--db.credentials.user",
+    "admin",
+    "--db.credentials.password",
+    "secret",
+  ],
+  {
+    flags: {
+      db: { type: Object },
+    },
+  },
 );
 // flags: { db: { host: "localhost", port: "5432", credentials: { user: "admin", password: "secret" } } }
 ```
@@ -273,11 +273,11 @@ Flags that are not defined in the schema are collected in the `unknown` object. 
 
 ```typescript
 const { flags, unknown } = parse([
-	"--unknown1",
-	"--unknown2=foo",
-	"--unknown3",
-	"bar",
-	"--unknown.foo",
+  "--unknown1",
+  "--unknown2=foo",
+  "--unknown3",
+  "bar",
+  "--unknown.foo",
 ]);
 
 // unknown: { unknown1: true, unknown2: "foo", unknown3: "bar", "unknown.foo": true }
@@ -289,12 +289,12 @@ Use the `ignore` function to stop parsing when a certain condition is met. Subse
 
 ```typescript
 const { flags, ignored } = parse(["--a", "--b", "stop", "--c"], {
-	flags: {
-		a: Boolean,
-		b: Boolean,
-		c: Boolean,
-	},
-	ignore: (type, arg) => arg === "stop",
+  flags: {
+    a: Boolean,
+    b: Boolean,
+    c: Boolean,
+  },
+  ignore: (type, arg) => arg === "stop",
 });
 // flags: { a: true, b: true, c: false }
 // ignored: ["stop", "--c"]
@@ -304,13 +304,13 @@ You can ignore everything after the first positional parameter by checking the `
 
 ```typescript
 const { flags, parameters, ignored } = parse(
-	["--allow-all", "./deno.ts", "--param"],
-	{
-		flags: {
-			allowAll: Boolean,
-		},
-		ignore: (type) => type === "parameter",
-	},
+  ["--allow-all", "./deno.ts", "--param"],
+  {
+    flags: {
+      allowAll: Boolean,
+    },
+    ignore: (type) => type === "parameter",
+  },
 );
 
 // flags: { allowAll: true }
@@ -324,10 +324,10 @@ Arguments after `--` are not parsed as flags and are collected in the `doubleDas
 
 ```typescript
 const { flags, doubleDash } = parse(["--foo", "--", "--bar"], {
-	flags: {
-		foo: Boolean,
-		bar: Boolean,
-	},
+  flags: {
+    foo: Boolean,
+    bar: Boolean,
+  },
 });
 // flags: { foo: true, bar: false }
 // doubleDash: ["--bar"]

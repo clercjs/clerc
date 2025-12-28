@@ -13,85 +13,85 @@ import { parse } from "../src";
 const args = ["--bool", "--no-meep", "--multi=baz"];
 
 describe("bench", () => {
-	bench("minimist", () => {
-		minimist(args, {
-			boolean: ["bool", "meep"],
-			string: ["multi"],
-		});
-	});
+  bench("minimist", () => {
+    minimist(args, {
+      boolean: ["bool", "meep"],
+      string: ["multi"],
+    });
+  });
 
-	bench("mri", () => {
-		mri(args);
-	});
+  bench("mri", () => {
+    mri(args);
+  });
 
-	bench("yargs-parser", () => {
-		yargs(args);
-	});
+  bench("yargs-parser", () => {
+    yargs(args);
+  });
 
-	bench("nopt", () => {
-		nopt(
-			{
-				bool: Boolean,
-				noMeep: Boolean,
-				multi: String,
-			},
-			{},
-			args,
-		);
-	});
+  bench("nopt", () => {
+    nopt(
+      {
+        bool: Boolean,
+        noMeep: Boolean,
+        multi: String,
+      },
+      {},
+      args,
+    );
+  });
 
-	bench("type-flag", () => {
-		typeFlag(
-			{
-				bool: Boolean,
-				noMeep: Boolean,
-				multi: String,
-			},
-			args,
-		);
-	});
+  bench("type-flag", () => {
+    typeFlag(
+      {
+        bool: Boolean,
+        noMeep: Boolean,
+        multi: String,
+      },
+      args,
+    );
+  });
 
-	bench("node:util parseArgs", () => {
-		nodeParseArgs({
-			args,
-			allowNegative: true,
-			options: {
-				bool: {
-					type: "boolean",
-				},
-				meep: {
-					type: "boolean",
-				},
-				multi: {
-					type: "string",
-				},
-			},
-		});
-	});
+  bench("node:util parseArgs", () => {
+    nodeParseArgs({
+      args,
+      allowNegative: true,
+      options: {
+        bool: {
+          type: "boolean",
+        },
+        meep: {
+          type: "boolean",
+        },
+        multi: {
+          type: "string",
+        },
+      },
+    });
+  });
 
-	bench("args-tokens", () => {
-		argsTokensParse(args, {
-			args: {
-				bool: {
-					type: "boolean",
-				},
-				meep: {
-					type: "boolean",
-				},
-				multi: {
-					type: "string",
-				},
-			},
-		});
-	});
+  bench("args-tokens", () => {
+    argsTokensParse(args, {
+      args: {
+        bool: {
+          type: "boolean",
+        },
+        meep: {
+          type: "boolean",
+        },
+        multi: {
+          type: "string",
+        },
+      },
+    });
+  });
 
-	bench("@clerc/parser", () => {
-		parse(args, {
-			flags: {
-				bool: Boolean,
-				meep: Boolean,
-				multi: String,
-			},
-		});
-	});
+  bench("@clerc/parser", () => {
+    parse(args, {
+      flags: {
+        bool: Boolean,
+        meep: Boolean,
+        multi: String,
+      },
+    });
+  });
 });

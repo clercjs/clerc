@@ -1,51 +1,51 @@
 {
-	"name": "@clerc/advanced-types",
-	"version": "1.0.3",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"type": "module",
-	"description": "Clerc advanced types",
-	"keywords": [
-		"args",
-		"arguments",
-		"argv",
-		"clerc",
-		"cli"
-	],
-	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/advanced-types#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/clercjs/clerc.git",
-		"directory": "/"
-	},
-	"bugs": {
-		"url": "https://github.com/clercjs/clerc/issues"
-	},
-	"license": "MIT",
-	"sideEffects": false,
-	"exports": {
-		".": "./dist/index.mjs"
-	},
-	"main": "./dist/index.mjs",
-	"module": "./dist/index.mjs",
-	"types": "dist/index.d.ts",
-	"typesVersions": {
-		"*": {
-			"*": [
-				"./dist/*",
-				"./dist/index.d.ts"
-			]
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"devDependencies": {
-		"@clerc/parser": "workspace:*"
-	},
-	"peerDependencies": {
-		"@clerc/parser": "*"
-	}
+  "name": "@clerc/advanced-types",
+  "version": "1.0.3",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Clerc advanced types",
+  "keywords": [
+    "args",
+    "arguments",
+    "argv",
+    "clerc",
+    "cli"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/advanced-types#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@clerc/parser": "workspace:*"
+  },
+  "peerDependencies": {
+    "@clerc/parser": "*"
+  }
 }

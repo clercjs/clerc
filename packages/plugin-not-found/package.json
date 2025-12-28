@@ -1,57 +1,57 @@
 {
-	"name": "@clerc/plugin-not-found",
-	"version": "1.0.3",
-	"author": "Ray <i@mk1.io> (https://github.com/so1ve)",
-	"type": "module",
-	"description": "Clerc plugin not found (did you mean)",
-	"keywords": [
-		"args",
-		"arguments",
-		"argv",
-		"clerc",
-		"clerc-plugin",
-		"cli",
-		"terminal"
-	],
-	"homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-not-found#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/clercjs/clerc.git",
-		"directory": "/"
-	},
-	"bugs": {
-		"url": "https://github.com/clercjs/clerc/issues"
-	},
-	"license": "MIT",
-	"sideEffects": false,
-	"exports": {
-		".": "./dist/index.mjs"
-	},
-	"main": "./dist/index.mjs",
-	"module": "./dist/index.mjs",
-	"types": "dist/index.d.ts",
-	"typesVersions": {
-		"*": {
-			"*": [
-				"./dist/*",
-				"./dist/index.d.ts"
-			]
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"dependencies": {
-		"@uttr/tint": "catalog:cli"
-	},
-	"devDependencies": {
-		"@clerc/core": "workspace:*",
-		"fastest-levenshtein": "catalog:cli"
-	},
-	"peerDependencies": {
-		"@clerc/core": "*"
-	}
+  "name": "@clerc/plugin-not-found",
+  "version": "1.0.3",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Clerc plugin not found (did you mean)",
+  "keywords": [
+    "args",
+    "arguments",
+    "argv",
+    "clerc",
+    "clerc-plugin",
+    "cli",
+    "terminal"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-not-found#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@uttr/tint": "catalog:cli"
+  },
+  "devDependencies": {
+    "@clerc/core": "workspace:*",
+    "fastest-levenshtein": "catalog:cli"
+  },
+  "peerDependencies": {
+    "@clerc/core": "*"
+  }
 }

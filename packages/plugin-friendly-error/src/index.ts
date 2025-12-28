@@ -5,16 +5,16 @@ import { definePlugin } from "@clerc/core";
 import * as kons from "kons";
 
 export interface FriendlyErrorPluginOptions {
-	target?: (str: string) => void;
+  target?: (str: string) => void;
 }
 
 export const friendlyErrorPlugin = ({
-	target = kons.error,
+  target = kons.error,
 }: FriendlyErrorPluginOptions = {}): Plugin =>
-	definePlugin({
-		setup: (cli) =>
-			cli.errorHandler((err: any) => {
-				target(err.message);
-				process.exit(1);
-			}),
-	});
+  definePlugin({
+    setup: (cli) =>
+      cli.errorHandler((err: any) => {
+        target(err.message);
+        process.exit(1);
+      }),
+  });

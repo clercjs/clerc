@@ -44,22 +44,22 @@ Install clerc, and create a file named `cli.mjs`:
 import { Cli } from "clerc";
 
 Cli.create() // Create a new Clerc instance with help and version plugins installed
-	.scriptName("foo") // CLI Script Name
-	.description("A foo CLI") // CLI Description
-	.version("0.0.0") // CLI Version
-	.command(
-		"bar", // Command name
-		"A bar command", // Command description
-	)
-	.on(
-		"bar",
-		(
-			_ctx, // The command context, but we haven't used it yet
-		) => {
-			console.log("Hello, world from Clerc!");
-		},
-	)
-	.parse(); // Parse the arguments and run!
+  .scriptName("foo") // CLI Script Name
+  .description("A foo CLI") // CLI Description
+  .version("0.0.0") // CLI Version
+  .command(
+    "bar", // Command name
+    "A bar command", // Command description
+  )
+  .on(
+    "bar",
+    (
+      _ctx, // The command context, but we haven't used it yet
+    ) => {
+      console.log("Hello, world from Clerc!");
+    },
+  )
+  .parse(); // Parse the arguments and run!
 ```
 
 Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Clerc!`
