@@ -25,22 +25,15 @@
   "license": "MIT",
   "sideEffects": false,
   "exports": {
-    ".": "./dist/index.mjs"
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
   },
   "bin": {
     "my-cli": "./src/a.mjs"
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/*",
-        "./dist/index.d.ts"
-      ]
-    }
-  },
+  "types": "./dist/index.d.mts",
   "files": [
     "dist"
   ],

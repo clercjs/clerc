@@ -9,6 +9,7 @@ export default defineConfig({
   dts: {
     oxc: true,
   },
+  exports: true,
   external(id) {
     if (id === "@clerc/advanced-types") {
       return false;
