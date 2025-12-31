@@ -28,9 +28,6 @@
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
   },
-  "bin": {
-    "my-cli": "./src/a.mjs"
-  },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
