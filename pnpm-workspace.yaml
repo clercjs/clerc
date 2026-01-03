@@ -46,7 +46,7 @@ catalogs:
     tsdown: "^0.18.3"
     typescript: "^5.9.3"
     vite: "^7.2.6"
-    vite-plugin-simple-tsconfig-alias: "^0.1.1"
+    vite-plugin-simple-tsconfig-alias: "^0.2.0"
     vitest: "^4.0.15"
     vitest-console: "^0.2.1"
   docs:
