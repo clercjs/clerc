@@ -7,7 +7,7 @@
 <div align="center">
 
 [![Version](https://img.shields.io/npm/v/clerc.svg)](https://npmjs.org/package/clerc)
-[![CI](https://github.com/clercjs/clerc/actions/workflows/autofix-ci.yml/badge.svg)](https://github.com/clercjs/clerc/actions/workflows/autofix-ci.yml)
+[![CI](https://github.com/clercjs/clerc/actions/workflows/conventional-ci.yml/badge.svg)](https://github.com/clercjs/clerc/actions/workflows/conventional-ci.yml)
 [![Downloads/week](https://img.shields.io/npm/dw/clerc.svg)](https://npmjs.org/package/clerc)
 [![License](https://img.shields.io/npm/l/clerc.svg)](https://github.com/clercjs/clerc/blob/main/package.json)
 
