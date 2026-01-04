@@ -9,8 +9,10 @@ export const toArray = <T>(a: MaybeArray<T>): T[] =>
   Array.isArray(a) ? a : [a];
 
 /**
- * Converts a dash- or space-separated string to camelCase. Not using regexp for
- * better performance, because this function is used in parser.
+ * Converts a dash- or space-separated string to camelCase.
+ *
+ * Not using regexp for better performance, because this function is used in
+ * parser.
  */
 export function camelCase(str: string): string {
   const firstIdx = Math.min(
