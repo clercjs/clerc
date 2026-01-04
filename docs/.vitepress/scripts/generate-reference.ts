@@ -79,14 +79,14 @@ if (import.meta.main) {
       formatWithPrettier: true,
       flattenOutputFiles: true,
 
-      indexFormat: "table",
-      parametersFormat: "table",
-      interfacePropertiesFormat: "table",
-      classPropertiesFormat: "table",
-      propertyMembersFormat: "table",
-      typeDeclarationFormat: "table",
-      typeAliasPropertiesFormat: "table",
-      enumMembersFormat: "table",
+      indexFormat: "htmlTable",
+      parametersFormat: "htmlTable",
+      interfacePropertiesFormat: "htmlTable",
+      classPropertiesFormat: "htmlTable",
+      propertyMembersFormat: "htmlTable",
+      typeDeclarationFormat: "htmlTable",
+      typeAliasPropertiesFormat: "htmlTable",
+      enumMembersFormat: "htmlTable",
 
       // @ts-expect-error VitePress config
       docsRoot: "./reference",
