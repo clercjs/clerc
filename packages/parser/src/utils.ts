@@ -35,6 +35,16 @@ export function setValueByType(
   }
 }
 
+function resolveSetValue(value: any): any {
+  if (value === "true" || value === "") {
+    return true;
+  } else if (value === "false") {
+    return false;
+  }
+
+  return value;
+}
+
 export function setDotValues(obj: any, path: string, value: any): void {
   const keys = path.split(".");
   let current = obj;
@@ -44,13 +54,7 @@ export function setDotValues(obj: any, path: string, value: any): void {
     current = current[key];
   }
   const lastKey = keys[keys.length - 1];
-  if (value === "true" || value === "") {
-    current[lastKey] = true;
-  } else if (value === "false") {
-    current[lastKey] = false;
-  } else {
-    current[lastKey] = value;
-  }
+  current[lastKey] = resolveSetValue(value);
 }
 
 export function splitNameAndValue(
