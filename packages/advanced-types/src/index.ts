@@ -6,8 +6,8 @@ export * from "./errors";
 
 /**
  * Creates a Enum type function that validates the input against allowed values.
- * The display name will be formatted as "value1 &#124; value2 &#124; ..." for
- * help output.
+ * The display name will be formatted as "value1 | value2 | ..." for help
+ * output.
  *
  * @example
  *
