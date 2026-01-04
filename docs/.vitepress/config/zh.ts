@@ -56,6 +56,10 @@ const guideSidebar = [
         link: "/zh/guide/error-handling",
       },
       {
+        text: "注意事项",
+        link: "/zh/guide/caveats",
+      },
+      {
         text: "进阶用法",
         link: "/zh/guide/advanced",
       },

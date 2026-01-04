@@ -56,6 +56,10 @@ const guideSidebar = [
         link: "/guide/error-handling",
       },
       {
+        text: "Caveats",
+        link: "/guide/caveats",
+      },
+      {
         text: "Advanced Usage",
         link: "/guide/advanced",
       },

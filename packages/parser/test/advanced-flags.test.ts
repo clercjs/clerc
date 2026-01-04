@@ -83,6 +83,24 @@ describe("parser - advanced flags", () => {
     expect(unknown).toEqual({ "unknown.foo": true });
   });
 
+  it("should overwrite value when both direct value and nested path are provided", () => {
+    // When --config.port 8080 is set first, and then --config.port.internal 9090 is set,
+    // the second one is ignored because config.port is already a primitive value, not an object
+    const { flags } = parse(
+      ["--config.port", "8080", "--config.port.internal", "9090"],
+      {
+        flags: {
+          config: { type: Object },
+        },
+      },
+    );
+
+    // The nested path is ignored - only the first value is kept
+    expect(flags).toEqual({
+      config: { port: "8080" },
+    });
+  });
+
   it("should support colon-separated long flags", () => {
     const result1 = parse(["--define:K=V"], {
       flags: {
