@@ -30,14 +30,13 @@ $ pnpm add @clerc/plugin-update-notifier
 
 ```ts
 import { updateNotifierPlugin } from "@clerc/plugin-update-notifier";
+// or import directly from clerc
+import { updateNotifierPlugin } from "clerc";
 ```
 
 ### Basic Usage
 
 ```ts
-import { Clerc } from "@clerc/core";
-import { updateNotifierPlugin } from "@clerc/plugin-update-notifier";
-
 import pkg from "./package.json";
 
 Clerc.create().use(updateNotifierPlugin({ pkg })).parse();
