@@ -1,6 +1,6 @@
 export * from "./errors";
 export { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
-export type { ObjectTypeFunction } from "./object-type";
+export type { ObjectTypeConfig, ObjectTypeFunction } from "./object-type";
 export { isObjectType, objectType } from "./object-type";
 export { DOUBLE_DASH, createParser, parse } from "./parse";
 export type * from "./types";

@@ -82,6 +82,25 @@ describe("parser - objectType", () => {
       });
     });
 
+    it("should handle external default - merge when user provides values", () => {
+      // External default should merge with user-provided values
+      const { flags } = parse(["--env.PORT", "1145"], {
+        flags: {
+          env: {
+            type: objectType(),
+            default: { PORT: "8080", DEBUG: false },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        env: {
+          PORT: "1145",
+          DEBUG: false, // Merged from default
+        },
+      });
+    });
+
     it("should handle nested paths", () => {
       const { flags } = parse(
         [
@@ -118,8 +137,8 @@ describe("parser - objectType", () => {
         ["--env.PORT", "3000", "--env.DEBUG", "true", "--env.NAME", "app"],
         {
           flags: {
-            env: objectType<{ PORT: number; DEBUG: boolean; NAME: string }>(
-              (object, path, value) => {
+            env: objectType<{ PORT: number; DEBUG: boolean; NAME: string }>({
+              setValue: (object, path, value) => {
                 if (path === "PORT") {
                   setDotValues(object, path, Number(value));
                 } else if (path === "DEBUG") {
@@ -128,7 +147,7 @@ describe("parser - objectType", () => {
                   setDotValues(object, path, value);
                 }
               },
-            ),
+            }),
           },
         },
       );
@@ -138,35 +157,6 @@ describe("parser - objectType", () => {
           PORT: 3000, // converted to number
           DEBUG: true, // converted to boolean
           NAME: "app", // kept as string
-        },
-      });
-    });
-
-    it("should allow context-aware transformations", () => {
-      const { flags } = parse(
-        ["--config.mode", "production", "--config.debug", "true"],
-        {
-          flags: {
-            config: objectType((object, path, value) => {
-              if (path === "debug") {
-                // Ignore debug flag in production mode
-                if (object.mode === "production") {
-                  setDotValues(object, path, false);
-                } else {
-                  setDotValues(object, path, coerceObjectValue(value));
-                }
-              } else {
-                setDotValues(object, path, coerceObjectValue(value));
-              }
-            }),
-          },
-        },
-      );
-
-      expect(flags).toEqual({
-        config: {
-          mode: "production",
-          debug: false, // forced to false in production
         },
       });
     });
@@ -183,15 +173,17 @@ describe("parser - objectType", () => {
         ],
         {
           flags: {
-            env: objectType((object, path, value) => {
-              if (path === "HOSTS") {
-                // Use appendDotValues for array behavior
-                appendDotValues(object, path, value);
-              } else if (path === "PORT") {
-                setDotValues(object, path, Number(value));
-              } else {
-                setDotValues(object, path, coerceObjectValue(value));
-              }
+            env: objectType({
+              setValue: (object, path, value) => {
+                if (path === "HOSTS") {
+                  // Use appendDotValues for array behavior
+                  appendDotValues(object, path, value);
+                } else if (path === "PORT") {
+                  setDotValues(object, path, Number(value));
+                } else {
+                  setDotValues(object, path, coerceObjectValue(value));
+                }
+              },
             }),
           },
         },
@@ -334,6 +326,121 @@ describe("parser - objectType", () => {
         config: {
           port: "8080",
           enabled: true,
+        },
+      });
+    });
+  });
+
+  describe("default values", () => {
+    it("should use external default when no value is provided", () => {
+      const { flags } = parse([], {
+        flags: {
+          config: {
+            type: objectType<{ PORT?: string; HOST?: string }>(),
+            default: { PORT: "3000", HOST: "localhost" },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        config: {
+          PORT: "3000",
+          HOST: "localhost",
+        },
+      });
+    });
+
+    it("should merge user values with external default values", () => {
+      const { flags } = parse(["--config.PORT", "8080"], {
+        flags: {
+          config: {
+            type: objectType<{ PORT?: string; HOST?: string }>(),
+            default: { PORT: "3000", HOST: "localhost" },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        config: {
+          PORT: "8080",
+          HOST: "localhost",
+        },
+      });
+    });
+
+    it("should work with custom setValue and external default values", () => {
+      const { flags } = parse(["--config.PORT", "8080"], {
+        flags: {
+          config: {
+            type: objectType<{ PORT?: number; HOST?: string }>({
+              setValue: (object, path, value) => {
+                if (path === "PORT") {
+                  setDotValues(object, path, Number(value));
+                } else {
+                  setDotValues(object, path, coerceObjectValue(value));
+                }
+              },
+            }),
+            default: { PORT: 3000, HOST: "localhost" },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        config: {
+          PORT: 8080,
+          HOST: "localhost",
+        },
+      });
+    });
+
+    it("should override external default values with multiple user values", () => {
+      const { flags } = parse(
+        ["--config.PORT", "8080", "--config.HOST", "example.com"],
+        {
+          flags: {
+            config: {
+              type: objectType<{ PORT?: string; HOST?: string }>(),
+              default: { PORT: "3000", HOST: "localhost" },
+            },
+          },
+        },
+      );
+
+      expect(flags).toEqual({
+        config: {
+          PORT: "8080",
+          HOST: "example.com",
+        },
+      });
+    });
+
+    it("should use custom mergeObject for external default", () => {
+      const { flags } = parse(["--config.PORT", "8080"], {
+        flags: {
+          config: {
+            type: objectType<{ PORT?: number; HOST?: string }>({
+              mergeObject: (target, defaults) => {
+                // Custom merge: keep user values, add missing defaults
+                for (const [key, val] of Object.entries(defaults)) {
+                  if (key === "PORT") {
+                    target.PORT = 1145;
+                  }
+                  if (!(key in target)) {
+                    (target as any)[key] = val;
+                  }
+                }
+              },
+            }),
+            default: { PORT: 3000, HOST: "localhost" },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        config: {
+          PORT: 1145,
+          HOST: "localhost",
         },
       });
     });

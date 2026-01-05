@@ -313,6 +313,25 @@ export function createParser<T extends FlagsDefinition>(
         } else if (config.required) {
           result.missingRequiredFlags.push(key);
         }
+      } else if (
+        isObjectType(config.type) &&
+        config.default !== undefined &&
+        typeof val === "object" &&
+        val !== null
+      ) {
+        const defaultValue = resolveValue(config.default) as any;
+        const mergeObject = config.type.mergeObject;
+
+        if (mergeObject) {
+          mergeObject(val, defaultValue);
+        } else {
+          // Default shallow merge: add missing keys from default
+          for (const [k, v] of Object.entries(defaultValue)) {
+            if (!(k in val)) {
+              val[k] = v;
+            }
+          }
+        }
       }
     }
 

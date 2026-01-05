@@ -2,24 +2,35 @@ import type { ObjectInputType, TypeFunction } from "./types";
 
 export const OBJECT_TYPE_MARKER: unique symbol = Symbol("objectType");
 
-/**
- * A special TypeFunction that supports dot-notation and context-aware value
- * setting.
- */
-export interface ObjectTypeFunction<
-  T = ObjectInputType,
-> extends TypeFunction<T> {
-  [OBJECT_TYPE_MARKER]: true;
-
+export interface ObjectTypeConfig<T = any> {
   /**
    * Optional custom value setter function. If not provided, uses default
    * behavior (appendDotValues - converts duplicate keys to arrays).
    */
   setValue?: (object: any, path: string, value: string) => void;
+
+  /**
+   * Custom merge function to combine external default values with user-provided
+   * values. By default, performs a shallow merge (assigns top-level properties
+   * from default that don't exist in user object).
+   *
+   * @param target The user-provided object
+   * @param defaults The external default values to merge
+   */
+  mergeObject?: (target: T, defaults: any) => void;
 }
 
 /**
- * Create an ObjectType with optional custom value setter.
+ * A special TypeFunction that supports dot-notation and context-aware value
+ * setting.
+ */
+export interface ObjectTypeFunction<T = ObjectInputType>
+  extends ObjectTypeConfig<T>, TypeFunction<T> {
+  [OBJECT_TYPE_MARKER]: true;
+}
+
+/**
+ * Create an ObjectType with optional custom value setter and merge function.
  *
  * @example
  *
@@ -29,24 +40,53 @@ export interface ObjectTypeFunction<
  *   env: objectType();
  * }
  *
+ * // With external default (will merge with user values using shallow merge)
+ * flags: {
+ *   config: {
+ *     type: objectType(),
+ *     default: { PORT: 3000, HOST: "localhost" }
+ *   }
+ * }
+ *
  * // Custom type conversion
  * flags: {
- *   env: objectType<{ PORT: number }>((object, path, value) => {
- *     if (path === "PORT") {
- *       setDotValues(object, path, Number(value));
- *     } else {
- *       setDotValues(object, path, coerceObjectValue(value));
+ *   env: objectType({
+ *     setValue: (object, path, value) => {
+ *       if (path === "PORT") {
+ *         setDotValues(object, path, Number(value));
+ *       } else {
+ *         setDotValues(object, path, coerceObjectValue(value));
+ *       }
  *     }
  *   });
+ * }
+ *
+ * // Custom merge function for external default
+ * flags: {
+ *   config: {
+ *     type: objectType({
+ *       mergeObject: (target, defaults) => {
+ *         // Custom deep merge logic
+ *         for (const [key, val] of Object.entries(defaults)) {
+ *           if (typeof val === 'object' && typeof target[key] === 'object') {
+ *             Object.assign(target[key], val, target[key]);
+ *           } else if (!(key in target)) {
+ *             target[key] = val;
+ *           }
+ *         }
+ *       }
+ *     }),
+ *     default: { PORT: 3000, nested: { foo: 'bar' } }
+ *   }
  * }
  * ```
  *
  * @template T The type of the resulting object
- * @param setValue Optional custom function to set values
+ * @param config Optional configuration object
  * @returns An ObjectTypeFunction that can be used as a flag type
  */
 export function objectType<T = ObjectInputType>(
-  setValue?: (object: any, path: string, value: string) => void,
+  config?: ObjectTypeConfig<T>,
 ): ObjectTypeFunction<NoInfer<T>> {
   const fn = (() => {
     throw new Error(
@@ -56,7 +96,10 @@ export function objectType<T = ObjectInputType>(
   }) as unknown as ObjectTypeFunction<T>;
 
   fn[OBJECT_TYPE_MARKER] = true;
-  fn.setValue = setValue;
+
+  if (config) {
+    Object.assign(fn, config);
+  }
 
   return fn;
 }
