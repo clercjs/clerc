@@ -234,36 +234,39 @@ $ node cli.mjs config --define:env=production --define:version=1.0.0
 
 #### 使用 `objectType()` 的高级对象类型
 
-为了更好地控制对象选项的解析和类型转换，你可以使用 `@clerc/parser` 提供的 `objectType()` 函数。这提供了上下文感知的值转换功能：
+为了更好地控制对象选项的解析、类型转换和默认值合并，你可以使用 `@clerc/parser` 提供的 `objectType()` 函数：
 
 ```ts
-import { objectType } from "@clerc/parser";
+import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
 
-// 或者 import { objectType } from "clerc";
+// 或者 import { objectType, setDotValues, coerceObjectValue } from "clerc";
 
 const cli = Cli()
   .command("dev", "启动开发服务器", {
     flags: {
-      env: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>(
-        (object, path, value) => {
-          // 根据字段名进行自定义类型转换
-          if (path === "PORT") {
-            setDotValues(object, path, Number(value));
-          } else if (path === "DEBUG") {
-            setDotValues(object, path, value === "true");
-          } else {
-            // 对于其他字段，使用默认强制转换
-            setDotValues(object, path, coerceObjectValue(value));
-          }
-        },
-      ),
+      env: {
+        type: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>({
+          setValue: (object, path, value) => {
+            // 根据字段名进行自定义类型转换
+            if (path === "PORT") {
+              setDotValues(object, path, Number(value));
+            } else if (path === "DEBUG") {
+              setDotValues(object, path, value === "true");
+            } else {
+              // 对于其他字段，使用默认强制转换
+              setDotValues(object, path, coerceObjectValue(value));
+            }
+          },
+        }),
+        default: { PORT: 3000, HOST: "0.0.0.0" }, // 默认值
+      },
     },
   })
   .on("dev", (ctx) => {
-    // $ node cli.mjs dev --env.PORT 3000 --env.DEBUG true --env.HOST localhost
-    ctx.flags.env.PORT; // => 3000 (number)
+    // $ node cli.mjs dev --env.PORT 8080 --env.DEBUG true
+    ctx.flags.env.PORT; // => 8080 (number)
     ctx.flags.env.DEBUG; // => true (boolean)
-    ctx.flags.env.HOST; // => "localhost" (string)
+    ctx.flags.env.HOST; // => "0.0.0.0" (从默认值合并而来)
   })
   .parse();
 ```
@@ -271,11 +274,12 @@ const cli = Cli()
 **主要特性：**
 
 1. **类型安全的泛型支持**：使用 `objectType<T>()` 指定预期的对象结构
-2. **上下文感知转换**：`setValue` 函数接收以下参数：
+2. **自定义值转换**：`setValue` 函数接收以下参数：
    - `object`：正在构建的当前对象
    - `path`：点分隔的路径（例如 `"PORT"` 或 `"foo.bar"`）
    - `value`：原始 CLI 字符串值
-3. **辅助函数**：使用 `setDotValues`、`appendDotValues` 和 `coerceObjectValue` 进行常见操作
+3. **自动默认值合并**：当你在 flag 配置中提供 `default` 值时，它会自动与用户提供的值合并（默认为浅合并）
+4. **辅助函数**：使用 `setDotValues`、`appendDotValues` 和 `coerceObjectValue` 进行常见操作
 
 **默认行为（不使用自定义 `setValue`）：**
 
@@ -287,15 +291,19 @@ import { objectType } from "@clerc/parser";
 const cli = Cli()
   .command("config", "配置设置", {
     flags: {
-      settings: objectType(), // 使用默认行为
+      settings: {
+        type: objectType(), // 使用默认行为
+        default: { theme: "dark", language: "zh" },
+      },
     },
   })
   .on("config", (ctx) => {
     // $ node cli.mjs config --settings.name app --settings.version 1.0.0
-    ctx.flags.settings; // => { name: "app", version: "1.0.0" }
+    ctx.flags.settings; // => { name: "app", version: "1.0.0", theme: "dark", language: "zh" }
 
     // $ node cli.mjs config --settings.tags a --settings.tags b
-    ctx.flags.settings; // => { tags: ["a", "b"] } (重复的键自动变为数组)
+    ctx.flags.settings; // => { tags: ["a", "b"], theme: "dark", language: "zh" }
+    // 重复的键自动变为数组，默认值被合并
   })
   .parse();
 ```
@@ -305,6 +313,7 @@ const cli = Cli()
 - 将 `"true"` 或空值转换为布尔值 `true`
 - 将 `"false"` 转换为布尔值 `false`
 - 通过创建数组来处理重复的键
+- **合并外部 `default` 值**与用户提供的值（浅合并）
 
 **上下文感知转换：**
 
@@ -316,25 +325,72 @@ import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
 const cli = Cli()
   .command("deploy", "部署应用", {
     flags: {
-      config: objectType((object, path, value) => {
-        // 基于其他字段的条件逻辑
-        if (path === "debug") {
-          // 在生产模式下禁用 debug
-          if (object.mode === "production") {
-            setDotValues(object, path, false);
-          } else {
-            setDotValues(object, path, coerceObjectValue(value));
-          }
-        } else {
-          setDotValues(object, path, coerceObjectValue(value));
-        }
-      }),
+      config: {
+        type: objectType({
+          setValue: (object, path, value) => {
+            // 基于其他字段的条件逻辑
+            if (path === "debug") {
+              // 在生产模式下禁用 debug
+              if (object.mode === "production") {
+                setDotValues(object, path, false);
+              } else {
+                setDotValues(object, path, coerceObjectValue(value));
+              }
+            } else {
+              setDotValues(object, path, coerceObjectValue(value));
+            }
+          },
+        }),
+        default: { mode: "development", timeout: 30 },
+      },
     },
   })
   .on("deploy", (ctx) => {
     // $ node cli.mjs deploy --config.mode production --config.debug true
-    ctx.flags.config; // => { mode: "production", debug: false }
-    // debug 在生产模式下被强制设为 false
+    ctx.flags.config; // => { mode: "production", debug: false, timeout: 30 }
+    // debug 在生产模式下被强制设为 false，timeout 从默认值合并而来
+  })
+  .parse();
+```
+
+**自定义合并逻辑：**
+
+默认情况下，`objectType` 在合并默认值与用户提供的值时执行浅合并。你可以使用 `mergeObject` 选项自定义此行为：
+
+```ts
+import { objectType } from "@clerc/parser";
+
+const cli = Cli()
+  .command("start", "启动服务器", {
+    flags: {
+      config: {
+        type: objectType({
+          mergeObject: (target, defaults) => {
+            // 自定义合并逻辑：深度合并嵌套对象
+            for (const [key, val] of Object.entries(defaults)) {
+              if (
+                typeof val === "object" &&
+                val !== null &&
+                typeof target[key] === "object"
+              ) {
+                // 深度合并嵌套对象
+                Object.assign(target[key], val, target[key]);
+              } else if (!(key in target)) {
+                // 从默认值添加缺失的键
+                target[key] = val;
+              }
+            }
+          },
+        }),
+        default: { db: { host: "localhost", port: 5432 }, cache: { ttl: 300 } },
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    // $ node cli.mjs start --config.db.host example.com
+    ctx.flags.config;
+    // => { db: { host: "example.com", port: 5432 }, cache: { ttl: 300 } }
+    // 深度合并保留了默认值中的 db.port
   })
   .parse();
 ```
@@ -351,6 +407,7 @@ const cli = Cli()
 - 需要对每个字段进行自定义类型转换
 - 需要上下文感知的转换
 - 需要更好的 TypeScript 类型推断
+- **智能默认值合并**，将用户输入与合理的默认值结合
 - 需要与模式验证库集成
   :::
 
