@@ -8,6 +8,8 @@ export type * from "./types";
 export const toArray = <T>(a: MaybeArray<T>): T[] =>
   Array.isArray(a) ? a : [a];
 
+const camelCaseCache = new Map<string, string>();
+
 /**
  * Converts a dash- or space-separated string to camelCase.
  *
@@ -15,6 +17,11 @@ export const toArray = <T>(a: MaybeArray<T>): T[] =>
  * parser.
  */
 export function camelCase(str: string): string {
+  const cached = camelCaseCache.get(str);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const firstIdx = Math.min(
     str.includes("-") ? str.indexOf("-") : Infinity,
     str.includes(" ") ? str.indexOf(" ") : Infinity,
@@ -38,6 +45,8 @@ export function camelCase(str: string): string {
       result += str[i];
     }
   }
+
+  camelCaseCache.set(str, result);
 
   return result;
 }

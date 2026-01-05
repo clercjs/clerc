@@ -66,7 +66,9 @@ export function createParser<T extends FlagsDefinition>(
     const possibleName =
       name[2] === "-"
         ? name.slice(3) // --no-foo -> foo
-        : name.length > 2 && /[A-Z]/.test(name[2])
+        : name.length > 2 &&
+            name.charCodeAt(2) >= 65 &&
+            name.charCodeAt(2) <= 90 // Check if uppercase letter (A-Z)
           ? name[2].toLowerCase() + name.slice(3) // --noFoo -> foo
           : "";
 
