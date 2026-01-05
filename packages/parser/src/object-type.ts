@@ -1,8 +1,5 @@
 import type { ObjectInputType, TypeFunction } from "./types";
 
-/**
- * Symbol brand to identify ObjectType functions
- */
 export const OBJECT_TYPE_MARKER = Symbol("objectType");
 
 /**
@@ -12,9 +9,6 @@ export const OBJECT_TYPE_MARKER = Symbol("objectType");
 export interface ObjectTypeFunction<
   T = ObjectInputType,
 > extends TypeFunction<T> {
-  /**
-   * Marker to identify this as an Object type that supports dot-notation.
-   */
   [OBJECT_TYPE_MARKER]: true;
 
   /**
@@ -54,7 +48,6 @@ export interface ObjectTypeFunction<
 export function objectType<T = ObjectInputType>(
   setValue?: (object: any, path: string, value: string) => void,
 ): ObjectTypeFunction<NoInfer<T>> {
-  // Create a dummy TypeFunction (should never be called directly)
   const fn = (() => {
     throw new Error(
       "ObjectType should not be called as a regular TypeFunction. " +

@@ -259,7 +259,6 @@ export function createParser<T extends FlagsDefinition>(
 
           if (path) {
             const configType = config.type;
-            // Support both Object (legacy) and objectType (new)
             if (configType === Object || isObjectType(configType)) {
               result.flags[key] ??= {};
               const value = hasSep
@@ -268,11 +267,9 @@ export function createParser<T extends FlagsDefinition>(
                   ? (eat() ?? "")
                   : "";
 
-              // Use custom setValue if provided, otherwise use default (appendDotValues + coerceObjectValue)
               if (isObjectType(configType) && configType.setValue) {
                 configType.setValue(result.flags[key], path, value);
               } else {
-                // Default behavior: use appendDotValues with coerceObjectValue for array support
                 appendDotValues(
                   result.flags[key],
                   path,

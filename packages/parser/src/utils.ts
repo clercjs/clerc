@@ -36,7 +36,7 @@ export function setValueByType(
 }
 
 /**
- * Default value coercion for Object type. Converts "true"/"" to true, "false"
+ * Default value coercion for Object type. Converts "true" / "" to true, "false"
  * to false, other values remain unchanged.
  *
  * @param value The raw string value from CLI
@@ -100,7 +100,6 @@ export function appendDotValues(obj: any, path: string, value: any): void {
   }
   const lastKey = keys[keys.length - 1];
 
-  // Handle duplicate keys by converting to array
   if (Object.hasOwn(current, lastKey)) {
     const existing = current[lastKey];
     if (Array.isArray(existing)) {
