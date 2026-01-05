@@ -244,7 +244,7 @@ import { objectType } from "@clerc/parser";
 const cli = Cli()
   .command("dev", "启动开发服务器", {
     flags: {
-      env: objectType<{ PORT: number; DEBUG: boolean; HOST: string }>(
+      env: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>(
         (object, path, value) => {
           // 根据字段名进行自定义类型转换
           if (path === "PORT") {

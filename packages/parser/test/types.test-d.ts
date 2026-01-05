@@ -100,12 +100,12 @@ describe("objectType types", () => {
   it("should infer objectType with generic", () => {
     const result = parse([], {
       flags: {
-        env: objectType<{ PORT: number; DEBUG: boolean }>(),
+        env: objectType<{ PORT?: number; DEBUG?: boolean }>(),
       },
     });
     expectTypeOf(result.flags.env).toEqualTypeOf<{
-      PORT: number;
-      DEBUG: boolean;
+      PORT?: number;
+      DEBUG?: boolean;
     }>();
   });
 
@@ -134,18 +134,18 @@ describe("objectType types", () => {
       flags: {
         config: {
           type: objectType<{
-            host: string;
-            port: number;
-            enabled: boolean;
+            host?: string;
+            port?: number;
+            enabled?: boolean;
           }>(),
         },
       },
     });
 
     expectTypeOf(result.flags.config).toEqualTypeOf<{
-      host: string;
-      port: number;
-      enabled: boolean;
+      host?: string;
+      port?: number;
+      enabled?: boolean;
     }>();
   });
 
@@ -153,30 +153,32 @@ describe("objectType types", () => {
     const result = parse([], {
       flags: {
         config: {
-          type: objectType<{ PORT: number }>(),
+          type: objectType<{ PORT?: number }>(),
           default: { PORT: 3000 },
         },
       },
     });
 
-    expectTypeOf(result.flags.config).toEqualTypeOf<{ PORT: number }>();
+    expectTypeOf(result.flags.config).toEqualTypeOf<
+      { PORT: number } | NoInfer<{ PORT?: number | undefined }>
+    >();
   });
 
   it("should support objectType with required flag", () => {
     const result = parse([], {
       flags: {
         required: {
-          type: objectType<{ value: string }>(),
+          type: objectType<{ value?: string }>(),
           required: true,
         },
         optional: {
-          type: objectType<{ value: string }>(),
+          type: objectType<{ value?: string }>(),
           required: false,
         },
       },
     });
 
-    expectTypeOf(result.flags.required).toEqualTypeOf<{ value: string }>();
-    expectTypeOf(result.flags.optional).toEqualTypeOf<{ value: string }>();
+    expectTypeOf(result.flags.required).toEqualTypeOf<{ value?: string }>();
+    expectTypeOf(result.flags.optional).toEqualTypeOf<{ value?: string }>();
   });
 });

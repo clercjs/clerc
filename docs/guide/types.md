@@ -244,7 +244,7 @@ import { objectType } from "@clerc/parser";
 const cli = Cli()
   .command("dev", "Start development server", {
     flags: {
-      env: objectType<{ PORT: number; DEBUG: boolean; HOST: string }>(
+      env: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>(
         (object, path, value) => {
           // Custom type conversion based on field name
           if (path === "PORT") {
