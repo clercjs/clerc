@@ -368,7 +368,6 @@ const cli = Cli()
 The `objectType()` function provides a more powerful and type-safe alternative to the basic `Object` type, especially when you need:
 
 - Custom type conversions per field
-- Context-aware transformations
 - Better TypeScript type inference
 - Integration with schema validation libraries
 
