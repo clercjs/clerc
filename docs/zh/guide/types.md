@@ -239,6 +239,8 @@ $ node cli.mjs config --define:env=production --define:version=1.0.0
 ```ts
 import { objectType } from "@clerc/parser";
 
+// 或者 import { objectType } from "clerc";
+
 const cli = Cli()
   .command("dev", "启动开发服务器", {
     flags: {
@@ -280,6 +282,8 @@ const cli = Cli()
 ```ts
 import { objectType } from "@clerc/parser";
 
+// 或者 import { objectType } from "clerc";
+
 const cli = Cli()
   .command("config", "配置设置", {
     flags: {
@@ -306,6 +310,8 @@ const cli = Cli()
 
 ```ts
 import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
+
+// 或者 import { coerceObjectValue, objectType, setDotValues } from "clerc";
 
 const cli = Cli()
   .command("deploy", "部署应用", {

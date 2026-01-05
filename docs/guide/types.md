@@ -282,6 +282,8 @@ const cli = Cli()
 ```ts
 import { objectType } from "@clerc/parser";
 
+// or import { objectType } from "clerc";
+
 const cli = Cli()
   .command("config", "Configure settings", {
     flags: {
@@ -308,6 +310,8 @@ The default behavior automatically:
 
 ```ts
 import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
+
+// or import { coerceObjectValue, objectType, setDotValues } from "clerc";
 
 const cli = Cli()
   .command("deploy", "Deploy application", {
