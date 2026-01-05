@@ -232,6 +232,126 @@ Actually, `--define=env=production` also works fine, it's just not as intuitive.
 
 :::
 
+#### Advanced Object Type with `objectType()`
+
+For more control over object flag parsing and type conversion, you can use the `objectType()` function from `@clerc/parser`. This provides context-aware value transformation capabilities:
+
+```ts
+import { objectType } from "@clerc/parser";
+
+// or import { objectType } from "clerc";
+
+const cli = Cli()
+  .command("dev", "Start development server", {
+    flags: {
+      env: objectType<{ PORT: number; DEBUG: boolean; HOST: string }>(
+        (object, path, value) => {
+          // Custom type conversion based on field name
+          if (path === "PORT") {
+            setDotValues(object, path, Number(value));
+          } else if (path === "DEBUG") {
+            setDotValues(object, path, value === "true");
+          } else {
+            // For other fields, use default coercion
+            setDotValues(object, path, coerceObjectValue(value));
+          }
+        },
+      ),
+    },
+  })
+  .on("dev", (ctx) => {
+    // $ node cli.mjs dev --env.PORT 3000 --env.DEBUG true --env.HOST localhost
+    ctx.flags.env.PORT; // => 3000 (number)
+    ctx.flags.env.DEBUG; // => true (boolean)
+    ctx.flags.env.HOST; // => "localhost" (string)
+  })
+  .parse();
+```
+
+**Key features:**
+
+1. **Type-safe generic support**: Specify the expected object structure with `objectType<T>()`
+2. **Context-aware transformation**: The `setValue` function receives:
+   - `object`: The current object being built
+   - `path`: The dot-separated path (e.g., `"PORT"` or `"foo.bar"`)
+   - `value`: The raw CLI string value
+3. **Helper functions**: Use `setDotValues`, `appendDotValues`, and `coerceObjectValue` for common operations
+
+**Default behavior (without custom `setValue`):**
+
+```ts
+import { objectType } from "@clerc/parser";
+
+const cli = Cli()
+  .command("config", "Configure settings", {
+    flags: {
+      settings: objectType(), // Uses default behavior
+    },
+  })
+  .on("config", (ctx) => {
+    // $ node cli.mjs config --settings.name app --settings.version 1.0.0
+    ctx.flags.settings; // => { name: "app", version: "1.0.0" }
+
+    // $ node cli.mjs config --settings.tags a --settings.tags b
+    ctx.flags.settings; // => { tags: ["a", "b"] } (duplicate keys become arrays)
+  })
+  .parse();
+```
+
+The default behavior automatically:
+
+- Converts `"true"` or empty values to boolean `true`
+- Converts `"false"` to boolean `false`
+- Handles duplicate keys by creating arrays
+
+**Context-aware transformations:**
+
+```ts
+import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
+
+const cli = Cli()
+  .command("deploy", "Deploy application", {
+    flags: {
+      config: objectType((object, path, value) => {
+        // Conditional logic based on other fields
+        if (path === "debug") {
+          // Disable debug in production mode
+          if (object.mode === "production") {
+            setDotValues(object, path, false);
+          } else {
+            setDotValues(object, path, coerceObjectValue(value));
+          }
+        } else {
+          setDotValues(object, path, coerceObjectValue(value));
+        }
+      }),
+    },
+  })
+  .on("deploy", (ctx) => {
+    // $ node cli.mjs deploy --config.mode production --config.debug true
+    ctx.flags.config; // => { mode: "production", debug: false }
+    // Debug is forced to false in production
+  })
+  .parse();
+```
+
+**Utility functions:**
+
+- `setDotValues(object, path, value)`: Sets a value at a nested path (overwrites existing values)
+- `appendDotValues(object, path, value)`: Sets a value at a nested path (converts duplicates to arrays)
+- `coerceObjectValue(value)`: Default boolean coercion (`"true"` → `true`, `"false"` → `false`)
+
+:::tip
+
+The `objectType()` function provides a more powerful and type-safe alternative to the basic `Object` type, especially when you need:
+
+- Custom type conversions per field
+- Context-aware transformations
+- Better TypeScript type inference
+- Integration with schema validation libraries
+
+:::
+
 ## Built-in Advanced Types
 
 Clerc provides some built-in advanced type functions to facilitate common needs:
