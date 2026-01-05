@@ -2,6 +2,7 @@ import { camelCase, resolveValue } from "@clerc/utils";
 
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import { iterateArgs } from "./iterator";
+import { isObjectType } from "./object-type";
 import type {
   FlagsDefinition,
   InferFlags,
@@ -9,10 +10,11 @@ import type {
   ParserOptions,
 } from "./types";
 import {
+  appendDotValues,
+  coerceObjectValue,
   isArrayOfType,
   isDigit,
   isLetter,
-  setDotValues,
   setValueByType,
   splitNameAndValue,
 } from "./utils";
@@ -256,14 +258,27 @@ export function createParser<T extends FlagsDefinition>(
           const { key, config, path } = resolved;
 
           if (path) {
-            if (config.type === Object) {
+            const configType = config.type;
+            // Support both Object (legacy) and objectType (new)
+            if (configType === Object || isObjectType(configType)) {
               result.flags[key] ??= {};
               const value = hasSep
                 ? rawValue!
                 : hasNext && !shouldProcessAsFlag(next)
                   ? (eat() ?? "")
                   : "";
-              setDotValues(result.flags[key], path, value);
+
+              // Use custom setValue if provided, otherwise use default (appendDotValues + coerceObjectValue)
+              if (isObjectType(configType) && configType.setValue) {
+                configType.setValue(result.flags[key], path, value);
+              } else {
+                // Default behavior: use appendDotValues with coerceObjectValue for array support
+                appendDotValues(
+                  result.flags[key],
+                  path,
+                  coerceObjectValue(value),
+                );
+              }
             }
           } else {
             if (config.type === Boolean) {
