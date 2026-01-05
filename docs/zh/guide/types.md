@@ -315,44 +315,6 @@ const cli = Cli()
 - 通过创建数组来处理重复的键
 - **合并外部 `default` 值**与用户提供的值（浅合并）
 
-**上下文感知转换：**
-
-```ts
-import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
-
-// 或者 import { coerceObjectValue, objectType, setDotValues } from "clerc";
-
-const cli = Cli()
-  .command("deploy", "部署应用", {
-    flags: {
-      config: {
-        type: objectType({
-          setValue: (object, path, value) => {
-            // 基于其他字段的条件逻辑
-            if (path === "debug") {
-              // 在生产模式下禁用 debug
-              if (object.mode === "production") {
-                setDotValues(object, path, false);
-              } else {
-                setDotValues(object, path, coerceObjectValue(value));
-              }
-            } else {
-              setDotValues(object, path, coerceObjectValue(value));
-            }
-          },
-        }),
-        default: { mode: "development", timeout: 30 },
-      },
-    },
-  })
-  .on("deploy", (ctx) => {
-    // $ node cli.mjs deploy --config.mode production --config.debug true
-    ctx.flags.config; // => { mode: "production", debug: false, timeout: 30 }
-    // debug 在生产模式下被强制设为 false，timeout 从默认值合并而来
-  })
-  .parse();
-```
-
 **自定义合并逻辑：**
 
 默认情况下，`objectType` 在合并默认值与用户提供的值时执行浅合并。你可以使用 `mergeObject` 选项自定义此行为：

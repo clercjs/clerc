@@ -315,44 +315,6 @@ The default behavior automatically:
 - Handles duplicate keys by creating arrays
 - **Merges external `default` values** with user-provided values (shallow merge)
 
-**Context-aware transformations:**
-
-```ts
-import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
-
-// or import { coerceObjectValue, objectType, setDotValues } from "clerc";
-
-const cli = Cli()
-  .command("deploy", "Deploy application", {
-    flags: {
-      config: {
-        type: objectType({
-          setValue: (object, path, value) => {
-            // Conditional logic based on other fields
-            if (path === "debug") {
-              // Disable debug in production mode
-              if (object.mode === "production") {
-                setDotValues(object, path, false);
-              } else {
-                setDotValues(object, path, coerceObjectValue(value));
-              }
-            } else {
-              setDotValues(object, path, coerceObjectValue(value));
-            }
-          },
-        }),
-        default: { mode: "development", timeout: 30 },
-      },
-    },
-  })
-  .on("deploy", (ctx) => {
-    // $ node cli.mjs deploy --config.mode production --config.debug true
-    ctx.flags.config; // => { mode: "production", debug: false, timeout: 30 }
-    // Debug is forced to false in production, timeout is merged from default
-  })
-  .parse();
-```
-
 **Custom merge logic:**
 
 By default, `objectType` performs a shallow merge when combining default values with user-provided values. You can customize this behavior with the `mergeObject` option:
