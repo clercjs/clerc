@@ -160,7 +160,7 @@ describe("objectType types", () => {
     });
 
     expectTypeOf(result.flags.config).toEqualTypeOf<
-      { PORT: number } | NoInfer<{ PORT?: number | undefined }>
+      NoInfer<{ PORT?: number | undefined }> & { PORT: number }
     >();
   });
 

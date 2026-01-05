@@ -170,6 +170,14 @@ type IsTypeAny<T extends FlagDefinitionValue> =
         : false
       : false;
 
+type MergeObjectDefault<U, T extends FlagDefinitionValue> = T extends {
+  default: FlagDefaultValue<infer DefaultType>;
+}
+  ? DefaultType extends object
+    ? U & DefaultType
+    : U | DefaultType
+  : U;
+
 type _InferFlags<T extends FlagsDefinition> = {
   [K in keyof T]: IsTypeAny<T[K]> extends true
     ? any
@@ -178,11 +186,11 @@ type _InferFlags<T extends FlagsDefinition> = {
           | { type: readonly [BooleanConstructor] }
       ? number | InferFlagDefault<T[K], never>
       : T[K] extends ObjectConstructor | { type: ObjectConstructor }
-        ? ObjectInputType | InferFlagDefault<T[K], never>
+        ? MergeObjectDefault<ObjectInputType, T[K]>
         : T[K] extends
               | ObjectTypeFunction<infer U>
               | { type: ObjectTypeFunction<infer U> }
-          ? U | InferFlagDefault<T[K], never>
+          ? MergeObjectDefault<U, T[K]>
           : T[K] extends
                 | readonly [TypeValue<infer U>]
                 | { type: readonly [TypeValue<infer U>] }
