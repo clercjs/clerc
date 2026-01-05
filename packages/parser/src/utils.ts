@@ -87,6 +87,14 @@ export function appendDotValues(obj: any, path: string, value: any): void {
   let current = obj;
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
+    // Check if the key exists and is not an object (path conflict)
+    if (
+      Object.hasOwn(current, key) &&
+      (typeof current[key] !== "object" || current[key] === null)
+    ) {
+      // current value is a primitive, cannot set nested property
+      return;
+    }
     current[key] ??= {};
     current = current[key];
   }

@@ -307,7 +307,7 @@ export function createParser<T extends FlagsDefinition>(
         // Make sure arrays and objects are always initialized with default values
         else if (Array.isArray(config.type)) {
           result.flags[key] = isArrayOfType(config.type, Boolean) ? 0 : [];
-        } else if (config.type === Object) {
+        } else if (config.type === Object || isObjectType(config.type)) {
           result.flags[key] = {};
         }
         // Initialize negatable booleans to false if not provided
