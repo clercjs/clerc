@@ -232,6 +232,147 @@ Actually, `--define=env=production` also works fine, it's just not as intuitive.
 
 :::
 
+#### Advanced Object Type with `objectType()`
+
+For more control over object flag parsing, type conversion, and default value merging, you can use the `objectType()` function from `@clerc/parser`:
+
+```ts
+import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
+
+// or import { objectType, setDotValues, coerceObjectValue } from "clerc";
+
+const cli = Cli()
+  .command("dev", "Start development server", {
+    flags: {
+      env: {
+        type: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>({
+          setValue: (object, path, value) => {
+            // Custom type conversion based on field name
+            if (path === "PORT") {
+              setDotValues(object, path, Number(value));
+            } else if (path === "DEBUG") {
+              setDotValues(object, path, value === "true");
+            } else {
+              // For other fields, use default coercion
+              setDotValues(object, path, coerceObjectValue(value));
+            }
+          },
+        }),
+        default: { PORT: 3000, HOST: "0.0.0.0" }, // Default values
+      },
+    },
+  })
+  .on("dev", (ctx) => {
+    // $ node cli.mjs dev --env.PORT 8080 --env.DEBUG true
+    ctx.flags.env.PORT; // => 8080 (number)
+    ctx.flags.env.DEBUG; // => true (boolean)
+    ctx.flags.env.HOST; // => "0.0.0.0" (merged from default)
+  })
+  .parse();
+```
+
+**Key features:**
+
+1. **Type-safe generic support**: Specify the expected object structure with `objectType<T>()`
+2. **Custom value transformation**: The `setValue` function receives:
+   - `object`: The current object being built
+   - `path`: The dot-separated path (e.g., `"PORT"` or `"foo.bar"`)
+   - `value`: The raw CLI string value
+3. **Automatic default merging**: When you provide a `default` value in the flag config, it automatically merges with user-provided values (shallow merge by default)
+4. **Helper functions**: Use `setDotValues`, `appendDotValues`, and `coerceObjectValue` for common operations
+
+**Default behavior (without custom `setValue`):**
+
+```ts
+import { objectType } from "@clerc/parser";
+
+// or import { objectType } from "clerc";
+
+const cli = Cli()
+  .command("config", "Configure settings", {
+    flags: {
+      settings: {
+        type: objectType(), // Uses default behavior
+        default: { theme: "dark", language: "en" },
+      },
+    },
+  })
+  .on("config", (ctx) => {
+    // $ node cli.mjs config --settings.name app --settings.version 1.0.0
+    ctx.flags.settings; // => { name: "app", version: "1.0.0", theme: "dark", language: "en" }
+
+    // $ node cli.mjs config --settings.tags a --settings.tags b
+    ctx.flags.settings; // => { tags: ["a", "b"], theme: "dark", language: "en" }
+    // Duplicate keys become arrays, default values are merged
+  })
+  .parse();
+```
+
+The default behavior automatically:
+
+- Converts `"true"` or empty values to boolean `true`
+- Converts `"false"` to boolean `false`
+- Handles duplicate keys by creating arrays
+- **Merges external `default` values** with user-provided values (shallow merge)
+
+**Custom merge logic:**
+
+By default, `objectType` performs a shallow merge when combining default values with user-provided values. You can customize this behavior with the `mergeObject` option:
+
+```ts
+import { objectType } from "@clerc/parser";
+
+const cli = Cli()
+  .command("start", "Start the server", {
+    flags: {
+      config: {
+        type: objectType({
+          mergeObject: (target, defaults) => {
+            // Custom merge logic: deep merge nested objects
+            for (const [key, val] of Object.entries(defaults)) {
+              if (
+                typeof val === "object" &&
+                val !== null &&
+                typeof target[key] === "object"
+              ) {
+                // Deep merge nested objects
+                Object.assign(target[key], val, target[key]);
+              } else if (!(key in target)) {
+                // Add missing keys from defaults
+                target[key] = val;
+              }
+            }
+          },
+        }),
+        default: { db: { host: "localhost", port: 5432 }, cache: { ttl: 300 } },
+      },
+    },
+  })
+  .on("start", (ctx) => {
+    // $ node cli.mjs start --config.db.host example.com
+    ctx.flags.config;
+    // => { db: { host: "example.com", port: 5432 }, cache: { ttl: 300 } }
+    // Deep merge preserves db.port from default
+  })
+  .parse();
+```
+
+**Utility functions:**
+
+- `setDotValues(object, path, value)`: Sets a value at a nested path (overwrites existing values)
+- `appendDotValues(object, path, value)`: Sets a value at a nested path (converts duplicates to arrays)
+- `coerceObjectValue(value)`: Default boolean coercion (`"true"` → `true`, `"false"` → `false`)
+
+:::tip
+
+The `objectType()` function provides a more powerful and type-safe alternative to the basic `Object` type, especially when you need:
+
+- Custom type conversions per field
+- Better TypeScript type inference
+- Integration with schema validation libraries
+
+:::
+
 ## Built-in Advanced Types
 
 Clerc provides some built-in advanced type functions to facilitate common needs:

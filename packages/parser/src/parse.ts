@@ -2,6 +2,7 @@ import { camelCase, resolveValue } from "@clerc/utils";
 
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
 import { iterateArgs } from "./iterator";
+import { isObjectType } from "./object-type";
 import type {
   FlagsDefinition,
   InferFlags,
@@ -9,10 +10,11 @@ import type {
   ParserOptions,
 } from "./types";
 import {
+  appendDotValues,
+  coerceObjectValue,
   isArrayOfType,
   isDigit,
   isLetter,
-  setDotValues,
   setValueByType,
   splitNameAndValue,
 } from "./utils";
@@ -258,14 +260,24 @@ export function createParser<T extends FlagsDefinition>(
           const { key, config, path } = resolved;
 
           if (path) {
-            if (config.type === Object) {
+            const configType = config.type;
+            if (configType === Object || isObjectType(configType)) {
               result.flags[key] ??= {};
               const value = hasSep
                 ? rawValue!
                 : hasNext && !shouldProcessAsFlag(next)
                   ? (eat() ?? "")
                   : "";
-              setDotValues(result.flags[key], path, value);
+
+              if (isObjectType(configType) && configType.setValue) {
+                configType.setValue(result.flags[key], path, value);
+              } else {
+                appendDotValues(
+                  result.flags[key],
+                  path,
+                  coerceObjectValue(value),
+                );
+              }
             }
           } else {
             if (config.type === Boolean) {
@@ -294,7 +306,7 @@ export function createParser<T extends FlagsDefinition>(
         // Make sure arrays and objects are always initialized with default values
         else if (Array.isArray(config.type)) {
           result.flags[key] = isArrayOfType(config.type, Boolean) ? 0 : [];
-        } else if (config.type === Object) {
+        } else if (config.type === Object || isObjectType(config.type)) {
           result.flags[key] = {};
         }
         // Initialize negatable booleans to false if not provided
@@ -302,6 +314,27 @@ export function createParser<T extends FlagsDefinition>(
           result.flags[key] = false;
         } else if (config.required) {
           result.missingRequiredFlags.push(key);
+        }
+      } else if (
+        (config.type === Object || isObjectType(config.type)) &&
+        config.default !== undefined &&
+        typeof val === "object" &&
+        val !== null
+      ) {
+        const defaultValue = resolveValue(config.default) as any;
+        const mergeObject = isObjectType(config.type)
+          ? config.type.mergeObject
+          : undefined;
+
+        if (mergeObject) {
+          mergeObject(val, defaultValue);
+        } else {
+          // Default shallow merge: add missing keys from default
+          for (const [k, v] of Object.entries(defaultValue)) {
+            if (!(k in val)) {
+              val[k] = v;
+            }
+          }
         }
       }
     }

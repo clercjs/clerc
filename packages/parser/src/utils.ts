@@ -35,7 +35,14 @@ export function setValueByType(
   }
 }
 
-function resolveSetValue(value: any): any {
+/**
+ * Default value coercion for Object type. Converts "true" / "" to true, "false"
+ * to false, other values remain unchanged.
+ *
+ * @param value The raw string value from CLI
+ * @returns Coerced value (boolean or string)
+ */
+export function coerceObjectValue(value: string): string | boolean {
   if (value === "true" || value === "") {
     return true;
   } else if (value === "false") {
@@ -45,6 +52,15 @@ function resolveSetValue(value: any): any {
   return value;
 }
 
+/**
+ * Sets a value at a nested path in an object, creating intermediate objects as
+ * needed. Does NOT apply type conversion - value is set as-is. Overwrites
+ * existing values.
+ *
+ * @param obj The target object
+ * @param path Dot-separated path (e.g., "foo.bar.baz")
+ * @param value The value to set (used as-is, no type conversion)
+ */
 export function setDotValues(obj: any, path: string, value: any): void {
   const keys = path.split(".");
   let current = obj;
@@ -54,7 +70,46 @@ export function setDotValues(obj: any, path: string, value: any): void {
     current = current[key];
   }
   const lastKey = keys[keys.length - 1];
-  current[lastKey] = resolveSetValue(value);
+  current[lastKey] = value;
+}
+
+/**
+ * Similar to setDotValues but handles duplicate keys by converting to arrays.
+ * Does NOT apply type conversion - value is set as-is. Useful for flags that
+ * can be specified multiple times.
+ *
+ * @param obj The target object
+ * @param path Dot-separated path (e.g., "foo.bar")
+ * @param value The value to set or append (used as-is, no type conversion)
+ */
+export function appendDotValues(obj: any, path: string, value: any): void {
+  const keys = path.split(".");
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    // Check if the key exists and is not an object (path conflict)
+    if (
+      Object.hasOwn(current, key) &&
+      (typeof current[key] !== "object" || current[key] === null)
+    ) {
+      // current value is a primitive, cannot set nested property
+      return;
+    }
+    current[key] ??= {};
+    current = current[key];
+  }
+  const lastKey = keys[keys.length - 1];
+
+  if (Object.hasOwn(current, lastKey)) {
+    const existing = current[lastKey];
+    if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      current[lastKey] = [existing, value];
+    }
+  } else {
+    current[lastKey] = value;
+  }
 }
 
 export function splitNameAndValue(

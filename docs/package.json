@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm generate && vitepress build",
+    "build": "pnpm generate && NODE_OPTIONS=\"--max-old-space-size=8192\" vitepress build",
     "dev": "vitepress dev",
     "generate": "node .vitepress/scripts/generate-reference.ts",
     "preview": "vitepress preview",
