@@ -269,17 +269,14 @@ describe("parser - objectType", () => {
     });
 
     it("should merge multiple user values with Object default", () => {
-      const { flags } = parse(
-        ["--env.PORT", "8080", "--env.DEBUG", "true"],
-        {
-          flags: {
-            env: {
-              type: Object,
-              default: { PORT: "3000", HOST: "localhost", TIMEOUT: "30" },
-            },
+      const { flags } = parse(["--env.PORT", "8080", "--env.DEBUG", "true"], {
+        flags: {
+          env: {
+            type: Object,
+            default: { PORT: "3000", HOST: "localhost", TIMEOUT: "30" },
           },
         },
-      );
+      });
 
       expect(flags).toEqual({
         env: {
