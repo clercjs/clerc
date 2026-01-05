@@ -93,7 +93,7 @@ export function appendDotValues(obj: any, path: string, value: any): void {
   const lastKey = keys[keys.length - 1];
 
   // Handle duplicate keys by converting to array
-  if (lastKey in current) {
+  if (Object.hasOwn(current, lastKey)) {
     const existing = current[lastKey];
     if (Array.isArray(existing)) {
       existing.push(value);

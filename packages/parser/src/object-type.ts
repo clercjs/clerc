@@ -69,4 +69,4 @@ export function objectType<T = ObjectInputType>(
 }
 
 export const isObjectType = (value: any): value is ObjectTypeFunction =>
-  typeof value === "function" && OBJECT_TYPE_MARKER in value;
+  typeof value === "function" && Object.hasOwn(value, OBJECT_TYPE_MARKER);
