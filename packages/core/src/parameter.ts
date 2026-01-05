@@ -56,7 +56,7 @@ function _parseParameters(
       normalized.key,
     );
 
-    if (name in result) {
+    if (Object.hasOwn(result, name)) {
       throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
     }
 
