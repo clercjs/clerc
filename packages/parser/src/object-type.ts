@@ -1,6 +1,6 @@
 import type { ObjectInputType, TypeFunction } from "./types";
 
-export const OBJECT_TYPE_MARKER = Symbol("objectType");
+export const OBJECT_TYPE_MARKER: unique symbol = Symbol("objectType");
 
 /**
  * A special TypeFunction that supports dot-notation and context-aware value
