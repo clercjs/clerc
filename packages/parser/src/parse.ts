@@ -314,13 +314,15 @@ export function createParser<T extends FlagsDefinition>(
           result.missingRequiredFlags.push(key);
         }
       } else if (
-        isObjectType(config.type) &&
+        (config.type === Object || isObjectType(config.type)) &&
         config.default !== undefined &&
         typeof val === "object" &&
         val !== null
       ) {
         const defaultValue = resolveValue(config.default) as any;
-        const mergeObject = config.type.mergeObject;
+        const mergeObject = isObjectType(config.type)
+          ? config.type.mergeObject
+          : undefined;
 
         if (mergeObject) {
           mergeObject(val, defaultValue);

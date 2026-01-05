@@ -230,6 +230,66 @@ describe("parser - objectType", () => {
         },
       });
     });
+
+    it("should merge external default for plain Object type", () => {
+      const { flags } = parse(["--env.PORT", "8080"], {
+        flags: {
+          env: {
+            type: Object,
+            default: { PORT: "3000", HOST: "localhost", DEBUG: false },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        env: {
+          PORT: "8080",
+          HOST: "localhost",
+          DEBUG: false,
+        },
+      });
+    });
+
+    it("should use all defaults when no Object values provided", () => {
+      const { flags } = parse([], {
+        flags: {
+          env: {
+            type: Object,
+            default: { PORT: "3000", HOST: "localhost" },
+          },
+        },
+      });
+
+      expect(flags).toEqual({
+        env: {
+          PORT: "3000",
+          HOST: "localhost",
+        },
+      });
+    });
+
+    it("should merge multiple user values with Object default", () => {
+      const { flags } = parse(
+        ["--env.PORT", "8080", "--env.DEBUG", "true"],
+        {
+          flags: {
+            env: {
+              type: Object,
+              default: { PORT: "3000", HOST: "localhost", TIMEOUT: "30" },
+            },
+          },
+        },
+      );
+
+      expect(flags).toEqual({
+        env: {
+          PORT: "8080",
+          DEBUG: true,
+          HOST: "localhost",
+          TIMEOUT: "30",
+        },
+      });
+    });
   });
 
   describe("utility functions", () => {
