@@ -226,19 +226,20 @@ This semantic mismatch with defaults causes several issues:
 Instead of using defaults with dot-notation, handle default values in your command handler:
 
 ```typescript
-.command('build', 'Build the project')
-.flags({
-  env: Object,
-})
-.on((context) => {
-  const env = {
-    NODE_ENV: 'development',
-    PORT: '3000',
-    ...context.flags.env,  // User-provided values override defaults
-  };
+cli
+  .command("build", "Build the project")
+  .flags({
+    env: Object,
+  })
+  .on((context) => {
+    const env = {
+      NODE_ENV: "development",
+      PORT: "3000",
+      ...context.flags.env, // User-provided values override defaults
+    };
 
-  // Use env...
-});
+    // Use env...
+  });
 ```
 
 This gives you full control over the merge logic and keeps type inference simple.

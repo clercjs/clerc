@@ -226,19 +226,20 @@ cli build --env.PORT 8080
 不要对点表示法使用默认值，而是在命令处理器中处理默认值：
 
 ```typescript
-.command('build', '构建项目')
-.flags({
-  env: Object,
-})
-.on((context) => {
-  const env = {
-    NODE_ENV: 'development',
-    PORT: '3000',
-    ...context.flags.env,  // 用户提供的值覆盖默认值
-  };
+cli
+  .command("build", "构建项目")
+  .flags({
+    env: Object,
+  })
+  .on((context) => {
+    const env = {
+      NODE_ENV: "development",
+      PORT: "3000",
+      ...context.flags.env, // 用户提供的值覆盖默认值
+    };
 
-  // 使用 env...
-});
+    // 使用 env...
+  });
 ```
 
 这样可以完全控制合并逻辑，并保持类型推断的简单性。
