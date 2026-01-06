@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import {
   appendDotValues,
+  coerceObjectValue,
   isArrayOfType,
   isDigit,
   isLetter,
@@ -265,7 +266,11 @@ export function createParser<T extends FlagsDefinition>(
                 : hasNext && !shouldProcessAsFlag(next)
                   ? (eat() ?? "")
                   : "";
-              appendDotValues(result.flags[key], path, value);
+              appendDotValues(
+                result.flags[key],
+                path,
+                coerceObjectValue(value),
+              );
             }
           } else {
             if (config.type === Boolean) {
