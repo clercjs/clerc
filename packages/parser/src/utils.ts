@@ -1,9 +1,41 @@
 import { looseIsArray } from "@clerc/utils";
 
-import type { FlagOptions } from "./types";
+import type { FlagOptions, TypeValue } from "./types";
 
 export const isArrayOfType = (arr: any, type: any): boolean =>
   Array.isArray(arr) && arr[0] === type;
+
+/**
+ * Infers the implicit default value for a flag type based on its type
+ * constructor. This is useful for help output to show the default values of
+ * types that have built-in defaults.
+ *
+ * - Boolean: false
+ * - [Boolean] (Counter): 0
+ * - [T] (Array): []
+ * - Object: {}
+ * - Others: undefined (no implicit default)
+ *
+ * @param type The type value (constructor or array of constructor)
+ * @returns The inferred default value, or undefined if no implicit default
+ */
+export function inferDefault(type: TypeValue): unknown {
+  if (looseIsArray(type)) {
+    if (isArrayOfType(type, Boolean)) {
+      return 0;
+    }
+
+    return [];
+  }
+  if (type === Boolean) {
+    return false;
+  }
+  if (type === Object) {
+    return {};
+  }
+
+  return undefined;
+}
 
 /**
  * Check if it's a letter (a-z: 97-122, A-Z: 65-90)

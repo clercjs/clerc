@@ -11,6 +11,7 @@ import type {
 import {
   appendDotValues,
   coerceObjectValue,
+  inferDefault,
   isArrayOfType,
   isDigit,
   isLetter,
@@ -295,18 +296,10 @@ export function createParser<T extends FlagsDefinition>(
       if (val === undefined) {
         if (config.default !== undefined) {
           result.flags[key] = resolveValue(config.default);
-        }
-        // Make sure arrays and objects are always initialized with default values
-        else if (Array.isArray(config.type)) {
-          result.flags[key] = isArrayOfType(config.type, Boolean) ? 0 : [];
-        } else if (config.type === Object) {
-          result.flags[key] = {};
-        }
-        // Initialize booleans to false if not provided
-        else if (config.type === Boolean) {
-          result.flags[key] = false;
         } else if (config.required) {
           result.missingRequiredFlags.push(key);
+        } else {
+          result.flags[key] = inferDefault(config.type);
         }
       }
     }
