@@ -297,7 +297,7 @@ export function createParser<T extends FlagsDefinition>(
         } else if (config.type === Object) {
           result.flags[key] = {};
         }
-        // Initialize negatable booleans to false if not provided
+        // Initialize booleans to false if not provided
         else if (config.type === Boolean) {
           result.flags[key] = false;
         } else if (config.required) {
