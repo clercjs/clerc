@@ -7,6 +7,7 @@ import type {
 } from "@clerc/core";
 import {
   DOUBLE_DASH,
+  inferDefault,
   normalizeFlagValue,
   normalizeParameterValue,
 } from "@clerc/core";
@@ -408,10 +409,15 @@ export class HelpRenderer {
       flagName += `, --no-${name}`;
     }
     const type = this._formatters.formatTypeValue(flag.type);
+
+    let defaultValue: unknown = flag.default;
+    if (defaultValue === undefined) {
+      defaultValue = inferDefault(flag.type);
+    }
     const default_ =
-      flag.default !== undefined &&
+      defaultValue !== undefined &&
       tint.dim(
-        `[default: ${tint.bold(this._formatters.formatFlagDefault(flag.default))}]`,
+        `[default: ${tint.bold(this._formatters.formatFlagDefault(defaultValue))}]`,
       );
 
     return [

@@ -549,4 +549,125 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
   });
+
+  describe("implicit default values", () => {
+    it("should show implicit default for Boolean flags (false)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              description: "Enable verbose output",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Boolean shorthand (false)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: Boolean,
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Counter [Boolean] flags (0)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbosity: {
+              type: [Boolean],
+              description: "Verbosity level (can be specified multiple times)",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Array flags ([])", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            file: {
+              type: [String],
+              description: "Files to process (can be specified multiple times)",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Object flags ({})", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            config: {
+              type: Object,
+              description: "Configuration object",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should NOT show default for String/Number flags without explicit default", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            name: {
+              type: String,
+              description: "Name value",
+            },
+            count: {
+              type: Number,
+              description: "Count value",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should prefer explicit default over implicit default", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              description: "Enable verbose output",
+              default: true,
+            },
+            files: {
+              type: [String],
+              description: "Files to process",
+              default: ["default.txt"],
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
 });

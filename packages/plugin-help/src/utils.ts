@@ -15,7 +15,7 @@ export function formatFlagDefault<T>(value: FlagDefaultValue<T>): string {
     return value.display;
   }
 
-  return String(value);
+  return JSON.stringify(value);
 }
 
 export function formatCommandName(name: string): string {
