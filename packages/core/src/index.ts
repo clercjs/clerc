@@ -6,11 +6,6 @@ export {
   KNOWN_FLAG,
   PARAMETER,
   UNKNOWN_FLAG,
-  appendDotValues,
-  coerceObjectValue,
-  isObjectType,
-  objectType,
-  setDotValues,
 } from "@clerc/parser";
 export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";

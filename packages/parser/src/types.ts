@@ -1,7 +1,6 @@
 import type { IsAny, Prettify, RequireExactlyOneOrNone } from "@clerc/utils";
 
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
-import type { ObjectTypeFunction } from "./object-type";
 
 export interface FlagDefaultValueFunction<T> {
   (): T;
@@ -40,7 +39,6 @@ export type IgnoreFunction = (
 
 export type TypeValue<T = unknown> =
   | TypeFunction<T>
-  | ObjectTypeFunction<T>
   | readonly [TypeFunction<T>];
 
 type FlagRequiredOrDefault = RequireExactlyOneOrNone<
@@ -188,25 +186,21 @@ type _InferFlags<T extends FlagsDefinition> = {
       : T[K] extends ObjectConstructor | { type: ObjectConstructor }
         ? MergeObjectDefault<ObjectInputType, T[K]>
         : T[K] extends
-              | ObjectTypeFunction<infer U>
-              | { type: ObjectTypeFunction<infer U> }
-          ? MergeObjectDefault<U, T[K]>
-          : T[K] extends
-                | readonly [TypeValue<infer U>]
-                | { type: readonly [TypeValue<infer U>] }
-            ? U[] | InferFlagDefault<T[K], never>
-            : T[K] extends TypeValue<infer U> | { type: TypeValue<infer U> }
-              ?
-                  | U
-                  | InferFlagDefault<
-                      T[K],
-                      [U] extends [boolean]
+              | readonly [TypeValue<infer U>]
+              | { type: readonly [TypeValue<infer U>] }
+          ? U[] | InferFlagDefault<T[K], never>
+          : T[K] extends TypeValue<infer U> | { type: TypeValue<infer U> }
+            ?
+                | U
+                | InferFlagDefault<
+                    T[K],
+                    [U] extends [boolean]
+                      ? never
+                      : T[K] extends { required: true }
                         ? never
-                        : T[K] extends { required: true }
-                          ? never
-                          : undefined
-                    >
-              : never;
+                        : undefined
+                  >
+            : never;
 };
 
 /**
