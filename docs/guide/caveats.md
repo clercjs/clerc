@@ -182,6 +182,67 @@ To avoid this, ensure your paths don't conflict (i.e., don't set both `a.b` and 
 
 :::
 
+### Default Values for Object Flags
+
+::: warning Not Recommended
+
+**We do not recommend using `default` values with Object flags that use dot-notation.**
+
+:::
+
+Object flags follow an **all-or-nothing** default behavior:
+
+- If **no** dot-notation values are provided for the flag, the `default` value is used entirely
+- If **any** dot-notation value is provided, the `default` is completely ignored (no merging)
+
+```bash
+# Example: env flag with default { NODE_ENV: "development", PORT: "3000" }
+
+# No --env flags provided → Uses entire default
+cli build
+# Result: { NODE_ENV: "development", PORT: "3000" }
+
+# Any --env flag provided → Default is completely ignored
+cli build --env.PORT 8080
+# Result: { PORT: "8080" }  ← NODE_ENV is NOT included!
+```
+
+#### Why Not Use Defaults with Dot-Notation?
+
+Dot-notation is designed for **user-defined, runtime configuration values** (like environment variables, define macros, etc.) where:
+
+- The keys are not known in advance
+- Users specify exactly what they need
+- There's no "standard set" of expected keys
+
+This semantic mismatch with defaults causes several issues:
+
+1. **Complex merge logic**: Shallow merge? Deep merge? User-configurable merge function? Each approach adds complexity
+2. **Type inference complexity**: Merging object types requires intersection types and sophisticated type-level logic
+3. **Unexpected behavior**: Users might expect `default` to act as "fallback values" for missing keys, but implementing this is non-trivial
+
+#### Recommended Approach
+
+Instead of using defaults with dot-notation, handle default values in your command handler:
+
+```typescript
+.command('build', 'Build the project')
+.flags({
+  env: Object,
+})
+.on((context) => {
+  const env = {
+    NODE_ENV: 'development',
+    PORT: '3000',
+    ...context.flags.env,  // User-provided values override defaults
+  };
+
+  // Use env...
+});
+```
+
+This gives you full control over the merge logic and keeps type inference simple.
+
 ## Short Flag Combinations
 
 Short flags can be combined:
