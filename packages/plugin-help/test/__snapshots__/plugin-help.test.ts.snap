@@ -126,6 +126,110 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
 ]
 `;
 
+exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax for non-boolean flags 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--count[22m  [2mNumber[22m  Count value
+  [1m--name[22m   [2mString[22m  Name value
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax when negatable is explicitly false 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--strict[22m  [2mBoolean[22m  Enable strict mode  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax along with short flag 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, -v, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for boolean flag shorthand 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for global boolean flags 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m               [2mBoolean[22m  Show help              [2m[default: [1mfalse[22m[2m][22m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for negatable boolean flags (default) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
 exports[`plugin-help > should format custom flag default with "display" property 1`] = `
 [
   [

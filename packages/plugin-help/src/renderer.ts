@@ -401,6 +401,12 @@ export class HelpRenderer {
     if (flag.short) {
       flagName += `, ${formatFlagName(flag.short)}`;
     }
+    const isBoolean = flag.type === Boolean;
+    const isNegatable =
+      isBoolean && flag.negatable !== false && flag.default === true;
+    if (isNegatable) {
+      flagName += `, --no-${name}`;
+    }
     const type = this._formatters.formatTypeValue(flag.type);
     const default_ =
       flag.default !== undefined &&
