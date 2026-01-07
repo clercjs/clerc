@@ -702,6 +702,13 @@ describe("plugin-help", () => {
         })
         .parse(["help"]);
 
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "",
+        })
+        .parse(["help", "test"]);
+
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 

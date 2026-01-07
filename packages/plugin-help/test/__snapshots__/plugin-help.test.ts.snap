@@ -59,8 +59,18 @@ exports[`plugin-help > alias > should show root alias (empty string) 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
-  [1mhelp[22m  Show help
-  [1mtest[22m  Test command",
+  [1mhelp[22m           Show help
+  [1mtest[22m ((root))  Test command",
+  ],
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+Alias: [1m(root)[22m
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
 ]
 `;

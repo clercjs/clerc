@@ -151,13 +151,14 @@ export class HelpRenderer {
       : "";
     const formattedVersion = command ? "" : ` ${formatVersion(_version)}`;
     const headerLine = `${formattedScriptName}${formattedCommandName}${formattedVersion}`;
-    const alias = command?.alias
-      ? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
-          command.alias,
-        )
-          .map((a) => tint.bold(a))
-          .join(", ")}`
-      : undefined;
+    const alias =
+      command?.alias === undefined
+        ? undefined
+        : `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
+            command.alias,
+          )
+            .map((a) => tint.bold(formatCommandName(a)))
+            .join(", ")}`;
 
     return {
       body: [
@@ -287,9 +288,10 @@ export class HelpRenderer {
       const commandName = tint.bold(
         formatCommandName(command.name.slice(prefix.length)),
       );
-      const aliases = command.alias
-        ? ` (${toArray(command.alias).map(formatCommandName).join(", ")})`
-        : "";
+      const aliases =
+        command.alias === undefined
+          ? ""
+          : ` (${toArray(command.alias).map(formatCommandName).join(", ")})`;
       const item = [`${commandName}${aliases}`, command.description].filter(
         isTruthy,
       );
