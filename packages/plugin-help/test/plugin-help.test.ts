@@ -670,4 +670,61 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
   });
+
+  describe("alias", () => {
+    it("should show single string alias", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "t",
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show array of aliases", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: ["t", "test-cmd"],
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show root alias (empty string)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "",
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show root alias (empty string in array)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: ["t", ""],
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show alias for subcommands", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("parent child", "Child command", {
+          alias: "c",
+        })
+        .parse(["parent", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
 });

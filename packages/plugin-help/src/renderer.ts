@@ -288,7 +288,7 @@ export class HelpRenderer {
         formatCommandName(command.name.slice(prefix.length)),
       );
       const aliases = command.alias
-        ? ` (${toArray(command.alias).join(", ")})`
+        ? ` (${toArray(command.alias).map(formatCommandName).join(", ")})`
         : "";
       const item = [`${commandName}${aliases}`, command.description].filter(
         isTruthy,

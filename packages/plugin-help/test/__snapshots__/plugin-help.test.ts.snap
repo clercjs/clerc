@@ -1,5 +1,88 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`plugin-help > alias > should show alias for subcommands 1`] = `
+[
+  [
+    "test [1mparent[22m not found
+
+[4m[1mAvailable Subcommands[22m[24m
+  [1mchild[22m (c)  Child command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show array of aliases 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m                Show help
+  [1mtest[22m (t, test-cmd)  Test command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show root alias (empty string in array) 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m[command][22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m              Show help
+  [1mtest[22m (t, (root))  Test command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show root alias (empty string) 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m[command][22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help
+  [1mtest[22m  Test command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show single string alias 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m      Show help
+  [1mtest[22m (t)  Test command",
+  ],
+]
+`;
+
 exports[`plugin-help > grouping > should display subcommands 1`] = `
 [
   [
