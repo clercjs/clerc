@@ -96,3 +96,6 @@ export const objectIsEmpty = (obj: Record<string, any>): boolean =>
 
 export const resolveValue = <T>(value: MaybeGetter<T>): T =>
   typeof value === "function" ? (value as () => T)() : value;
+
+export const hasOwn = (obj: object, key: PropertyKey): boolean =>
+  Object.prototype.hasOwnProperty.call(obj, key);
