@@ -1,9 +1,41 @@
-import { looseIsArray } from "@clerc/utils";
+import { hasOwn, looseIsArray } from "@clerc/utils";
 
-import type { FlagOptions } from "./types";
+import type { FlagOptions, TypeValue } from "./types";
 
 export const isArrayOfType = (arr: any, type: any): boolean =>
   Array.isArray(arr) && arr[0] === type;
+
+/**
+ * Infers the implicit default value for a flag type based on its type
+ * constructor. This is useful for help output to show the default values of
+ * types that have built-in defaults.
+ *
+ * - Boolean: false
+ * - [Boolean] (Counter): 0
+ * - [T] (Array): []
+ * - Object: {}
+ * - Others: undefined (no implicit default)
+ *
+ * @param type The type value (constructor or array of constructor)
+ * @returns The inferred default value, or undefined if no implicit default
+ */
+export function inferDefault(type: TypeValue): unknown {
+  if (looseIsArray(type)) {
+    if (isArrayOfType(type, Boolean)) {
+      return 0;
+    }
+
+    return [];
+  }
+  if (type === Boolean) {
+    return false;
+  }
+  if (type === Object) {
+    return {};
+  }
+
+  return undefined;
+}
 
 /**
  * Check if it's a letter (a-z: 97-122, A-Z: 65-90)
@@ -35,6 +67,32 @@ export function setValueByType(
   }
 }
 
+/**
+ * Default value coercion for Object type. Converts "true" / "" to true, "false"
+ * to false, other values remain unchanged.
+ *
+ * @param value The raw string value from CLI
+ * @returns Coerced value (boolean or string)
+ */
+export function coerceObjectValue(value: string): string | boolean {
+  if (value === "true" || value === "") {
+    return true;
+  } else if (value === "false") {
+    return false;
+  }
+
+  return value;
+}
+
+/**
+ * Sets a value at a nested path in an object, creating intermediate objects as
+ * needed. Does NOT apply type conversion - value is set as-is. Overwrites
+ * existing values.
+ *
+ * @param obj The target object
+ * @param path Dot-separated path (e.g., "foo.bar.baz")
+ * @param value The value to set (used as-is, no type conversion)
+ */
 export function setDotValues(obj: any, path: string, value: any): void {
   const keys = path.split(".");
   let current = obj;
@@ -44,10 +102,43 @@ export function setDotValues(obj: any, path: string, value: any): void {
     current = current[key];
   }
   const lastKey = keys[keys.length - 1];
-  if (value === "true" || value === "") {
-    current[lastKey] = true;
-  } else if (value === "false") {
-    current[lastKey] = false;
+  current[lastKey] = value;
+}
+
+/**
+ * Similar to setDotValues but handles duplicate keys by converting to arrays.
+ * Does NOT apply type conversion - value is set as-is. Useful for flags that
+ * can be specified multiple times.
+ *
+ * @param obj The target object
+ * @param path Dot-separated path (e.g., "foo.bar")
+ * @param value The value to set or append (used as-is, no type conversion)
+ */
+export function appendDotValues(obj: any, path: string, value: any): void {
+  const keys = path.split(".");
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    // Check if the key exists and is not an object (path conflict)
+    if (
+      hasOwn(current, key) &&
+      (typeof current[key] !== "object" || current[key] === null)
+    ) {
+      // current value is a primitive, cannot set nested property
+      return;
+    }
+    current[key] ??= {};
+    current = current[key];
+  }
+  const lastKey = keys[keys.length - 1];
+
+  if (hasOwn(current, lastKey)) {
+    const existing = current[lastKey];
+    if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      current[lastKey] = [existing, value];
+    }
   } else {
     current[lastKey] = value;
   }

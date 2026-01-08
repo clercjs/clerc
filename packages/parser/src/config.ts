@@ -25,8 +25,6 @@ const normalizeConfig = (config: FlagDefinitionValue): FlagOptions =>
     ? { type: config }
     : config;
 
-const BUILDTIN_DELIMITERS_RE = /[\s.]/;
-
 export function buildConfigsAndAliases(
   delimiters: string[],
   flags: FlagsDefinition,
@@ -39,7 +37,8 @@ export function buildConfigsAndAliases(
 
   const isNameInvalid = (name: string) =>
     delimiters.some((char) => name.includes(char)) ||
-    BUILDTIN_DELIMITERS_RE.test(name);
+    name.includes(" ") ||
+    name.includes(".");
 
   function validateFlagOptions(name: string, options: FlagOptions) {
     const prefix = `Flag "${name}"`;

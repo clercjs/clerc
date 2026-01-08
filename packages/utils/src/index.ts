@@ -8,23 +8,46 @@ export type * from "./types";
 export const toArray = <T>(a: MaybeArray<T>): T[] =>
   Array.isArray(a) ? a : [a];
 
+const camelCaseCache = new Map<string, string>();
+
 /**
- * Converts a dash- or space-separated string to camelCase. Not using regexp for
- * better performance, because this function is used in parser.
+ * Converts a dash- or space-separated string to camelCase.
+ *
+ * Not using regexp for better performance, because this function is used in
+ * parser.
  */
 export function camelCase(str: string): string {
-  const firstIdx = Math.min(
-    str.includes("-") ? str.indexOf("-") : Infinity,
-    str.includes(" ") ? str.indexOf(" ") : Infinity,
-  );
-  if (firstIdx === Infinity) {
+  const cached = camelCaseCache.get(str);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  // Find first separator using charCode for performance
+  const len = str.length;
+  let firstIdx = -1;
+  for (let i = 0; i < len; i++) {
+    const c = str.charCodeAt(i);
+    // 45 = '-', 32 = ' '
+    if (c === 45 || c === 32) {
+      firstIdx = i;
+      break;
+    }
+  }
+
+  if (firstIdx === -1) {
+    // Cache even when no transformation needed
+    camelCaseCache.set(str, str);
+
     return str;
   }
 
   let result = str.slice(0, firstIdx);
-  for (let i = firstIdx; i < str.length; i++) {
-    if ((str[i] === "-" || str[i] === " ") && i + 1 < str.length) {
+  for (let i = firstIdx; i < len; i++) {
+    const c = str.charCodeAt(i);
+    // 45 = '-', 32 = ' '
+    if ((c === 45 || c === 32) && i + 1 < len) {
       const nextChar = str.charCodeAt(i + 1);
+      // 97-122 = a-z
       if (nextChar >= 97 && nextChar <= 122) {
         result += String.fromCharCode(nextChar - 32);
         i++;
@@ -32,10 +55,12 @@ export function camelCase(str: string): string {
         result += str[i + 1];
         i++;
       }
-    } else if (str[i] !== "-" && str[i] !== " ") {
+    } else if (c !== 45 && c !== 32) {
       result += str[i];
     }
   }
+
+  camelCaseCache.set(str, result);
 
   return result;
 }
@@ -71,3 +96,6 @@ export const objectIsEmpty = (obj: Record<string, any>): boolean =>
 
 export const resolveValue = <T>(value: MaybeGetter<T>): T =>
   typeof value === "function" ? (value as () => T)() : value;
+
+export const hasOwn = (obj: object, key: PropertyKey): boolean =>
+  Object.prototype.hasOwnProperty.call(obj, key);

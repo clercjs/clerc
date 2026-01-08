@@ -1,5 +1,5 @@
 import { DOUBLE_DASH } from "@clerc/parser";
-import { camelCase } from "@clerc/utils";
+import { camelCase, hasOwn } from "@clerc/utils";
 
 import { InvalidParametersError } from "./errors";
 import type { ParameterDefinitionValue } from "./types/parameter";
@@ -56,7 +56,7 @@ function _parseParameters(
       normalized.key,
     );
 
-    if (name in result) {
+    if (hasOwn(result, name)) {
       throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
     }
 

@@ -1,5 +1,98 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`plugin-help > alias > should show alias for subcommands 1`] = `
+[
+  [
+    "test [1mparent[22m not found
+
+[4m[1mAvailable Subcommands[22m[24m
+  [1mchild[22m (c)  Child command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show array of aliases 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m                Show help
+  [1mtest[22m (t, test-cmd)  Test command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show root alias (empty string in array) 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m[command][22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m              Show help
+  [1mtest[22m (t, (root))  Test command",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show root alias (empty string) 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m[command][22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m           Show help
+  [1mtest[22m ((root))  Test command",
+  ],
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+Alias: [1m(root)[22m
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > alias > should show single string alias 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m      Show help
+  [1mtest[22m (t)  Test command",
+  ],
+]
+`;
+
 exports[`plugin-help > grouping > should display subcommands 1`] = `
 [
   [
@@ -94,8 +187,8 @@ exports[`plugin-help > grouping > should group global flags 1`] = `
   [1m--config[22m    [2mString[22m   Config file path
   
   [2mOutput Options[22m
-    [1m--verbose, -v[22m  [2mBoolean[22m  Enable verbose output
-    [1m--quiet, -q[22m    [2mBoolean[22m  Suppress output
+    [1m--verbose, -v[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mfalse[22m[2m][22m
+    [1m--quiet, -q[22m    [2mBoolean[22m  Suppress output        [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
   [1mhelp[22m  Show help",
@@ -122,6 +215,231 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
   [1mhelp[22m   Show help
   [1minit[22m   Initialize project
   [1mbuild[22m  Build project",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should NOT show default for String/Number flags without explicit default 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--name[22m   [2mString[22m  Name value
+  [1m--count[22m  [2mNumber[22m  Count value
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should prefer explicit default over implicit default 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m        Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+  [1m--files[22m                  [2mArray<String>[22m  Files to process       [2m[default: [1m["default.txt"][22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should show implicit default for Array flags ([]) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--file[22m  [2mArray<String>[22m  Files to process (can be specified multiple times)  [2m[default: [1m[][22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should show implicit default for Boolean flags (false) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should show implicit default for Boolean shorthand (false) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose[22m  [2mBoolean[22m  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should show implicit default for Counter [Boolean] flags (0) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbosity[22m  [2mArray<Boolean>[22m  Verbosity level (can be specified multiple times)  [2m[default: [1m0[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > implicit default values > should show implicit default for Object flags ({}) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--config[22m  [2mObject[22m  Configuration object  [2m[default: [1m{}[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax for non-boolean flags 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--count[22m  [2mNumber[22m  Count value
+  [1m--name[22m   [2mString[22m  Name value
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax when negatable is explicitly false 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--strict[22m  [2mBoolean[22m  Enable strict mode  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax along with short flag 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, -v, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for boolean flag shorthand 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for global boolean flags 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m               [2mBoolean[22m  Show help              [2m[default: [1mfalse[22m[2m][22m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help",
+  ],
+]
+`;
+
+exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for negatable boolean flags (default) 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--verbose, --no-verbose[22m  [2mBoolean[22m  Enable verbose output  [2m[default: [1mtrue[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
 ]
 `;
@@ -416,7 +734,7 @@ exports[`plugin-help > should support flag shorthand 1`] = `
   $ test test [2m[flags][22m
 
 [4m[1mFlags[22m[24m
-  [1m--verbose[22m  [2mBoolean[22m
+  [1m--verbose[22m  [2mBoolean[22m  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
@@ -436,11 +754,11 @@ exports[`plugin-help > should support no description 1`] = `
   [1m<param>[22m  [2mstring[22m
 
 [4m[1mFlags[22m[24m
-  [1m--flag[22m  [2mBoolean[22m
+  [1m--flag[22m  [2mBoolean[22m  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mGlobal Flags[22m[24m
-  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
-  [1m--global[22m    [2mBoolean[22m",
+  [1m--help, -h[22m  [2mBoolean[22m  Show help         [2m[default: [1mfalse[22m[2m][22m
+  [1m--global[22m    [2mBoolean[22m  [2m[default: [1mfalse[22m[2m][22m",
   ],
 ]
 `;
@@ -473,7 +791,7 @@ exports[`plugin-help > should support optional description for global flag 1`] =
 
 [4m[1mGlobal Flags[22m[24m
   [1m--help, -h[22m  [2mBoolean[22m  Show help              [2m[default: [1mfalse[22m[2m][22m
-  [1m--verbose[22m   [2mBoolean[22m  Enable verbose output
+  [1m--verbose[22m   [2mBoolean[22m  Enable verbose output  [2m[default: [1mfalse[22m[2m][22m
 
 [4m[1mCommands[22m[24m
   [1mhelp[22m  Show help",
