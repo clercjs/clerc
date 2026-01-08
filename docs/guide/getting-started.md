@@ -6,7 +6,7 @@ title: Getting Started
 
 :::warning
 
-Clerc only supports ESM!
+Clerc is ESM-only!
 
 :::
 
