@@ -7,8 +7,8 @@ settings:
 catalogs:
   cli:
     '@bomb.sh/tab':
-      specifier: ^0.0.10
-      version: 0.0.10
+      specifier: ^0.0.11
+      version: 0.0.11
     '@types/minimist':
       specifier: ^1.2.5
       version: 1.2.5
@@ -333,7 +333,7 @@ importers:
     devDependencies:
       '@bomb.sh/tab':
         specifier: catalog:cli
-        version: 0.0.10(cac@6.7.14)(citty@0.1.6)
+        version: 0.0.11(cac@6.7.14)(citty@0.1.6)
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
@@ -520,8 +520,8 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
-  '@bomb.sh/tab@0.0.10':
-    resolution: {integrity: sha512-6ALS2rh/4LKn0Yxwm35V6LcgQuSiECHbqQo7+9g4rkgGyXZ0siOc8K+IuWIq/4u0Zkv2mevP9QSqgKhGIvLJMw==}
+  '@bomb.sh/tab@0.0.11':
+    resolution: {integrity: sha512-RSqyreeicYBALcMaNxIUJTBknftXsyW45VRq5gKDNwKroh0Re5SDoWwXZaphb+OTEzVdpm/BA8Uq6y0P+AtVYw==}
     hasBin: true
     peerDependencies:
       cac: ^6.7.14
@@ -4945,7 +4945,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bomb.sh/tab@0.0.10(cac@6.7.14)(citty@0.1.6)':
+  '@bomb.sh/tab@0.0.11(cac@6.7.14)(citty@0.1.6)':
     optionalDependencies:
       cac: 6.7.14
       citty: 0.1.6
