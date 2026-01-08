@@ -1,7 +1,8 @@
 import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client";
 import type { Theme } from "vitepress";
 import DefaultTheme from "vitepress/theme";
-import CopyOrDownloadAsMarkdownButtons from "vitepress-plugin-llms/vitepress-components/CopyOrDownloadAsMarkdownButtons.vue";
+
+import { loadCopyOrDownloadAsMarkdownButtons } from "../components/CopyOrDownloadAsMarkdownButtons";
 
 import "./style.css";
 import "virtual:uno.css";
@@ -10,10 +11,10 @@ import "@shikijs/vitepress-twoslash/style.css";
 
 export default {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
+  async enhanceApp({ app }) {
     app.component(
       "CopyOrDownloadAsMarkdownButtons",
-      CopyOrDownloadAsMarkdownButtons,
+      await loadCopyOrDownloadAsMarkdownButtons,
     );
     app.use(TwoslashFloatingVue);
   },
