@@ -4,7 +4,7 @@ import { cp, rename, rm, writeFile } from "node:fs/promises";
 import type { TypeDocOptions } from "typedoc";
 import { Application } from "typedoc";
 
-import { comparePackages } from "../utils/sort";
+import { comparePackages } from "../utils/sort.ts";
 
 const LANGUAGES = ["zh"];
 const IGNORED_PACKAGES = ["test-utils"];
