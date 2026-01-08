@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [
     TsconfigAlias({
       configNames: ["tsconfig.base.json"],
-    }),
+    }) as any,
   ],
   test: {
     coverage: {
