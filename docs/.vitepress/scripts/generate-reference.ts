@@ -1,8 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { cp, rename, rm } from "node:fs/promises";
+import { cp, rename, rm, writeFile } from "node:fs/promises";
 
 import type { TypeDocOptions } from "typedoc";
 import { Application } from "typedoc";
+
+import { comparePackages } from "../utils/sort";
 
 const LANGUAGES = ["zh"];
 const IGNORED_PACKAGES = ["test-utils"];
@@ -24,7 +26,7 @@ export const PACKAGES = Object.fromEntries(
       return [name, pkgJson.name as string] as const;
     })
     .filter((x): x is [string, string] => !!x)
-    .toSorted(([a], [b]) => a.localeCompare(b)),
+    .toSorted(([, aName], [, bName]) => comparePackages(aName, bName)),
 );
 
 const tsconfig = "../tsconfig.json";
@@ -53,6 +55,16 @@ if (import.meta.main) {
     }
     await rm(`reference/api/${pkg}/_media`, { recursive: true, force: true });
   }
+
+  console.log("📚 Generating API index...");
+  const apiIndexContent = [
+    "# API Reference",
+    "",
+    "## Packages",
+    "",
+    ...Object.entries(PACKAGES).map(([pkg, name]) => `- [${name}](./${pkg}/)`),
+  ].join("\n");
+  await writeFile("reference/api/index.md", apiIndexContent);
 
   for (const language of LANGUAGES) {
     await rm(`${language}/reference/api`, { recursive: true, force: true });

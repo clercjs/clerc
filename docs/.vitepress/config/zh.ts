@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 
 import { PACKAGES } from "../scripts/generate-reference";
@@ -11,7 +12,7 @@ const pluginNavigation = await getNavigation(
   "/zh/official-plugins",
 );
 
-const guideSidebar = [
+const guideSidebar: DefaultTheme.Config["sidebar"] = [
   {
     text: "指南",
     items: [
@@ -71,6 +72,7 @@ const guideSidebar = [
   },
   {
     text: "API 参考",
+    link: "/zh/reference/api/",
     items: Object.entries(PACKAGES).map(([pkg, name]) => ({
       text: name,
       link: `/zh/reference/api/${pkg}/`,
@@ -78,7 +80,7 @@ const guideSidebar = [
   },
 ];
 
-const sidebar = {
+const sidebar: DefaultTheme.Config["sidebar"] = {
   ...Object.fromEntries(
     Object.keys(PACKAGES).map((pkg) => [
       `/zh/reference/api/${pkg}/`,
@@ -112,6 +114,16 @@ export const zhConfig = defineConfig({
       {
         text: "官方插件列表",
         items: pluginNavigation,
+      },
+      {
+        text: "API 参考",
+        items: [
+          { text: "总览", link: "/zh/reference/api/" },
+          ...Object.entries(PACKAGES).map(([pkg, name]) => ({
+            text: name,
+            link: `/zh/reference/api/${pkg}/`,
+          })),
+        ],
       },
       {
         text: "成员",

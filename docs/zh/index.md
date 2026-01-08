@@ -13,6 +13,9 @@ hero:
       text: 快速开始
       link: /zh/guide/getting-started
     - theme: alt
+      text: API 参考
+      link: /zh/reference/api/
+    - theme: alt
       text: 在 GitHub 上查看
       link: https://github.com/clercjs/clerc
 
