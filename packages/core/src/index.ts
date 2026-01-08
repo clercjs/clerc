@@ -6,6 +6,7 @@ export {
   KNOWN_FLAG,
   PARAMETER,
   UNKNOWN_FLAG,
+  inferDefault,
 } from "@clerc/parser";
 export type { CreateOptions, ParseOptions } from "./cli";
 export { Clerc } from "./cli";

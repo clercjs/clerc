@@ -7,6 +7,7 @@ import type {
 } from "@clerc/core";
 import {
   DOUBLE_DASH,
+  inferDefault,
   normalizeFlagValue,
   normalizeParameterValue,
 } from "@clerc/core";
@@ -150,13 +151,14 @@ export class HelpRenderer {
       : "";
     const formattedVersion = command ? "" : ` ${formatVersion(_version)}`;
     const headerLine = `${formattedScriptName}${formattedCommandName}${formattedVersion}`;
-    const alias = command?.alias
-      ? `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
-          command.alias,
-        )
-          .map((a) => tint.bold(a))
-          .join(", ")}`
-      : undefined;
+    const alias =
+      command?.alias === undefined
+        ? undefined
+        : `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
+            command.alias,
+          )
+            .map((a) => tint.bold(formatCommandName(a)))
+            .join(", ")}`;
 
     return {
       body: [
@@ -286,9 +288,10 @@ export class HelpRenderer {
       const commandName = tint.bold(
         formatCommandName(command.name.slice(prefix.length)),
       );
-      const aliases = command.alias
-        ? ` (${toArray(command.alias).join(", ")})`
-        : "";
+      const aliases =
+        command.alias === undefined
+          ? ""
+          : ` (${toArray(command.alias).map(formatCommandName).join(", ")})`;
       const item = [`${commandName}${aliases}`, command.description].filter(
         isTruthy,
       );
@@ -401,11 +404,22 @@ export class HelpRenderer {
     if (flag.short) {
       flagName += `, ${formatFlagName(flag.short)}`;
     }
+    const isBoolean = flag.type === Boolean;
+    const isNegatable =
+      isBoolean && flag.negatable !== false && flag.default === true;
+    if (isNegatable) {
+      flagName += `, --no-${name}`;
+    }
     const type = this._formatters.formatTypeValue(flag.type);
+
+    let defaultValue: unknown = flag.default;
+    if (defaultValue === undefined) {
+      defaultValue = inferDefault(flag.type);
+    }
     const default_ =
-      flag.default !== undefined &&
+      defaultValue !== undefined &&
       tint.dim(
-        `[default: ${tint.bold(this._formatters.formatFlagDefault(flag.default))}]`,
+        `[default: ${tint.bold(this._formatters.formatFlagDefault(defaultValue))}]`,
       );
 
     return [

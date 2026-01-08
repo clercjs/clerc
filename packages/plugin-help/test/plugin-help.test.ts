@@ -446,4 +446,292 @@ describe("plugin-help", () => {
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
+
+  describe("negatable boolean flags", () => {
+    it("should show --no-xxx syntax for negatable boolean flags (default)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              description: "Enable verbose output",
+              default: true,
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show --no-xxx syntax for boolean flag shorthand", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              default: true,
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show --no-xxx syntax for global boolean flags", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .globalFlag("verbose", "Enable verbose output", {
+          type: Boolean,
+          default: true,
+        })
+        .parse(["--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should NOT show --no-xxx syntax when negatable is explicitly false", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            strict: {
+              type: Boolean,
+              description: "Enable strict mode",
+              negatable: false,
+              default: true,
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should NOT show --no-xxx syntax for non-boolean flags", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            count: {
+              type: Number,
+              description: "Count value",
+            },
+            name: {
+              type: String,
+              description: "Name value",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show --no-xxx syntax along with short flag", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              short: "v",
+              description: "Enable verbose output",
+              default: true,
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
+
+  describe("implicit default values", () => {
+    it("should show implicit default for Boolean flags (false)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              description: "Enable verbose output",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Boolean shorthand (false)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: Boolean,
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Counter [Boolean] flags (0)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbosity: {
+              type: [Boolean],
+              description: "Verbosity level (can be specified multiple times)",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Array flags ([])", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            file: {
+              type: [String],
+              description: "Files to process (can be specified multiple times)",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show implicit default for Object flags ({})", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            config: {
+              type: Object,
+              description: "Configuration object",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should NOT show default for String/Number flags without explicit default", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            name: {
+              type: String,
+              description: "Name value",
+            },
+            count: {
+              type: Number,
+              description: "Count value",
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should prefer explicit default over implicit default", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            verbose: {
+              type: Boolean,
+              description: "Enable verbose output",
+              default: true,
+            },
+            files: {
+              type: [String],
+              description: "Files to process",
+              default: ["default.txt"],
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
+
+  describe("alias", () => {
+    it("should show single string alias", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "t",
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show array of aliases", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: ["t", "test-cmd"],
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show root alias (empty string)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "",
+        })
+        .parse(["help"]);
+
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: "",
+        })
+        .parse(["help", "test"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show root alias (empty string in array)", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          alias: ["t", ""],
+        })
+        .parse(["help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should show alias for subcommands", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("parent child", "Child command", {
+          alias: "c",
+        })
+        .parse(["parent", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
 });

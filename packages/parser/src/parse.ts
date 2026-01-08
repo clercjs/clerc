@@ -9,10 +9,12 @@ import type {
   ParserOptions,
 } from "./types";
 import {
+  appendDotValues,
+  coerceObjectValue,
+  inferDefault,
   isArrayOfType,
   isDigit,
   isLetter,
-  setDotValues,
   setValueByType,
   splitNameAndValue,
 } from "./utils";
@@ -66,7 +68,9 @@ export function createParser<T extends FlagsDefinition>(
     const possibleName =
       name[2] === "-"
         ? name.slice(3) // --no-foo -> foo
-        : name.length > 2 && /[A-Z]/.test(name[2])
+        : name.length > 2 &&
+            name.charCodeAt(2) >= 65 &&
+            name.charCodeAt(2) <= 90 // Check if uppercase letter (A-Z)
           ? name[2].toLowerCase() + name.slice(3) // --noFoo -> foo
           : "";
 
@@ -263,7 +267,11 @@ export function createParser<T extends FlagsDefinition>(
                 : hasNext && !shouldProcessAsFlag(next)
                   ? (eat() ?? "")
                   : "";
-              setDotValues(result.flags[key], path, value);
+              appendDotValues(
+                result.flags[key],
+                path,
+                coerceObjectValue(value),
+              );
             }
           } else {
             if (config.type === Boolean) {
@@ -288,18 +296,10 @@ export function createParser<T extends FlagsDefinition>(
       if (val === undefined) {
         if (config.default !== undefined) {
           result.flags[key] = resolveValue(config.default);
-        }
-        // Make sure arrays and objects are always initialized with default values
-        else if (Array.isArray(config.type)) {
-          result.flags[key] = isArrayOfType(config.type, Boolean) ? 0 : [];
-        } else if (config.type === Object) {
-          result.flags[key] = {};
-        }
-        // Initialize negatable booleans to false if not provided
-        else if (config.type === Boolean) {
-          result.flags[key] = false;
         } else if (config.required) {
           result.missingRequiredFlags.push(key);
+        } else {
+          result.flags[key] = inferDefault(config.type);
         }
       }
     }

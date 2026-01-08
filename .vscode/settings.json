@@ -1,6 +1,7 @@
 {
-  "typescript.experimental.useTsgo": true,
-  "typescript.native-preview.tsdk": "./node_modules/@typescript/native-preview",
+  // "typescript.experimental.useTsgo": true,
+  // "typescript.native-preview.tsdk": "./node_modules/@typescript/native-preview",
+  "typescript.tsdk": "node_modules\\typescript\\lib",
   "files.associations": {
     "*.md": "markdown"
   }

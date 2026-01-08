@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import { join } from "node:path";
 
+import { comparePackages } from "./sort";
+
 function extractTitleFromMarkdown(content: string): string | null {
   // eslint-disable-next-line regexp/no-super-linear-backtracking
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
@@ -45,7 +47,7 @@ export async function getTitles(
       }
     }
 
-    results.sort((a, b) => a.filename.localeCompare(b.filename));
+    results.sort((a, b) => comparePackages(a.filename, b.filename));
 
     return results;
   } catch (error) {

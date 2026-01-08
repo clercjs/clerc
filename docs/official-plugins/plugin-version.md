@@ -8,7 +8,7 @@ A plugin that adds a version command to your CLI.
 
 :::info
 
-This plugin is built into the `Clerc` class exported by the `clerc` package, so you don't need to install it separately to use it.
+This plugin is built into the `Cli` function exported by the `clerc` package, so you don't need to install it separately to use it.
 
 :::
 

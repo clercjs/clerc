@@ -1,6 +1,8 @@
 import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client";
-import type { EnhanceAppContext } from "vitepress";
-import Theme from "vitepress/theme";
+import type { Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme";
+
+import { loadCopyOrDownloadAsMarkdownButtons } from "../components/CopyOrDownloadAsMarkdownButtons";
 
 import "./style.css";
 import "virtual:uno.css";
@@ -8,8 +10,12 @@ import "virtual:group-icons.css";
 import "@shikijs/vitepress-twoslash/style.css";
 
 export default {
-  extends: Theme,
-  enhanceApp({ app }: EnhanceAppContext) {
+  extends: DefaultTheme,
+  async enhanceApp({ app }) {
+    app.component(
+      "CopyOrDownloadAsMarkdownButtons",
+      await loadCopyOrDownloadAsMarkdownButtons,
+    );
     app.use(TwoslashFloatingVue);
   },
-};
+} satisfies Theme;

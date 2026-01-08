@@ -13,6 +13,9 @@ hero:
       text: Getting Started
       link: /guide/getting-started
     - theme: alt
+      text: API Reference
+      link: /reference/api/
+    - theme: alt
       text: View on GitHub
       link: https://github.com/clercjs/clerc
 

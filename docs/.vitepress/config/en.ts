@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 
 import { PACKAGES } from "../scripts/generate-reference";
@@ -11,7 +12,7 @@ const pluginNavigation = await getNavigation(
   "/official-plugins",
 );
 
-const guideSidebar = [
+const guideSidebar: DefaultTheme.Config["sidebar"] = [
   {
     text: "Guide",
     items: [
@@ -56,6 +57,10 @@ const guideSidebar = [
         link: "/guide/error-handling",
       },
       {
+        text: "Caveats",
+        link: "/guide/caveats",
+      },
+      {
         text: "Advanced Usage",
         link: "/guide/advanced",
       },
@@ -67,6 +72,7 @@ const guideSidebar = [
   },
   {
     text: "API Reference",
+    link: "/reference/api/",
     items: Object.entries(PACKAGES).map(([pkg, name]) => ({
       text: name,
       link: `/reference/api/${pkg}/`,
@@ -74,7 +80,7 @@ const guideSidebar = [
   },
 ];
 
-const sidebar = {
+const sidebar: DefaultTheme.Config["sidebar"] = {
   ...Object.fromEntries(
     Object.keys(PACKAGES).map((pkg) => [
       `/reference/api/${pkg}/`,
@@ -108,6 +114,16 @@ export const enConfig = defineConfig({
       {
         text: "Official Plugins",
         items: pluginNavigation,
+      },
+      {
+        text: "API Reference",
+        items: [
+          { text: "Overview", link: "/reference/api/" },
+          ...Object.entries(PACKAGES).map(([pkg, name]) => ({
+            text: name,
+            link: `/reference/api/${pkg}/`,
+          })),
+        ],
       },
       {
         text: "Members",
