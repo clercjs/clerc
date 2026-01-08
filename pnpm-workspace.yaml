@@ -45,13 +45,13 @@ catalogs:
     prettier: "^3.7.3"
     tsdown: "^0.18.3"
     typescript: "^5.9.3"
-    vite: "^7.2.6"
+    vite: "^8.0.0-beta.7"
     vite-plugin-simple-tsconfig-alias: "^0.2.0"
     vitest: "^4.0.15"
     vitest-console: "^0.2.1"
   docs:
     "@shikijs/vitepress-twoslash": "^3.19.0"
-    oxc-minify: ^0.102.0
+    oxc-minify: ^0.107.0
     typedoc: "^0.28.15"
     typedoc-plugin-markdown: ^4.9.0
     typedoc-vitepress-theme: ^1.1.2

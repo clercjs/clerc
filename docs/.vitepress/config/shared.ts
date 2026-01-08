@@ -11,6 +11,7 @@ import {
 } from "vitepress-plugin-group-icons";
 import Llms, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
 
+import pkg from "../../../packages/clerc/package.json" with { type: "json" };
 import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
 import { MarkdownTransform, clercImports } from "../plugins/markdown-transform";
 
@@ -108,6 +109,14 @@ export const sharedConfig = defineConfig({
     languages: ["js", "jsx", "ts", "tsx"],
   },
   vite: {
-    plugins: [GroupIconVitePlugin(), UnoCSS(), MarkdownTransform(), Llms()],
+    plugins: [
+      GroupIconVitePlugin(),
+      UnoCSS(),
+      MarkdownTransform(),
+      Llms({
+        ignoreFiles: ["index.md", "zh/**/*"],
+        description: pkg.description,
+      }) as any,
+    ],
   },
 });
