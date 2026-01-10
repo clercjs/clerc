@@ -7,6 +7,7 @@ import type {
 } from "@clerc/core";
 import {
   DOUBLE_DASH,
+  extractParameterInfo,
   inferDefault,
   normalizeFlagValue,
   normalizeParameterValue,
@@ -235,9 +236,14 @@ export class HelpRenderer {
       .filter((parameter) => parameter !== DOUBLE_DASH)
       .map(normalizeParameterValue)
       .map(({ key, type, description }) => {
-        const formattedType = type
-          ? this._formatters.formatTypeValue(type)
-          : "string";
+        let formattedType: string;
+
+        if (type) {
+          formattedType = this._formatters.formatTypeValue(type);
+        } else {
+          const { isVariadic } = extractParameterInfo(key);
+          formattedType = isVariadic ? "Array<string>" : "string";
+        }
 
         return [tint.bold(key), tint.dim(formattedType), description].filter(
           isTruthy,

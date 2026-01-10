@@ -705,6 +705,37 @@ exports[`plugin-help > should show parameter description 1`] = `
 ]
 `;
 
+exports[`plugin-help > should show parameter type as "string" or "Array<string>" when type is not specified 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test <param1> <param2...> [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  [1m<param1>[22m     [2mstring[22m
+  [1m<param2...>[22m  [2mArray<string>[22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [param1] [param2...] [2m[flags][22m
+
+[4m[1mParameters[22m[24m
+  [1m[param1][22m     [2mstring[22m
+  [1m[param2...][22m  [2mArray<string>[22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
 exports[`plugin-help > should show parameter types 1`] = `
 [
   [

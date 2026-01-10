@@ -69,6 +69,24 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
+  it('should show parameter type as "string" or "Array<string>" when type is not specified', () => {
+    TestBaseCli()
+      .use(helpPlugin())
+      .command("test", "Test command", {
+        parameters: ["<param1>", "<param2...>"],
+      })
+      .parse(["test", "--help"]);
+
+    TestBaseCli()
+      .use(helpPlugin())
+      .command("test", "Test command", {
+        parameters: ["[param1]", "[param2...]"],
+      })
+      .parse(["test", "--help"]);
+
+    expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+  });
+
   it("should hide double dash in parameters section", () => {
     TestBaseCli()
       .use(helpPlugin())
