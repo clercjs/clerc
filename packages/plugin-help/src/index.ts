@@ -12,6 +12,12 @@ export type { GroupDefinition, GroupsOptions } from "./types";
 
 export interface HelpOptions {
   /**
+   * Whether to show this item in help output.
+   *
+   * @default true
+   */
+  show?: boolean;
+  /**
    * The group this item belongs to. The group must be defined in the `groups`
    * option of `helpPlugin()`.
    */
@@ -19,12 +25,6 @@ export interface HelpOptions {
 }
 
 export interface CommandHelpOptions extends HelpOptions {
-  /**
-   * Whether to show the command in help output.
-   *
-   * @default true
-   */
-  show?: boolean;
   /**
    * Notes to show in the help output.
    */
@@ -35,6 +35,8 @@ export interface CommandHelpOptions extends HelpOptions {
    */
   examples?: [string, string][];
 }
+
+export interface FlagHelpOptions extends HelpOptions {}
 
 declare module "@clerc/core" {
   export interface CommandCustomOptions {
@@ -48,7 +50,7 @@ declare module "@clerc/core" {
     /**
      * Help options for the flag.
      */
-    help?: HelpOptions;
+    help?: FlagHelpOptions;
   }
 }
 

@@ -1,4 +1,10 @@
+import type { ClercFlagDefinitionValue, ClercFlagOptions } from "@clerc/core";
 import type { FlagDefaultValue, TypeValue } from "@clerc/parser";
+
+export const isFlagObject = (
+  value: ClercFlagDefinitionValue,
+): value is ClercFlagOptions =>
+  typeof value === "object" && !Array.isArray(value);
 
 export function formatTypeValue(type: TypeValue): string {
   if (typeof type === "function") {

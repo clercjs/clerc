@@ -158,6 +158,39 @@ const cli = Clerc.create()
   .parse();
 ```
 
+### 在帮助信息中隐藏选项
+
+你可以通过在选项的 `help` 配置中设置 `show: false` 来隐藏特定的选项。这对于不想暴露给用户的内部或已弃用的选项非常有用。
+
+```ts
+const cli = Clerc.create()
+  .scriptName("my-cli")
+  .description("我的 CLI 应用程序")
+  .version("1.0.0")
+  .use(helpPlugin())
+  .command("build", "构建应用程序", {
+    flags: {
+      output: {
+        type: String,
+        description: "输出目录",
+      },
+      internalDebug: {
+        type: Boolean,
+        description: "内部调试模式",
+        help: { show: false }, // 从帮助输出中隐藏
+      },
+    },
+  })
+  // 隐藏全局选项
+  .globalFlag("trace", "启用追踪", {
+    type: Boolean,
+    help: { show: false },
+  })
+  .parse();
+```
+
+当一个组中的所有选项都设置了 `show: false` 时，整个组部分将被隐藏。同样，如果所有选项（或全局选项）都被隐藏，整个 "Flags" 或 "Global Flags" 部分将不会显示。
+
 ### 插件选项
 
 你可以通过传递选项来定制帮助插件的行为：

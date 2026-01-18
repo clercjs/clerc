@@ -384,6 +384,112 @@ describe("plugin-help", () => {
 
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
+
+    it("should not show flags which set `show` to false", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            visible: {
+              type: Boolean,
+              description: "Visible flag",
+            },
+            hidden: {
+              type: Boolean,
+              description: "Hidden flag",
+              help: { show: false },
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should not show global flags which set `show` to false", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .globalFlag("visible", "Visible global flag", {
+          type: Boolean,
+        })
+        .globalFlag("hidden", "Hidden global flag", {
+          type: Boolean,
+          help: { show: false },
+        })
+        .parse(["--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should not show group header when all flags in group are hidden", () => {
+      TestBaseCli()
+        .use(
+          helpPlugin({
+            groups: {
+              flags: [["hidden-group", "Hidden Group"]],
+            },
+          }),
+        )
+        .command("test", "Test command", {
+          flags: {
+            visible: {
+              type: Boolean,
+              description: "Visible flag",
+            },
+            hidden1: {
+              type: Boolean,
+              description: "Hidden flag 1",
+              help: { group: "hidden-group", show: false },
+            },
+            hidden2: {
+              type: Boolean,
+              description: "Hidden flag 2",
+              help: { group: "hidden-group", show: false },
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should not show Flags section when all flags are hidden", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .command("test", "Test command", {
+          flags: {
+            hidden1: {
+              type: Boolean,
+              description: "Hidden flag 1",
+              help: { show: false },
+            },
+            hidden2: {
+              type: Boolean,
+              description: "Hidden flag 2",
+              help: { show: false },
+            },
+          },
+        })
+        .parse(["test", "--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should not show Global Flags section when all global flags are hidden", () => {
+      TestBaseCli()
+        .use(helpPlugin())
+        .globalFlag("hidden1", "Hidden global flag 1", {
+          type: Boolean,
+          help: { show: false },
+        })
+        .globalFlag("hidden2", "Hidden global flag 2", {
+          type: Boolean,
+          help: { show: false },
+        })
+        .parse(["--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
   });
 
   it("should throw error when command not found", async () => {

@@ -161,6 +161,39 @@ const cli = Clerc.create()
   .parse();
 ```
 
+### Hiding Flags from Help
+
+You can hide specific flags from help output by setting `show: false` in the flag's `help` option. This is useful for internal or deprecated flags that you don't want to expose to users.
+
+```ts
+const cli = Clerc.create()
+  .scriptName("my-cli")
+  .description("My CLI application")
+  .version("1.0.0")
+  .use(helpPlugin())
+  .command("build", "Build the application", {
+    flags: {
+      output: {
+        type: String,
+        description: "Output directory",
+      },
+      internalDebug: {
+        type: Boolean,
+        description: "Internal debug mode",
+        help: { show: false }, // Hidden from help output
+      },
+    },
+  })
+  // Hide a global flag
+  .globalFlag("trace", "Enable tracing", {
+    type: Boolean,
+    help: { show: false },
+  })
+  .parse();
+```
+
+When all flags in a group have `show: false`, the entire group section will be hidden. Similarly, if all flags (or global flags) are hidden, the entire "Flags" or "Global Flags" section will not be displayed.
+
 ### Plugin Options
 
 You can customize the behavior of the help plugin by passing options:

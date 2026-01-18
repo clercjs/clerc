@@ -24,7 +24,7 @@ import stringWidth from "string-width";
 import textTable from "text-table";
 
 import type { Formatters, GroupsOptions } from "./types";
-import { formatCommandName } from "./utils";
+import { formatCommandName, isFlagObject } from "./utils";
 
 const DEFAULT_GROUP_KEY = "default";
 
@@ -445,18 +445,24 @@ export class HelpRenderer {
     const defaultFlags: string[][] = [];
 
     for (const [name, flag] of Object.entries(flags)) {
-      const group = (flag as any).help?.group as string | undefined;
-      validateGroup(group, groupMap, itemType, name);
-
-      const item = this.renderFlagItem(name, flag);
-
-      if (group && group !== DEFAULT_GROUP_KEY) {
-        const groupItems = groupedFlags.get(group) ?? [];
-        groupItems.push(item);
-        groupedFlags.set(group, groupItems);
-      } else {
-        defaultFlags.push(item);
+      if (isFlagObject(flag) && flag.help?.show === false) {
+        continue;
       }
+
+      const group =
+        // eslint-disable-next-line ts/prefer-nullish-coalescing
+        (isFlagObject(flag) && flag.help?.group) || DEFAULT_GROUP_KEY;
+
+      if (group === DEFAULT_GROUP_KEY) {
+        defaultFlags.push(this.renderFlagItem(name, flag));
+
+        continue;
+      }
+
+      validateGroup(group, groupMap, itemType, name);
+      const groupItems = groupedFlags.get(group) ?? [];
+      groupItems.push(this.renderFlagItem(name, flag));
+      groupedFlags.set(group, groupItems);
     }
 
     // Build body with groups
@@ -494,6 +500,10 @@ export class HelpRenderer {
       "flag",
     );
 
+    if (body.length === 0) {
+      return;
+    }
+
     return {
       title: "Flags",
       body,
@@ -510,6 +520,11 @@ export class HelpRenderer {
       this._globalFlagGroups,
       "global flag",
     );
+
+    // Skip section if all global flags are hidden
+    if (body.length === 0) {
+      return;
+    }
 
     return {
       title: "Global Flags",

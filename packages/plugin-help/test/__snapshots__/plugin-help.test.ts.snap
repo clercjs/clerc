@@ -219,6 +219,89 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
 ]
 `;
 
+exports[`plugin-help > grouping > should not show Flags section when all flags are hidden 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should not show Global Flags section when all global flags are hidden 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should not show flags which set \`show\` to false 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--visible[22m  [2mBoolean[22m  Visible flag  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should not show global flags which set \`show\` to false 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help            [2m[default: [1mfalse[22m[2m][22m
+  [1m--visible[22m   [2mBoolean[22m  Visible global flag  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help",
+  ],
+]
+`;
+
+exports[`plugin-help > grouping > should not show group header when all flags in group are hidden 1`] = `
+[
+  [
+    "[2mtest[22m [1mtest[22m - Test command
+
+[4m[1mUsage[22m[24m
+  $ test test [2m[flags][22m
+
+[4m[1mFlags[22m[24m
+  [1m--visible[22m  [2mBoolean[22m  Visible flag  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
 exports[`plugin-help > implicit default values > should NOT show default for String/Number flags without explicit default 1`] = `
 [
   [
