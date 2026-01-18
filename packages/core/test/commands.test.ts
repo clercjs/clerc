@@ -99,8 +99,8 @@ describe("commands", () => {
             "missingRequiredFlags": [],
             "parameters": [],
             "raw": [],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");

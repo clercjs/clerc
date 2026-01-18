@@ -62,8 +62,8 @@ describe("flags parsing", () => {
             "raw": [
               "--foo",
             ],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");

@@ -34,8 +34,8 @@ describe("parameters parsing", () => {
               "baz",
               "qux",
             ],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
@@ -81,8 +81,8 @@ describe("parameters parsing", () => {
             "raw": [
               "bar",
             ],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
@@ -130,8 +130,8 @@ describe("parameters parsing", () => {
               "--",
               "bar",
             ],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters.optional).toStrictEqual("bar");

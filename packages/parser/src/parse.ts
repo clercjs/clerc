@@ -154,7 +154,7 @@ export function createParser<T extends FlagsDefinition>(
       flags: {},
       raw: args,
       unknown: {},
-      unknownRaw: [],
+      rawUnknown: [],
       ignored: [],
       missingRequiredFlags: [],
     };

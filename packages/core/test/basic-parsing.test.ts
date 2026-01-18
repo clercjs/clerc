@@ -15,8 +15,8 @@ describe("basic parsing", () => {
             "missingRequiredFlags": [],
             "parameters": [],
             "raw": [],
+            "rawUnknown": [],
             "unknown": {},
-            "unknownRaw": [],
           }
         `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");
