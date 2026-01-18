@@ -144,6 +144,10 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
    */
   unknown: Record<string, RawInputType>;
   /**
+   * Raw arguments for unknown flags (original string form).
+   */
+  unknownRaw: string[];
+  /**
    * Arguments that were not parsed due to ignore callback.
    */
   ignored: string[];

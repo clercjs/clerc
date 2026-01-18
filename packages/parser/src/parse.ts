@@ -154,6 +154,7 @@ export function createParser<T extends FlagsDefinition>(
       flags: {},
       raw: args,
       unknown: {},
+      unknownRaw: [],
       ignored: [],
       missingRequiredFlags: [],
     };
@@ -166,7 +167,17 @@ export function createParser<T extends FlagsDefinition>(
       ignore,
       (
         // @keep-sorted
-        { current, eat, exit, hasNext, index, next, shouldIgnore },
+        {
+          advance,
+          advanceUnknown,
+          current,
+          exit,
+          hasNext,
+          index,
+          markUnknown,
+          next,
+          shouldIgnore,
+        },
       ) => {
         if (current === DOUBLE_DASH) {
           result.doubleDash.push(...args.slice(index + 1));
@@ -194,12 +205,17 @@ export function createParser<T extends FlagsDefinition>(
         // -abc
         if (isShortFlag) {
           const charsLen = chars.length;
+          let hasUnknown = false;
           for (let j = 0; j < charsLen; j++) {
             const char = chars[j];
             const resolved = resolve(char, true);
 
             if (!resolved) {
               result.unknown[char] = true;
+              if (!hasUnknown) {
+                markUnknown();
+                hasUnknown = true;
+              }
               continue;
             }
 
@@ -217,7 +233,7 @@ export function createParser<T extends FlagsDefinition>(
               } else {
                 // -ab foo, we are on "b"
                 const value =
-                  hasNext && !shouldProcessAsFlag(next) ? (eat() ?? "") : "";
+                  hasNext && !shouldProcessAsFlag(next) ? advance() : "";
                 setValueByType(result.flags, key, value, config);
               }
             }
@@ -245,11 +261,12 @@ export function createParser<T extends FlagsDefinition>(
           }
           if (!resolved) {
             const key = camelCase(rawName);
+            markUnknown();
             if (hasSep) {
               result.unknown[key] = rawValue!;
             } else if (hasNext && !shouldProcessAsFlag(next)) {
-              const value = eat();
-              result.unknown[key] = value ?? true;
+              const value = advanceUnknown();
+              result.unknown[key] = value || true;
             } else {
               result.unknown[key] = true;
             }
@@ -265,7 +282,7 @@ export function createParser<T extends FlagsDefinition>(
               const value = hasSep
                 ? rawValue!
                 : hasNext && !shouldProcessAsFlag(next)
-                  ? (eat() ?? "")
+                  ? advance()
                   : "";
               appendDotValues(
                 result.flags[key],
@@ -281,7 +298,7 @@ export function createParser<T extends FlagsDefinition>(
               const value = hasSep
                 ? rawValue!
                 : hasNext && !shouldProcessAsFlag(next)
-                  ? (eat() ?? "")
+                  ? advance()
                   : "";
               setValueByType(result.flags, key, value, config);
             }

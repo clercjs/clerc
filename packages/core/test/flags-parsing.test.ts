@@ -51,20 +51,21 @@ describe("flags parsing", () => {
       .on("foo", (ctx) => {
         expect(ctx.command.name).toBe("foo");
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [],
-					  "flags": {
-					    "foo": true,
-					  },
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [],
-					  "raw": [
-					    "--foo",
-					  ],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [],
+            "flags": {
+              "foo": true,
+            },
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [],
+            "raw": [
+              "--foo",
+            ],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({ foo: true });
       })

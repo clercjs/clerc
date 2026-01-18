@@ -92,16 +92,17 @@ describe("commands", () => {
       .on("foo bar", (ctx) => {
         expect(ctx.command.name).toBe("foo bar");
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [],
-					  "flags": {},
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [],
-					  "raw": [],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [],
+            "flags": {},
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [],
+            "raw": [],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toMatchInlineSnapshot("{}");
       })

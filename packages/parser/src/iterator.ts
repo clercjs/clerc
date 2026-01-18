@@ -10,7 +10,9 @@ export interface ArgsIterator {
   hasNext: boolean;
   next: string;
   shouldIgnore: (arg: string) => boolean;
-  eat: () => string | undefined;
+  advance: () => string;
+  advanceUnknown: () => string;
+  markUnknown: () => void;
   exit: (push?: boolean) => void;
 }
 
@@ -45,22 +47,27 @@ export function iterateArgs(
 
       return false;
     },
-    eat: (): string | undefined => {
-      if (index + 1 >= argsLength) {
-        return undefined;
-      }
-      const nextArg = args[index + 1];
-
-      if (iterator.shouldIgnore(nextArg)) {
+    advance: () => {
+      if (iterator.shouldIgnore(iterator.next)) {
         iterator.exit();
 
-        return undefined;
+        return "";
       }
-
       index++;
-      next();
+      updateState();
 
       return args[index];
+    },
+    advanceUnknown: () => {
+      const value = iterator.advance();
+      if (value) {
+        result.unknownRaw.push(value);
+      }
+
+      return value;
+    },
+    markUnknown: () => {
+      result.unknownRaw.push(iterator.current);
     },
     exit: (push = true) => {
       if (!stopped) {
@@ -72,7 +79,7 @@ export function iterateArgs(
     },
   };
 
-  function next() {
+  function updateState() {
     iterator.current = args[index];
     iterator.index = index;
     iterator.hasNext = index + 1 < argsLength;
@@ -84,7 +91,7 @@ export function iterateArgs(
       break;
     }
 
-    next();
+    updateState();
 
     callback(iterator);
   }

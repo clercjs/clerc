@@ -17,26 +17,27 @@ describe("parameters parsing", () => {
       .on("", (ctx) => {
         expect(ctx.command.name).toStrictEqual("");
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [],
-					  "flags": {
-					    "foo": "baz",
-					  },
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [
-					    "bar",
-					    "qux",
-					  ],
-					  "raw": [
-					    "bar",
-					    "--foo",
-					    "baz",
-					    "qux",
-					  ],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [],
+            "flags": {
+              "foo": "baz",
+            },
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [
+              "bar",
+              "qux",
+            ],
+            "raw": [
+              "bar",
+              "--foo",
+              "baz",
+              "qux",
+            ],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
 					{
 					  "optional": [
@@ -67,22 +68,23 @@ describe("parameters parsing", () => {
       .on("", (ctx) => {
         expect(ctx.command.name).toStrictEqual("");
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [],
-					  "flags": {
-					    "foo": "",
-					  },
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [
-					    "bar",
-					  ],
-					  "raw": [
-					    "bar",
-					  ],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [],
+            "flags": {
+              "foo": "",
+            },
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [
+              "bar",
+            ],
+            "raw": [
+              "bar",
+            ],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters).toMatchInlineSnapshot(`
 					{
 					  "required": "bar",
@@ -116,21 +118,22 @@ describe("parameters parsing", () => {
       })
       .on("foo", (ctx) => {
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [
-					    "bar",
-					  ],
-					  "flags": {},
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [],
-					  "raw": [
-					    "--",
-					    "bar",
-					  ],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [
+              "bar",
+            ],
+            "flags": {},
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [],
+            "raw": [
+              "--",
+              "bar",
+            ],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters.optional).toStrictEqual("bar");
       })
       .parse(["foo", "--", "bar"]);

@@ -8,16 +8,17 @@ describe("basic parsing", () => {
       .on("foo", (ctx) => {
         expect(ctx.command.name).toBe("foo");
         expect(ctx.rawParsed).toMatchInlineSnapshot(`
-					{
-					  "doubleDash": [],
-					  "flags": {},
-					  "ignored": [],
-					  "missingRequiredFlags": [],
-					  "parameters": [],
-					  "raw": [],
-					  "unknown": {},
-					}
-				`);
+          {
+            "doubleDash": [],
+            "flags": {},
+            "ignored": [],
+            "missingRequiredFlags": [],
+            "parameters": [],
+            "raw": [],
+            "unknown": {},
+            "unknownRaw": [],
+          }
+        `);
         expect(ctx.parameters).toMatchInlineSnapshot("{}");
         expect(ctx.flags).toStrictEqual({});
       })
