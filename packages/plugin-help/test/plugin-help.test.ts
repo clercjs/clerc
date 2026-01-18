@@ -231,6 +231,19 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
+  it("should not show Commands section when all commands are hidden", () => {
+    TestBaseCli()
+      .use(helpPlugin({ command: false }))
+      .command("test", "", {
+        help: {
+          show: false,
+        },
+      })
+      .parse(["-h"]);
+
+    expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+  });
+
   it("should show examples and notes", () => {
     TestBaseCli()
       .use(helpPlugin())

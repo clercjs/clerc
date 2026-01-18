@@ -398,6 +398,10 @@ export class HelpRenderer {
 
     const body = this.buildGroupedCommandsBody(commandsToShow, prefix);
 
+    if (body.length === 0) {
+      return null;
+    }
+
     return {
       title,
       body,

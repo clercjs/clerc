@@ -621,6 +621,20 @@ exports[`plugin-help > should hide double dash in parameters section 1`] = `
 ]
 `;
 
+exports[`plugin-help > should not show Commands section when all commands are hidden 1`] = `
+[
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
+  ],
+]
+`;
+
 exports[`plugin-help > should not show commands placeholder when no commands exist 1`] = `
 [
   [
