@@ -144,7 +144,7 @@ const cli = Clerc.create()
   .use(helpPlugin())
   .command("deploy", "部署命令", {
     help: {
-      showInHelp: true, // 在帮助信息中显示此命令
+      show: true, // 在帮助信息中显示此命令（默认值：true）
       notes: [
         "这是一个用于部署应用程序的命令。",
         "你可以使用不同的选项来控制部署行为。",

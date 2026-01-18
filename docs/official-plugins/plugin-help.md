@@ -144,7 +144,7 @@ const cli = Clerc.create()
   .use(helpPlugin())
   .command("deploy", "Deploy command", {
     help: {
-      showInHelp: true, // Show this command in help
+      show: true, // Show this command in help (default: true)
       notes: [
         "This is a command for deploying applications.",
         "You can use different options to control deployment behavior.",
