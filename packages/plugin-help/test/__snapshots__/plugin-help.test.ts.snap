@@ -63,7 +63,7 @@ exports[`plugin-help > alias > should show root alias (empty string) 1`] = `
   [1mtest[22m ((root))  Test command",
   ],
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 Alias: [1m(root)[22m
 
 [4m[1mUsage[22m[24m
@@ -96,7 +96,7 @@ exports[`plugin-help > alias > should show single string alias 1`] = `
 exports[`plugin-help > grouping > should display subcommands 1`] = `
 [
   [
-    "[2mtest[22m [1mparent[22m - Parent command
+    "[2mtest[22m [1mparent[22m v0.0.0 - Parent command
 
 [4m[1mUsage[22m[24m
   $ test parent [2m[flags][22m
@@ -109,7 +109,7 @@ exports[`plugin-help > grouping > should display subcommands 1`] = `
   [1mchild2[22m  Second child command",
   ],
   [
-    "[1mtest[22m - Parent command
+    "[1mtest[22m v0.0.0 - Parent command
 
 [4m[1mUsage[22m[24m
   $ test [2m[flags][22m
@@ -123,7 +123,7 @@ exports[`plugin-help > grouping > should display subcommands 1`] = `
 exports[`plugin-help > grouping > should group command flags 1`] = `
 [
   [
-    "[2mtest[22m [1mbuild[22m - Build project
+    "[2mtest[22m [1mbuild[22m v0.0.0 - Build project
 
 [4m[1mUsage[22m[24m
   $ test build [2m[flags][22m
@@ -222,7 +222,7 @@ exports[`plugin-help > grouping > should not add group headers when no groups de
 exports[`plugin-help > grouping > should not show Flags section when all flags are hidden 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -253,7 +253,7 @@ exports[`plugin-help > grouping > should not show Global Flags section when all 
 exports[`plugin-help > grouping > should not show flags which set \`show\` to false 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -288,7 +288,7 @@ exports[`plugin-help > grouping > should not show global flags which set \`show\
 exports[`plugin-help > grouping > should not show group header when all flags in group are hidden 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -305,7 +305,7 @@ exports[`plugin-help > grouping > should not show group header when all flags in
 exports[`plugin-help > implicit default values > should NOT show default for String/Number flags without explicit default 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -323,7 +323,7 @@ exports[`plugin-help > implicit default values > should NOT show default for Str
 exports[`plugin-help > implicit default values > should prefer explicit default over implicit default 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -341,7 +341,7 @@ exports[`plugin-help > implicit default values > should prefer explicit default 
 exports[`plugin-help > implicit default values > should show implicit default for Array flags ([]) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -358,7 +358,7 @@ exports[`plugin-help > implicit default values > should show implicit default fo
 exports[`plugin-help > implicit default values > should show implicit default for Boolean flags (false) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -375,7 +375,7 @@ exports[`plugin-help > implicit default values > should show implicit default fo
 exports[`plugin-help > implicit default values > should show implicit default for Boolean shorthand (false) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -392,7 +392,7 @@ exports[`plugin-help > implicit default values > should show implicit default fo
 exports[`plugin-help > implicit default values > should show implicit default for Counter [Boolean] flags (0) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -409,7 +409,7 @@ exports[`plugin-help > implicit default values > should show implicit default fo
 exports[`plugin-help > implicit default values > should show implicit default for Object flags ({}) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -426,7 +426,7 @@ exports[`plugin-help > implicit default values > should show implicit default fo
 exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax for non-boolean flags 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -444,7 +444,7 @@ exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax
 exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax when negatable is explicitly false 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -461,7 +461,7 @@ exports[`plugin-help > negatable boolean flags > should NOT show --no-xxx syntax
 exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax along with short flag 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -478,7 +478,7 @@ exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax alo
 exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for boolean flag shorthand 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -513,7 +513,7 @@ exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for
 exports[`plugin-help > negatable boolean flags > should show --no-xxx syntax for negatable boolean flags (default) 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -566,7 +566,7 @@ exports[`plugin-help > should format custom flag type with "display" property 1`
 exports[`plugin-help > should handle optional double dash 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [--] [2m[flags][22m
@@ -578,7 +578,7 @@ exports[`plugin-help > should handle optional double dash 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [--] [optional] [2m[flags][22m
@@ -595,7 +595,7 @@ exports[`plugin-help > should handle optional double dash 1`] = `
 exports[`plugin-help > should hide double dash in parameters section 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [--] [2m[flags][22m
@@ -607,7 +607,7 @@ exports[`plugin-help > should hide double dash in parameters section 1`] = `
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [--] [2m[flags][22m
@@ -652,7 +652,7 @@ exports[`plugin-help > should not show commands placeholder when no commands exi
 exports[`plugin-help > should not show commands placeholder when only registered root command 1`] = `
 [
   [
-    "[1mtest[22m
+    "[1mtest[22m v0.0.0
 
 [4m[1mUsage[22m[24m
   $ test [2m[flags][22m
@@ -728,7 +728,7 @@ exports[`plugin-help > should show available subcommands when parent command doe
 exports[`plugin-help > should show examples and notes 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -788,7 +788,7 @@ exports[`plugin-help > should show help when no command 1`] = `
 exports[`plugin-help > should show parameter description 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test <param> [2m[flags][22m
@@ -805,7 +805,7 @@ exports[`plugin-help > should show parameter description 1`] = `
 exports[`plugin-help > should show parameter type as "string" or "Array<string>" when type is not specified 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test <param1> <param2...> [2m[flags][22m
@@ -818,7 +818,7 @@ exports[`plugin-help > should show parameter type as "string" or "Array<string>"
   [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m",
   ],
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [param1] [param2...] [2m[flags][22m
@@ -836,7 +836,7 @@ exports[`plugin-help > should show parameter type as "string" or "Array<string>"
 exports[`plugin-help > should show parameter types 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test <param> <param2> [range] [regex] [--] [2m[flags][22m
@@ -856,7 +856,7 @@ exports[`plugin-help > should show parameter types 1`] = `
 exports[`plugin-help > should support flag shorthand 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m - Test command
+    "[2mtest[22m [1mtest[22m v0.0.0 - Test command
 
 [4m[1mUsage[22m[24m
   $ test test [2m[flags][22m
@@ -873,7 +873,7 @@ exports[`plugin-help > should support flag shorthand 1`] = `
 exports[`plugin-help > should support no description 1`] = `
 [
   [
-    "[2mtest[22m [1mtest[22m
+    "[2mtest[22m [1mtest[22m v1.0.0
 
 [4m[1mUsage[22m[24m
   $ test test <param> [2m[flags][22m

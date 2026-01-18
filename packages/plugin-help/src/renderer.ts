@@ -150,7 +150,7 @@ export class HelpRenderer {
     const formattedCommandName = command?.name
       ? ` ${tint.bold(command.name)}`
       : "";
-    const formattedVersion = command ? "" : ` ${formatVersion(_version)}`;
+    const formattedVersion = ` ${formatVersion(_version)}`;
     const headerLine = `${formattedScriptName}${formattedCommandName}${formattedVersion}`;
     const alias =
       command?.alias === undefined
