@@ -173,6 +173,7 @@ export class Clerc<
       return result;
     } catch (error) {
       this.#handleError(error);
+
       throw error; // This will never be reached, but TypeScript needs it.
     }
   }

@@ -8,9 +8,6 @@ onlyBuiltDependencies:
   - esbuild
   - unrs-resolver
 
-defines:
-  - &codestyle-config v4.1.3
-
 catalogs:
   cli:
     "@bomb.sh/tab": "^0.0.11"
@@ -34,31 +31,31 @@ catalogs:
     update-notifier: "^7.3.1"
     yargs-parser: "^22.0.0"
   dev:
-    "@antfu/ni": "^28.0.0"
-    "@types/node": "^24.10.1"
-    "@typescript/native-preview": "7.0.0-dev.20251218.3"
-    "@vitest/coverage-istanbul": "^4.0.15"
-    "@vitest/ui": "^4.0.15"
-    bumpp: "^10.3.2"
+    "@antfu/ni": "^28.2.0"
+    "@types/node": "^24.10.9"
+    "@typescript/native-preview": "7.0.0-dev.20260118.1"
+    "@vitest/coverage-istanbul": "^4.0.17"
+    "@vitest/ui": "^4.0.17"
+    bumpp: "^10.4.0"
     changelogithub: "^14.0.0"
-    eslint: "^9.39.1"
-    prettier: "^3.7.3"
-    tsdown: "^0.18.3"
+    eslint: "^9.39.2"
+    prettier: "^3.8.0"
+    tsdown: "^0.20.0-beta.3"
     typescript: "^5.9.3"
-    vite: "^8.0.0-beta.7"
+    vite: "^8.0.0-beta.8"
     vite-plugin-simple-tsconfig-alias: "^0.2.0"
-    vitest: "^4.0.15"
+    vitest: "^4.0.17"
     vitest-console: "^0.2.1"
   docs:
-    "@shikijs/vitepress-twoslash": "^3.19.0"
-    oxc-minify: ^0.107.0
-    typedoc: "^0.28.15"
+    "@shikijs/vitepress-twoslash": "^3.21.0"
+    oxc-minify: ^0.108.0
+    typedoc: "^0.28.16"
     typedoc-plugin-markdown: ^4.9.0
     typedoc-vitepress-theme: ^1.1.2
-    unocss: "^66.5.10"
+    unocss: "^66.6.0"
     vitepress: "2.0.0-alpha.15"
-    vitepress-plugin-group-icons: "^1.6.5"
-    vue-tsc: ^3.1.8
+    vitepress-plugin-group-icons: "^1.6.9"
+    vue-tsc: ^3.2.2
   lint:
-    "@so1ve/eslint-config": *codestyle-config
-    "@so1ve/prettier-config": *codestyle-config
+    "@so1ve/eslint-config": v4.3.0
+    "@so1ve/prettier-config": v4.3.0

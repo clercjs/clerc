@@ -30,6 +30,7 @@ export function camelCase(str: string): string {
     // 45 = '-', 32 = ' '
     if (c === 45 || c === 32) {
       firstIdx = i;
+
       break;
     }
   }

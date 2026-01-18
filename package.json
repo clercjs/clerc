@@ -2,7 +2,7 @@
   "name": "@clerc/monorepo",
   "private": true,
   "version": "1.2.1",
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.28.0",
   "type": "module",
   "scripts": {
     "bench": "vitest bench",

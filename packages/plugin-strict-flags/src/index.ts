@@ -16,6 +16,7 @@ export const strictFlagsPlugin = (): Plugin =>
             keys.length > 1
               ? new Error(`Unexpected flags: ${joinWithAnd(keys)}`)
               : new Error(`Unexpected flag: ${keys[0]}`);
+
           throw error;
         }
       });

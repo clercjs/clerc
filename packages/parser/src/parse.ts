@@ -216,6 +216,7 @@ export function createParser<T extends FlagsDefinition>(
                 markUnknown();
                 hasUnknown = true;
               }
+
               continue;
             }
 
@@ -229,6 +230,7 @@ export function createParser<T extends FlagsDefinition>(
                 // -abval, b's type is not Boolean
                 // set b to 'val'
                 setValueByType(result.flags, key, chars.slice(j + 1), config);
+
                 break;
               } else {
                 // -ab foo, we are on "b"
