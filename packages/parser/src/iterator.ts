@@ -61,13 +61,13 @@ export function iterateArgs(
     advanceUnknown: () => {
       const value = iterator.advance();
       if (value) {
-        result.unknownRaw.push(value);
+        result.rawUnknown.push(value);
       }
 
       return value;
     },
     markUnknown: () => {
-      result.unknownRaw.push(iterator.current);
+      result.rawUnknown.push(iterator.current);
     },
     exit: (push = true) => {
       if (!stopped) {
