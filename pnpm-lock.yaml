@@ -7,8 +7,8 @@ settings:
 catalogs:
   cli:
     '@bomb.sh/tab':
-      specifier: ^0.0.11
-      version: 0.0.11
+      specifier: ^0.0.12
+      version: 0.0.12
     '@types/minimist':
       specifier: ^1.2.5
       version: 1.2.5
@@ -333,7 +333,7 @@ importers:
     devDependencies:
       '@bomb.sh/tab':
         specifier: catalog:cli
-        version: 0.0.11(cac@6.7.14)(citty@0.1.6)
+        version: 0.0.12(cac@6.7.14)(citty@0.1.6)
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
@@ -629,8 +629,8 @@ packages:
     resolution: {integrity: sha512-0ZrskXVEHSWIqZM/sQZ4EV3jZJXRkio/WCxaqKZP1g//CEWEPSfeZFcms4XeKBCHU0ZKnIkdJeU/kF+eRp5lBg==}
     engines: {node: '>=6.9.0'}
 
-  '@bomb.sh/tab@0.0.11':
-    resolution: {integrity: sha512-RSqyreeicYBALcMaNxIUJTBknftXsyW45VRq5gKDNwKroh0Re5SDoWwXZaphb+OTEzVdpm/BA8Uq6y0P+AtVYw==}
+  '@bomb.sh/tab@0.0.12':
+    resolution: {integrity: sha512-dYRwg4MqfHR5/BcTy285XOGRhjQFmNpaJBZ0tl2oU+RY595MQ5ApTF6j3OvauPAooHL6cfoOZMySQrOQztT8RQ==}
     hasBin: true
     peerDependencies:
       cac: ^6.7.14
@@ -4413,6 +4413,7 @@ packages:
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
@@ -5280,7 +5281,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bomb.sh/tab@0.0.11(cac@6.7.14)(citty@0.1.6)':
+  '@bomb.sh/tab@0.0.12(cac@6.7.14)(citty@0.1.6)':
     optionalDependencies:
       cac: 6.7.14
       citty: 0.1.6
