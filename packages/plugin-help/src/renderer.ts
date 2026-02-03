@@ -20,7 +20,7 @@ import {
   toArray,
 } from "@clerc/utils";
 import * as tint from "@uttr/tint";
-import stringWidth from "string-width";
+import stringWidth from "fast-string-width";
 import textTable from "text-table";
 
 import type { Formatters, GroupsOptions } from "./types";

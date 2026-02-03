@@ -38,7 +38,7 @@
   "dependencies": {
     "@clerc/utils": "workspace:*",
     "@uttr/tint": "catalog:cli",
-    "string-width": "catalog:cli",
+    "fast-string-width": "catalog:cli",
     "text-table": "catalog:cli"
   },
   "devDependencies": {
