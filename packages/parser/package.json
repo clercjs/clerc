@@ -1,6 +1,6 @@
 {
   "name": "@clerc/parser",
-  "version": "1.3.0-beta.1",
+  "version": "1.3.0-beta.2",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
   "description": "Clerc parser",
