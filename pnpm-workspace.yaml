@@ -10,7 +10,7 @@ onlyBuiltDependencies:
 
 catalogs:
   cli:
-    "@bomb.sh/tab": "^0.0.11"
+    "@bomb.sh/tab": "^0.0.14"
     "@types/minimist": "^1.2.5"
     "@types/nopt": "^3.0.32"
     "@types/text-table": "^0.2.5"
