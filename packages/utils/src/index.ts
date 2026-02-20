@@ -1,4 +1,4 @@
-import type { MaybeArray, MaybeGetter } from "./types";
+import type { MaybeArray, MaybeAsyncGetter, MaybeGetter } from "./types";
 
 export const looseIsArray = <T>(arr: any): arr is readonly T[] =>
   Array.isArray(arr);
@@ -97,6 +97,10 @@ export const objectIsEmpty = (obj: Record<string, any>): boolean =>
 
 export const resolveValue = <T>(value: MaybeGetter<T>): T =>
   typeof value === "function" ? (value as () => T)() : value;
+export const resolveAsyncValue = async <T>(
+  value: MaybeAsyncGetter<T>,
+): Promise<T> =>
+  typeof value === "function" ? (value as () => T | Promise<T>)() : value;
 
 export const hasOwn = (obj: object, key: PropertyKey): boolean =>
   Object.prototype.hasOwnProperty.call(obj, key);

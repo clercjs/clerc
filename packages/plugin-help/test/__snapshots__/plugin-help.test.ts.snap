@@ -93,6 +93,35 @@ exports[`plugin-help > alias > should show single string alias 1`] = `
 ]
 `;
 
+exports[`plugin-help > getter support > should work with static header/footer/notes/examples 1`] = `
+[
+  [
+    "STATIC_HEADER",
+  ],
+  [
+    "[1mtest[22m v0.0.0 - test
+
+[4m[1mUsage[22m[24m
+  $ test [2m<command>[22m [2m[flags][22m
+
+[4m[1mGlobal Flags[22m[24m
+  [1m--help, -h[22m  [2mBoolean[22m  Show help  [2m[default: [1mfalse[22m[2m][22m
+
+[4m[1mCommands[22m[24m
+  [1mhelp[22m  Show help
+
+[4m[1mExamples[22m[24m
+  $ cli test  -  Static example
+
+[4m[1mNotes[22m[24m
+  Static note",
+  ],
+  [
+    "STATIC_FOOTER",
+  ],
+]
+`;
+
 exports[`plugin-help > grouping > should display subcommands 1`] = `
 [
   [

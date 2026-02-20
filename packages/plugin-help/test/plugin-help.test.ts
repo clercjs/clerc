@@ -25,26 +25,26 @@ describe("plugin-help", () => {
 
   afterAll(restoreConsole);
 
-  it("should show help", () => {
-    TestBaseCli().use(helpPlugin()).parse(["help"]);
+  it("should show help", async () => {
+    await TestBaseCli().use(helpPlugin()).parse(["help"]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show --help", () => {
-    TestBaseCli().use(helpPlugin()).parse(["--help"]);
+  it("should show --help", async () => {
+    await TestBaseCli().use(helpPlugin()).parse(["--help"]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show help when no command", () => {
-    TestBaseCli().use(helpPlugin()).parse([]);
+  it("should show help when no command", async () => {
+    await TestBaseCli().use(helpPlugin()).parse([]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show parameter types", () => {
-    TestBaseCli()
+  it("should show parameter types", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: [
@@ -69,15 +69,15 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it('should show parameter type as "string" or "Array<string>" when type is not specified', () => {
-    TestBaseCli()
+  it('should show parameter type as "string" or "Array<string>" when type is not specified', async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["<param1>", "<param2...>"],
       })
       .parse(["test", "--help"]);
 
-    TestBaseCli()
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["[param1]", "[param2...]"],
@@ -87,15 +87,15 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should hide double dash in parameters section", () => {
-    TestBaseCli()
+  it("should hide double dash in parameters section", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["--"],
       })
       .parse(["test", "--help"]);
 
-    TestBaseCli()
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["--"],
@@ -105,15 +105,15 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should handle optional double dash", () => {
-    TestBaseCli()
+  it("should handle optional double dash", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["--"],
       })
       .parse(["test", "--help"]);
 
-    TestBaseCli()
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: ["--", "[optional]"],
@@ -123,8 +123,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show parameter description", () => {
-    TestBaseCli()
+  it("should show parameter description", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         parameters: [
@@ -139,14 +139,14 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should support optional description for command", () => {
-    TestBaseCli().use(helpPlugin()).command("test").parse(["--help"]);
+  it("should support optional description for command", async () => {
+    await TestBaseCli().use(helpPlugin()).command("test").parse(["--help"]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should support flag shorthand", () => {
-    TestBaseCli()
+  it("should support flag shorthand", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         flags: {
@@ -158,8 +158,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should support optional description for global flag", () => {
-    TestBaseCli()
+  it("should support optional description for global flag", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .globalFlag("verbose", {
         type: Boolean,
@@ -170,8 +170,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should support no description", () => {
-    Clerc.create()
+  it("should support no description", async () => {
+    await Clerc.create()
       .scriptName("test")
       .version("1.0.0")
       .use(helpPlugin())
@@ -195,22 +195,25 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should use [] as placeholder when root command exists", () => {
-    TestBaseCli().use(helpPlugin()).command("", "Root command").parse(["help"]);
+  it("should use [] as placeholder when root command exists", async () => {
+    await TestBaseCli()
+      .use(helpPlugin())
+      .command("", "Root command")
+      .parse(["help"]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should not show commands placeholder when no commands exist", () => {
-    TestBaseCli()
+  it("should not show commands placeholder when no commands exist", async () => {
+    await TestBaseCli()
       .use(helpPlugin({ command: false }))
       .parse(["--help"]);
 
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should not show commands placeholder when only registered root command", () => {
-    TestBaseCli()
+  it("should not show commands placeholder when only registered root command", async () => {
+    await TestBaseCli()
       .use(helpPlugin({ command: false }))
       .command("")
       .parse(["--help"]);
@@ -218,8 +221,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should not show commands which set `show` to false", () => {
-    TestBaseCli()
+  it("should not show commands which set `show` to false", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "", {
         help: {
@@ -231,8 +234,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should not show Commands section when all commands are hidden", () => {
-    TestBaseCli()
+  it("should not show Commands section when all commands are hidden", async () => {
+    await TestBaseCli()
       .use(helpPlugin({ command: false }))
       .command("test", "", {
         help: {
@@ -244,8 +247,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show examples and notes", () => {
-    TestBaseCli()
+  it("should show examples and notes", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("test", "Test command", {
         help: {
@@ -265,8 +268,8 @@ describe("plugin-help", () => {
   });
 
   describe("grouping", () => {
-    it("should group commands", () => {
-      TestBaseCli()
+    it("should group commands", async () => {
+      await TestBaseCli()
         .use(
           helpPlugin({
             groups: {
@@ -292,8 +295,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should group global flags", () => {
-      TestBaseCli()
+    it("should group global flags", async () => {
+      await TestBaseCli()
         .use(
           helpPlugin({
             groups: {
@@ -319,8 +322,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should group command flags", () => {
-      TestBaseCli()
+    it("should group command flags", async () => {
+      await TestBaseCli()
         .use(
           helpPlugin({
             groups: {
@@ -370,8 +373,8 @@ describe("plugin-help", () => {
       );
     });
 
-    it("should not add group headers when no groups defined", () => {
-      TestBaseCli()
+    it("should not add group headers when no groups defined", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("init", "Initialize project")
         .command("build", "Build project")
@@ -380,15 +383,15 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should display subcommands", () => {
-      TestBaseCli()
+    it("should display subcommands", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("parent", "Parent command")
         .command("parent child1", "First child command")
         .command("parent child2", "Second child command")
         .parse(["parent", "--help"]);
 
-      TestBaseCli()
+      await TestBaseCli()
         .use(helpPlugin())
         .command("", "Parent command")
         .command("child1", "First child command")
@@ -398,8 +401,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should not show flags which set `show` to false", () => {
-      TestBaseCli()
+    it("should not show flags which set `show` to false", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -419,8 +422,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should not show global flags which set `show` to false", () => {
-      TestBaseCli()
+    it("should not show global flags which set `show` to false", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .globalFlag("visible", "Visible global flag", {
           type: Boolean,
@@ -434,8 +437,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should not show group header when all flags in group are hidden", () => {
-      TestBaseCli()
+    it("should not show group header when all flags in group are hidden", async () => {
+      await TestBaseCli()
         .use(
           helpPlugin({
             groups: {
@@ -466,8 +469,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should not show Flags section when all flags are hidden", () => {
-      TestBaseCli()
+    it("should not show Flags section when all flags are hidden", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -488,8 +491,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should not show Global Flags section when all global flags are hidden", () => {
-      TestBaseCli()
+    it("should not show Global Flags section when all global flags are hidden", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .globalFlag("hidden1", "Hidden global flag 1", {
           type: Boolean,
@@ -515,8 +518,8 @@ describe("plugin-help", () => {
     ).rejects.toThrowError(NoSuchCommandError);
   });
 
-  it("should show available subcommands when parent command does not exist", () => {
-    TestBaseCli()
+  it("should show available subcommands when parent command does not exist", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("completions install", "Install shell completions")
       .command("completions uninstall", "Uninstall shell completions")
@@ -525,8 +528,8 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it("should show available subcommands when parent command does not exist (using --help)", () => {
-    TestBaseCli()
+  it("should show available subcommands when parent command does not exist (using --help)", async () => {
+    await TestBaseCli()
       .use(helpPlugin())
       .command("completions install", "Install shell completions")
       .command("completions uninstall", "Uninstall shell completions")
@@ -545,21 +548,19 @@ describe("plugin-help", () => {
   });
 
   it("should work with friendly-error", async () => {
-    expect(async () => {
-      await TestBaseCli()
-        .use(helpPlugin())
-        .use(friendlyErrorPlugin())
-        .parse(["not-exist", "--help"]);
+    await TestBaseCli()
+      .use(helpPlugin())
+      .use(friendlyErrorPlugin())
+      .parse(["not-exist", "--help"]);
 
-      expect(spy.mock.calls).toMatchSnapshot();
-    }).not.toThrowError();
+    expect(spy.mock.calls).toMatchSnapshot();
   });
 
-  it('should format custom flag type with "display" property', () => {
+  it('should format custom flag type with "display" property', async () => {
     const customType = (val: string) => val;
     customType.display = "custom-type";
 
-    TestBaseCli()
+    await TestBaseCli()
       .use(helpPlugin())
       .globalFlag("custom", "A flag with custom type", {
         type: customType,
@@ -569,11 +570,11 @@ describe("plugin-help", () => {
     expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
   });
 
-  it('should format custom flag default with "display" property', () => {
+  it('should format custom flag default with "display" property', async () => {
     const defaultFn = () => "string";
     defaultFn.display = "custom-default";
 
-    TestBaseCli()
+    await TestBaseCli()
       .use(helpPlugin())
       .globalFlag("custom", "A flag with custom default", {
         type: String,
@@ -585,8 +586,8 @@ describe("plugin-help", () => {
   });
 
   describe("negatable boolean flags", () => {
-    it("should show --no-xxx syntax for negatable boolean flags (default)", () => {
-      TestBaseCli()
+    it("should show --no-xxx syntax for negatable boolean flags (default)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -602,8 +603,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show --no-xxx syntax for boolean flag shorthand", () => {
-      TestBaseCli()
+    it("should show --no-xxx syntax for boolean flag shorthand", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -618,8 +619,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show --no-xxx syntax for global boolean flags", () => {
-      TestBaseCli()
+    it("should show --no-xxx syntax for global boolean flags", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .globalFlag("verbose", "Enable verbose output", {
           type: Boolean,
@@ -630,8 +631,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should NOT show --no-xxx syntax when negatable is explicitly false", () => {
-      TestBaseCli()
+    it("should NOT show --no-xxx syntax when negatable is explicitly false", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -648,8 +649,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should NOT show --no-xxx syntax for non-boolean flags", () => {
-      TestBaseCli()
+    it("should NOT show --no-xxx syntax for non-boolean flags", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -668,8 +669,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show --no-xxx syntax along with short flag", () => {
-      TestBaseCli()
+    it("should show --no-xxx syntax along with short flag", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -688,8 +689,8 @@ describe("plugin-help", () => {
   });
 
   describe("implicit default values", () => {
-    it("should show implicit default for Boolean flags (false)", () => {
-      TestBaseCli()
+    it("should show implicit default for Boolean flags (false)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -704,8 +705,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show implicit default for Boolean shorthand (false)", () => {
-      TestBaseCli()
+    it("should show implicit default for Boolean shorthand (false)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -717,8 +718,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show implicit default for Counter [Boolean] flags (0)", () => {
-      TestBaseCli()
+    it("should show implicit default for Counter [Boolean] flags (0)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -733,8 +734,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show implicit default for Array flags ([])", () => {
-      TestBaseCli()
+    it("should show implicit default for Array flags ([])", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -749,8 +750,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show implicit default for Object flags ({})", () => {
-      TestBaseCli()
+    it("should show implicit default for Object flags ({})", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -765,8 +766,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should NOT show default for String/Number flags without explicit default", () => {
-      TestBaseCli()
+    it("should NOT show default for String/Number flags without explicit default", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -785,8 +786,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should prefer explicit default over implicit default", () => {
-      TestBaseCli()
+    it("should prefer explicit default over implicit default", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           flags: {
@@ -809,8 +810,8 @@ describe("plugin-help", () => {
   });
 
   describe("alias", () => {
-    it("should show single string alias", () => {
-      TestBaseCli()
+    it("should show single string alias", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           alias: "t",
@@ -820,8 +821,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show array of aliases", () => {
-      TestBaseCli()
+    it("should show array of aliases", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           alias: ["t", "test-cmd"],
@@ -831,15 +832,15 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show root alias (empty string)", () => {
-      TestBaseCli()
+    it("should show root alias (empty string)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           alias: "",
         })
         .parse(["help"]);
 
-      TestBaseCli()
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           alias: "",
@@ -849,8 +850,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show root alias (empty string in array)", () => {
-      TestBaseCli()
+    it("should show root alias (empty string in array)", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("test", "Test command", {
           alias: ["t", ""],
@@ -860,8 +861,8 @@ describe("plugin-help", () => {
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
     });
 
-    it("should show alias for subcommands", () => {
-      TestBaseCli()
+    it("should show alias for subcommands", async () => {
+      await TestBaseCli()
         .use(helpPlugin())
         .command("parent child", "Child command", {
           alias: "c",
@@ -869,6 +870,147 @@ describe("plugin-help", () => {
         .parse(["parent", "--help"]);
 
       expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+  });
+
+  describe("getter support", () => {
+    it("should work with static header/footer/notes/examples", async () => {
+      await TestBaseCli()
+        .use(
+          helpPlugin({
+            header: "STATIC_HEADER",
+            footer: "STATIC_FOOTER",
+            notes: ["Static note"],
+            examples: [["$ cli test", "Static example"]],
+          }),
+        )
+        .parse(["--help"]);
+
+      expect(getConsoleMock("log").mock.calls).toMatchSnapshot();
+    });
+
+    it("should resolve sync getter for header", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ header: () => "SYNC_HEADER" }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("SYNC_HEADER");
+    });
+
+    it("should resolve async getter for header", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ header: async () => "ASYNC_HEADER" }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("ASYNC_HEADER");
+    });
+
+    it("should resolve sync getter for footer", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ footer: () => "SYNC_FOOTER" }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("SYNC_FOOTER");
+    });
+
+    it("should resolve async getter for footer", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ footer: async () => "ASYNC_FOOTER" }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("ASYNC_FOOTER");
+    });
+
+    it("should resolve getter for plugin-level notes", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ notes: () => ["Dynamic plugin note"] }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("Dynamic plugin note");
+    });
+
+    it("should resolve getter for plugin-level examples", async () => {
+      await TestBaseCli()
+        .use(
+          helpPlugin({ examples: () => [["$ cli test", "Dynamic example"]] }),
+        )
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("Dynamic example");
+    });
+
+    it("should resolve getter for command-level notes", async () => {
+      await TestBaseCli()
+        .use(helpPlugin())
+        .command("foo", "Foo command", {
+          help: { notes: async () => ["Async command note"] },
+        })
+        .parse(["help", "foo"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("Async command note");
+    });
+
+    it("should resolve getter for command-level examples", async () => {
+      await TestBaseCli()
+        .use(helpPlugin())
+        .command("foo", "Foo command", {
+          help: {
+            examples: async () => [["$ cli foo", "Async example"]],
+          },
+        })
+        .parse(["help", "foo"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("Async example");
+    });
+
+    it("should resolve all getters together", async () => {
+      await TestBaseCli()
+        .use(
+          helpPlugin({
+            header: async () => "COMBINED_HEADER",
+            footer: async () => "COMBINED_FOOTER",
+            notes: () => ["Combined note"],
+            examples: () => [["$ cli", "Combined example"]],
+          }),
+        )
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("COMBINED_HEADER");
+      expect(output).toContain("COMBINED_FOOTER");
+      expect(output).toContain("Combined note");
+      expect(output).toContain("Combined example");
+    });
+
+    it("should let command-level notes override plugin-level notes", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ notes: () => ["Plugin note"] }))
+        .command("foo", "Foo command", {
+          help: { notes: () => ["Command note"] },
+        })
+        .parse(["help", "foo"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).toContain("Command note");
+      expect(output).not.toContain("Plugin note");
     });
   });
 });

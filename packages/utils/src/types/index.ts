@@ -1,6 +1,7 @@
 export type ToArray<T> = T extends any[] ? T : [T];
 export type MaybeArray<T> = T | T[];
 export type MaybeGetter<T> = T | (() => T);
+export type MaybeAsyncGetter<T> = T | (() => T | Promise<T>);
 
 export type PartialRequired<T, K extends keyof T> = T & {
   [P in K]-?: T[P];

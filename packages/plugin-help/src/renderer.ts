@@ -74,6 +74,8 @@ function validateGroup(
 
 export class HelpRenderer {
   private _command: Command | undefined;
+  private _examples?: [string, string][];
+  private _notes?: string[];
 
   private get _commandGroups() {
     return groupDefinitionsToMap(this._getGroups().commands);
@@ -92,16 +94,17 @@ export class HelpRenderer {
     private _cli: Clerc,
     private _globalFlags: ClercFlagsDefinition,
     private _getGroups: () => GroupsOptions,
-    private _examples?: [string, string][],
-    private _notes?: string[],
   ) {}
 
   public setCommand(command: Command | undefined): void {
     if (command) {
       this._command = command;
-      this._examples = command?.help?.examples;
-      this._notes = command?.help?.notes;
     }
+  }
+
+  public setHelpContent(notes?: string[], examples?: [string, string][]): void {
+    this._notes = notes;
+    this._examples = examples;
   }
 
   private renderSections(sections: Section[]): string {

@@ -1,6 +1,7 @@
 import type { Plugin } from "@clerc/core";
 import { NoSuchCommandError, definePlugin, resolveCommand } from "@clerc/core";
-import { isTruthy } from "@clerc/utils";
+import type { MaybeAsyncGetter } from "@clerc/utils";
+import { isTruthy, resolveAsyncValue } from "@clerc/utils";
 
 import { defaultFormatters } from "./formatters";
 import { HelpRenderer } from "./renderer";
@@ -28,12 +29,12 @@ export interface CommandHelpOptions extends HelpOptions {
   /**
    * Notes to show in the help output.
    */
-  notes?: string[];
+  notes?: MaybeAsyncGetter<string[]>;
   /**
    * Examples to show in the help output. Each example is a tuple of `[command,
    * description]`.
    */
-  examples?: [string, string][];
+  examples?: MaybeAsyncGetter<[string, string][]>;
 }
 
 export interface FlagHelpOptions extends HelpOptions {}
@@ -76,20 +77,20 @@ export interface HelpPluginOptions {
   /**
    * Notes to show in the help output.
    */
-  notes?: string[];
+  notes?: MaybeAsyncGetter<string[]>;
   /**
    * Examples to show in the help output. Each example is a tuple of `[command,
    * description]`.
    */
-  examples?: [string, string][];
+  examples?: MaybeAsyncGetter<[string, string][]>;
   /**
    * Header to show before the help output.
    */
-  header?: string;
+  header?: MaybeAsyncGetter<string>;
   /**
    * Footer to show after the help output.
    */
-  footer?: string;
+  footer?: MaybeAsyncGetter<string>;
   /**
    * Custom formatters for rendering help.
    */
@@ -123,13 +124,29 @@ export const helpPlugin = ({
         ...formatters,
       };
 
-      function printHelp(s: string) {
+      async function resolveHelpContent(
+        commandHelp: CommandHelpOptions | undefined,
+      ): Promise<{ notes?: string[]; examples?: [string, string][] }> {
+        const resolvedNotes = commandHelp?.notes ?? notes;
+        const resolvedExamples = commandHelp?.examples ?? examples;
+
+        return {
+          notes: resolvedNotes
+            ? await resolveAsyncValue(resolvedNotes)
+            : undefined,
+          examples: resolvedExamples
+            ? await resolveAsyncValue(resolvedExamples)
+            : undefined,
+        };
+      }
+
+      async function printHelp(s: string) {
         if (header) {
-          console.log(header);
+          console.log(await resolveAsyncValue(header));
         }
         console.log(s);
         if (footer) {
-          console.log(footer);
+          console.log(await resolveAsyncValue(footer));
         }
       }
 
@@ -138,16 +155,14 @@ export const helpPlugin = ({
         cli,
         cli._globalFlags,
         () => groups,
-        examples,
-        notes,
       );
 
-      function tryPrintSubcommandsHelp(commandName: string) {
+      async function tryPrintSubcommandsHelp(commandName: string) {
         const subcommandsOutput =
           renderer.renderAvailableSubcommands(commandName);
 
         if (subcommandsOutput) {
-          printHelp(subcommandsOutput);
+          await printHelp(subcommandsOutput);
 
           return true;
         }
@@ -178,7 +193,7 @@ export const helpPlugin = ({
               ].filter(isTruthy) as [string, string][],
             },
           })
-          .on("help", (ctx) => {
+          .on("help", async (ctx) => {
             const commandName = ctx.parameters.command;
             let command;
             if (commandName.length > 0) {
@@ -187,7 +202,7 @@ export const helpPlugin = ({
               if (!command) {
                 const parentCommandName = commandName.join(" ");
 
-                if (tryPrintSubcommandsHelp(parentCommandName)) {
+                if (await tryPrintSubcommandsHelp(parentCommandName)) {
                   return;
                 }
 
@@ -197,7 +212,10 @@ export const helpPlugin = ({
             }
 
             renderer.setCommand(command);
-            printHelp(renderer.render());
+            const { notes: resolvedNotes, examples: resolvedExamples } =
+              await resolveHelpContent(command?.help);
+            renderer.setHelpContent(resolvedNotes, resolvedExamples);
+            await printHelp(renderer.render());
           });
       }
 
@@ -218,7 +236,7 @@ export const helpPlugin = ({
             if (!command && ctx.rawParsed.parameters.length > 0) {
               const parentCommandName = ctx.rawParsed.parameters.join(" ");
 
-              if (tryPrintSubcommandsHelp(parentCommandName)) {
+              if (await tryPrintSubcommandsHelp(parentCommandName)) {
                 return;
               }
 
@@ -226,7 +244,10 @@ export const helpPlugin = ({
             }
 
             renderer.setCommand(command);
-            printHelp(renderer.render());
+            const { notes: resolvedNotes, examples: resolvedExamples } =
+              await resolveHelpContent(command?.help);
+            renderer.setHelpContent(resolvedNotes, resolvedExamples);
+            await printHelp(renderer.render());
           } else {
             const shouldShowHelp =
               showHelpWhenNoCommandSpecified &&
@@ -236,7 +257,11 @@ export const helpPlugin = ({
             if (shouldShowHelp) {
               const text = "No command specified. Showing help:\n";
               console.log(text);
-              printHelp(renderer.render());
+              renderer.setCommand(undefined);
+              const { notes: resolvedNotes, examples: resolvedExamples } =
+                await resolveHelpContent(undefined);
+              renderer.setHelpContent(resolvedNotes, resolvedExamples);
+              await printHelp(renderer.render());
             } else {
               await next();
             }
