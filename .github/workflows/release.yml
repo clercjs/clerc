@@ -11,4 +11,4 @@ permissions:
 
 jobs:
   release:
-    uses: so1ve/workflows/.github/workflows/release.yml@v1
+    uses: rayxiom/workflows/.github/workflows/release.yml@v1

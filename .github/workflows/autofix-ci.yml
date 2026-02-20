@@ -8,6 +8,6 @@ on:
 
 jobs:
   autofix:
-    uses: so1ve/workflows/.github/workflows/autofix-ci.yml@v1
+    uses: rayxiom/workflows/.github/workflows/autofix-ci.yml@v1
     permissions:
       contents: read

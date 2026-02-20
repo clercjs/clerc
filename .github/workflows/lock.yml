@@ -7,4 +7,4 @@ on:
 
 jobs:
   lock:
-    uses: so1ve/workflows/.github/workflows/lock.yml@v1
+    uses: rayxiom/workflows/.github/workflows/lock.yml@v1
