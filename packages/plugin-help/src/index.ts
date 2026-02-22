@@ -141,12 +141,12 @@ export const helpPlugin = ({
       }
 
       async function printHelp(s: string) {
-        const headerText = header && await resolveAsyncValue(header);
+        const headerText = header && (await resolveAsyncValue(header));
         if (headerText) {
           console.log(headerText);
         }
         console.log(s);
-        const footerText = footer && await resolveAsyncValue(footer);
+        const footerText = footer && (await resolveAsyncValue(footer));
         if (footerText) {
           console.log(footerText);
         }
