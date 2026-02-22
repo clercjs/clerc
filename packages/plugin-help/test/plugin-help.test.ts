@@ -999,6 +999,26 @@ describe("plugin-help", () => {
       expect(output).toContain("Combined example");
     });
 
+    it("should not log header when getter returns undefined", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ header: () => undefined }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).not.toContain("undefined");
+    });
+
+    it("should not log footer when getter returns undefined", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ footer: async () => undefined }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).not.toContain("undefined");
+    });
+
     it("should let command-level notes override plugin-level notes", async () => {
       await TestBaseCli()
         .use(helpPlugin({ notes: () => ["Plugin note"] }))
