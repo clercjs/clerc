@@ -86,11 +86,11 @@ export interface HelpPluginOptions {
   /**
    * Header to show before the help output.
    */
-  header?: MaybeAsyncGetter<string>;
+  header?: MaybeAsyncGetter<string | undefined>;
   /**
    * Footer to show after the help output.
    */
-  footer?: MaybeAsyncGetter<string>;
+  footer?: MaybeAsyncGetter<string | undefined>;
   /**
    * Custom formatters for rendering help.
    */
@@ -141,12 +141,14 @@ export const helpPlugin = ({
       }
 
       async function printHelp(s: string) {
-        if (header) {
-          console.log(await resolveAsyncValue(header));
+        const headerText = header && await resolveAsyncValue(header);
+        if (headerText) {
+          console.log(headerText);
         }
         console.log(s);
-        if (footer) {
-          console.log(await resolveAsyncValue(footer));
+        const footerText = footer && await resolveAsyncValue(footer);
+        if (footerText) {
+          console.log(footerText);
         }
       }
 
