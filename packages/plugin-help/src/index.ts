@@ -86,11 +86,11 @@ export interface HelpPluginOptions {
   /**
    * Header to show before the help output.
    */
-  header?: MaybeAsyncGetter<string | undefined>;
+  header?: MaybeAsyncGetter<string | void | undefined>;
   /**
    * Footer to show after the help output.
    */
-  footer?: MaybeAsyncGetter<string | undefined>;
+  footer?: MaybeAsyncGetter<string | void | undefined>;
   /**
    * Custom formatters for rendering help.
    */

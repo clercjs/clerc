@@ -1009,6 +1009,26 @@ describe("plugin-help", () => {
       expect(output).not.toContain("undefined");
     });
 
+    it("should not log header when getter returns void", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ header: () => {} }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).not.toContain("undefined");
+    });
+
+    it("should not log footer when getter returns void", async () => {
+      await TestBaseCli()
+        .use(helpPlugin({ footer: () => {} }))
+        .parse(["--help"]);
+
+      const output = getConsoleMock("log").mock.calls.flat().join("\n");
+
+      expect(output).not.toContain("undefined");
+    });
+
     it("should not log footer when getter returns undefined", async () => {
       await TestBaseCli()
         .use(helpPlugin({ footer: async () => undefined }))
