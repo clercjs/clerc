@@ -48,7 +48,7 @@ catalogs:
     vitest-console: "^0.2.1"
   docs:
     "@shikijs/vitepress-twoslash": "^3.21.0"
-    oxc-minify: ^0.108.0
+    oxc-minify: ^0.115.0
     typedoc: "^0.28.16"
     typedoc-plugin-markdown: ^4.9.0
     typedoc-vitepress-theme: ^1.1.2
