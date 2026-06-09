@@ -7,8 +7,8 @@ settings:
 catalogs:
   cli:
     '@bomb.sh/tab':
-      specifier: ^0.0.11
-      version: 0.0.11
+      specifier: ^0.0.16
+      version: 0.0.16
     '@types/minimist':
       specifier: ^1.2.5
       version: 1.2.5
@@ -106,6 +106,9 @@ catalogs:
     vite-plugin-simple-tsconfig-alias:
       specifier: ^0.2.0
       version: 0.2.0
+    vitest:
+      specifier: ^4.0.17
+      version: 4.1.0
     vitest-console:
       specifier: ^0.2.1
       version: 0.2.1
@@ -330,7 +333,7 @@ importers:
     devDependencies:
       '@bomb.sh/tab':
         specifier: catalog:cli
-        version: 0.0.11(cac@6.7.14)(citty@0.1.6)
+        version: 0.0.16(cac@6.7.14)(citty@0.1.6)
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
@@ -626,12 +629,12 @@ packages:
     resolution: {integrity: sha512-0ZrskXVEHSWIqZM/sQZ4EV3jZJXRkio/WCxaqKZP1g//CEWEPSfeZFcms4XeKBCHU0ZKnIkdJeU/kF+eRp5lBg==}
     engines: {node: '>=6.9.0'}
 
-  '@bomb.sh/tab@0.0.11':
-    resolution: {integrity: sha512-RSqyreeicYBALcMaNxIUJTBknftXsyW45VRq5gKDNwKroh0Re5SDoWwXZaphb+OTEzVdpm/BA8Uq6y0P+AtVYw==}
+  '@bomb.sh/tab@0.0.16':
+    resolution: {integrity: sha512-xFtIH6JYVdXgkSft97gsQyJODZbjGXw+l+wkT06lBiBPuaF0CFYNulQNsgnYud7rURI7D4lyLmOQeAzRkvl1Fg==}
     hasBin: true
     peerDependencies:
       cac: ^6.7.14
-      citty: ^0.1.6
+      citty: ^0.1.6 || ^0.2.0
       commander: ^13.1.0
     peerDependenciesMeta:
       cac:
@@ -5311,7 +5314,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bomb.sh/tab@0.0.11(cac@6.7.14)(citty@0.1.6)':
+  '@bomb.sh/tab@0.0.16(cac@6.7.14)(citty@0.1.6)':
     optionalDependencies:
       cac: 6.7.14
       citty: 0.1.6
@@ -6636,7 +6639,7 @@ snapshots:
 
   '@vitest/pretty-format@4.0.17':
     dependencies:
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   '@vitest/pretty-format@4.1.0':
     dependencies:
@@ -6670,7 +6673,7 @@ snapshots:
   '@vitest/utils@4.0.17':
     dependencies:
       '@vitest/pretty-format': 4.0.17
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   '@vitest/utils@4.1.0':
     dependencies:
@@ -8903,7 +8906,7 @@ snapshots:
       consola: 3.4.2
       pathe: 2.0.3
       pkg-types: 2.3.0
-      tinyexec: 1.0.2
+      tinyexec: 1.2.4
 
   obug@2.1.1: {}
 
