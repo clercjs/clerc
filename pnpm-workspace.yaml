@@ -40,7 +40,7 @@ catalogs:
     changelogithub: "^14.0.0"
     eslint: "^9.39.2"
     prettier: "^3.8.0"
-    tsdown: "^0.20.0-beta.3"
+    tsdown: "^0.22.0"
     typescript: "^5.9.3"
     vite: "^8.0.0-beta.8"
     vite-plugin-simple-tsconfig-alias: "^0.2.0"
