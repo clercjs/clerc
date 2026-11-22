@@ -8,7 +8,7 @@ describe("commands", () => {
     expect(() => {
       // @ts-expect-error testing
       TestBaseCli().command("foo", "foo").command("foo", "foo");
-    }).toThrowError();
+    }).toThrow();
   });
 
   it("should parse nested command", () => {
@@ -137,7 +137,7 @@ describe("commands", () => {
           },
         })
         .parse(["bar"]),
-    ).resolves.not.toThrowError();
+    ).resolves.not.toThrow();
   });
 
   it("should register multiple commands with array form", () => {
@@ -295,6 +295,6 @@ describe("commands", () => {
 
     expect(() => {
       TestBaseCli().command(commands);
-    }).toThrowError('Command with name "duplicate" already exists.');
+    }).toThrow('Command with name "duplicate" already exists.');
   });
 });

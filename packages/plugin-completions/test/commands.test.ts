@@ -56,7 +56,7 @@ describe("plugin-completions/commands", () => {
     it("should throw error if shell is missing", async () => {
       await expect(
         TestBaseCli().use(completionsPlugin()).parse(["completions"]),
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         "Shell type is required. Please provide it via --shell flag or [shell] parameter.",
       );
     });

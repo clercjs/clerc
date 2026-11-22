@@ -4,8 +4,7 @@ import type { CamelCase, Prettify, UnionToIntersection } from "@clerc/utils";
 export declare interface ParameterCustomOptions {}
 
 type InferStringParameter<T extends string, Type = string> = T extends
-  | `<${infer Name extends string}...>`
-  | `[${infer Name extends string}...]`
+  `<${infer Name extends string}...>` | `[${infer Name extends string}...]`
   ? Record<CamelCase<Name>, Type[]>
   : T extends `<${infer Name extends string}>`
     ? Record<CamelCase<Name>, Type>

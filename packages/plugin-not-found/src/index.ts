@@ -1,10 +1,11 @@
+import { styleText } from "node:util";
+
 import type { Plugin } from "@clerc/core";
 import {
   NoCommandSpecifiedError,
   NoSuchCommandError,
   definePlugin,
 } from "@clerc/core";
-import * as tint from "@uttr/tint";
 import { closest, distance } from "fastest-levenshtein";
 
 export interface NotFoundPluginOptions {
@@ -53,10 +54,10 @@ export const notFoundPlugin = ({
             if (dist > distanceThreshold) {
               closestCommandName = undefined;
             }
-            let text = `Command "${tint.strikethrough(commandName)}" not found.`;
+            let text = `Command "${styleText("strikethrough", commandName)}" not found.`;
 
             if (hasCommands && closestCommandName) {
-              text += `\nDid you mean "${tint.bold(closestCommandName)}"?`;
+              text += `\nDid you mean "${styleText("bold", closestCommandName)}"?`;
             } else if (!hasCommands) {
               text += "\nNo commands registered.";
             }

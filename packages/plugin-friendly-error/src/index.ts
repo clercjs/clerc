@@ -1,15 +1,20 @@
-// TODO: unit tests
+import { styleText } from "node:util";
 
 import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
-import * as kons from "kons";
 
 export interface FriendlyErrorPluginOptions {
   target?: (str: string) => void;
 }
 
+function defaultTarget(str: string): void {
+  console.error(
+    `${styleText(["bgRed", "black", "bold"], " ERROR ")} ${styleText("red", str)}`,
+  );
+}
+
 export const friendlyErrorPlugin = ({
-  target = kons.error,
+  target = defaultTarget,
 }: FriendlyErrorPluginOptions = {}): Plugin =>
   definePlugin({
     setup: (cli) =>

@@ -1,24 +1,12 @@
 import { TestBaseCli, getConsoleMock } from "@clerc/test-utils";
 import { Clerc, NoSuchCommandError, Types, friendlyErrorPlugin } from "clerc";
-import * as kons from "kons";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mockConsole } from "vitest-console";
 
 import { helpPlugin } from "../src";
 
-vi.mock("kons", () => ({
-  error: vi.fn(),
-}));
-
 describe("plugin-help", () => {
   vi.spyOn(process, "exit").mockImplementation(() => ({}) as never);
-  const spy = vi.spyOn(kons, "error").mockImplementation(() => {});
-  vi.mocked(kons.error).mockImplementation(() => {});
-
-  afterEach(() => {
-    spy.mockClear();
-  });
-
   const { clearConsole, restoreConsole } = mockConsole({ quiet: true });
 
   afterEach(clearConsole);
@@ -511,11 +499,11 @@ describe("plugin-help", () => {
   it("should throw error when command not found", async () => {
     await expect(
       TestBaseCli().use(helpPlugin()).parse(["not-exist", "--help"]),
-    ).rejects.toThrowError(NoSuchCommandError);
+    ).rejects.toThrow(NoSuchCommandError);
 
     await expect(
       TestBaseCli().use(helpPlugin()).parse(["help", "not-exist"]),
-    ).rejects.toThrowError(NoSuchCommandError);
+    ).rejects.toThrow(NoSuchCommandError);
   });
 
   it("should show available subcommands when parent command does not exist", async () => {
@@ -544,7 +532,7 @@ describe("plugin-help", () => {
         .use(helpPlugin())
         .command("other", "Other command")
         .parse(["help", "not-exist"]),
-    ).rejects.toThrowError(NoSuchCommandError);
+    ).rejects.toThrow(NoSuchCommandError);
   });
 
   it("should work with friendly-error", async () => {
@@ -553,7 +541,10 @@ describe("plugin-help", () => {
       .use(friendlyErrorPlugin())
       .parse(["not-exist", "--help"]);
 
-    expect(spy.mock.calls).toMatchSnapshot();
+    expect(getConsoleMock("error")).toHaveBeenCalledTimes(1);
+    expect(getConsoleMock("error").mock.calls[0][0]).toContain(
+      `No such command: "not-exist".`,
+    );
   });
 
   it('should format custom flag type with "display" property', async () => {

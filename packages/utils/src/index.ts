@@ -74,9 +74,7 @@ export function joinWithAnd(values: string[]): string {
     return values[0];
   }
 
-  const last = values.pop();
-
-  return `${values.join(", ")} and ${last}`;
+  return `${values.slice(0, -1).join(", ")} and ${values.at(-1)}`;
 }
 
 export const kebabCase = <T extends string>(s: T): string =>
@@ -101,6 +99,3 @@ export const resolveAsyncValue = async <T>(
   value: MaybeAsyncGetter<T>,
 ): Promise<T> =>
   typeof value === "function" ? (value as () => T | Promise<T>)() : value;
-
-export const hasOwn = (obj: object, key: PropertyKey): boolean =>
-  Object.prototype.hasOwnProperty.call(obj, key);

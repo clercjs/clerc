@@ -6,16 +6,17 @@ export default defineConfig({
     exclude: ["packages/test-utils"],
   },
   entry: ["src/index.ts"],
+  target: "node26",
   dts: {
-    oxc: true,
+    generator: "oxc",
   },
   minify: true,
-  exports: true,
-  external(id) {
-    if (id === "@clerc/advanced-types") {
-      return false;
-    }
-
-    return id.startsWith("@clerc/");
+  exports: {
+    inlinedDependencies: false,
+  },
+  deps: {
+    alwaysBundle: ["@clerc/advanced-types"],
+    neverBundle: [/^@clerc\//],
+    onlyBundle: false,
   },
 });

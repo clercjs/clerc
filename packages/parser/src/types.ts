@@ -38,8 +38,7 @@ export type IgnoreFunction = (
 ) => boolean;
 
 export type TypeValue<T = unknown> =
-  | TypeFunction<T>
-  | readonly [TypeFunction<T>];
+  TypeFunction<T> | readonly [TypeFunction<T>];
 
 type FlagRequiredOrDefault = RequireExactlyOneOrNone<
   {
@@ -186,16 +185,15 @@ type _InferFlags<T extends FlagsDefinition> = {
               | { type: readonly [TypeValue<infer U>] }
           ? U[] | InferFlagDefault<T[K], never>
           : T[K] extends TypeValue<infer U> | { type: TypeValue<infer U> }
-            ?
-                | U
-                | InferFlagDefault<
-                    T[K],
-                    [U] extends [boolean]
+            ? | U
+              | InferFlagDefault<
+                  T[K],
+                  [U] extends [boolean]
+                    ? never
+                    : T[K] extends { required: true }
                       ? never
-                      : T[K] extends { required: true }
-                        ? never
-                        : undefined
-                  >
+                      : undefined
+                >
             : never;
 };
 

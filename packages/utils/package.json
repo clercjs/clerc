@@ -33,6 +33,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=26"
+  },
   "publishConfig": {
     "access": "public"
   }

@@ -151,6 +151,6 @@ describe("parser - advanced flags", () => {
         },
         delimiters: [":", "=", "|"],
       }),
-    ).toThrowError(InvalidSchemaError);
+    ).toThrow(InvalidSchemaError);
   });
 });

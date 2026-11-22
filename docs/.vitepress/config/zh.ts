@@ -1,11 +1,10 @@
 import { join } from "node:path";
 
-import type { DefaultTheme } from "vitepress";
-import { defineConfig } from "vitepress";
+import type { DefaultTheme, LocaleSpecificConfig } from "vitepress";
 
-import { PACKAGES } from "../scripts/generate-reference";
-import { getNavigation } from "../utils/navigation";
-import { getTypedocSidebar } from "./shared";
+import { PACKAGES } from "../scripts/generate-reference.ts";
+import { getNavigation } from "../utils/navigation.ts";
+import { getTypedocSidebar } from "./shared.ts";
 
 const pluginNavigation = await getNavigation(
   join(import.meta.dirname, "..", "..", "zh", "official-plugins"),
@@ -101,7 +100,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = {
   "/zh/": guideSidebar,
 };
 
-export const zhConfig = defineConfig({
+export const zhConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
   lang: "zh-CN",
   description: "全功能 CLI 库",
   themeConfig: {
@@ -170,4 +169,4 @@ export const zhConfig = defineConfig({
       },
     },
   },
-});
+};

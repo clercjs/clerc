@@ -1,5 +1,3 @@
-// TODO: unit tests
-
 import type { Plugin } from "@clerc/core";
 import { definePlugin } from "@clerc/core";
 import { joinWithAnd } from "@clerc/utils";

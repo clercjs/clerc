@@ -28,7 +28,7 @@ describe("plugin-version", () => {
       TestBaseCli()
         .use(versionPlugin({ command: false }))
         .parse(["version"]),
-    ).rejects.toThrowError('No such command: "version".');
+    ).rejects.toThrow('No such command: "version".');
 
     expect(console).not.toHaveLogged();
   });
@@ -38,7 +38,7 @@ describe("plugin-version", () => {
       TestBaseCli()
         .use(versionPlugin({ flag: false }))
         .parse(["--version"]),
-    ).rejects.toThrowError("No command specified.");
+    ).rejects.toThrow("No command specified.");
 
     expect(console).not.toHaveLogged();
   });

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { join } from "node:path";
 
-import { comparePackages } from "./sort";
+import { comparePackages } from "./sort.ts";
 
 function extractTitleFromMarkdown(content: string): string | null {
   // eslint-disable-next-line regexp/no-super-linear-backtracking

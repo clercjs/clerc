@@ -1,13 +1,11 @@
-import TsconfigAlias from "vite-plugin-simple-tsconfig-alias";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [
-    TsconfigAlias({
-      configNames: ["tsconfig.base.json"],
-    }) as any,
-  ],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
+    exclude: [...configDefaults.exclude, "**/.devenv/**"],
     coverage: {
       provider: "istanbul",
     },

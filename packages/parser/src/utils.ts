@@ -1,4 +1,4 @@
-import { hasOwn, looseIsArray } from "@clerc/utils";
+import { looseIsArray } from "@clerc/utils";
 
 import type { FlagOptions, TypeValue } from "./types";
 
@@ -121,7 +121,7 @@ export function appendDotValues(obj: any, path: string, value: any): void {
     const key = keys[i];
     // Check if the key exists and is not an object (path conflict)
     if (
-      hasOwn(current, key) &&
+      Object.hasOwn(current, key) &&
       (typeof current[key] !== "object" || current[key] === null)
     ) {
       // current value is a primitive, cannot set nested property
@@ -132,7 +132,7 @@ export function appendDotValues(obj: any, path: string, value: any): void {
   }
   const lastKey = keys[keys.length - 1];
 
-  if (hasOwn(current, lastKey)) {
+  if (Object.hasOwn(current, lastKey)) {
     const existing = current[lastKey];
     if (Array.isArray(existing)) {
       existing.push(value);

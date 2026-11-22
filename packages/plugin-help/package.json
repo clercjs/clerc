@@ -32,20 +32,19 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=26"
+  },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@clerc/utils": "workspace:*",
-    "@uttr/tint": "catalog:cli",
-    "fast-string-width": "catalog:cli",
-    "text-table": "catalog:cli"
+    "fast-string-width": "catalog:cli"
   },
   "devDependencies": {
     "@clerc/core": "workspace:*",
-    "@clerc/parser": "workspace:*",
-    "@types/text-table": "catalog:cli",
-    "kons": "catalog:cli"
+    "@clerc/parser": "workspace:*"
   },
   "peerDependencies": {
     "@clerc/core": "*"

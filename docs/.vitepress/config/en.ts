@@ -1,11 +1,10 @@
 import { join } from "node:path";
 
-import type { DefaultTheme } from "vitepress";
-import { defineConfig } from "vitepress";
+import type { DefaultTheme, LocaleSpecificConfig } from "vitepress";
 
-import { PACKAGES } from "../scripts/generate-reference";
-import { getNavigation } from "../utils/navigation";
-import { getTypedocSidebar } from "./shared";
+import { PACKAGES } from "../scripts/generate-reference.ts";
+import { getNavigation } from "../utils/navigation.ts";
+import { getTypedocSidebar } from "./shared.ts";
 
 const pluginNavigation = await getNavigation(
   join(import.meta.dirname, "..", "..", "official-plugins"),
@@ -101,7 +100,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = {
   "/": guideSidebar,
 };
 
-export const enConfig = defineConfig({
+export const enConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
   lang: "en-US",
   description: "The The full-featured Command-Line Interface library",
   themeConfig: {
@@ -147,4 +146,4 @@ export const enConfig = defineConfig({
       copyright: "Copyright © 2023-present Clerc Developers",
     },
   },
-});
+};

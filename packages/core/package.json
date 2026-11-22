@@ -31,6 +31,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=26"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -40,7 +43,6 @@
     "lite-emit": "catalog:cli"
   },
   "devDependencies": {
-    "@clerc/advanced-types": "workspace:*",
-    "is-platform": "catalog:cli"
+    "@clerc/advanced-types": "workspace:*"
   }
 }

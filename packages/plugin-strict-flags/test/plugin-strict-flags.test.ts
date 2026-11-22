@@ -7,7 +7,7 @@ describe("plugin-strict-flags", () => {
   it("shouldn't show when flags are not passed", async () => {
     await expect(
       TestBaseCli().use(strictFlagsPlugin()).command("a", "a").parse([]),
-    ).rejects.toThrowError("No command specified.");
+    ).rejects.toThrow("No command specified.");
   });
 
   it("should show unknown flags", async () => {
@@ -16,6 +16,6 @@ describe("plugin-strict-flags", () => {
         .use(strictFlagsPlugin())
         .command("a", "a")
         .parse(["a", "-a", "-bc", "--foo"]),
-    ).rejects.toThrowError("Unexpected flags: a, b, c and foo");
+    ).rejects.toThrow("Unexpected flags: a, b, c and foo");
   });
 });

@@ -34,7 +34,7 @@ describe("error handling", () => {
         missingRequiredFlags = ctx.rawParsed.missingRequiredFlags;
       });
 
-    await expect(cli.parse({ argv: ["test"] })).resolves.not.toThrowError();
+    await expect(cli.parse({ argv: ["test"] })).resolves.not.toThrow();
     expect(missingRequiredFlags).toEqual(["requiredFlag"]);
   });
 });

@@ -1,3 +1,5 @@
+import { styleText } from "node:util";
+
 import type {
   Clerc,
   ClercFlagDefinitionValue,
@@ -19,19 +21,41 @@ import {
   objectIsEmpty,
   toArray,
 } from "@clerc/utils";
-import * as tint from "@uttr/tint";
 import stringWidth from "fast-string-width";
-import textTable from "text-table";
 
 import type { Formatters, GroupsOptions } from "./types";
 import { formatCommandName, isFlagObject } from "./utils";
 
 const DEFAULT_GROUP_KEY = "default";
 
-const table = (items: string[][]) =>
-  textTable(items, { stringLength: stringWidth });
+function formatTable(rows: string[][]): string {
+  const colWidths: number[] = [];
+  const rowWidths = rows.map((row) =>
+    row.map((cell, i) => {
+      const width = stringWidth(cell);
+      if (width > (colWidths[i] ?? 0)) {
+        colWidths[i] = width;
+      }
 
-const splitTable = (items: string[][]) => table(items).split("\n");
+      return width;
+    }),
+  );
+
+  return rows
+    .map((row, r) =>
+      row
+        .map((cell, c) =>
+          c === row.length - 1
+            ? cell
+            : cell + " ".repeat(colWidths[c] - rowWidths[r][c]),
+        )
+        .join("  ")
+        .trimEnd(),
+    )
+    .join("\n");
+}
+
+const splitTable = (items: string[][]) => formatTable(items).split("\n");
 
 const DELIMITER = "-";
 const INDENT = " ".repeat(2);
@@ -119,7 +143,7 @@ export class HelpRenderer {
           return body;
         }
 
-        return `${tint.underline.bold(section.title)}\n${body
+        return `${styleText(["underline", "bold"], section.title)}\n${body
           .split("\n")
           .map(withIndent)
           .join("\n")}`;
@@ -148,10 +172,10 @@ export class HelpRenderer {
     const description = command ? command.description : _description;
     const isRoot = !command || command.name === "";
     const formattedScriptName = isRoot
-      ? tint.bold(_scriptName)
-      : tint.dim(_scriptName);
+      ? styleText("bold", _scriptName)
+      : styleText("dim", _scriptName);
     const formattedCommandName = command?.name
-      ? ` ${tint.bold(command.name)}`
+      ? ` ${styleText("bold", command.name)}`
       : "";
     const formattedVersion = ` ${formatVersion(_version)}`;
     const headerLine = `${formattedScriptName}${formattedCommandName}${formattedVersion}`;
@@ -161,7 +185,7 @@ export class HelpRenderer {
         : `Alias${toArray(command.alias).length > 1 ? "es" : ""}: ${toArray(
             command.alias,
           )
-            .map((a) => tint.bold(formatCommandName(a)))
+            .map((a) => styleText("bold", formatCommandName(a)))
             .join(", ")}`;
 
     return {
@@ -210,8 +234,8 @@ export class HelpRenderer {
         (!this._cli._commands.has("") || this._cli._commands.size !== 1) // Not root command only case
       ) {
         usage += this._cli._commands.has("")
-          ? ` ${tint.dim("[command]")}`
-          : ` ${tint.dim("<command>")}`;
+          ? ` ${styleText("dim", "[command]")}`
+          : ` ${styleText("dim", "<command>")}`;
       }
     }
 
@@ -219,7 +243,7 @@ export class HelpRenderer {
       (command?.flags && !objectIsEmpty(command.flags)) ||
       !objectIsEmpty(this._globalFlags)
     ) {
-      usage += ` ${tint.dim("[flags]")}`;
+      usage += ` ${styleText("dim", "[flags]")}`;
     }
 
     return {
@@ -248,9 +272,11 @@ export class HelpRenderer {
           formattedType = isVariadic ? "Array<string>" : "string";
         }
 
-        return [tint.bold(key), tint.dim(formattedType), description].filter(
-          isTruthy,
-        );
+        return [
+          styleText("bold", key),
+          styleText("dim", formattedType),
+          description,
+        ].filter(isTruthy);
       });
 
     return {
@@ -294,7 +320,8 @@ export class HelpRenderer {
       const group = command.help?.group;
       validateGroup(group, this._commandGroups, "command", command.name);
 
-      const commandName = tint.bold(
+      const commandName = styleText(
+        "bold",
         formatCommandName(command.name.slice(prefix.length)),
       );
       const aliases =
@@ -340,7 +367,7 @@ export class HelpRenderer {
         if (body.length > 0) {
           body.push("");
         }
-        body.push(`${tint.dim(name)}`);
+        body.push(`${styleText("dim", name)}`);
         body.push(...splitTable(items).map(withIndent));
       }
     }
@@ -364,7 +391,7 @@ export class HelpRenderer {
 
     const sections: Section[] = [
       {
-        body: `${this._cli._scriptName} ${tint.bold(parentCommandName)} not found`,
+        body: `${this._cli._scriptName} ${styleText("bold", parentCommandName)} not found`,
       },
       {
         title: "Available Subcommands",
@@ -431,13 +458,14 @@ export class HelpRenderer {
     }
     const default_ =
       defaultValue !== undefined &&
-      tint.dim(
-        `[default: ${tint.bold(this._formatters.formatFlagDefault(defaultValue))}]`,
+      styleText(
+        "dim",
+        `[default: ${styleText("bold", this._formatters.formatFlagDefault(defaultValue))}]`,
       );
 
     return [
-      tint.bold(flagName),
-      tint.dim(type),
+      styleText("bold", flagName),
+      styleText("dim", type),
       flag.description,
       default_,
     ].filter(isTruthy);
@@ -487,7 +515,7 @@ export class HelpRenderer {
         if (body.length > 0) {
           body.push("");
         }
-        body.push(`${tint.dim(name)}`);
+        body.push(`${styleText("dim", name)}`);
         body.push(...splitTable(items).map(withIndent));
       }
     }
