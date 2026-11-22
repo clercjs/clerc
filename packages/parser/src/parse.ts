@@ -32,6 +32,9 @@ export interface ScanResult {
   readonly stoppedAt: number;
 }
 
+const isBooleanLike = (type: unknown): boolean =>
+  type === Boolean || isArrayOfType(type, Boolean);
+
 function recordProvided(provided: string[], key: string): void {
   if (!provided.includes(key)) {
     provided.push(key);
@@ -77,7 +80,6 @@ export function createParser<T extends FlagsDefinition>(
     }
 
     const config = configs.get(key)!;
-
     if (!isShortFlag && config.short === rootName) {
       return undefined;
     }
@@ -90,35 +92,32 @@ export function createParser<T extends FlagsDefinition>(
   }
 
   function resolveNegated(name: string) {
-    if (
-      name.length < 3 ||
-      name.charCodeAt(0) !== 110 ||
-      name.charCodeAt(1) !== 111
-    ) {
+    if (!name.startsWith("no") || name.length < 3) {
       return undefined;
     }
-    const third = name.charCodeAt(2);
+    const third = name[2];
     const possibleName =
-      third === 45
+      third === "-"
         ? name.slice(3)
-        : third >= 65 && third <= 90
-          ? String.fromCharCode(third + 32) + name.slice(3)
+        : third >= "A" && third <= "Z"
+          ? third.toLowerCase() + name.slice(3)
           : "";
 
-    if (possibleName) {
-      const possibleResolved = resolve(possibleName);
-      if (
-        possibleResolved?.config.type === Boolean &&
-        (possibleResolved.config as any).negatable !== false
-      ) {
-        return possibleResolved;
-      }
+    if (!possibleName) {
+      return undefined;
+    }
+
+    const resolved = resolve(possibleName);
+    if (
+      resolved?.config.type === Boolean &&
+      (resolved.config as { negatable?: boolean }).negatable !== false
+    ) {
+      return resolved;
     }
   }
 
   function shouldProcessAsFlag(arg: string): boolean {
-    const len = arg.length;
-    if (len < 2 || arg.charCodeAt(0) !== 45) {
+    if (arg.length < 2 || arg[0] !== "-") {
       return false;
     }
 
@@ -129,34 +128,39 @@ export function createParser<T extends FlagsDefinition>(
     if (isDigit(secondChar)) {
       return Boolean(resolve(arg[1], true));
     }
-    if (secondChar === 45 && len > 2) {
+    if (arg[1] === "-" && arg.length > 2) {
       return isLetter(arg.charCodeAt(2));
     }
 
     return false;
   }
 
-  const isBooleanLike = (type: unknown): boolean =>
-    type === Boolean || isArrayOfType(type, Boolean);
+  /**
+   * Inspects a flag token once: returns `undefined` if unknown, `true` if it
+   * expects its value in the next argv token, or `false` if self-contained.
+   */
+  function inspectFlag(arg: string): boolean | undefined {
+    if (arg[1] === "-") {
+      const { rawName, hasSep } = splitNameAndValue(arg.slice(2), delimiters);
+      const resolved = resolve(rawName, false) ?? resolveNegated(rawName);
+      if (!resolved) {
+        return undefined;
+      }
 
-  function isKnownFlag(arg: string): boolean {
-    if (arg.charCodeAt(1) === 45) {
-      const { rawName } = splitNameAndValue(arg.slice(2), delimiters);
-
-      return Boolean(resolve(rawName, false) ?? resolveNegated(rawName));
+      return !hasSep && !isBooleanLike(resolved.config.type);
     }
 
     for (let j = 1; j < arg.length; j++) {
       const resolved = resolve(arg[j], true);
       if (!resolved) {
-        return false;
+        return undefined;
       }
       if (!isBooleanLike(resolved.config.type)) {
-        return true;
+        return j === arg.length - 1;
       }
     }
 
-    return true;
+    return false;
   }
 
   function shouldIgnore(arg: string): boolean {
@@ -164,9 +168,9 @@ export function createParser<T extends FlagsDefinition>(
       return false;
     }
     const argType = shouldProcessAsFlag(arg)
-      ? isKnownFlag(arg)
-        ? KNOWN_FLAG
-        : UNKNOWN_FLAG
+      ? inspectFlag(arg) === undefined
+        ? UNKNOWN_FLAG
+        : KNOWN_FLAG
       : PARAMETER;
 
     return ignore(argType, arg);
@@ -203,7 +207,94 @@ export function createParser<T extends FlagsDefinition>(
       return args[++i];
     }
 
-    for (; i < argsLen && !stopped; i++) {
+    function parseLongFlag(current: string): void {
+      const { rawName, rawValue, hasSep } = splitNameAndValue(
+        current.slice(2),
+        delimiters,
+      );
+
+      let resolved = resolve(rawName);
+      let isNegated = false;
+
+      if (!resolved) {
+        const negated = resolveNegated(rawName);
+        if (negated) {
+          resolved = negated;
+          isNegated = true;
+        }
+      }
+
+      if (!resolved) {
+        const key = camelCase(rawName);
+        result.rawUnknown.push(current);
+        if (hasSep) {
+          result.unknown[key] = rawValue!;
+        } else {
+          const val = takeNextValue();
+          if (val) {
+            result.rawUnknown.push(val);
+          }
+          result.unknown[key] = val || true;
+        }
+
+        return;
+      }
+
+      const { key, config, path } = resolved;
+      recordProvided(provided, key);
+
+      if (path) {
+        if (config.type === Object) {
+          result.flags[key] ??= {};
+          const value = hasSep ? rawValue! : takeNextValue();
+          appendDotValues(result.flags[key], path, coerceObjectValue(value));
+        }
+      } else if (config.type === Boolean) {
+        const value = hasSep ? rawValue !== "false" : true;
+        result.flags[key] = isNegated ? !value : value;
+      } else {
+        const value = hasSep ? rawValue! : takeNextValue();
+        setValueByType(result.flags, key, value, config);
+      }
+    }
+
+    function parseShortFlags(current: string): void {
+      const chars = current.slice(1);
+      let hasUnknown = false;
+
+      for (let j = 0; j < chars.length; j++) {
+        const char = chars[j];
+        const resolved = resolve(char, true);
+
+        if (!resolved) {
+          result.unknown[char] = true;
+          if (!hasUnknown) {
+            result.rawUnknown.push(current);
+            hasUnknown = true;
+          }
+
+          continue;
+        }
+
+        const { key, config } = resolved;
+        recordProvided(provided, key);
+
+        if (isBooleanLike(config.type)) {
+          setValueByType(result.flags, key, "true", config);
+        } else if (j + 1 < chars.length) {
+          setValueByType(result.flags, key, chars.slice(j + 1), config);
+
+          break;
+        } else {
+          setValueByType(result.flags, key, takeNextValue(), config);
+          if (stopped) {
+            break;
+          }
+        }
+      }
+    }
+
+    for (; i < argsLen; i++) {
       const current = args[i];
 
       if (current === DOUBLE_DASH) {
@@ -220,98 +311,18 @@ export function createParser<T extends FlagsDefinition>(
 
       if (!shouldProcessAsFlag(current)) {
         result.parameters.push(current);
-
-        continue;
+      } else if (current[1] === "-") {
+        parseLongFlag(current);
+      } else {
+        parseShortFlags(current);
       }
 
-      if (current.charCodeAt(1) === 45) {
-        const { rawName, rawValue, hasSep } = splitNameAndValue(
-          current.slice(2),
-          delimiters,
-        );
-
-        let resolved = resolve(rawName);
-        let isNegated = false;
-
-        if (!resolved) {
-          const negated = resolveNegated(rawName);
-          if (negated) {
-            resolved = negated;
-            isNegated = true;
-          }
-        }
-
-        if (!resolved) {
-          const key = camelCase(rawName);
-          result.rawUnknown.push(current);
-          if (hasSep) {
-            result.unknown[key] = rawValue!;
-          } else {
-            const val = takeNextValue();
-            if (val) {
-              result.rawUnknown.push(val);
-            }
-            result.unknown[key] = val || true;
-          }
-
-          continue;
-        }
-
-        const { key, config, path } = resolved;
-        recordProvided(provided, key);
-
-        if (path) {
-          if (config.type === Object) {
-            result.flags[key] ??= {};
-            const value = hasSep ? rawValue! : takeNextValue();
-            appendDotValues(result.flags[key], path, coerceObjectValue(value));
-          }
-        } else if (config.type === Boolean) {
-          const value = hasSep ? rawValue !== "false" : true;
-          result.flags[key] = isNegated ? !value : value;
-        } else {
-          const value = hasSep ? rawValue! : takeNextValue();
-          setValueByType(result.flags, key, value, config);
-        }
-      } else {
-        const chars = current.slice(1);
-        const charsLen = chars.length;
-        let hasUnknown = false;
-
-        for (let j = 0; j < charsLen; j++) {
-          const char = chars[j];
-          const resolved = resolve(char, true);
-
-          if (!resolved) {
-            result.unknown[char] = true;
-            if (!hasUnknown) {
-              result.rawUnknown.push(current);
-              hasUnknown = true;
-            }
-
-            continue;
-          }
-
-          const { key, config } = resolved;
-          recordProvided(provided, key);
-
-          if (isBooleanLike(config.type)) {
-            setValueByType(result.flags, key, "true", config);
-          } else if (j + 1 < charsLen) {
-            setValueByType(result.flags, key, chars.slice(j + 1), config);
-
-            break;
-          } else {
-            setValueByType(result.flags, key, takeNextValue(), config);
-            if (stopped) {
-              break;
-            }
-          }
-        }
+      if (stopped) {
+        break;
       }
     }
 
-    for (const [key, config] of configs.entries()) {
+    for (const [key, config] of configs) {
       if (result.flags[key] === undefined) {
         if (config.default !== undefined) {
           result.flags[key] = resolveValue(config.default);
@@ -331,9 +342,8 @@ export function createParser<T extends FlagsDefinition>(
     onPositional: ScanCallback,
   ): ScanResult {
     let i = 0;
-    const argsLen = args.length;
 
-    while (i < argsLen) {
+    while (i < args.length) {
       const current = args[i];
 
       if (current === DOUBLE_DASH) {
@@ -349,31 +359,13 @@ export function createParser<T extends FlagsDefinition>(
         continue;
       }
 
-      if (!isKnownFlag(current)) {
+      const takesNext = inspectFlag(current);
+      if (takesNext === undefined) {
         return { stoppedAt: i };
       }
 
-      let takesNext = false;
-      if (current.charCodeAt(1) === 45) {
-        const { rawName, hasSep } = splitNameAndValue(
-          current.slice(2),
-          delimiters,
-        );
-        const resolved = resolve(rawName) ?? resolveNegated(rawName)!;
-        takesNext = !hasSep && !isBooleanLike(resolved.config.type);
-      } else {
-        for (let j = 1; j < current.length; j++) {
-          const resolved = resolve(current[j], true)!;
-          if (!isBooleanLike(resolved.config.type)) {
-            takesNext = j === current.length - 1;
-
-            break;
-          }
-        }
-      }
-
       i++;
-      if (takesNext && i < argsLen && !shouldProcessAsFlag(args[i])) {
+      if (takesNext && i < args.length && !shouldProcessAsFlag(args[i])) {
         i++;
       }
     }

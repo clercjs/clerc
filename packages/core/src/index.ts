@@ -9,9 +9,10 @@ export {
   inferDefault,
 } from "@clerc/parser";
 export { Clerc } from "./cli";
-export type { ArgvResolution } from "./command-tree";
+export type { ArgvResolution, ArgvScanFn } from "./command-tree";
 export { CommandTree } from "./command-tree";
 export * from "./errors";
+export { normalizeFlagValue } from "./flags";
 export {
   createStopAtFirstParameter,
   defineCommand,
@@ -31,7 +32,6 @@ export { createLogger } from "./logger";
 export type { ParameterInfo } from "./parameter";
 export {
   extractParameterInfo,
-  normalizeFlagValue,
   normalizeParameterValue,
   parseParameters,
 } from "./parameter";

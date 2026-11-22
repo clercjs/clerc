@@ -1,9 +1,5 @@
-import type {
-  FlagsDefinition as ParserFlagsDefinition,
-  ScanCallback,
-  ScanResult,
-} from "@clerc/parser";
-import { DOUBLE_DASH, createParser } from "@clerc/parser";
+import type { ScanCallback, ScanResult } from "@clerc/parser";
+import { DOUBLE_DASH } from "@clerc/parser";
 
 import { InvalidCommandError } from "./errors";
 import type {
@@ -22,9 +18,10 @@ export interface ArgvResolution {
   readonly leadingPositional?: string;
 }
 
-export interface ArgvScanner {
-  scan: (args: readonly string[], onPositional: ScanCallback) => ScanResult;
-}
+export type ArgvScanFn = (
+  args: readonly string[],
+  onPositional: ScanCallback,
+) => ScanResult;
 
 const createNode = (
   name: string,
@@ -160,26 +157,19 @@ export class CommandTree implements ReadonlyCommandTree {
   }
 
   /**
-   * Resolves the longest matching command in the tree by delegating leading
-   * global flag scanning to `@clerc/parser`.
+   * Resolves the longest matching command in the tree using a flag-aware
+   * positional scanner (from `@clerc/parser`).
    */
   public resolveArgv(
     argv: readonly string[],
-    globalFlagsOrScanner: ParserFlagsDefinition | ArgvScanner,
+    scan: ArgvScanFn,
   ): ArgvResolution {
     let current: CommandNode = this.root;
     const calledTokens: string[] = [];
     const matchedIndices: number[] = [];
     let isContiguousPrefix = true;
 
-    const scanner: ArgvScanner =
-      typeof (globalFlagsOrScanner as ArgvScanner).scan === "function"
-        ? (globalFlagsOrScanner as ArgvScanner)
-        : createParser({
-            flags: globalFlagsOrScanner as ParserFlagsDefinition,
-          });
-
-    const { stoppedAt } = scanner.scan(argv, (token, index) => {
+    const { stoppedAt } = scan(argv, (token, index) => {
       const nextNode =
         current.children.get(token) ?? current.aliasIndex.get(token);
       if (!nextNode) {

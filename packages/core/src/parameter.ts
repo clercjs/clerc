@@ -1,14 +1,11 @@
-import type { TypeFunction } from "@clerc/parser";
 import { DOUBLE_DASH, camelCase } from "@clerc/parser";
 
 import {
   InvalidParametersError,
   MissingRequiredParameterError,
 } from "./errors";
-import { convertValue, convertValueSync, isStandardSchema } from "./schema";
+import { convertValue } from "./schema";
 import type {
-  ClercFlagDefinitionValue,
-  ClercFlagOptions,
   CoreSingleType,
   ParameterDefinitionValue,
   ParameterOptions,
@@ -30,26 +27,11 @@ export interface ParameterInfo {
 interface CompiledParamItem extends ParameterInfo {
   readonly key: string;
   readonly type?: CoreSingleType;
-  readonly isSchema: boolean;
 }
 
 export interface CompiledParameters {
   readonly main: readonly CompiledParamItem[];
   readonly doubleDash: readonly CompiledParamItem[];
-}
-
-export function normalizeFlagValue(
-  flag: ClercFlagDefinitionValue,
-): ClercFlagOptions {
-  if (
-    typeof flag === "function" ||
-    Array.isArray(flag) ||
-    isStandardSchema(flag)
-  ) {
-    return { type: flag as any };
-  }
-
-  return flag as ClercFlagOptions;
 }
 
 export const normalizeParameterValue = (
@@ -108,7 +90,6 @@ function compileParameterSlice(
       ...info,
       key: normalized.key,
       type: normalized.type,
-      isSchema: normalized.type ? isStandardSchema(normalized.type) : false,
     });
   }
 
@@ -150,31 +131,16 @@ async function applyCompiledSlice(
     if (!item.type) {
       result[item.name] = raw;
     } else if (item.isVariadic) {
-      const rawArr = raw as string[];
       const converted: unknown[] = [];
-      for (const element of rawArr) {
-        converted.push(
-          item.isSchema
-            ? await convertValue(item.type, element, item.key)
-            : convertValueSync(
-                item.type as TypeFunction<any>,
-                element,
-                item.key,
-              ),
-        );
+      for (const element of raw as string[]) {
+        converted.push(await convertValue(item.type, element, item.key));
       }
       result[item.name] = converted;
     } else {
       result[item.name] =
         raw === undefined
           ? undefined
-          : item.isSchema
-            ? await convertValue(item.type, raw as string, item.key)
-            : convertValueSync(
-                item.type as TypeFunction<any>,
-                raw as string,
-                item.key,
-              );
+          : await convertValue(item.type, raw as string, item.key);
     }
   }
 }

@@ -1,14 +1,12 @@
 import type {
   FlagDefinitionValue as ParserFlagDefinitionValue,
   FlagsDefinition as ParserFlagsDefinition,
-  TypeFunction,
 } from "@clerc/parser";
-import { inferDefault } from "@clerc/parser";
 
 import { FlagConflictError, FlagImpliesError } from "./errors";
-import { normalizeFlagValue } from "./parameter";
-import { convertValue, convertValueSync, isStandardSchema } from "./schema";
+import { convertValue, isStandardSchema } from "./schema";
 import type {
+  ClercFlagDefinitionValue,
   ClercFlagOptions,
   ClercFlagsDefinition,
   CoreSingleType,
@@ -16,32 +14,15 @@ import type {
 } from "./types";
 import { formatFlagName, toArray } from "./utils";
 
-const isArrayType = (type: CoreTypeValue): type is readonly [CoreSingleType] =>
-  Array.isArray(type);
-
-const isCounterType = (type: CoreTypeValue): boolean =>
-  Array.isArray(type) && type[0] === Boolean;
-
-function isDeferredValidationType(type: CoreTypeValue): boolean {
-  if (isArrayType(type)) {
-    const inner = type[0];
-
-    return inner !== Boolean && inner !== String;
-  }
-
-  return type !== Boolean && type !== Object && type !== String;
-}
+type FlagKind = "boolean" | "counter" | "object" | "array" | "single";
 
 export interface CompiledFlagEntry {
   readonly name: string;
   readonly norm: ClercFlagOptions;
   readonly target: string;
-  readonly isArray: boolean;
-  readonly isCounter: boolean;
-  readonly isDeferred: boolean;
-  readonly innerType: CoreSingleType;
-  readonly innerIsSchema: boolean;
-  readonly implicitDefault: unknown;
+  readonly kind: FlagKind;
+  readonly valueType: CoreSingleType;
+  readonly needsConvert: boolean;
 }
 
 export interface CompiledFlags {
@@ -50,59 +31,164 @@ export interface CompiledFlags {
   readonly parserFlags: ParserFlagsDefinition;
 }
 
-const convertEntry = (entry: CompiledFlagEntry, raw: string) =>
-  entry.innerIsSchema
-    ? convertValue(entry.innerType, raw, entry.target)
-    : convertValueSync(entry.innerType as TypeFunction<any>, raw, entry.target);
+export function normalizeFlagValue(
+  flag: ClercFlagDefinitionValue,
+): ClercFlagOptions {
+  if (
+    typeof flag === "function" ||
+    Array.isArray(flag) ||
+    isStandardSchema(flag)
+  ) {
+    return { type: flag as CoreTypeValue };
+  }
+
+  return flag as ClercFlagOptions;
+}
+
+const isArrayType = (type: CoreTypeValue): type is readonly [CoreSingleType] =>
+  Array.isArray(type);
+
+function classifyFlagType(type: CoreTypeValue): {
+  kind: FlagKind;
+  valueType: CoreSingleType;
+  parserType: ParserFlagDefinitionValue;
+  needsConvert: boolean;
+} {
+  if (isArrayType(type)) {
+    const inner = type[0];
+    if (inner === Boolean) {
+      return {
+        kind: "counter",
+        valueType: Boolean,
+        parserType: [Boolean],
+        needsConvert: false,
+      };
+    }
+
+    return {
+      kind: "array",
+      valueType: inner,
+      parserType: [String],
+      needsConvert: inner !== String,
+    };
+  }
+
+  if (type === Boolean) {
+    return {
+      kind: "boolean",
+      valueType: Boolean,
+      parserType: Boolean,
+      needsConvert: false,
+    };
+  }
+  if (type === Object) {
+    return {
+      kind: "object",
+      valueType: Object,
+      parserType: Object,
+      needsConvert: false,
+    };
+  }
+
+  return {
+    kind: "single",
+    valueType: type,
+    parserType: String,
+    needsConvert: type !== String,
+  };
+}
+
+function createImplicitDefault(kind: FlagKind): unknown {
+  switch (kind) {
+    case "boolean": {
+      return false;
+    }
+    case "counter": {
+      return 0;
+    }
+    case "array": {
+      return [];
+    }
+    case "object": {
+      return {};
+    }
+    case "single": {
+      return undefined;
+    }
+  }
+}
 
 export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
   const entries: CompiledFlagEntry[] = [];
   const byName = new Map<string, CompiledFlagEntry>();
   const parserFlags: ParserFlagsDefinition = {};
 
-  for (const name in flags) {
-    if (!Object.hasOwn(flags, name)) {
-      continue;
-    }
+  for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
-    const isArray = isArrayType(norm.type);
-    const isCounter = isCounterType(norm.type);
-    const isDeferred = isDeferredValidationType(norm.type);
-    const innerType: CoreSingleType = isArray ? norm.type[0] : norm.type;
-    const innerIsSchema = isStandardSchema(innerType);
-    const implicitDefault = isStandardSchema(norm.type)
-      ? undefined
-      : isArray && innerIsSchema
-        ? []
-        : inferDefault(norm.type as any);
+    const { kind, valueType, parserType, needsConvert } = classifyFlagType(
+      norm.type,
+    );
 
     const entry: CompiledFlagEntry = {
       name,
       norm,
       target: formatFlagName(name),
-      isArray,
-      isCounter,
-      isDeferred,
-      innerType,
-      innerIsSchema,
-      implicitDefault,
+      kind,
+      valueType,
+      needsConvert,
     };
     entries.push(entry);
     byName.set(name, entry);
 
-    const opts: Record<string, unknown> = {
-      type: isDeferred ? (isArray ? [String] : String) : (norm.type as any),
-    };
+    const opts: Record<string, unknown> = { type: parserType };
     if (norm.short !== undefined) {
       opts.short = norm.short;
     }
-    if (norm.negatable !== undefined && norm.type === Boolean) {
+    if (norm.negatable !== undefined && kind === "boolean") {
       opts.negatable = norm.negatable;
     }
     parserFlags[name] = opts as ParserFlagDefinitionValue;
   }
 
   return { entries, byName, parserFlags };
+}
+
+async function resolveEnvValue(
+  entry: CompiledFlagEntry,
+  envValue: string,
+  rawValue: unknown,
+): Promise<unknown> {
+  switch (entry.kind) {
+    case "boolean": {
+      return envValue !== "0" && envValue.toLowerCase() !== "false";
+    }
+    case "counter": {
+      const count = Number(envValue);
+
+      return Number.isNaN(count) ? 0 : count;
+    }
+    case "array": {
+      const converted: unknown[] = [];
+      for (const item of envValue.split(",")) {
+        const trimmed = item.trim();
+        converted.push(
+          entry.needsConvert
+            ? await convertValue(entry.valueType, trimmed, entry.target)
+            : trimmed,
+        );
+      }
+
+      return converted;
+    }
+    case "object": {
+      return rawValue ?? {};
+    }
+    case "single": {
+      return entry.needsConvert
+        ? convertValue(entry.valueType, envValue, entry.target)
+        : envValue;
+    }
+  }
 }
 
 export async function resolveCompiledFlags(
@@ -120,21 +206,21 @@ export async function resolveCompiledFlags(
   const provided = new Set<string>(explicitlyProvided);
 
   for (const entry of compiled.entries) {
-    const { name, norm, isArray, isCounter, isDeferred } = entry;
+    const { name, norm, kind, valueType, target, needsConvert } = entry;
     const rawValue = rawFlags[name];
 
     // 1. Explicitly supplied on CLI
     if (provided.has(name)) {
-      if (!isDeferred) {
+      if (!needsConvert) {
         flags[name] = rawValue;
-      } else if (isArray) {
+      } else if (kind === "array") {
         const converted: unknown[] = [];
         for (const item of rawValue as string[]) {
-          converted.push(await convertEntry(entry, item));
+          converted.push(await convertValue(valueType, item, target));
         }
         flags[name] = converted;
       } else {
-        flags[name] = await convertEntry(entry, rawValue as string);
+        flags[name] = await convertValue(valueType, rawValue as string, target);
       }
 
       continue;
@@ -144,22 +230,7 @@ export async function resolveCompiledFlags(
     const envValue = norm.env ? env[norm.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       provided.add(name);
-      if (norm.type === Boolean) {
-        flags[name] = envValue !== "0" && envValue.toLowerCase() !== "false";
-      } else if (isCounter) {
-        const count = Number(envValue);
-        flags[name] = Number.isNaN(count) ? 0 : count;
-      } else if (isArray) {
-        const converted: unknown[] = [];
-        for (const item of envValue.split(",")) {
-          converted.push(await convertEntry(entry, item.trim()));
-        }
-        flags[name] = converted;
-      } else if (norm.type === Object) {
-        flags[name] = rawValue ?? {};
-      } else {
-        flags[name] = await convertEntry(entry, envValue);
-      }
+      flags[name] = await resolveEnvValue(entry, envValue, rawValue);
 
       continue;
     }
@@ -181,13 +252,8 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    // 5. Implicit default from type
-    flags[name] =
-      isArray && Array.isArray(entry.implicitDefault)
-        ? []
-        : norm.type === Object
-          ? {}
-          : entry.implicitDefault;
+    // 5. Implicit default from kind (fresh instance per run)
+    flags[name] = createImplicitDefault(kind);
   }
 
   return { flags, missingRequired, provided };

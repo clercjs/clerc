@@ -1,5 +1,6 @@
 import { createParser } from "@clerc/parser";
 
+import type { ArgvResolution } from "./command-tree";
 import { CommandTree } from "./command-tree";
 import {
   ClercError,
@@ -41,12 +42,33 @@ import type {
   RunOptions,
   RunResult,
 } from "./types";
-import { formatFlagName } from "./utils";
 
 interface CompiledCommand {
   readonly flags: CompiledFlags;
   readonly parser: ReturnType<typeof createParser>;
   readonly parameters?: CompiledParameters;
+}
+
+interface CompiledCli {
+  readonly model: ReadonlyCliModel;
+  readonly tree: CommandTree;
+  readonly global: CompiledCommand;
+  readonly commands: WeakMap<AnyCommandDefinition, CompiledCommand>;
+}
+
+function createMissingCommandError(resolution: ArgvResolution): ClercError {
+  if (resolution.matchedPath.length > 0) {
+    const attempted = resolution.leadingPositional
+      ? [...resolution.matchedPath, resolution.leadingPositional].join(" ")
+      : resolution.matchedPath.join(" ");
+
+    return new UnknownCommandError(attempted, resolution.matchedPath);
+  }
+  if (resolution.leadingPositional) {
+    return new UnknownCommandError(resolution.leadingPositional, []);
+  }
+
+  return new NoCommandError();
 }
 
 export class Clerc<
@@ -70,9 +92,7 @@ export class Clerc<
     globalFlags: [] as GroupDefinition[],
   };
 
-  #initializedModel?: ReadonlyCliModel;
-  #globalCompiled?: CompiledCommand;
-  #compiledCommands = new WeakMap<AnyCommandDefinition, CompiledCommand>();
+  #compiled?: CompiledCli;
 
   private constructor(options: CreateOptions = {}) {
     if (options.scriptName) {
@@ -97,9 +117,7 @@ export class Clerc<
   }
 
   #invalidate(): void {
-    this.#initializedModel = undefined;
-    this.#globalCompiled = undefined;
-    this.#compiledCommands = new WeakMap();
+    this.#compiled = undefined;
   }
 
   public scriptName(scriptName: string): this {
@@ -233,9 +251,9 @@ export class Clerc<
     return this;
   }
 
-  public buildModel(): ReadonlyCliModel {
-    if (this.#initializedModel) {
-      return this.#initializedModel;
+  #ensureCompiled(): CompiledCli {
+    if (this.#compiled) {
+      return this.#compiled;
     }
 
     const meta: ReadonlyCliMeta = {
@@ -245,7 +263,6 @@ export class Clerc<
     };
 
     const plugins = [...this.#plugins.values()];
-
     const mergedGlobalFlags: ClercFlagsDefinition = {};
     for (const plugin of plugins) {
       if (plugin.globalFlags) {
@@ -278,42 +295,53 @@ export class Clerc<
       },
     };
 
-    const globalFlagsCompiled = compileFlags(mergedGlobalFlags);
-    this.#globalCompiled = {
-      flags: globalFlagsCompiled,
-      parser: createParser({ flags: globalFlagsCompiled.parserFlags }),
+    const globalFlags = compileFlags(mergedGlobalFlags);
+    this.#compiled = {
+      model,
+      tree,
+      global: {
+        flags: globalFlags,
+        parser: createParser({ flags: globalFlags.parserFlags }),
+      },
+      commands: new WeakMap(),
     };
-    this.#initializedModel = model;
 
-    return model;
+    return this.#compiled;
   }
 
-  #getCompiledCommand(
-    model: ReadonlyCliModel,
+  public buildModel(): ReadonlyCliModel {
+    return this.#ensureCompiled().model;
+  }
+
+  #compileCommand(
+    cli: CompiledCli,
     cmd?: AnyCommandDefinition,
   ): CompiledCommand {
     if (!cmd) {
-      return this.#globalCompiled!;
+      return cli.global;
     }
-    let compiled = this.#compiledCommands.get(cmd);
-    if (!compiled) {
-      const hasLocalFlags = cmd.flags !== undefined;
-      const flags = hasLocalFlags
-        ? compileFlags({ ...model.globalFlags, ...cmd.flags })
-        : this.#globalCompiled!.flags;
-      const parser =
-        !hasLocalFlags && !cmd.ignore
-          ? this.#globalCompiled!.parser
-          : createParser({ flags: flags.parserFlags, ignore: cmd.ignore });
-      compiled = {
-        flags,
-        parser,
-        parameters: cmd.parameters
-          ? compileParameters(cmd.parameters)
-          : undefined,
-      };
-      this.#compiledCommands.set(cmd, compiled);
+
+    const cached = cli.commands.get(cmd);
+    if (cached) {
+      return cached;
     }
+
+    const hasLocalFlags = cmd.flags !== undefined;
+    const flags = hasLocalFlags
+      ? compileFlags({ ...cli.model.globalFlags, ...cmd.flags })
+      : cli.global.flags;
+    const parser =
+      !hasLocalFlags && !cmd.ignore
+        ? cli.global.parser
+        : createParser({ flags: flags.parserFlags, ignore: cmd.ignore });
+    const compiled: CompiledCommand = {
+      flags,
+      parser,
+      parameters: cmd.parameters
+        ? compileParameters(cmd.parameters)
+        : undefined,
+    };
+    cli.commands.set(cmd, compiled);
 
     return compiled;
   }
@@ -325,6 +353,80 @@ export class Clerc<
     if (!meta.version) {
       throw new MissingRequiredMetadataError("version");
     }
+  }
+
+  #warnDeprecations(
+    ctx: BaseRunContext<TGlobalFlags>,
+    compiledFlags: CompiledFlags,
+    provided: ReadonlySet<string>,
+  ): void {
+    if (ctx.command?.deprecated) {
+      const reason =
+        typeof ctx.command.deprecated === "string"
+          ? `: ${ctx.command.deprecated}`
+          : "";
+      const pathLabel = ctx.node?.fullPath.join(" ");
+      ctx.log.warn(
+        `Command '${pathLabel && pathLabel.length > 0 ? pathLabel : "(root)"}' is deprecated${reason}`,
+      );
+    }
+    for (const name of provided) {
+      const entry = compiledFlags.byName.get(name);
+      if (entry?.norm.deprecated) {
+        const reason =
+          typeof entry.norm.deprecated === "string"
+            ? `: ${entry.norm.deprecated}`
+            : "";
+        ctx.log.warn(`Option '${entry.target}' is deprecated${reason}`);
+      }
+    }
+  }
+
+  async #handleError(
+    caughtError: unknown,
+    model: ReadonlyCliModel,
+    ctx: BaseRunContext<TGlobalFlags> & TExt,
+    throwOnUnhandled: boolean,
+  ): Promise<RunResult> {
+    let currentError: unknown = caughtError;
+
+    for (const plugin of model.plugins) {
+      const onError = plugin.hooks?.onError;
+      if (onError) {
+        const transformed = await onError(currentError, ctx);
+        if (transformed !== undefined) {
+          currentError = transformed;
+        }
+      }
+    }
+    for (const hook of this.#onErrorHooks) {
+      const transformed = await hook(currentError, ctx);
+      if (transformed !== undefined) {
+        currentError = transformed;
+      }
+    }
+
+    const exitCode =
+      currentError instanceof ClercError ? currentError.exitCode : 1;
+
+    for (let i = model.plugins.length - 1; i >= 0; i--) {
+      const plugin = model.plugins[i];
+      const onRenderError = plugin.hooks?.onRenderError;
+      if (onRenderError && (await onRenderError(currentError, ctx))) {
+        return {
+          ok: false,
+          exitCode,
+          error: currentError,
+          handledBy: plugin.name,
+        };
+      }
+    }
+
+    if (throwOnUnhandled) {
+      throw currentError;
+    }
+
+    return { ok: false, exitCode, error: currentError };
   }
 
   public async run(
@@ -345,7 +447,8 @@ export class Clerc<
       ...options.logger,
     });
 
-    const model = this.buildModel();
+    const compiledCli = this.#ensureCompiled();
+    const { model, tree } = compiledCli;
     const throwOnUnhandled = options.throwOnUnhandled ?? true;
 
     const baseCtx: BaseRunContext<TGlobalFlags> = {
@@ -373,27 +476,26 @@ export class Clerc<
     try {
       this.#validateMetadata(model.meta);
 
-      // Stage 1: Resolve command tree using cached global flag scanner
-      const tree = model.tree as CommandTree;
+      // Stage 1: Resolve command tree
       const resolution = tree.resolveArgv(
         effectiveArgv,
-        this.#globalCompiled!.parser,
+        compiledCli.global.parser.scan,
       );
       ctx.node = resolution.node;
       ctx.command = resolution.command;
       ctx.calledAs = resolution.calledAs;
 
-      // Stage 2: Lexical parse using cached per-command parser
-      const compiled = this.#getCompiledCommand(model, ctx.command);
-      const parsed = compiled.parser.parse(resolution.remainingArgv);
+      // Stage 2: Lexical parse
+      const compiledCmd = this.#compileCommand(compiledCli, ctx.command);
+      const parsed = compiledCmd.parser.parse(resolution.remainingArgv);
 
       ctx.rawParsed = parsed;
-      ctx.flags = { ...parsed.flags } as any;
+      ctx.flags = parsed.flags as any;
       ctx.unknown = parsed.unknown;
       ctx.ignored = parsed.ignored;
       ctx.doubleDash = parsed.doubleDash;
 
-      // Stage 3: Intercept (early short-circuit: --version, --help, verbosity)
+      // Stage 3: Intercept (--version, --help, verbosity)
       for (const plugin of model.plugins) {
         const res = await plugin.hooks?.onIntercept?.(ctx);
         if (res?.handled) {
@@ -405,26 +507,13 @@ export class Clerc<
         }
       }
 
-      // Stage 4: Validate command existence, flags, schemas, env, constraints & parameters
+      // Stage 4: Validate command, flags, schemas, env, constraints & parameters
       if (!ctx.command) {
-        if (resolution.matchedPath.length > 0) {
-          const attempted = resolution.leadingPositional
-            ? [...resolution.matchedPath, resolution.leadingPositional].join(
-                " ",
-              )
-            : resolution.matchedPath.join(" ");
-
-          throw new UnknownCommandError(attempted, resolution.matchedPath);
-        }
-        if (resolution.leadingPositional) {
-          throw new UnknownCommandError(resolution.leadingPositional, []);
-        }
-
-        throw new NoCommandError();
+        throw createMissingCommandError(resolution);
       }
 
       const { flags, missingRequired, provided } = await resolveCompiledFlags(
-        compiled.flags,
+        compiledCmd.flags,
         parsed.flags,
         parsed.provided,
         terminal.env,
@@ -432,28 +521,8 @@ export class Clerc<
       ctx.flags = flags as any;
       ctx.missingRequiredFlags = missingRequired;
 
-      // Emit deprecation notices for explicitly used deprecated command/flags
-      if (ctx.command.deprecated) {
-        const reason =
-          typeof ctx.command.deprecated === "string"
-            ? `: ${ctx.command.deprecated}`
-            : "";
-        log.warn(
-          `Command '${ctx.node.fullPath.join(" ") || "(root)"}' is deprecated${reason}`,
-        );
-      }
-      for (const name of provided) {
-        const entry = compiled.flags.byName.get(name);
-        if (entry?.norm.deprecated) {
-          const reason =
-            typeof entry.norm.deprecated === "string"
-              ? `: ${entry.norm.deprecated}`
-              : "";
-          log.warn(`Option '${entry.target}' is deprecated${reason}`);
-        }
-      }
+      this.#warnDeprecations(ctx, compiledCmd.flags, provided);
 
-      // Run plugin validation hooks (e.g. strictFlags) before missing-required/parameters
       for (const plugin of model.plugins) {
         await plugin.hooks?.onValidate?.(ctx);
       }
@@ -461,11 +530,9 @@ export class Clerc<
       if (missingRequired.length > 0) {
         const hints: string[] = [];
         for (const name of missingRequired) {
-          const entry = compiled.flags.byName.get(name);
+          const entry = compiledCmd.flags.byName.get(name);
           if (entry?.norm.env) {
-            hints.push(
-              `provide '${formatFlagName(name)}' or set ${entry.norm.env}`,
-            );
+            hints.push(`provide '${entry.target}' or set ${entry.norm.env}`);
           }
         }
 
@@ -475,17 +542,17 @@ export class Clerc<
         );
       }
 
-      checkFlagConstraints(compiled.flags, provided);
+      checkFlagConstraints(compiledCmd.flags, provided);
 
-      ctx.parameters = compiled.parameters
+      ctx.parameters = compiledCmd.parameters
         ? await executeCompiledParameters(
-            compiled.parameters,
+            compiledCmd.parameters,
             parsed.parameters,
             parsed.doubleDash,
           )
         : {};
 
-      // Stage 5: Middleware & Command execution (onion symmetry: afterRun runs in reverse)
+      // Stage 5: Middleware & Command execution (afterRun runs in reverse)
       for (const plugin of model.plugins) {
         await plugin.hooks?.beforeRun?.(ctx);
       }
@@ -498,7 +565,6 @@ export class Clerc<
         const loaded = await ctx.command.load();
         handler = typeof loaded === "function" ? loaded : loaded.default;
       }
-
       if (handler) {
         await handler(ctx as any);
       }
@@ -512,53 +578,8 @@ export class Clerc<
 
       return { ok: true, exitCode: 0 };
     } catch (caughtError) {
-      // Stage 6: Error enrichment & rendering pipeline (onRenderError runs in reverse: last-registered wins)
-      let currentError: unknown = caughtError;
-
-      for (const plugin of model.plugins) {
-        const onError = plugin.hooks?.onError;
-        if (onError) {
-          const transformed = await onError(currentError, ctx);
-          if (transformed !== undefined) {
-            currentError = transformed;
-          }
-        }
-      }
-      for (const hook of this.#onErrorHooks) {
-        const transformed = await hook(currentError, ctx);
-        if (transformed !== undefined) {
-          currentError = transformed;
-        }
-      }
-
-      const exitCode =
-        currentError instanceof ClercError ? currentError.exitCode : 1;
-
-      for (let i = model.plugins.length - 1; i >= 0; i--) {
-        const plugin = model.plugins[i];
-        const onRenderError = plugin.hooks?.onRenderError;
-        if (onRenderError) {
-          const handled = await onRenderError(currentError, ctx);
-          if (handled) {
-            return {
-              ok: false,
-              exitCode,
-              error: currentError,
-              handledBy: plugin.name,
-            };
-          }
-        }
-      }
-
-      if (throwOnUnhandled) {
-        throw currentError;
-      }
-
-      return {
-        ok: false,
-        exitCode,
-        error: currentError,
-      };
+      // Stage 6: Error enrichment & rendering pipeline
+      return this.#handleError(caughtError, model, ctx, throwOnUnhandled);
     }
   }
 

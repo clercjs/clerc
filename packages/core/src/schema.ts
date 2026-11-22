@@ -50,16 +50,21 @@ export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly "~standard": StandardSchemaV1Props<Input, Output>;
 }
 
-export const isStandardSchema = (
+export function isStandardSchema(
   value: unknown,
-): value is StandardSchemaV1<any, any> =>
-  typeof value === "object" &&
-  value !== null &&
-  "~standard" in value &&
-  typeof (value as any)["~standard"] === "object" &&
-  (value as any)["~standard"] !== null &&
-  (value as any)["~standard"].version === 1 &&
-  typeof (value as any)["~standard"].validate === "function";
+): value is StandardSchemaV1<any, any> {
+  if (typeof value !== "object" || value === null || !("~standard" in value)) {
+    return false;
+  }
+  const std = value["~standard"];
+
+  return (
+    typeof std === "object" &&
+    std !== null &&
+    (std as StandardSchemaV1Props).version === 1 &&
+    typeof (std as StandardSchemaV1Props).validate === "function"
+  );
+}
 
 export async function validateStandardSchema<T>(
   schema: StandardSchemaV1<unknown, T>,
@@ -82,17 +87,29 @@ export async function validateStandardSchema<T>(
   return { ok: true, value: result.value };
 }
 
+const parseNumber = (raw: string): number =>
+  raw.trim() === "" ? Number.NaN : Number(raw);
+
 /**
  * Single source of truth for converting and validating a raw CLI string value
  * against a TypeFunction, Number constructor, or Standard Schema v1 validator.
  */
-export function convertValueSync(
-  type: TypeFunction<any>,
+export async function convertValue(
+  type: CoreSingleType,
   raw: string,
   target: string,
-): unknown {
+): Promise<unknown> {
+  if (isStandardSchema(type)) {
+    const result = await validateStandardSchema(type, raw);
+    if (!result.ok) {
+      throw new ValidationError(target, raw, result.issues);
+    }
+
+    return result.value;
+  }
+
   if (type === Number) {
-    const num = raw.trim() === "" ? Number.NaN : Number(raw);
+    const num = parseNumber(raw);
     if (Number.isNaN(num)) {
       throw new ValidationError(target, raw, [
         { message: "expected a valid number" },
@@ -109,23 +126,6 @@ export function convertValueSync(
 
     throw new ValidationError(target, raw, [{ message }], error);
   }
-}
-
-export async function convertValue(
-  type: CoreSingleType,
-  raw: string,
-  target: string,
-): Promise<unknown> {
-  if (isStandardSchema(type)) {
-    const result = await validateStandardSchema(type, raw);
-    if (!result.ok) {
-      throw new ValidationError(target, raw, result.issues);
-    }
-
-    return result.value;
-  }
-
-  return convertValueSync(type, raw, target);
 }
 
 export class FlagValidationError extends Error {
@@ -154,7 +154,7 @@ export function Enum<T extends string>(
 
 export function Range(min: number, max: number): TypeFunction<number> {
   const fn = ((value: string) => {
-    const num = Number(value);
+    const num = parseNumber(value);
     if (Number.isNaN(num) || num < min || num > max) {
       throw new FlagValidationError(
         `expected a number between ${min} and ${max}`,
@@ -183,7 +183,7 @@ export function Regex(pattern: RegExp, display?: string): TypeFunction<string> {
 
 export const Integer: TypeFunction<number> = Object.assign(
   (value: string): number => {
-    const num = Number(value);
+    const num = parseNumber(value);
     if (!Number.isInteger(num)) {
       throw new FlagValidationError("expected an integer");
     }

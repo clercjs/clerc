@@ -75,10 +75,7 @@ export function buildConfigsAndAliases(
   const configs = new Map<string, FlagOptions>();
   const aliases = new Map<string, string>();
 
-  for (const name in flags) {
-    if (!Object.hasOwn(flags, name)) {
-      continue;
-    }
+  for (const name of Object.keys(flags)) {
     const normalized = normalizeConfig(flags[name]);
     validateFlagOptions(name, normalized, delimiters);
 
