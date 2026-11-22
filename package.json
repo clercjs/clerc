@@ -23,10 +23,8 @@
     "test:coverage": "vitest --coverage",
     "test:typecheck": "vitest --typecheck",
     "test:ui": "vitest --ui",
-    "typecheck": "nr typecheck:isolated && nr typecheck:non-isolated && nr typecheck:docs",
+    "typecheck": "tsc && nr typecheck:docs",
     "typecheck:docs": "pnpm -C docs typecheck",
-    "typecheck:isolated": "tsc -p tsconfig.isolated.json",
-    "typecheck:non-isolated": "tsc -p tsconfig.non-isolated.json",
     "watch": "tsdown --watch"
   },
   "devDependencies": {
@@ -45,7 +43,6 @@
     "tsdown": "catalog:dev",
     "typescript": "catalog:dev",
     "vite": "catalog:dev",
-    "vitest": "catalog:dev",
-    "vitest-console": "catalog:dev"
+    "vitest": "catalog:dev"
   }
 }

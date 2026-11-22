@@ -40,9 +40,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@clerc/utils": "workspace:*"
-  },
   "devDependencies": {
     "@types/minimist": "catalog:cli",
     "@types/nopt": "catalog:cli",

@@ -38,11 +38,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@clerc/parser": "workspace:*",
-    "@clerc/utils": "workspace:*",
-    "lite-emit": "catalog:cli"
-  },
-  "devDependencies": {
-    "@clerc/advanced-types": "workspace:*"
+    "@clerc/parser": "workspace:*"
   }
 }

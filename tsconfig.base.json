@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "target": "ESNext",
     "lib": ["ESNext"],
     "moduleDetection": "force",
@@ -16,7 +15,8 @@
     "skipLibCheck": true,
     "paths": {
       "@clerc/*": ["./packages/*/src/index.ts"],
-      "clerc": ["./packages/clerc/src/index.ts"]
+      "clerc": ["./packages/clerc/src/index.ts"],
+      "clerc/plugins": ["./packages/clerc/src/plugins/index.ts"]
     }
   }
 }

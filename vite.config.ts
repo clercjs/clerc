@@ -9,14 +9,5 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
     },
-    server: {
-      deps: {
-        inline: ["vitest-console"],
-      },
-    },
-    typecheck: {
-      tsconfig: "tsconfig.non-isolated.json",
-    },
-    setupFiles: ["test/setup.ts"],
   },
 });

@@ -1,7 +1,7 @@
 ![Clerc Card](.github/assets/ClercCard.png)
 
 <p align="center">
-	<a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a full-featured library (tool set) for building CLI Apps in Node.js, Deno or Bun.
+  <a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a modern, strongly-typed CLI framework for Node.js 26+.
 </p>
 
 <div align="center">
@@ -15,54 +15,73 @@
 
 <hr/>
 
-<!-- toc -->
-
-- [✨ Features](#-features)
-- [😊 The simplest CLI example](#-the-simplest-cli-example)
-- [📖 Documentation](#-documentation)
-- [🦄 Examples](#-examples)
-- [🤔 More...](#-more)
-
-<!-- tocstop -->
-
-> [!NOTE]  
-> This package is ESM-only.
+> [!NOTE]
+> ESM-only, targeting Node.js >= 26.
 
 # ✨ Features
 
-- **Lightweight** - Dependencies are bundled.
-- **Plugin system** - Add rich features on demand.
-- **Chainable APIs** - Composable.
-- **Developer friendly** - Strongly typed, converts flags and parameters to camelCase.
-- **Parses parameters** - No need to read them by yourself.
+- **Command Tree & Lazy Loading** — First-class nested subcommands, aliases, leading global flags, and `load()` for instant startup.
+- **Typed Hook Plugin System** — Structured lifecycle hooks (`onIntercept`, `onValidate`, `beforeRun`, `afterRun`, `onError`, `onRenderError`) and type-safe `extendContext` without global module pollution.
+- **Standard Schema v1** — Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
+- **Modern Precision UI & First-Class Logger** — Built-in `ctx.log` (compact, rail, and JSON/NDJSON modes), Cargo/Clap-inspired diagnostics, and aligned terminal-width-aware help output powered by `node:util` `styleText`.
+- **Testable by Design** — Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
 
-# 😊 The simplest CLI example
-
-Install clerc, and create a file named `cli.mjs`:
+# 😊 Quick Start
 
 ```ts
-import { Cli } from "clerc";
+import { Cli, Types } from "clerc";
 
-Cli() // Create a new Clerc instance with help and version plugins installed
-  .scriptName("foo") // CLI Script Name
-  .description("A foo CLI") // CLI Description
-  .version("0.0.0") // CLI Version
+await Cli({
+  scriptName: "acme",
+  description: "Build and deploy modern TypeScript apps",
+  version: "2.0.0",
+})
   .command(
-    "bar", // Command name
-    "A bar command", // Command description
-  )
-  .on(
-    "bar",
-    (
-      _ctx, // The command context, but we haven't used it yet
-    ) => {
-      console.log("Hello, world from Clerc!");
+    "deploy",
+    {
+      description: "Deploy application to target environment",
+      parameters: [
+        {
+          key: "<target>",
+          type: Types.Enum("staging", "prod"),
+          description: "Target environment",
+        },
+      ] as const,
+      flags: {
+        port: {
+          type: Number,
+          short: "p",
+          default: 3000,
+          env: "PORT",
+          description: "Server port",
+        },
+        dryRun: {
+          type: Boolean,
+          short: "n",
+          description: "Preview without deploying",
+        },
+      },
+    },
+    (ctx) => {
+      ctx.log.step(
+        `Deploying to ${ctx.parameters.target} on port ${ctx.flags.port}`,
+      );
+      if (ctx.flags.dryRun) {
+        ctx.log.info("Dry run enabled, no changes applied.");
+      } else {
+        ctx.log.success("Deployed!");
+      }
     },
   )
-  .parse(); // Parse the arguments and run!
+  .runMain();
 ```
 
-Then run: `node cli.mjs bar`. It should log in your shell: `Hello, world from Clerc!`
+# 📦 Packages
+
+- `clerc` — Batteries-included CLI package with built-in plugins (`help`, `version`, `not-found`, `error`, `strict-flags`, `verbosity`, `update-notifier`).
+- `@clerc/core` — Core runtime: CommandTree, execution pipeline, typed plugin engine, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
+- `@clerc/parser` — Zero-dependency, high-performance argument parser.
+- `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 
 # 📖 Documentation
 
@@ -70,21 +89,9 @@ Please see https://clerc.so1ve.dev.
 
 # 🦄 Examples
 
-Check the examples made with `Clerc`:
+- [Greeting](./examples/greeting)
+- [Bumpp](./examples/bumpp)
 
-- [Greeting](./examples/greeting) - The example from above
-- [Bumpp](./examples/bumpp) - Reimplementation of [`Bumpp`](https://github.com/antfu/bumpp)'s CLI
-
-# 🤔 More...
-
-## Why using Clerc?
-
-Clerc uses [`@clerc/parser`](https://github.com/clercjs/clerc/blob/main/packages/parser) to parse arguments. It is strongly-typed, which brings you better DX. It is powerful(supports custom type) and quite small and performant!
-
-Clerc has a plugin system, which means you can add features on demand (e.g. auto completions, help text generation...). It also provides chainable APIs for better composability.
-
-Clerc's flexible architecture and plugin system offer vast potential for further exploration and customization in diverse CLI application scenarios. There are more and more opportunities to leverage Clerc's capabilities to create unique and powerful command-line tools!
-
-## 📝 License
+# 📝 License
 
 [MIT](./LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)

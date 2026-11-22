@@ -2,13 +2,25 @@ import type { Command as TabCommand, RootCommand } from "@bomb.sh/tab";
 import type {
   ClercFlagDefinitionValue,
   ClercFlagsDefinition,
-  CommandsMap,
+  CommandNode,
+  ReadonlyCliModel,
 } from "@clerc/core";
 import {
+  DOUBLE_DASH,
   extractParameterInfo,
   normalizeFlagValue,
   normalizeParameterValue,
 } from "@clerc/core";
+
+export interface CompletionMeta {
+  readonly show?: boolean;
+  readonly handler?: (...args: any[]) => any;
+}
+
+const getCompletionMeta = (
+  meta?: Record<string, unknown>,
+): CompletionMeta | undefined =>
+  meta?.completions as CompletionMeta | undefined;
 
 function registerFlag(
   tc: TabCommand,
@@ -16,19 +28,22 @@ function registerFlag(
   def: ClercFlagDefinitionValue,
 ): void {
   const normalized = normalizeFlagValue(def);
+  const compMeta = getCompletionMeta(normalized.meta);
+  if (normalized.hidden || compMeta?.show === false) {
+    return;
+  }
+
   const desc = normalized.description ?? "";
   if (normalized.type === Boolean) {
     tc.option(flagName, desc, normalized.short);
   } else {
-    // idk why put async here, but whatever tab itself also writes it like this:
-    // https://github.com/bombshell-dev/tab/blob/56ead3243f14bfb7d841aa203773cdce8bf932b2/src/cac.ts#L109
-    const handler = normalized.completions?.handler ?? (async () => {});
+    const handler = compMeta?.handler ?? (async () => {});
     tc.option(flagName, desc, handler, normalized.short);
   }
 }
 
 function registerGlobalFlags(
-  globalFlags: ClercFlagsDefinition,
+  globalFlags: Readonly<ClercFlagsDefinition>,
   tc: TabCommand,
 ): void {
   for (const [flagName, def] of Object.entries(globalFlags)) {
@@ -36,35 +51,43 @@ function registerGlobalFlags(
   }
 }
 
-export function buildTabModel(
-  t: RootCommand,
-  globalFlags: ClercFlagsDefinition,
-  commands: CommandsMap,
-): void {
-  registerGlobalFlags(globalFlags, t);
+export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
+  registerGlobalFlags(model.globalFlags, t);
 
-  for (const cmd of commands.values()) {
-    if (cmd.completions?.show === false) {
+  const commands: readonly CommandNode[] = model.tree.walkCommands();
+  for (const node of commands) {
+    const cmd = node.command;
+    if (!cmd) {
       continue;
     }
 
-    let command: TabCommand = t;
-
-    if (cmd.name !== "") {
-      command = t.command(cmd.name, cmd.description ?? "");
-      registerGlobalFlags(globalFlags, command);
+    const compMeta = getCompletionMeta(cmd.meta);
+    if (cmd.hidden || compMeta?.show === false) {
+      continue;
     }
 
-    cmd.completions?.handler?.(command);
+    const fullName = node.fullPath.join(" ");
+    let tabCmd: TabCommand = t;
+
+    if (fullName !== "") {
+      tabCmd = t.command(fullName, cmd.description ?? "");
+      registerGlobalFlags(model.globalFlags, tabCmd);
+    }
+
+    compMeta?.handler?.(tabCmd);
 
     for (const def of cmd.parameters ?? []) {
+      if (def === DOUBLE_DASH) {
+        continue;
+      }
       const normalized = normalizeParameterValue(def);
+      const paramComp = getCompletionMeta(normalized.meta);
       const { name, isVariadic } = extractParameterInfo(normalized.key);
-      command.argument(name, normalized.completions?.handler, isVariadic);
+      tabCmd.argument(name, paramComp?.handler, isVariadic);
     }
 
     for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
-      registerFlag(command, flagName, def);
+      registerFlag(tabCmd, flagName, def as ClercFlagDefinitionValue);
     }
   }
 }

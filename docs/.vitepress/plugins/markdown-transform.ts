@@ -4,11 +4,14 @@ import type { Plugin } from "vitepress";
 export const clercImports = [
   "Clerc",
   "Cli",
-  "completionsPlugin",
-  "friendlyErrorPlugin",
+  "defineCommand",
+  "definePlugin",
+  "errorPlugin",
   "helpPlugin",
   "notFoundPlugin",
   "strictFlagsPlugin",
+  "updateNotifierPlugin",
+  "verbosityPlugin",
   "versionPlugin",
 ];
 

@@ -1,117 +1,67 @@
-import type {
-  ArgumentHandler,
-  Command as TabCommand,
-  OptionHandler,
-} from "@bomb.sh/tab";
 import { RootCommand } from "@bomb.sh/tab";
-import type { Plugin } from "@clerc/core";
-import { Types, definePlugin } from "@clerc/core";
+import type { ClercPlugin } from "@clerc/core";
+import { ClercError, Types, definePlugin } from "@clerc/core";
 
 import { buildTabModel } from "./t";
 
-declare module "@clerc/core" {
-  export interface CommandCustomOptions {
-    /**
-     * Completions options for the command.
-     */
-    completions?: {
-      /**
-       * Whether to show the command in completions output.
-       *
-       * @default true
-       */
-      show?: boolean;
-      /**
-       * Handler to provide custom completions for the command.
-       */
-      handler?: (command: TabCommand) => void;
-    };
-  }
-  export interface FlagCustomOptions {
-    /**
-     * Completions options for the flag.
-     */
-    completions?: {
-      /**
-       * Whether to show the flag in completions output.
-       *
-       * @default true
-       */
-      show?: boolean;
-      /**
-       * Handler to provide custom completions for the flag.
-       */
-      handler?: OptionHandler;
-    };
-  }
-  export interface ParameterCustomOptions {
-    /**
-     * Completions options for the parameter.
-     */
-    completions?: {
-      /**
-       * Handler to provide custom completions for the parameter.
-       */
-      handler?: ArgumentHandler;
-    };
-  }
-}
+export type { CompletionMeta } from "./t";
 
-export const completionsPlugin = (): Plugin =>
-  definePlugin({
-    setup: (cli) => {
-      const t = new RootCommand();
+export function completionsPlugin(): ClercPlugin {
+  const supportedShellEnum = Types.Enum("zsh", "bash", "fish", "powershell");
 
-      const supportedShellEnum = Types.Enum(
-        "zsh",
-        "bash",
-        "fish",
-        "powershell",
-      );
-
-      cli
-        .command("completions", "Generate shell completion scripts", {
-          flags: {
-            shell: {
-              description: "Shell type",
-              type: supportedShellEnum,
-            },
+  return definePlugin({
+    name: "clerc:completions",
+    commands: () => [
+      {
+        name: "completions",
+        description: "Generate shell completion scripts",
+        flags: {
+          shell: {
+            description: "Shell type",
+            type: supportedShellEnum,
           },
-          parameters: [
-            {
-              key: "[shell]",
-              description: "Shell type",
-              type: supportedShellEnum,
-            },
-          ],
-        })
-        .on("completions", async (ctx) => {
-          const shell = ctx.parameters.shell ?? ctx.flags.shell;
+        },
+        parameters: [
+          {
+            key: "[shell]",
+            description: "Shell type",
+            type: supportedShellEnum,
+          },
+        ] as const,
+        run: async (ctx) => {
+          const shell =
+            (ctx.parameters as { shell?: string }).shell ??
+            (ctx.flags as { shell?: string }).shell;
 
           if (!shell) {
-            throw new Error(
-              "Shell type is required. Please provide it via --shell flag or [shell] parameter.",
+            throw new ClercError(
+              "shell type is required (zsh, bash, fish, or powershell)",
+              {
+                code: "ERR_MISSING_PARAMETER",
+                exitCode: 2,
+                hints: [
+                  `run '${ctx.meta.scriptName} completions zsh' or pass '--shell zsh'`,
+                ],
+              },
             );
           }
 
-          buildTabModel(t, cli._globalFlags, cli._commands);
-
-          t.setup(cli._scriptName, cli._scriptName, shell);
-        });
-
-      cli
-        .command("complete", {
-          help: { show: false },
-          completions: { show: false },
-          parameters: ["--", "[input...]"],
-        })
-        .on("complete", async (ctx) => {
-          buildTabModel(t, cli._globalFlags, cli._commands);
-
-          const { input } = ctx.parameters;
+          const t = new RootCommand();
+          buildTabModel(t, ctx.model);
+          t.setup(ctx.meta.scriptName, ctx.meta.scriptName, shell);
+        },
+      },
+      {
+        name: "complete",
+        hidden: true,
+        parameters: ["--", "[input...]"] as const,
+        run: async (ctx) => {
+          const t = new RootCommand();
+          buildTabModel(t, ctx.model);
+          const { input } = ctx.parameters as { input: string[] };
           t.parse(input);
-        });
-
-      return cli;
-    },
+        },
+      },
+    ],
   });
+}

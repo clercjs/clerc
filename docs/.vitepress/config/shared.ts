@@ -13,7 +13,10 @@ import Llms, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
 
 import pkg from "../../../packages/clerc/package.json" with { type: "json" };
 import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
-import { MarkdownTransform, clercImports } from "../plugins/markdown-transform.ts";
+import {
+  MarkdownTransform,
+  clercImports,
+} from "../plugins/markdown-transform.ts";
 
 const flattenItems = (
   items: DefaultTheme.SidebarItem[],

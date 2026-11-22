@@ -1,5 +1,4 @@
-import type { IsAny, Prettify, RequireExactlyOneOrNone } from "@clerc/utils";
-
+import type { IsAny, Prettify, RequireExactlyOneOrNone } from "./helpers";
 import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
 
 export interface FlagDefaultValueFunction<T> {
@@ -154,6 +153,10 @@ export interface ParsedResult<TFlags extends Record<string, any>> {
    * List of required flags that were not provided.
    */
   missingRequiredFlags: string[];
+  /**
+   * Flag keys explicitly provided in argv.
+   */
+  provided: string[];
 }
 
 type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {

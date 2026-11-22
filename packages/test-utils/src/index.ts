@@ -1,13 +1,20 @@
-import { Clerc } from "@clerc/core";
+import type { MemoryTerminal, MemoryTerminalOptions } from "@clerc/core";
+import { Clerc, createMemoryTerminal } from "@clerc/core";
 import { Cli } from "clerc";
-import type { Mock } from "vitest";
-import { vi } from "vitest";
 
-export const TestBaseCli = (): Clerc =>
-  Clerc.create().scriptName("test").description("test").version("0.0.0");
+export { createMemoryTerminal };
+export type { MemoryTerminal, MemoryTerminalOptions };
 
-export const TestCli = (): Clerc =>
-  Cli().scriptName("test").description("test").version("0.0.0");
+export const createTestBaseCli = (): Clerc =>
+  Clerc.create({
+    scriptName: "test",
+    description: "Test CLI",
+    version: "1.0.0",
+  });
 
-export const getConsoleMock = (method: keyof Console): Mock =>
-  vi.mocked(console[method]) as Mock;
+export const createTestCli = (): ReturnType<typeof Cli> =>
+  Cli({
+    scriptName: "test",
+    description: "Test CLI",
+    version: "1.0.0",
+  });

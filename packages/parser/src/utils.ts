@@ -1,5 +1,4 @@
-import { looseIsArray } from "@clerc/utils";
-
+import { looseIsArray } from "./helpers";
 import type { FlagOptions, TypeValue } from "./types";
 
 export const isArrayOfType = (arr: any, type: any): boolean =>

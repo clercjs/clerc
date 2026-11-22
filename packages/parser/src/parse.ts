@@ -1,6 +1,5 @@
-import { camelCase, resolveValue } from "@clerc/utils";
-
 import { buildConfigsAndAliases, resolveParserOptions } from "./config";
+import { camelCase, resolveValue } from "./helpers";
 import { iterateArgs } from "./iterator";
 import type {
   FlagsDefinition,
@@ -25,9 +24,18 @@ type ParseFunction<T extends FlagsDefinition> = (
   args: string[],
 ) => ParsedResult<InferFlags<T>>;
 
+export type ScanCallback = (arg: string, index: number) => boolean;
+
+export interface ScanResult {
+  readonly stoppedAt: number;
+}
+
 export function createParser<T extends FlagsDefinition>(
   options: ParserOptions<T> = {},
-): { parse: ParseFunction<T> } {
+): {
+  parse: ParseFunction<T>;
+  scan: (args: readonly string[], onPositional: ScanCallback) => ScanResult;
+} {
   const {
     flags: flagsConfig = {},
     delimiters,
@@ -122,6 +130,9 @@ export function createParser<T extends FlagsDefinition>(
     return false;
   }
 
+  const isBooleanLike = (type: unknown): boolean =>
+    type === Boolean || isArrayOfType(type, Boolean);
+
   function isKnownFlag(arg: string) {
     const secondChar = arg.charCodeAt(1);
 
@@ -139,8 +150,12 @@ export function createParser<T extends FlagsDefinition>(
 
     const chars = arg.slice(1);
     for (const char of chars) {
-      if (!resolve(char, true)) {
+      const resolved = resolve(char, true);
+      if (!resolved) {
         return false;
+      }
+      if (!isBooleanLike(resolved.config.type)) {
+        return true;
       }
     }
 
@@ -157,7 +172,9 @@ export function createParser<T extends FlagsDefinition>(
       rawUnknown: [],
       ignored: [],
       missingRequiredFlags: [],
+      provided: [],
     };
+    const providedSet = new Set<string>();
 
     iterateArgs(
       args,
@@ -221,9 +238,10 @@ export function createParser<T extends FlagsDefinition>(
             }
 
             const { key, config } = resolved;
+            providedSet.add(key);
             const configType = config.type;
 
-            if (configType === Boolean || isArrayOfType(configType, Boolean)) {
+            if (isBooleanLike(configType)) {
               setValueByType(result.flags, key, "true", config);
             } else {
               if (j + 1 < charsLen) {
@@ -277,6 +295,7 @@ export function createParser<T extends FlagsDefinition>(
           }
 
           const { key, config, path } = resolved;
+          providedSet.add(key);
 
           if (path) {
             if (config.type === Object) {
@@ -323,10 +342,71 @@ export function createParser<T extends FlagsDefinition>(
       }
     }
 
+    result.provided = [...providedSet];
+
     return result;
   };
 
-  return { parse };
+  function scan(
+    args: readonly string[],
+    onPositional: ScanCallback,
+  ): ScanResult {
+    let i = 0;
+
+    while (i < args.length) {
+      const current = args[i];
+
+      if (current === DOUBLE_DASH) {
+        return { stoppedAt: i };
+      }
+
+      if (!shouldProcessAsFlag(current)) {
+        if (!onPositional(current, i)) {
+          return { stoppedAt: i };
+        }
+        i++;
+
+        continue;
+      }
+
+      if (!isKnownFlag(current)) {
+        return { stoppedAt: i };
+      }
+
+      const isShortFlag = !current.startsWith(DOUBLE_DASH);
+      if (isShortFlag) {
+        const chars = current.slice(1);
+        let takesNext = false;
+        for (let j = 0; j < chars.length; j++) {
+          const resolved = resolve(chars[j], true)!;
+          if (!isBooleanLike(resolved.config.type)) {
+            takesNext = j === chars.length - 1;
+
+            break;
+          }
+        }
+        i++;
+        if (takesNext && i < args.length && !shouldProcessAsFlag(args[i])) {
+          i++;
+        }
+      } else {
+        const { rawName, hasSep } = splitNameAndValue(
+          current.slice(2),
+          delimiters,
+        );
+        const resolved = resolve(rawName) ?? resolveNegated(rawName)!;
+        const takesNext = !hasSep && !isBooleanLike(resolved.config.type);
+        i++;
+        if (takesNext && i < args.length && !shouldProcessAsFlag(args[i])) {
+          i++;
+        }
+      }
+    }
+
+    return { stoppedAt: i };
+  }
+
+  return { parse, scan };
 }
 
 export const parse = <T extends FlagsDefinition>(

@@ -1,7 +1,6 @@
-import type { PartialRequired } from "@clerc/utils";
-import { camelCase, looseIsArray } from "@clerc/utils";
-
 import { InvalidSchemaError } from "./errors";
+import type { PartialRequired } from "./helpers";
+import { camelCase, looseIsArray } from "./helpers";
 import type {
   FlagDefinitionValue,
   FlagOptions,

@@ -7,15 +7,12 @@ export default defineConfig({
   },
   entry: ["src/index.ts"],
   target: "node26",
-  dts: {
-    generator: "oxc",
-  },
+  dts: true,
   minify: true,
   exports: {
     inlinedDependencies: false,
   },
   deps: {
-    alwaysBundle: ["@clerc/advanced-types"],
     neverBundle: [/^@clerc\//],
     onlyBundle: false,
   },

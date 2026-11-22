@@ -8,6 +8,12 @@ export default so1ve(
     },
   },
   {
+    files: ["packages/core/src/cli.ts"],
+    rules: {
+      "ts/prefer-return-this-type": "off",
+    },
+  },
+  {
     files: ["examples/**"],
     rules: {
       "no-console": "off",

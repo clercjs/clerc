@@ -1,122 +1,141 @@
-import { DOUBLE_DASH } from "@clerc/parser";
-import { camelCase } from "@clerc/utils";
+import { DOUBLE_DASH, camelCase } from "@clerc/parser";
 
-import { InvalidParametersError } from "./errors";
-import type { ParameterDefinitionValue } from "./types/parameter";
-import { normalizeParameterValue } from "./utils";
+import {
+  InvalidParametersError,
+  MissingRequiredParameterError,
+} from "./errors";
+import { convertValue, isStandardSchema } from "./schema";
+import type {
+  ClercFlagDefinitionValue,
+  ClercFlagOptions,
+  ParameterDefinitionValue,
+  ParameterOptions,
+} from "./types";
 
-export function getParametersToResolve(argv: string[]): string[] {
-  const parameters: string[] = [];
+const PARAMETER_REGEX = /^(<|\[)([\w -]+)(\.\.\.)?(\]|>)$/;
 
-  for (const arg of argv) {
-    if (arg.startsWith("-")) {
-      break;
-    }
-    parameters.push(arg);
-  }
-
-  return parameters;
-}
-
-const PARAMETER_REGEX = /^(<|\[)([\w ]+)(\.\.\.)?(\]|>)$/;
-
-const isParameterDefinitionBracketsValid = (definition: string): boolean =>
+const isParameterBracketsValid = (definition: string): boolean =>
   (definition.startsWith("<") && definition.endsWith(">")) ||
   (definition.startsWith("[") && definition.endsWith("]"));
 
-interface ParameterInfo {
-  name: string;
-  isRequired: boolean;
-  isVariadic: boolean;
+export interface ParameterInfo {
+  readonly name: string;
+  readonly rawName: string;
+  readonly isRequired: boolean;
+  readonly isVariadic: boolean;
 }
+
+export function normalizeFlagValue(
+  flag: ClercFlagDefinitionValue,
+): ClercFlagOptions {
+  if (
+    typeof flag === "function" ||
+    Array.isArray(flag) ||
+    isStandardSchema(flag)
+  ) {
+    return { type: flag as any };
+  }
+
+  return flag as ClercFlagOptions;
+}
+
+export const normalizeParameterValue = (
+  parameter: ParameterDefinitionValue,
+): ParameterOptions =>
+  typeof parameter === "string" ? { key: parameter } : parameter;
 
 export function extractParameterInfo(key: string): ParameterInfo {
   const match = key.match(PARAMETER_REGEX);
-  if (!match || !isParameterDefinitionBracketsValid(key)) {
-    throw new InvalidParametersError(`Invalid parameter definition: ${key}`);
+  if (!match || !isParameterBracketsValid(key)) {
+    throw new InvalidParametersError(`invalid parameter definition: ${key}`);
   }
 
   return {
     name: camelCase(match[2]),
+    rawName: match[2],
     isRequired: key.startsWith("<"),
-    isVariadic: !!match[3],
+    isVariadic: Boolean(match[3]),
   };
 }
 
-function _parseParameters(
+async function parseParameterSlice(
   definitions: readonly ParameterDefinitionValue[],
-  parameters: string[],
-): Record<string, any> {
-  const result: Record<string, any> = {};
+  values: readonly string[],
+): Promise<Record<string, unknown>> {
+  const result: Record<string, unknown> = {};
   let hasOptional = false;
 
   for (const [i, def] of definitions.entries()) {
     const normalized = normalizeParameterValue(def);
-    const { name, isRequired, isVariadic } = extractParameterInfo(
+    const { name, rawName, isRequired, isVariadic } = extractParameterInfo(
       normalized.key,
     );
 
     if (Object.hasOwn(result, name)) {
-      throw new InvalidParametersError(`Duplicate parameter name: ${name}`);
+      throw new InvalidParametersError(`duplicate parameter name: ${name}`);
     }
-
     if (isVariadic && i !== definitions.length - 1) {
       throw new InvalidParametersError(
-        "Variadic parameter must be the last parameter in the definition.",
+        "variadic parameter must be the last parameter in the definition",
       );
     }
-
     if (isRequired) {
       if (hasOptional) {
         throw new InvalidParametersError(
-          `Required parameter "${name}" cannot appear after an optional parameter.`,
+          `required parameter "${name}" cannot appear after an optional parameter`,
         );
       }
     } else {
       hasOptional = true;
     }
 
-    const value = isVariadic ? parameters.slice(i) : parameters[i];
-
-    if (isRequired && (isVariadic ? value.length === 0 : value === undefined)) {
-      throw new InvalidParametersError(
-        `Missing required ${isVariadic ? "variadic " : ""}parameter: ${name}`,
-      );
+    const raw = isVariadic ? values.slice(i) : values[i];
+    if (
+      isRequired &&
+      (isVariadic ? (raw as string[]).length === 0 : raw === undefined)
+    ) {
+      throw new MissingRequiredParameterError(rawName, isVariadic);
     }
 
-    if (normalized.type) {
-      if (isVariadic) {
-        result[name] = (value as string[]).map((v) => normalized.type!(v));
-      } else if (value === undefined) {
-        result[name] = value;
-      } else {
-        result[name] = normalized.type(value as string);
+    if (!normalized.type) {
+      result[name] = raw;
+    } else if (isVariadic) {
+      const converted: unknown[] = [];
+      for (const item of raw as string[]) {
+        converted.push(
+          await convertValue(normalized.type, item, normalized.key),
+        );
       }
+      result[name] = converted;
     } else {
-      result[name] = value;
+      result[name] =
+        raw === undefined
+          ? undefined
+          : await convertValue(normalized.type, raw as string, normalized.key);
     }
   }
 
   return result;
 }
 
-export function parseParameters(
+export async function parseParameters(
   definitions: readonly ParameterDefinitionValue[],
-  parameters: string[],
-  doubleDashParameters: string[],
-): Record<string, any> {
-  // Use `definitions` without normalization here on purpose since we allow only string format for `--`
+  parameters: readonly string[],
+  doubleDashParameters: readonly string[],
+): Promise<Record<string, unknown>> {
   const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
-
   if (doubleDashIndex === -1) {
-    return _parseParameters(definitions, parameters);
-  } else {
-    const definitionBeforeDoubleDash = definitions.slice(0, doubleDashIndex);
-    const definitionAfterDoubleDash = definitions.slice(doubleDashIndex + 1);
-
-    return {
-      ..._parseParameters(definitionBeforeDoubleDash, parameters),
-      ..._parseParameters(definitionAfterDoubleDash, doubleDashParameters),
-    };
+    return parseParameterSlice(definitions, parameters);
   }
+
+  return {
+    ...(await parseParameterSlice(
+      definitions.slice(0, doubleDashIndex),
+      parameters,
+    )),
+    ...(await parseParameterSlice(
+      definitions.slice(doubleDashIndex + 1),
+      doubleDashParameters,
+    )),
+  };
 }

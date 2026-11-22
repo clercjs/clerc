@@ -1,9 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
-  "references": [
-    { "path": "./tsconfig.isolated.json" },
-    { "path": "./tsconfig.non-isolated.json" },
-    { "path": "./docs/tsconfig.json" }
-  ],
-  "files": []
+  "include": [
+    "changelogithub.config.ts",
+    "examples",
+    "packages/*/bench",
+    "packages/*/src",
+    "packages/*/test",
+    "packages/*/tsdown.config.ts",
+    "tsdown.config.ts",
+    "vite.config.ts"
+  ]
 }

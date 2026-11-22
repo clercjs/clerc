@@ -1,13 +1,13 @@
-import { Clerc, helpPlugin, versionPlugin } from "clerc";
+import { Cli } from "clerc";
 
-Clerc.create()
-  .scriptName("bumpp")
-  .description("Interactive CLI that bumps your version numbers and more")
-  .version("9.2.0")
-  .use(helpPlugin())
-  .use(versionPlugin())
-  .command("", "Bump your version numbers", {
-    parameters: ["[files...]"],
+await Cli({
+  scriptName: "bumpp",
+  description: "Interactive CLI that bumps your version numbers and more",
+  version: "9.2.0",
+})
+  .command("", {
+    description: "Bump your version numbers",
+    parameters: ["[files...]"] as const,
     flags: {
       preid: {
         type: String,
@@ -20,7 +20,7 @@ Clerc.create()
       },
       commit: {
         type: String,
-        alias: "c",
+        short: "c",
         description: "Commit message",
       },
       noCommit: {
@@ -30,24 +30,24 @@ Clerc.create()
       },
       tag: {
         type: String,
-        alias: "t",
+        short: "t",
         description: "Tag name",
       },
       push: {
         type: Boolean,
-        alias: "p",
+        short: "p",
         description: "Push to remote",
         default: true,
       },
       yes: {
         type: Boolean,
-        alias: "y",
+        short: "y",
         description: "Skip confirmation",
         default: true,
       },
       recursive: {
         type: Boolean,
-        alias: "r",
+        short: "r",
         description: "Bump package.json files recursively",
         default: false,
       },
@@ -68,17 +68,19 @@ Clerc.create()
       },
       version: {
         type: String,
-        alias: "v",
+        short: "v",
         description: "Target version",
       },
       execute: {
         type: String,
-        alias: "x",
+        short: "x",
         description: "Commands to execute after version bumps",
       },
     },
+    run: (ctx) => {
+      ctx.log.info(
+        `Bumping version:\n${JSON.stringify({ parameters: ctx.parameters, flags: ctx.flags }, null, 2)}`,
+      );
+    },
   })
-  .on("", (ctx) => {
-    console.log(`Bumpping version:\n${JSON.stringify(ctx, null, 2)}`);
-  })
-  .parse();
+  .runMain();

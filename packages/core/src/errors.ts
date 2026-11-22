@@ -1,31 +1,286 @@
-export class NoSuchCommandError extends Error {
+import type { Theme } from "./theme";
+import { formatFlagName, joinWithAnd } from "./utils";
+
+export type ClercErrorCode =
+  | "ERR_UNKNOWN_COMMAND"
+  | "ERR_NO_COMMAND"
+  | "ERR_MISSING_FLAG"
+  | "ERR_MISSING_PARAMETER"
+  | "ERR_UNKNOWN_FLAG"
+  | "ERR_VALIDATION"
+  | "ERR_FLAG_CONFLICT"
+  | "ERR_FLAG_IMPLIES"
+  | "ERR_INVALID_COMMAND"
+  | "ERR_INVALID_PARAMETERS"
+  | "ERR_MISSING_METADATA";
+
+export interface ValidationIssue {
+  readonly message: string;
+  readonly path?: readonly unknown[];
+}
+
+export interface ClercErrorOptions extends ErrorOptions {
+  readonly code: ClercErrorCode;
+  readonly exitCode?: number;
+  readonly detail?: string;
+  readonly hints?: readonly string[];
+  readonly usage?: string;
+}
+
+export class ClercError extends Error {
+  public readonly code: ClercErrorCode;
+  public readonly exitCode: number;
+  public detail?: string;
+  public readonly hints: string[];
+  public usage?: string;
+
+  constructor(message: string, options: ClercErrorOptions) {
+    super(message, { cause: options.cause });
+    this.name = new.target.name;
+    this.code = options.code;
+    this.exitCode = options.exitCode ?? 2;
+    this.detail = options.detail;
+    this.hints = options.hints ? [...options.hints] : [];
+    this.usage = options.usage;
+  }
+
+  public addHint(hint: string): this {
+    this.hints.push(hint);
+
+    return this;
+  }
+}
+
+export class UnknownCommandError extends ClercError {
+  public readonly commandName: string;
+  public readonly parentPath: readonly string[];
+
   constructor(
-    public commandName: string,
-    text = `No such command: "${commandName}".`,
+    commandName: string,
+    parentPath: readonly string[] = [],
+    message = `unknown command '${commandName}'`,
   ) {
-    super(text);
+    super(message, {
+      code: "ERR_UNKNOWN_COMMAND",
+      exitCode: 2,
+    });
+    this.commandName = commandName;
+    this.parentPath = parentPath;
   }
 }
 
-export class NoCommandSpecifiedError extends Error {
-  constructor(text = "No command specified.") {
-    super(text);
+export class NoCommandError extends ClercError {
+  constructor(message = "no command specified") {
+    super(message, {
+      code: "ERR_NO_COMMAND",
+      exitCode: 2,
+    });
   }
 }
 
-export class InvalidCommandError extends Error {}
+export class MissingRequiredFlagError extends ClercError {
+  public readonly flags: readonly string[];
 
-export class MissingRequiredMetadataError extends Error {
+  constructor(flags: readonly string[], hints?: readonly string[]) {
+    const formatted = flags.map(formatFlagName);
+    const plural = flags.length > 1 ? "s" : "";
+    super(
+      `missing required option${plural}: ${formatted.map((f) => `'${f}'`).join(", ")}`,
+      {
+        code: "ERR_MISSING_FLAG",
+        exitCode: 2,
+        hints,
+      },
+    );
+    this.flags = flags;
+  }
+}
+
+export class MissingRequiredParameterError extends ClercError {
+  public readonly parameter: string;
+  public readonly isVariadic: boolean;
+
+  constructor(parameter: string, isVariadic = false) {
+    super(
+      `missing required ${isVariadic ? "variadic " : ""}argument '<${parameter}${isVariadic ? "..." : ""}>'`,
+      {
+        code: "ERR_MISSING_PARAMETER",
+        exitCode: 2,
+      },
+    );
+    this.parameter = parameter;
+    this.isVariadic = isVariadic;
+  }
+}
+
+export class UnknownFlagError extends ClercError {
+  public readonly flags: readonly string[];
+
+  constructor(flags: readonly string[], hints?: readonly string[]) {
+    const formatted = flags.map((f) => `'${formatFlagName(f)}'`);
+    const plural = flags.length > 1 ? "s" : "";
+    super(`unexpected option${plural}: ${joinWithAnd(formatted)}`, {
+      code: "ERR_UNKNOWN_FLAG",
+      exitCode: 2,
+      hints,
+    });
+    this.flags = flags;
+  }
+}
+
+export class ValidationError extends ClercError {
+  public readonly target: string;
+  public readonly value: unknown;
+  public readonly issues: readonly ValidationIssue[];
+
+  constructor(
+    target: string,
+    value: unknown,
+    issues: readonly ValidationIssue[],
+    cause?: unknown,
+  ) {
+    const formattedValue =
+      typeof value === "string" ? `'${value}'` : JSON.stringify(value);
+    const detail = issues.map((i) => i.message).join("\n");
+    super(`invalid value ${formattedValue} for '${target}'`, {
+      code: "ERR_VALIDATION",
+      exitCode: 2,
+      detail,
+      cause,
+    });
+    this.target = target;
+    this.value = value;
+    this.issues = issues;
+  }
+}
+
+export class FlagConflictError extends ClercError {
+  public readonly flag: string;
+  public readonly conflictsWith: string;
+
+  constructor(flag: string, conflictsWith: string) {
+    super(
+      `option '${formatFlagName(flag)}' cannot be used together with '${formatFlagName(conflictsWith)}'`,
+      {
+        code: "ERR_FLAG_CONFLICT",
+        exitCode: 2,
+      },
+    );
+    this.flag = flag;
+    this.conflictsWith = conflictsWith;
+  }
+}
+
+export class FlagImpliesError extends ClercError {
+  public readonly flag: string;
+  public readonly requiresFlag: string;
+
+  constructor(flag: string, requiresFlag: string) {
+    super(
+      `option '${formatFlagName(flag)}' requires '${formatFlagName(requiresFlag)}' to also be provided`,
+      {
+        code: "ERR_FLAG_IMPLIES",
+        exitCode: 2,
+      },
+    );
+    this.flag = flag;
+    this.requiresFlag = requiresFlag;
+  }
+}
+
+export class InvalidCommandError extends ClercError {
+  constructor(message: string) {
+    super(message, {
+      code: "ERR_INVALID_COMMAND",
+      exitCode: 1,
+    });
+  }
+}
+
+export class InvalidParametersError extends ClercError {
+  constructor(message: string) {
+    super(message, {
+      code: "ERR_INVALID_PARAMETERS",
+      exitCode: 1,
+    });
+  }
+}
+
+export class MissingRequiredMetadataError extends ClercError {
   constructor(metadataName: string) {
-    super(`CLI ${metadataName} is required.`);
+    super(`CLI ${metadataName} is required`, {
+      code: "ERR_MISSING_METADATA",
+      exitCode: 1,
+    });
   }
 }
 
-export class InvalidParametersError extends Error {}
+export interface FormatDiagnosticOptions {
+  readonly theme: Theme;
+  readonly scriptName?: string;
+  readonly commandPath?: readonly string[];
+  readonly verbose?: boolean;
+  readonly showHelpHint?: boolean;
+}
 
-export class MissingRequiredFlagError extends Error {
-  constructor(flags: string[]) {
-    const s = flags.length > 1 ? "s" : "";
-    super(`Missing required flag${s}: ${flags.join(", ")}`);
+/**
+ * Formats any error using Clerc v2 Cargo/Clap-inspired diagnostic style.
+ */
+export function formatDiagnostic(
+  error: unknown,
+  options: FormatDiagnosticOptions,
+): string {
+  const {
+    theme,
+    scriptName,
+    commandPath,
+    verbose = false,
+    showHelpHint = true,
+  } = options;
+  const message = error instanceof Error ? error.message : String(error);
+  const lines: string[] = [`${theme.error("error:")} ${message}`];
+
+  if (error instanceof ClercError) {
+    if (error.detail) {
+      for (const line of error.detail.split("\n")) {
+        lines.push(`  ${theme.muted(line)}`);
+      }
+    }
+
+    if (error.hints.length > 0) {
+      lines.push("");
+      for (const hint of error.hints) {
+        lines.push(`  ${theme.info("tip:")} ${hint}`);
+      }
+    }
+
+    if (error.usage) {
+      lines.push("");
+      lines.push(`${theme.heading("Usage:")} ${error.usage}`);
+    }
+
+    if (showHelpHint && scriptName && error.exitCode === 2) {
+      const cmdPart =
+        commandPath && commandPath.length > 0
+          ? ` ${commandPath.join(" ")}`
+          : "";
+      lines.push("");
+      lines.push(
+        theme.muted(
+          `For more information, try '${scriptName}${cmdPart} --help'.`,
+        ),
+      );
+    }
+  } else if (error instanceof Error && error.cause !== undefined) {
+    const causeMsg =
+      error.cause instanceof Error ? error.cause.message : String(error.cause);
+    lines.push(`  ${theme.muted(`caused by: ${causeMsg}`)}`);
   }
+
+  if (verbose && error instanceof Error && error.stack) {
+    lines.push("");
+    lines.push(theme.muted(error.stack));
+  }
+
+  return lines.join("\n");
 }

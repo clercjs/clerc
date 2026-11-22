@@ -25,6 +25,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
+    "./plugins": "./dist/plugins/index.mjs",
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.mts",
@@ -39,12 +40,9 @@
   },
   "dependencies": {
     "@clerc/core": "workspace:*",
-    "@clerc/plugin-completions": "workspace:*",
-    "@clerc/plugin-friendly-error": "workspace:*",
-    "@clerc/plugin-help": "workspace:*",
-    "@clerc/plugin-not-found": "workspace:*",
-    "@clerc/plugin-strict-flags": "workspace:*",
-    "@clerc/plugin-update-notifier": "workspace:*",
-    "@clerc/plugin-version": "workspace:*"
+    "fast-string-width": "catalog:cli"
+  },
+  "devDependencies": {
+    "fastest-levenshtein": "catalog:cli"
   }
 }
