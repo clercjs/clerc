@@ -41,8 +41,5 @@
   "dependencies": {
     "@clerc/core": "workspace:*",
     "fast-string-width": "catalog:cli"
-  },
-  "devDependencies": {
-    "fastest-levenshtein": "catalog:cli"
   }
 }

@@ -1,13 +1,15 @@
+import type { TypeFunction } from "@clerc/parser";
 import { DOUBLE_DASH, camelCase } from "@clerc/parser";
 
 import {
   InvalidParametersError,
   MissingRequiredParameterError,
 } from "./errors";
-import { convertValue, isStandardSchema } from "./schema";
+import { convertValue, convertValueSync, isStandardSchema } from "./schema";
 import type {
   ClercFlagDefinitionValue,
   ClercFlagOptions,
+  CoreSingleType,
   ParameterDefinitionValue,
   ParameterOptions,
 } from "./types";
@@ -23,6 +25,17 @@ export interface ParameterInfo {
   readonly rawName: string;
   readonly isRequired: boolean;
   readonly isVariadic: boolean;
+}
+
+interface CompiledParamItem extends ParameterInfo {
+  readonly key: string;
+  readonly type?: CoreSingleType;
+  readonly isSchema: boolean;
+}
+
+export interface CompiledParameters {
+  readonly main: readonly CompiledParamItem[];
+  readonly doubleDash: readonly CompiledParamItem[];
 }
 
 export function normalizeFlagValue(
@@ -45,7 +58,7 @@ export const normalizeParameterValue = (
   typeof parameter === "string" ? { key: parameter } : parameter;
 
 export function extractParameterInfo(key: string): ParameterInfo {
-  const match = key.match(PARAMETER_REGEX);
+  const match = PARAMETER_REGEX.exec(key);
   if (!match || !isParameterBracketsValid(key)) {
     throw new InvalidParametersError(`invalid parameter definition: ${key}`);
   }
@@ -58,84 +71,135 @@ export function extractParameterInfo(key: string): ParameterInfo {
   };
 }
 
-async function parseParameterSlice(
+function compileParameterSlice(
   definitions: readonly ParameterDefinitionValue[],
-  values: readonly string[],
-): Promise<Record<string, unknown>> {
-  const result: Record<string, unknown> = {};
+): CompiledParamItem[] {
+  const items: CompiledParamItem[] = [];
+  const seen = new Set<string>();
   let hasOptional = false;
 
-  for (const [i, def] of definitions.entries()) {
-    const normalized = normalizeParameterValue(def);
-    const { name, rawName, isRequired, isVariadic } = extractParameterInfo(
-      normalized.key,
-    );
+  for (let i = 0; i < definitions.length; i++) {
+    const normalized = normalizeParameterValue(definitions[i]);
+    const info = extractParameterInfo(normalized.key);
 
-    if (Object.hasOwn(result, name)) {
-      throw new InvalidParametersError(`duplicate parameter name: ${name}`);
+    if (seen.has(info.name)) {
+      throw new InvalidParametersError(
+        `duplicate parameter name: ${info.name}`,
+      );
     }
-    if (isVariadic && i !== definitions.length - 1) {
+    seen.add(info.name);
+
+    if (info.isVariadic && i !== definitions.length - 1) {
       throw new InvalidParametersError(
         "variadic parameter must be the last parameter in the definition",
       );
     }
-    if (isRequired) {
+    if (info.isRequired) {
       if (hasOptional) {
         throw new InvalidParametersError(
-          `required parameter "${name}" cannot appear after an optional parameter`,
+          `required parameter "${info.name}" cannot appear after an optional parameter`,
         );
       }
     } else {
       hasOptional = true;
     }
 
-    const raw = isVariadic ? values.slice(i) : values[i];
+    items.push({
+      ...info,
+      key: normalized.key,
+      type: normalized.type,
+      isSchema: normalized.type ? isStandardSchema(normalized.type) : false,
+    });
+  }
+
+  return items;
+}
+
+export function compileParameters(
+  definitions: readonly ParameterDefinitionValue[],
+): CompiledParameters {
+  const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
+  if (doubleDashIndex === -1) {
+    return {
+      main: compileParameterSlice(definitions),
+      doubleDash: [],
+    };
+  }
+
+  return {
+    main: compileParameterSlice(definitions.slice(0, doubleDashIndex)),
+    doubleDash: compileParameterSlice(definitions.slice(doubleDashIndex + 1)),
+  };
+}
+
+async function applyCompiledSlice(
+  items: readonly CompiledParamItem[],
+  values: readonly string[],
+  result: Record<string, unknown>,
+): Promise<void> {
+  for (const [i, item] of items.entries()) {
+    const raw = item.isVariadic ? values.slice(i) : values[i];
+
     if (
-      isRequired &&
-      (isVariadic ? (raw as string[]).length === 0 : raw === undefined)
+      item.isRequired &&
+      (item.isVariadic ? (raw as string[]).length === 0 : raw === undefined)
     ) {
-      throw new MissingRequiredParameterError(rawName, isVariadic);
+      throw new MissingRequiredParameterError(item.rawName, item.isVariadic);
     }
 
-    if (!normalized.type) {
-      result[name] = raw;
-    } else if (isVariadic) {
+    if (!item.type) {
+      result[item.name] = raw;
+    } else if (item.isVariadic) {
+      const rawArr = raw as string[];
       const converted: unknown[] = [];
-      for (const item of raw as string[]) {
+      for (const element of rawArr) {
         converted.push(
-          await convertValue(normalized.type, item, normalized.key),
+          item.isSchema
+            ? await convertValue(item.type, element, item.key)
+            : convertValueSync(
+                item.type as TypeFunction<any>,
+                element,
+                item.key,
+              ),
         );
       }
-      result[name] = converted;
+      result[item.name] = converted;
     } else {
-      result[name] =
+      result[item.name] =
         raw === undefined
           ? undefined
-          : await convertValue(normalized.type, raw as string, normalized.key);
+          : item.isSchema
+            ? await convertValue(item.type, raw as string, item.key)
+            : convertValueSync(
+                item.type as TypeFunction<any>,
+                raw as string,
+                item.key,
+              );
     }
+  }
+}
+
+export async function executeCompiledParameters(
+  compiled: CompiledParameters,
+  parameters: readonly string[],
+  doubleDashParameters: readonly string[],
+): Promise<Record<string, unknown>> {
+  const result: Record<string, unknown> = {};
+  await applyCompiledSlice(compiled.main, parameters, result);
+  if (compiled.doubleDash.length > 0) {
+    await applyCompiledSlice(compiled.doubleDash, doubleDashParameters, result);
   }
 
   return result;
 }
 
-export async function parseParameters(
+export const parseParameters = async (
   definitions: readonly ParameterDefinitionValue[],
   parameters: readonly string[],
   doubleDashParameters: readonly string[],
-): Promise<Record<string, unknown>> {
-  const doubleDashIndex = definitions.indexOf(DOUBLE_DASH);
-  if (doubleDashIndex === -1) {
-    return parseParameterSlice(definitions, parameters);
-  }
-
-  return {
-    ...(await parseParameterSlice(
-      definitions.slice(0, doubleDashIndex),
-      parameters,
-    )),
-    ...(await parseParameterSlice(
-      definitions.slice(doubleDashIndex + 1),
-      doubleDashParameters,
-    )),
-  };
-}
+): Promise<Record<string, unknown>> =>
+  executeCompiledParameters(
+    compileParameters(definitions),
+    parameters,
+    doubleDashParameters,
+  );

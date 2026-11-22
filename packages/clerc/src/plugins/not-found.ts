@@ -1,6 +1,7 @@
 import type { ClercPlugin } from "@clerc/core";
 import { NoCommandError, UnknownCommandError, definePlugin } from "@clerc/core";
-import { closest, distance } from "fastest-levenshtein";
+
+import { findClosest } from "./suggest";
 
 export interface NotFoundPluginOptions {
   readonly distanceThreshold?: number;
@@ -36,11 +37,12 @@ export function notFoundPlugin(
           const candidates = visible.map((n) => n.fullPath.join(" "));
 
           if (candidates.length > 0) {
-            const match = closest(error.commandName, candidates);
-            if (
-              match &&
-              distance(error.commandName, match) <= distanceThreshold
-            ) {
+            const match = findClosest(
+              error.commandName,
+              candidates,
+              distanceThreshold,
+            );
+            if (match) {
               error.addHint(`a similar command exists: '${match}'`);
             } else if (error.parentPath.length > 0) {
               error.addHint(

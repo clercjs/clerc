@@ -27,15 +27,10 @@ export const resolveValue = <T>(value: MaybeGetter<T>): T =>
 const camelCaseCache = new Map<string, string>();
 
 /**
- * Converts a dash- or space-separated string to camelCase. Uses charCode
- * scanning with memoization for hot-path parser performance.
+ * Converts a dash- or space-separated string to camelCase. Plain strings
+ * without dashes or spaces return immediately without Map lookups.
  */
 export function camelCase(str: string): string {
-  const cached = camelCaseCache.get(str);
-  if (cached !== undefined) {
-    return cached;
-  }
-
   const len = str.length;
   let firstIdx = -1;
   for (let i = 0; i < len; i++) {
@@ -48,9 +43,12 @@ export function camelCase(str: string): string {
   }
 
   if (firstIdx === -1) {
-    camelCaseCache.set(str, str);
-
     return str;
+  }
+
+  const cached = camelCaseCache.get(str);
+  if (cached !== undefined) {
+    return cached;
   }
 
   let result = str.slice(0, firstIdx);
@@ -70,7 +68,9 @@ export function camelCase(str: string): string {
     }
   }
 
-  camelCaseCache.set(str, result);
+  if (camelCaseCache.size < 2048) {
+    camelCaseCache.set(str, result);
+  }
 
   return result;
 }

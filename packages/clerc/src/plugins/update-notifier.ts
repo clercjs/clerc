@@ -1,7 +1,3 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-
 import { definePlugin } from "@clerc/core";
 
 export interface UpdateInfo {
@@ -55,38 +51,6 @@ export function isNewerVersion(current: string, latest: string): boolean {
       ? l[2] > c[2]
       : l[1] > c[1]
     : l[0] > c[0];
-}
-
-function getCacheFilePath(
-  pkgName: string,
-  env: Readonly<Record<string, string | undefined>>,
-  overrideDir?: string,
-): string {
-  const baseDir =
-    overrideDir ?? env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache");
-  const safeName = pkgName.replace(/[^\w.-]/g, "_");
-
-  return path.join(baseDir, "clerc-update-notifier", `${safeName}.json`);
-}
-
-async function readCache(filePath: string): Promise<UpdateCache | null> {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw) as UpdateCache;
-
-    return typeof parsed.lastCheck === "number" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-async function writeCache(filePath: string, cache: UpdateCache): Promise<void> {
-  try {
-    await mkdir(path.dirname(filePath), { recursive: true });
-    await writeFile(filePath, JSON.stringify(cache), "utf8");
-  } catch {
-    // Ignore cache write errors in read-only environments
-  }
 }
 
 async function fetchLatestVersion(
@@ -145,10 +109,35 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
           return;
         }
 
-        const cacheFile = getCacheFilePath(pkg.name, env, cacheDir);
-        const cache = await readCache(cacheFile);
-        const currentTime = now();
+        // Lazy-load Node fs/os/path so CLIs not running update checks pay zero startup cost
+        const [{ mkdir, readFile, writeFile }, os, path] = await Promise.all([
+          import("node:fs/promises"),
+          import("node:os"),
+          import("node:path"),
+        ]);
 
+        const baseDir =
+          cacheDir ?? env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache");
+        const safeName = pkg.name.replace(/[^\w.-]/g, "_");
+        const cacheFile = path.join(
+          baseDir,
+          "clerc-update-notifier",
+          `${safeName}.json`,
+        );
+
+        let cache: UpdateCache | null = null;
+        try {
+          const parsed = JSON.parse(
+            await readFile(cacheFile, "utf8"),
+          ) as UpdateCache;
+          if (typeof parsed.lastCheck === "number") {
+            cache = parsed;
+          }
+        } catch {
+          cache = null;
+        }
+
+        const currentTime = now();
         let latest = cache?.latest;
         const isStale =
           !cache || currentTime - cache.lastCheck >= checkIntervalMs;
@@ -164,10 +153,16 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
           if (fetched) {
             latest = fetched;
           }
-          await writeCache(cacheFile, {
-            lastCheck: currentTime,
-            latest,
-          });
+          try {
+            await mkdir(path.dirname(cacheFile), { recursive: true });
+            await writeFile(
+              cacheFile,
+              JSON.stringify({ lastCheck: currentTime, latest }),
+              "utf8",
+            );
+          } catch {
+            // Ignore cache write errors in read-only environments
+          }
         }
 
         if (latest && isNewerVersion(pkg.version, latest)) {

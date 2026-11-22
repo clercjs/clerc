@@ -145,7 +145,7 @@ export function appendDotValues(obj: any, path: string, value: any): void {
 
 export function splitNameAndValue(
   arg: string,
-  delimiters: string[],
+  delimiters: readonly string[],
 ): {
   rawName: string;
   rawValue: string | undefined;

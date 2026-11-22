@@ -1,5 +1,5 @@
 import type { IsAny, Prettify, RequireExactlyOneOrNone } from "./helpers";
-import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./iterator";
+import type { KNOWN_FLAG, PARAMETER, UNKNOWN_FLAG } from "./parse";
 
 export interface FlagDefaultValueFunction<T> {
   (): T;

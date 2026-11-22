@@ -1,12 +1,13 @@
 import type {
   FlagDefinitionValue as ParserFlagDefinitionValue,
   FlagsDefinition as ParserFlagsDefinition,
+  TypeFunction,
 } from "@clerc/parser";
 import { inferDefault } from "@clerc/parser";
 
 import { FlagConflictError, FlagImpliesError } from "./errors";
 import { normalizeFlagValue } from "./parameter";
-import { convertValue, isStandardSchema } from "./schema";
+import { convertValue, convertValueSync, isStandardSchema } from "./schema";
 import type {
   ClercFlagOptions,
   ClercFlagsDefinition,
@@ -31,41 +32,81 @@ function isDeferredValidationType(type: CoreTypeValue): boolean {
   return type !== Boolean && type !== Object && type !== String;
 }
 
-/**
- * Projects Clerc flag definitions into lexical `@clerc/parser` flags.
- * Complex/validated types parse as raw strings here so `onIntercept` (e.g.
- * `--help`) can short-circuit before validation runs.
- */
-export function toParserFlags(
-  flags: ClercFlagsDefinition,
-): ParserFlagsDefinition {
-  const result: ParserFlagsDefinition = {};
+export interface CompiledFlagEntry {
+  readonly name: string;
+  readonly norm: ClercFlagOptions;
+  readonly target: string;
+  readonly isArray: boolean;
+  readonly isCounter: boolean;
+  readonly isDeferred: boolean;
+  readonly innerType: CoreSingleType;
+  readonly innerIsSchema: boolean;
+  readonly implicitDefault: unknown;
+}
 
-  for (const [name, def] of Object.entries(flags)) {
-    const norm = normalizeFlagValue(def);
-    const parserType: ParserFlagDefinitionValue = isDeferredValidationType(
-      norm.type,
-    )
-      ? isArrayType(norm.type)
-        ? [String]
-        : String
-      : (norm.type as any);
+export interface CompiledFlags {
+  readonly entries: readonly CompiledFlagEntry[];
+  readonly byName: ReadonlyMap<string, CompiledFlagEntry>;
+  readonly parserFlags: ParserFlagsDefinition;
+}
 
-    const opts: Record<string, unknown> = { type: parserType };
+const convertEntry = (entry: CompiledFlagEntry, raw: string) =>
+  entry.innerIsSchema
+    ? convertValue(entry.innerType, raw, entry.target)
+    : convertValueSync(entry.innerType as TypeFunction<any>, raw, entry.target);
+
+export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
+  const entries: CompiledFlagEntry[] = [];
+  const byName = new Map<string, CompiledFlagEntry>();
+  const parserFlags: ParserFlagsDefinition = {};
+
+  for (const name in flags) {
+    if (!Object.hasOwn(flags, name)) {
+      continue;
+    }
+    const norm = normalizeFlagValue(flags[name]);
+    const isArray = isArrayType(norm.type);
+    const isCounter = isCounterType(norm.type);
+    const isDeferred = isDeferredValidationType(norm.type);
+    const innerType: CoreSingleType = isArray ? norm.type[0] : norm.type;
+    const innerIsSchema = isStandardSchema(innerType);
+    const implicitDefault = isStandardSchema(norm.type)
+      ? undefined
+      : isArray && innerIsSchema
+        ? []
+        : inferDefault(norm.type as any);
+
+    const entry: CompiledFlagEntry = {
+      name,
+      norm,
+      target: formatFlagName(name),
+      isArray,
+      isCounter,
+      isDeferred,
+      innerType,
+      innerIsSchema,
+      implicitDefault,
+    };
+    entries.push(entry);
+    byName.set(name, entry);
+
+    const opts: Record<string, unknown> = {
+      type: isDeferred ? (isArray ? [String] : String) : (norm.type as any),
+    };
     if (norm.short !== undefined) {
       opts.short = norm.short;
     }
     if (norm.negatable !== undefined && norm.type === Boolean) {
       opts.negatable = norm.negatable;
     }
-    result[name] = opts as ParserFlagDefinitionValue;
+    parserFlags[name] = opts as ParserFlagDefinitionValue;
   }
 
-  return result;
+  return { entries, byName, parserFlags };
 }
 
-export async function resolveAndValidateFlags(
-  mergedDefs: ClercFlagsDefinition,
+export async function resolveCompiledFlags(
+  compiled: CompiledFlags,
   rawFlags: Record<string, any>,
   explicitlyProvided: readonly string[],
   env: Readonly<Record<string, string | undefined>>,
@@ -78,29 +119,22 @@ export async function resolveAndValidateFlags(
   const missingRequired: string[] = [];
   const provided = new Set<string>(explicitlyProvided);
 
-  for (const [name, def] of Object.entries(mergedDefs)) {
-    const norm = normalizeFlagValue(def);
-    const target = formatFlagName(name);
+  for (const entry of compiled.entries) {
+    const { name, norm, isArray, isCounter, isDeferred } = entry;
     const rawValue = rawFlags[name];
 
-    // 1. Explicitly supplied on CLI (accurately tracked by @clerc/parser — handles --no-flag with default: true!)
+    // 1. Explicitly supplied on CLI
     if (provided.has(name)) {
-      if (isDeferredValidationType(norm.type)) {
-        if (isArrayType(norm.type)) {
-          const converted: unknown[] = [];
-          for (const item of rawValue as string[]) {
-            converted.push(await convertValue(norm.type[0], item, target));
-          }
-          flags[name] = converted;
-        } else {
-          flags[name] = await convertValue(
-            norm.type as CoreSingleType,
-            rawValue as string,
-            target,
-          );
-        }
-      } else {
+      if (!isDeferred) {
         flags[name] = rawValue;
+      } else if (isArray) {
+        const converted: unknown[] = [];
+        for (const item of rawValue as string[]) {
+          converted.push(await convertEntry(entry, item));
+        }
+        flags[name] = converted;
+      } else {
+        flags[name] = await convertEntry(entry, rawValue as string);
       }
 
       continue;
@@ -112,23 +146,19 @@ export async function resolveAndValidateFlags(
       provided.add(name);
       if (norm.type === Boolean) {
         flags[name] = envValue !== "0" && envValue.toLowerCase() !== "false";
-      } else if (isCounterType(norm.type)) {
+      } else if (isCounter) {
         const count = Number(envValue);
         flags[name] = Number.isNaN(count) ? 0 : count;
-      } else if (isArrayType(norm.type)) {
+      } else if (isArray) {
         const converted: unknown[] = [];
-        for (const item of envValue.split(",").map((s) => s.trim())) {
-          converted.push(await convertValue(norm.type[0], item, target));
+        for (const item of envValue.split(",")) {
+          converted.push(await convertEntry(entry, item.trim()));
         }
         flags[name] = converted;
       } else if (norm.type === Object) {
         flags[name] = rawValue ?? {};
       } else {
-        flags[name] = await convertValue(
-          norm.type as CoreSingleType,
-          envValue,
-          target,
-        );
+        flags[name] = await convertEntry(entry, envValue);
       }
 
       continue;
@@ -152,26 +182,27 @@ export async function resolveAndValidateFlags(
     }
 
     // 5. Implicit default from type
-    flags[name] = isStandardSchema(norm.type)
-      ? undefined
-      : isArrayType(norm.type) && isStandardSchema(norm.type[0])
+    flags[name] =
+      isArray && Array.isArray(entry.implicitDefault)
         ? []
-        : inferDefault(norm.type as any);
+        : norm.type === Object
+          ? {}
+          : entry.implicitDefault;
   }
 
   return { flags, missingRequired, provided };
 }
 
 export function checkFlagConstraints(
-  mergedDefs: ClercFlagsDefinition,
+  compiled: CompiledFlags,
   provided: ReadonlySet<string>,
 ): void {
   for (const name of provided) {
-    const def = mergedDefs[name];
-    if (!def) {
+    const entry = compiled.byName.get(name);
+    if (!entry) {
       continue;
     }
-    const norm: ClercFlagOptions = normalizeFlagValue(def);
+    const { norm } = entry;
     if (norm.conflicts) {
       for (const other of toArray(norm.conflicts)) {
         if (provided.has(other)) {

@@ -1,4 +1,4 @@
-import { parse } from "@clerc/parser";
+import { createParser } from "@clerc/parser";
 
 import { CommandTree } from "./command-tree";
 import {
@@ -8,14 +8,16 @@ import {
   NoCommandError,
   UnknownCommandError,
 } from "./errors";
+import type { CompiledFlags } from "./flags";
 import {
   checkFlagConstraints,
-  resolveAndValidateFlags,
-  toParserFlags,
+  compileFlags,
+  resolveCompiledFlags,
 } from "./flags";
 import type { LoggerOptions } from "./logger";
 import { createLogger } from "./logger";
-import { normalizeFlagValue, parseParameters } from "./parameter";
+import type { CompiledParameters } from "./parameter";
+import { compileParameters, executeCompiledParameters } from "./parameter";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
@@ -41,6 +43,12 @@ import type {
 } from "./types";
 import { formatFlagName } from "./utils";
 
+interface CompiledCommand {
+  readonly flags: CompiledFlags;
+  readonly parser: ReturnType<typeof createParser>;
+  readonly parameters?: CompiledParameters;
+}
+
 export class Clerc<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
@@ -63,6 +71,8 @@ export class Clerc<
   };
 
   #initializedModel?: ReadonlyCliModel;
+  #globalCompiled?: CompiledCommand;
+  #compiledCommands = new WeakMap<AnyCommandDefinition, CompiledCommand>();
 
   private constructor(options: CreateOptions = {}) {
     if (options.scriptName) {
@@ -88,6 +98,8 @@ export class Clerc<
 
   #invalidate(): void {
     this.#initializedModel = undefined;
+    this.#globalCompiled = undefined;
+    this.#compiledCommands = new WeakMap();
   }
 
   public scriptName(scriptName: string): this {
@@ -266,9 +278,44 @@ export class Clerc<
       },
     };
 
+    const globalFlagsCompiled = compileFlags(mergedGlobalFlags);
+    this.#globalCompiled = {
+      flags: globalFlagsCompiled,
+      parser: createParser({ flags: globalFlagsCompiled.parserFlags }),
+    };
     this.#initializedModel = model;
 
     return model;
+  }
+
+  #getCompiledCommand(
+    model: ReadonlyCliModel,
+    cmd?: AnyCommandDefinition,
+  ): CompiledCommand {
+    if (!cmd) {
+      return this.#globalCompiled!;
+    }
+    let compiled = this.#compiledCommands.get(cmd);
+    if (!compiled) {
+      const hasLocalFlags = cmd.flags !== undefined;
+      const flags = hasLocalFlags
+        ? compileFlags({ ...model.globalFlags, ...cmd.flags })
+        : this.#globalCompiled!.flags;
+      const parser =
+        !hasLocalFlags && !cmd.ignore
+          ? this.#globalCompiled!.parser
+          : createParser({ flags: flags.parserFlags, ignore: cmd.ignore });
+      compiled = {
+        flags,
+        parser,
+        parameters: cmd.parameters
+          ? compileParameters(cmd.parameters)
+          : undefined,
+      };
+      this.#compiledCommands.set(cmd, compiled);
+    }
+
+    return compiled;
   }
 
   #validateMetadata(meta: ReadonlyCliMeta): void {
@@ -286,10 +333,11 @@ export class Clerc<
   ): Promise<RunResult> {
     const terminal = options.terminal ?? createTerminal();
     const effectiveArgv = argv ?? terminal.argv;
-    const theme = createTheme(terminal.color, {
-      ...this.#themeOverrides,
-      ...options.theme,
-    });
+    const themeOverrides =
+      this.#themeOverrides || options.theme
+        ? { ...this.#themeOverrides, ...options.theme }
+        : undefined;
+    const theme = createTheme(terminal.color, themeOverrides);
     const log = createLogger({
       terminal,
       theme,
@@ -325,25 +373,19 @@ export class Clerc<
     try {
       this.#validateMetadata(model.meta);
 
-      // Stage 1: Resolve command tree (delegating leading global flags to @clerc/parser)
+      // Stage 1: Resolve command tree using cached global flag scanner
       const tree = model.tree as CommandTree;
       const resolution = tree.resolveArgv(
         effectiveArgv,
-        toParserFlags(model.globalFlags),
+        this.#globalCompiled!.parser,
       );
       ctx.node = resolution.node;
       ctx.command = resolution.command;
       ctx.calledAs = resolution.calledAs;
 
-      // Stage 2: Lexical parse (@clerc/parser)
-      const mergedFlagDefs: ClercFlagsDefinition = {
-        ...model.globalFlags,
-        ...ctx.command?.flags,
-      };
-      const parsed = parse([...resolution.remainingArgv], {
-        flags: toParserFlags(mergedFlagDefs),
-        ignore: ctx.command?.ignore,
-      });
+      // Stage 2: Lexical parse using cached per-command parser
+      const compiled = this.#getCompiledCommand(model, ctx.command);
+      const parsed = compiled.parser.parse(resolution.remainingArgv);
 
       ctx.rawParsed = parsed;
       ctx.flags = { ...parsed.flags } as any;
@@ -381,13 +423,12 @@ export class Clerc<
         throw new NoCommandError();
       }
 
-      const { flags, missingRequired, provided } =
-        await resolveAndValidateFlags(
-          mergedFlagDefs,
-          parsed.flags,
-          parsed.provided,
-          terminal.env,
-        );
+      const { flags, missingRequired, provided } = await resolveCompiledFlags(
+        compiled.flags,
+        parsed.flags,
+        parsed.provided,
+        terminal.env,
+      );
       ctx.flags = flags as any;
       ctx.missingRequiredFlags = missingRequired;
 
@@ -402,15 +443,13 @@ export class Clerc<
         );
       }
       for (const name of provided) {
-        const def = mergedFlagDefs[name];
-        if (!def) {
-          continue;
-        }
-        const norm = normalizeFlagValue(def);
-        if (norm.deprecated) {
+        const entry = compiled.flags.byName.get(name);
+        if (entry?.norm.deprecated) {
           const reason =
-            typeof norm.deprecated === "string" ? `: ${norm.deprecated}` : "";
-          log.warn(`Option '${formatFlagName(name)}' is deprecated${reason}`);
+            typeof entry.norm.deprecated === "string"
+              ? `: ${entry.norm.deprecated}`
+              : "";
+          log.warn(`Option '${entry.target}' is deprecated${reason}`);
         }
       }
 
@@ -422,9 +461,11 @@ export class Clerc<
       if (missingRequired.length > 0) {
         const hints: string[] = [];
         for (const name of missingRequired) {
-          const norm = normalizeFlagValue(mergedFlagDefs[name]);
-          if (norm.env) {
-            hints.push(`provide '${formatFlagName(name)}' or set ${norm.env}`);
+          const entry = compiled.flags.byName.get(name);
+          if (entry?.norm.env) {
+            hints.push(
+              `provide '${formatFlagName(name)}' or set ${entry.norm.env}`,
+            );
           }
         }
 
@@ -434,17 +475,17 @@ export class Clerc<
         );
       }
 
-      checkFlagConstraints(mergedFlagDefs, provided);
+      checkFlagConstraints(compiled.flags, provided);
 
-      ctx.parameters = ctx.command.parameters
-        ? await parseParameters(
-            ctx.command.parameters,
+      ctx.parameters = compiled.parameters
+        ? await executeCompiledParameters(
+            compiled.parameters,
             parsed.parameters,
             parsed.doubleDash,
           )
         : {};
 
-      // Stage 5: Middleware & Command execution
+      // Stage 5: Middleware & Command execution (onion symmetry: afterRun runs in reverse)
       for (const plugin of model.plugins) {
         await plugin.hooks?.beforeRun?.(ctx);
       }
@@ -462,21 +503,22 @@ export class Clerc<
         await handler(ctx as any);
       }
 
-      for (const hook of [...this.#afterRunHooks].reverse()) {
-        await hook(ctx);
+      for (let i = this.#afterRunHooks.length - 1; i >= 0; i--) {
+        await this.#afterRunHooks[i](ctx);
       }
-      for (const plugin of [...model.plugins].reverse()) {
-        await plugin.hooks?.afterRun?.(ctx);
+      for (let i = model.plugins.length - 1; i >= 0; i--) {
+        await model.plugins[i].hooks?.afterRun?.(ctx);
       }
 
       return { ok: true, exitCode: 0 };
     } catch (caughtError) {
-      // Stage 6: Error enrichment & rendering pipeline
+      // Stage 6: Error enrichment & rendering pipeline (onRenderError runs in reverse: last-registered wins)
       let currentError: unknown = caughtError;
 
       for (const plugin of model.plugins) {
-        if (plugin.hooks?.onError) {
-          const transformed = await plugin.hooks.onError(currentError, ctx);
+        const onError = plugin.hooks?.onError;
+        if (onError) {
+          const transformed = await onError(currentError, ctx);
           if (transformed !== undefined) {
             currentError = transformed;
           }
@@ -492,9 +534,11 @@ export class Clerc<
       const exitCode =
         currentError instanceof ClercError ? currentError.exitCode : 1;
 
-      for (const plugin of [...model.plugins].reverse()) {
-        if (plugin.hooks?.onRenderError) {
-          const handled = await plugin.hooks.onRenderError(currentError, ctx);
+      for (let i = model.plugins.length - 1; i >= 0; i--) {
+        const plugin = model.plugins[i];
+        const onRenderError = plugin.hooks?.onRenderError;
+        if (onRenderError) {
+          const handled = await onRenderError(currentError, ctx);
           if (handled) {
             return {
               ok: false,

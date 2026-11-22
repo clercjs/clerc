@@ -21,7 +21,6 @@ catalogs:
     "@types/yargs-parser": "^21.0.3"
     args-tokens: "^1.4.0"
     fast-string-width: "^3.0.2"
-    fastest-levenshtein: "^1.0.16"
     minimist: "^1.2.8"
     mri: "^1.2.0"
     nopt: "^10.0.1"

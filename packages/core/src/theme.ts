@@ -59,35 +59,35 @@ export const monoThemeStyles: ThemeStyleMap = {
   dim: "dim",
 };
 
+const TOKENS = Object.keys(defaultThemeStyles) as readonly ThemeToken[];
+const identity = (text: string): string => text;
+
+function buildTheme(enabled: boolean, styles?: ThemeStyleMap): Theme {
+  const theme: Record<string, unknown> = { enabled };
+  for (const token of TOKENS) {
+    const format = styles?.[token];
+    theme[token] =
+      enabled && format
+        ? (text: string) => styleText(format, text, { validateStream: false })
+        : identity;
+  }
+
+  return Object.freeze(theme) as Theme;
+}
+
+const PLAIN_THEME = buildTheme(false);
+let cachedDefaultColorTheme: Theme | undefined;
+
 export function createTheme(
   enabled: boolean,
-  overrides: Partial<ThemeStyleMap> = {},
+  overrides?: Partial<ThemeStyleMap>,
 ): Theme {
-  const styles: ThemeStyleMap = {
-    ...defaultThemeStyles,
-    ...overrides,
-  };
+  if (!enabled) {
+    return PLAIN_THEME;
+  }
+  if (!overrides || Object.keys(overrides).length === 0) {
+    return (cachedDefaultColorTheme ??= buildTheme(true, defaultThemeStyles));
+  }
 
-  const apply = (format: StyleFormat): ((text: string) => string) =>
-    enabled
-      ? (text: string) => styleText(format, text, { validateStream: false })
-      : (text: string) => text;
-
-  return {
-    enabled,
-    brand: apply(styles.brand),
-    heading: apply(styles.heading),
-    command: apply(styles.command),
-    flag: apply(styles.flag),
-    placeholder: apply(styles.placeholder),
-    muted: apply(styles.muted),
-    error: apply(styles.error),
-    warn: apply(styles.warn),
-    success: apply(styles.success),
-    info: apply(styles.info),
-    accent: apply(styles.accent),
-    code: apply(styles.code),
-    bold: apply(styles.bold),
-    dim: apply(styles.dim),
-  };
+  return buildTheme(true, { ...defaultThemeStyles, ...overrides });
 }

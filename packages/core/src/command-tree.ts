@@ -1,4 +1,8 @@
-import type { FlagsDefinition as ParserFlagsDefinition } from "@clerc/parser";
+import type {
+  FlagsDefinition as ParserFlagsDefinition,
+  ScanCallback,
+  ScanResult,
+} from "@clerc/parser";
 import { DOUBLE_DASH, createParser } from "@clerc/parser";
 
 import { InvalidCommandError } from "./errors";
@@ -16,6 +20,10 @@ export interface ArgvResolution {
   readonly matchedPath: readonly string[];
   readonly remainingArgv: readonly string[];
   readonly leadingPositional?: string;
+}
+
+export interface ArgvScanner {
+  scan: (args: readonly string[], onPositional: ScanCallback) => ScanResult;
 }
 
 const createNode = (
@@ -157,29 +165,46 @@ export class CommandTree implements ReadonlyCommandTree {
    */
   public resolveArgv(
     argv: readonly string[],
-    globalFlags: ParserFlagsDefinition,
+    globalFlagsOrScanner: ParserFlagsDefinition | ArgvScanner,
   ): ArgvResolution {
     let current: CommandNode = this.root;
     const calledTokens: string[] = [];
-    const matchedIndices = new Set<number>();
+    const matchedIndices: number[] = [];
+    let isContiguousPrefix = true;
 
-    const { stoppedAt } = createParser({ flags: globalFlags }).scan(
-      argv,
-      (token, index) => {
-        const nextNode =
-          current.children.get(token) ?? current.aliasIndex.get(token);
-        if (!nextNode) {
-          return false;
-        }
-        current = nextNode;
-        calledTokens.push(token);
-        matchedIndices.add(index);
+    const scanner: ArgvScanner =
+      typeof (globalFlagsOrScanner as ArgvScanner).scan === "function"
+        ? (globalFlagsOrScanner as ArgvScanner)
+        : createParser({
+            flags: globalFlagsOrScanner as ParserFlagsDefinition,
+          });
 
-        return true;
-      },
-    );
+    const { stoppedAt } = scanner.scan(argv, (token, index) => {
+      const nextNode =
+        current.children.get(token) ?? current.aliasIndex.get(token);
+      if (!nextNode) {
+        return false;
+      }
+      if (index !== matchedIndices.length) {
+        isContiguousPrefix = false;
+      }
+      current = nextNode;
+      calledTokens.push(token);
+      matchedIndices.push(index);
 
-    const remainingArgv = argv.filter((_, index) => !matchedIndices.has(index));
+      return true;
+    });
+
+    let remainingArgv: readonly string[];
+    if (matchedIndices.length === 0) {
+      remainingArgv = argv;
+    } else if (isContiguousPrefix) {
+      remainingArgv = argv.slice(matchedIndices.length);
+    } else {
+      const matchedSet = new Set(matchedIndices);
+      remainingArgv = argv.filter((_, index) => !matchedSet.has(index));
+    }
+
     const stoppedToken = argv[stoppedAt];
     const leadingPositional =
       stoppedToken &&

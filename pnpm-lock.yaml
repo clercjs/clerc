@@ -191,9 +191,6 @@ catalogs:
     fast-string-width:
       specifier: ^3.0.2
       version: 3.0.2
-    fastest-levenshtein:
-      specifier: ^1.0.16
-      version: 1.0.16
     minimist:
       specifier: ^1.2.8
       version: 1.2.8
@@ -381,10 +378,6 @@ importers:
       fast-string-width:
         specifier: catalog:cli
         version: 3.0.2
-    devDependencies:
-      fastest-levenshtein:
-        specifier: catalog:cli
-        version: 1.0.16
 
   packages/core:
     dependencies:
@@ -3121,10 +3114,6 @@ packages:
 
   fast-string-width@3.0.2:
     resolution: {integrity: sha512-gX8LrtNEI5hq8DVUfRQMbr5lpaS4nMIWV+7XEbXk2b8kiQIizgnlr12B4dA3ZEx3308ze0O4Q1R+cHts8kyUJg==}
-
-  fastest-levenshtein@1.0.16:
-    resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
-    engines: {node: '>= 4.9.1'}
 
   fault@2.0.1:
     resolution: {integrity: sha512-WtySTkS4OKev5JtpHXnib4Gxiurzh5NCGvWrFaZ34m6JehfTUhKZvn9njTfw48t6JumVQOmrKqpmGcdwxnhqBQ==}
@@ -7569,8 +7558,6 @@ snapshots:
   fast-string-width@3.0.2:
     dependencies:
       fast-string-truncated-width: 3.0.3
-
-  fastest-levenshtein@1.0.16: {}
 
   fault@2.0.1:
     dependencies:

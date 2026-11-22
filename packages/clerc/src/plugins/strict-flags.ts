@@ -1,6 +1,7 @@
 import type { ClercPlugin } from "@clerc/core";
 import { UnknownFlagError, definePlugin, formatFlagName } from "@clerc/core";
-import { closest, distance } from "fastest-levenshtein";
+
+import { findClosest } from "./suggest";
 
 export interface StrictFlagsPluginOptions {
   readonly distanceThreshold?: number;
@@ -31,11 +32,12 @@ export function strictFlagsPlugin(
             if (unknown.length <= 1) {
               continue;
             }
-            const suggestion = closest(unknown, knownFlags);
-            if (
-              suggestion &&
-              distance(unknown, suggestion) <= distanceThreshold
-            ) {
+            const suggestion = findClosest(
+              unknown,
+              knownFlags,
+              distanceThreshold,
+            );
+            if (suggestion) {
               hints.push(
                 `a similar option exists: '${formatFlagName(suggestion)}'`,
               );

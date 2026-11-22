@@ -86,20 +86,11 @@ export async function validateStandardSchema<T>(
  * Single source of truth for converting and validating a raw CLI string value
  * against a TypeFunction, Number constructor, or Standard Schema v1 validator.
  */
-export async function convertValue(
-  type: CoreSingleType,
+export function convertValueSync(
+  type: TypeFunction<any>,
   raw: string,
   target: string,
-): Promise<unknown> {
-  if (isStandardSchema(type)) {
-    const result = await validateStandardSchema(type, raw);
-    if (!result.ok) {
-      throw new ValidationError(target, raw, result.issues);
-    }
-
-    return result.value;
-  }
-
+): unknown {
   if (type === Number) {
     const num = raw.trim() === "" ? Number.NaN : Number(raw);
     if (Number.isNaN(num)) {
@@ -118,6 +109,23 @@ export async function convertValue(
 
     throw new ValidationError(target, raw, [{ message }], error);
   }
+}
+
+export async function convertValue(
+  type: CoreSingleType,
+  raw: string,
+  target: string,
+): Promise<unknown> {
+  if (isStandardSchema(type)) {
+    const result = await validateStandardSchema(type, raw);
+    if (!result.ok) {
+      throw new ValidationError(target, raw, result.issues);
+    }
+
+    return result.value;
+  }
+
+  return convertValueSync(type, raw, target);
 }
 
 export class FlagValidationError extends Error {
