@@ -1,0 +1,11 @@
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  ray-devenv:
+    url: github:so1ve/nix-config?dir=dotfiles/devenv
+    flake: false
+  js-toolchain-overlay:
+    url: github:so1ve/js-toolchain-overlay
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
