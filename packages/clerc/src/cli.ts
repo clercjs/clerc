@@ -30,7 +30,7 @@ import {
   warnFlagDeprecations,
 } from "./flags";
 import { renderHelp } from "./help/renderer";
-import type { ArgvFlagSpec, ArgvParser } from "./parser";
+import type { ArgvFlagSpec, ArgvParseResult, ArgvParser } from "./parser";
 import { DOUBLE_DASH, createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type {
@@ -138,19 +138,38 @@ interface ScopeCollector {
   readonly errorHandlers: ErrorHandler<any, any>[];
 }
 
+function resolveWinningPlugins(
+  scope: Plugin<any, any>,
+  winners = new Map<string, Plugin<any, any>>(),
+  visiting = new Set<Plugin<any, any>>(),
+): ReadonlyMap<string, Plugin<any, any>> {
+  if (visiting.has(scope)) {
+    return winners;
+  }
+  visiting.add(scope);
+  for (const child of getPluginState(scope).plugins.values()) {
+    resolveWinningPlugins(child, winners, visiting);
+  }
+  winners.set(scope.pluginName, scope);
+
+  return winners;
+}
+
 function collectScope(
   scope: Plugin<any, any>,
   acc: ScopeCollector,
+  winners: ReadonlyMap<string, Plugin<any, any>> = resolveWinningPlugins(scope),
   visited = new Set<string>(),
 ): void {
-  if (visited.has(scope.pluginName)) {
+  const resolved = winners.get(scope.pluginName) ?? scope;
+  if (visited.has(resolved.pluginName)) {
     return;
   }
-  visited.add(scope.pluginName);
+  visited.add(resolved.pluginName);
 
-  const state = getPluginState(scope);
+  const state = getPluginState(resolved);
   for (const child of state.plugins.values()) {
-    collectScope(child, acc, visited);
+    collectScope(child, acc, winners, visited);
   }
 
   Object.assign(acc.globalFlags, state.flags);
@@ -420,15 +439,6 @@ export class Clerc<
     return this as any;
   }
 
-  public disable(pluginName: string): this {
-    const state = getPluginState(this);
-    if (state.plugins.delete(pluginName)) {
-      this.#compiled = undefined;
-    }
-
-    return this;
-  }
-
   #ensureCompiled(): CompiledCli {
     if (this.#compiled) {
       return this.#compiled;
@@ -661,33 +671,25 @@ export class Clerc<
       compiledCli.rootRuntime.parser.scan,
     );
 
-    // Handle explicit root --version / --help before falling back to defaultCommand
-    if (match.kind === "empty" && compiledCli.defaultNode) {
-      const rootParsed = compiledCli.rootRuntime.parser.parse(
-        match.remainingArgv,
+    let rootParsed: ArgvParseResult | undefined;
+    const isRootBuiltinRequest = (): boolean => {
+      if (match.kind !== "empty") {
+        return false;
+      }
+      rootParsed ??= compiledCli.rootRuntime.parser.parse(match.remainingArgv);
+
+      return (
+        (compiledCli.rootRuntime.hasBuiltinVersion &&
+          rootParsed.flags.version === true) ||
+        (this.#helpOptions !== false &&
+          compiledCli.rootRuntime.hasBuiltinHelp &&
+          rootParsed.flags.help === true)
       );
-      if (
-        compiledCli.rootRuntime.hasBuiltinVersion &&
-        rootParsed.flags.version === true
-      ) {
-        ctx.terminal.stdout(formatCliVersion(ctx.meta));
-
-        return { ok: true, exitCode: 0 };
-      }
-      if (
-        this.#helpOptions !== false &&
-        compiledCli.rootRuntime.hasBuiltinHelp &&
-        rootParsed.flags.help === true
-      ) {
-        await ctx.help.print([]);
-
-        return { ok: true, exitCode: 0 };
-      }
-    }
+    };
 
     if (
       compiledCli.defaultNode?.command &&
-      (match.kind === "empty" ||
+      ((match.kind === "empty" && !isRootBuiltinRequest()) ||
         (match.kind === "unknown" &&
           match.parentPath.length === 0 &&
           compiledCli.defaultAcceptsArgs))
@@ -710,7 +712,10 @@ export class Clerc<
     // 2. Parse raw argv into flags & positionals
     const runtime =
       compiledCli.runtimes.get(match.node) ?? compiledCli.rootRuntime;
-    const parsed = runtime.parser.parse(match.remainingArgv);
+    const parsed =
+      match.node === compiledCli.tree.root && rootParsed
+        ? rootParsed
+        : runtime.parser.parse(match.remainingArgv);
     ctx.unknown = parsed.unknown;
     ctx.doubleDash = parsed.doubleDash;
 
@@ -793,12 +798,12 @@ export class Clerc<
     if (runtime.args) {
       ctx.args = await executeCompiledArgs(
         runtime.args,
-        parsed.parameters,
+        parsed.positionals,
         parsed.doubleDash,
         ctx.terminal.env,
       );
     } else {
-      const extraArgs = [...parsed.parameters, ...parsed.doubleDash];
+      const extraArgs = [...parsed.positionals, ...parsed.doubleDash];
       if (extraArgs.length > 0) {
         throw new UnexpectedArgumentError(extraArgs);
       }

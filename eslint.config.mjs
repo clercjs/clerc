@@ -20,7 +20,11 @@ export default so1ve(
     },
   },
   {
-    files: ["packages/clerc/src/**", "packages/logger/src/**"],
+    files: [
+      "packages/clerc/src/**",
+      "packages/logger/src/**",
+      "packages/theme/src/**",
+    ],
     rules: {
       "no-restricted-imports": ["error", "clerc"],
     },

@@ -1,7 +1,7 @@
 import {
+  InvalidArgumentError,
   InvalidCommandError,
-  InvalidParametersError,
-  MissingRequiredParameterError,
+  MissingRequiredArgumentError,
   UnexpectedArgumentError,
 } from "./errors";
 import { convertItemList } from "./flags";
@@ -76,7 +76,7 @@ function parseArgToken(token: string): {
     (match[1] === "<" && match[4] !== ">") ||
     (match[1] === "[" && match[4] !== "]")
   ) {
-    throw new InvalidParametersError(`invalid argument definition: ${token}`);
+    throw new InvalidArgumentError(`invalid argument definition: ${token}`);
   }
 
   return {
@@ -103,7 +103,7 @@ export function parseCommandSpec(spec: string): ParsedCommandSpec {
   for (const token of tokens) {
     if (argTokens.length > 0 || isArgToken(token)) {
       if (!isArgToken(token)) {
-        throw new InvalidParametersError(
+        throw new InvalidArgumentError(
           `unexpected command segment "${token}" after argument in "${spec}"`,
         );
       }
@@ -132,18 +132,18 @@ function compileArgSlice(
     const info = parseArgToken(tokens[i]);
 
     if (seen.has(info.name)) {
-      throw new InvalidParametersError(`duplicate argument name: ${info.name}`);
+      throw new InvalidArgumentError(`duplicate argument name: ${info.name}`);
     }
     seen.add(info.name);
 
     if (info.isVariadic && i !== tokens.length - 1) {
-      throw new InvalidParametersError(
+      throw new InvalidArgumentError(
         "variadic argument must be the last argument in the signature",
       );
     }
     if (info.isRequired) {
       if (hasOptional) {
-        throw new InvalidParametersError(
+        throw new InvalidArgumentError(
           `required argument "${info.name}" cannot appear after an optional argument`,
         );
       }
@@ -154,7 +154,7 @@ function compileArgSlice(
     const def = argDefs?.[info.name];
     const norm = def ? normalizeArgValue(def) : undefined;
     if (info.isRequired && norm?.default !== undefined) {
-      throw new InvalidParametersError(
+      throw new InvalidArgumentError(
         `required argument "${info.name}" cannot have a default value`,
       );
     }
@@ -246,7 +246,7 @@ async function applyArgSlice(
         ? [`provide '${item.token}' or set ${item.env}`]
         : undefined;
 
-      throw new MissingRequiredParameterError(
+      throw new MissingRequiredArgumentError(
         item.rawName,
         item.isVariadic,
         hints,

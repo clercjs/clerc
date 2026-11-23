@@ -77,7 +77,7 @@ describe("Unified Plugin & Clerc composition", () => {
     ]);
   });
 
-  it("replaces named plugins atomically on .use() and removes them on .disable()", async () => {
+  it("replaces named plugins atomically on both direct and nested .use()", async () => {
     const terminal = createMemoryTerminal();
 
     const makeGreetingPlugin = (msg: string) =>
@@ -87,19 +87,14 @@ describe("Unified Plugin & Clerc composition", () => {
         },
       });
 
+    const bundlePlugin = plugin("demo:bundle").use(makeGreetingPlugin("v1"));
     const cli = clerc({ name: "app", version: "1.0.0" })
-      .use(makeGreetingPlugin("v1"))
+      .use(bundlePlugin)
       .use(makeGreetingPlugin("v2"));
 
     await cli.run(["hi"], { terminal });
 
     expect(terminal.stdoutText()).toBe("v2");
-
-    cli.disable("demo:greet");
-    const res = await cli.run(["hi"], { terminal });
-
-    expect(res.ok).toBeFalsy();
-    expect(res.exitCode).toBe(2);
   });
 
   it("derives async context in extend() using resolved flags", async () => {

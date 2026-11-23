@@ -14,12 +14,12 @@ import type {
   Prettify,
 } from "./utils";
 
-export interface FlagDefaultValueFunction<T> {
+export interface DefaultValueFunction<T> {
   (): T;
   display?: string;
 }
 
-export type FlagDefaultValue<T = unknown> = T | FlagDefaultValueFunction<T>;
+export type DefaultValue<T = unknown> = T | DefaultValueFunction<T>;
 
 export interface TypeFunction<T = unknown> {
   (value: string): T;
@@ -44,8 +44,8 @@ export interface FlagOptions<T extends TypeValue = TypeValue> {
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly default?: FlagDefaultValue;
-  readonly implicitValue?: FlagDefaultValue;
+  readonly default?: DefaultValue;
+  readonly implicitValue?: DefaultValue;
   readonly delimiter?: string;
   readonly required?: boolean;
   readonly env?: string;
@@ -138,13 +138,13 @@ type InferSingleType<T> =
       : never;
 
 type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
-  readonly default: FlagDefaultValue<infer DefaultType>;
+  readonly default: DefaultValue<infer DefaultType>;
 }
   ? DefaultType
   : Fallback;
 
 type InferFlagImplicitValue<T extends FlagDefinitionValue> = T extends {
-  readonly implicitValue: FlagDefaultValue<infer ImplicitType>;
+  readonly implicitValue: DefaultValue<infer ImplicitType>;
 }
   ? ImplicitType
   : never;
@@ -194,7 +194,7 @@ export interface ArgOptions<T extends SingleType = SingleType> {
   readonly type?: T;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly default?: FlagDefaultValue;
+  readonly default?: DefaultValue;
   readonly env?: string;
   readonly meta?: ArgMeta;
 }
@@ -263,7 +263,7 @@ type InferArgDefault<
   Fallback,
 > = Name extends keyof Args
   ? NonNullable<Args[Name]> extends {
-      readonly default: FlagDefaultValue<infer DefaultType>;
+      readonly default: DefaultValue<infer DefaultType>;
     }
     ? DefaultType
     : Fallback

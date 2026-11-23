@@ -32,7 +32,7 @@ export type FlagValues = Record<
 >;
 
 export interface ArgvParseResult {
-  readonly parameters: readonly string[];
+  readonly positionals: readonly string[];
   readonly doubleDash: readonly string[];
   readonly flags: FlagValues;
   readonly unknown: Readonly<Record<string, RawInputType>>;
@@ -247,7 +247,7 @@ export function createArgvParser(
     }
     const c1 = next.charCodeAt(1);
     if (c1 === CHAR_DASH) {
-      return len > 2 && !isLetter(next.charCodeAt(2));
+      return false;
     }
 
     return !isShortStart(c1);
@@ -256,12 +256,39 @@ export function createArgvParser(
   function parse(args: readonly string[]): ArgvParseResult {
     const flags: FlagValues = {};
     const provided: string[] = [];
-    let parameters: string[] | undefined;
+    let positionals: string[] | undefined;
     let doubleDash: readonly string[] = EMPTY_STRINGS;
     let unknown: Record<string, RawInputType> | undefined;
     let missingValueFlags: string[] | undefined;
     let missingValueCandidates: Record<string, string> | undefined;
     let invalidValues: InvalidFlagValue[] | undefined;
+
+    function assignValue(
+      key: string,
+      kind: "single" | "array",
+      val: string | undefined,
+      nextIndex: number,
+    ): void {
+      if (val === undefined) {
+        recordUnique((missingValueFlags ??= []), key);
+        if (nextIndex < args.length && args[nextIndex] !== DOUBLE_DASH) {
+          (missingValueCandidates ??= {})[key] ??= args[nextIndex];
+        }
+      } else if (kind === "array") {
+        const prev = flags[key] as string[] | undefined;
+        if (prev === undefined) {
+          provided.push(key);
+          flags[key] = [val];
+        } else {
+          prev.push(val);
+        }
+      } else {
+        if (flags[key] === undefined) {
+          provided.push(key);
+        }
+        flags[key] = val;
+      }
+    }
 
     for (let i = 0; i < args.length; i++) {
       const current = args[i];
@@ -280,7 +307,7 @@ export function createArgvParser(
         }
 
         // 2. Long flag: `--name`, `--name=value`, `--no-name`
-        if (c1 === CHAR_DASH && isLetter(current.charCodeAt(2))) {
+        if (c1 === CHAR_DASH) {
           const eq = current.indexOf("=", 2);
           const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
           let flag = byName[name];
@@ -353,31 +380,14 @@ export function createArgvParser(
 
                 break;
               }
+              const nextIndex = i + 1;
               const val =
                 eq === -1
-                  ? canConsumeNext(args, i + 1)
+                  ? canConsumeNext(args, nextIndex)
                     ? args[++i]
                     : undefined
                   : current.slice(eq + 1);
-              if (val === undefined) {
-                recordUnique((missingValueFlags ??= []), key);
-                if (i + 1 < args.length && args[i + 1] !== DOUBLE_DASH) {
-                  (missingValueCandidates ??= {})[key] ??= args[i + 1];
-                }
-              } else if (kind === "array") {
-                const prev = flags[key] as string[] | undefined;
-                if (prev === undefined) {
-                  provided.push(key);
-                  flags[key] = [val];
-                } else {
-                  prev.push(val);
-                }
-              } else {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = val;
-              }
+              assignValue(key, kind, val, nextIndex);
 
               break;
             }
@@ -421,33 +431,16 @@ export function createArgvParser(
 
                 break;
               }
+              const nextIndex = i + 1;
               const val =
                 j + 1 < curLen
                   ? current.slice(
                       current.charCodeAt(j + 1) === CHAR_EQ ? j + 2 : j + 1,
                     )
-                  : canConsumeNext(args, i + 1)
+                  : canConsumeNext(args, nextIndex)
                     ? args[++i]
                     : undefined;
-              if (val === undefined) {
-                recordUnique((missingValueFlags ??= []), key);
-                if (i + 1 < args.length && args[i + 1] !== DOUBLE_DASH) {
-                  (missingValueCandidates ??= {})[key] ??= args[i + 1];
-                }
-              } else if (kind === "array") {
-                const prev = flags[key] as string[] | undefined;
-                if (prev === undefined) {
-                  provided.push(key);
-                  flags[key] = [val];
-                } else {
-                  prev.push(val);
-                }
-              } else {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = val;
-              }
+              assignValue(key, kind, val, nextIndex);
 
               break;
             }
@@ -459,17 +452,17 @@ export function createArgvParser(
 
       // 4. Positional argument
       if (stopAtFirstPositional) {
-        parameters = parameters
-          ? [...parameters, ...args.slice(i)]
+        positionals = positionals
+          ? [...positionals, ...args.slice(i)]
           : args.slice(i);
 
         break;
       }
-      (parameters ??= []).push(current);
+      (positionals ??= []).push(current);
     }
 
     return {
-      parameters: parameters ?? EMPTY_STRINGS,
+      positionals: positionals ?? EMPTY_STRINGS,
       doubleDash,
       flags,
       unknown: unknown ?? EMPTY_UNKNOWN,
@@ -501,7 +494,7 @@ export function createArgvParser(
         }
 
         // 2. Long flag
-        if (c1 === CHAR_DASH && isLetter(current.charCodeAt(2))) {
+        if (c1 === CHAR_DASH) {
           const eq = current.indexOf("=", 2);
           const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
           let flag = byName[name];

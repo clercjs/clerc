@@ -10,7 +10,7 @@ export type ClercErrorCode =
   | "ERR_NO_COMMAND"
   | "ERR_MISSING_FLAG"
   | "ERR_MISSING_FLAG_VALUE"
-  | "ERR_MISSING_PARAMETER"
+  | "ERR_MISSING_ARGUMENT"
   | "ERR_UNEXPECTED_ARGUMENT"
   | "ERR_UNKNOWN_FLAG"
   | "ERR_VALIDATION"
@@ -18,7 +18,7 @@ export type ClercErrorCode =
   | "ERR_FLAG_IMPLIES"
   | "ERR_INVALID_SCHEMA"
   | "ERR_INVALID_COMMAND"
-  | "ERR_INVALID_PARAMETERS"
+  | "ERR_INVALID_ARGUMENT"
   | "ERR_MISSING_METADATA";
 
 export interface ValidationIssue {
@@ -137,24 +137,20 @@ export class UnexpectedArgumentError extends ClercError {
   }
 }
 
-export class MissingRequiredParameterError extends ClercError {
-  public readonly parameter: string;
+export class MissingRequiredArgumentError extends ClercError {
+  public readonly argument: string;
   public readonly isVariadic: boolean;
 
-  constructor(
-    parameter: string,
-    isVariadic = false,
-    hints?: readonly string[],
-  ) {
+  constructor(argument: string, isVariadic = false, hints?: readonly string[]) {
     super(
-      `missing required ${isVariadic ? "variadic " : ""}argument '<${parameter}${isVariadic ? "..." : ""}>'`,
+      `missing required ${isVariadic ? "variadic " : ""}argument '<${argument}${isVariadic ? "..." : ""}>'`,
       {
-        code: "ERR_MISSING_PARAMETER",
+        code: "ERR_MISSING_ARGUMENT",
         exitCode: 2,
         hints,
       },
     );
-    this.parameter = parameter;
+    this.argument = argument;
     this.isVariadic = isVariadic;
   }
 }
@@ -252,10 +248,10 @@ export class InvalidCommandError extends ClercError {
   }
 }
 
-export class InvalidParametersError extends ClercError {
+export class InvalidArgumentError extends ClercError {
   constructor(message: string) {
     super(message, {
-      code: "ERR_INVALID_PARAMETERS",
+      code: "ERR_INVALID_ARGUMENT",
       exitCode: 1,
     });
   }

@@ -36,7 +36,7 @@ describe("core argv parser & scanner", () => {
       tags: ["v1", "v2"],
       dryRun: true,
     });
-    expect(res.parameters).toEqual(["prod"]);
+    expect(res.positionals).toEqual(["prod"]);
     expect(res.doubleDash).toEqual(["--after"]);
     expect(res.unknown).toEqual({});
     expect(res.missingValueFlags).toEqual([]);
@@ -73,7 +73,7 @@ describe("core argv parser & scanner", () => {
       },
     ]);
     expect(res.unknown).toEqual({ unknown: true, unknown2: "val", u: true });
-    expect(res.parameters).toEqual(["pos1", "pos2"]);
+    expect(res.positionals).toEqual(["pos1", "pos2"]);
     expect(res.doubleDash).toEqual(["after-dd"]);
   });
 
@@ -86,7 +86,7 @@ describe("core argv parser & scanner", () => {
     const wrapRes = wrapper.parse(["-q", "git", "--status", "-s"]);
 
     expect(wrapRes.flags).toEqual({ quiet: true });
-    expect(wrapRes.parameters).toEqual(["git", "--status", "-s"]);
+    expect(wrapRes.positionals).toEqual(["git", "--status", "-s"]);
 
     const scanner = createArgvParser([
       { key: "verbose", kind: "counter", short: "v" },
@@ -165,7 +165,7 @@ describe("core argv parser & scanner", () => {
       color: false,
       inspect: IMPLICIT_FLAG_VALUE,
     });
-    expect(res.parameters).toEqual(["deploy"]);
+    expect(res.positionals).toEqual(["deploy"]);
     expect(res.missingValueFlags).toEqual(["pattern"]);
     expect(res.missingValueCandidates).toEqual({ pattern: "-bar" });
 
@@ -175,7 +175,7 @@ describe("core argv parser & scanner", () => {
     expect(parser.parse(["-I9232"]).flags.inspect).toBe("9232");
     expect(parser.parse(["-I", "deploy"])).toMatchObject({
       flags: { inspect: IMPLICIT_FLAG_VALUE },
-      parameters: ["deploy"],
+      positionals: ["deploy"],
     });
 
     // scan() recognizes aliases and does not greedily consume next token for optionalValue
@@ -187,5 +187,15 @@ describe("core argv parser & scanner", () => {
     });
 
     expect(seen).toEqual(["deploy"]);
+
+    // Non-letter long flags (e.g. --2fa, --123) parse as flags instead of positionals
+    const digitFlagParser = createArgvParser([{ key: "2fa", kind: "boolean" }]);
+
+    expect(digitFlagParser.parse(["--2fa", "--123", "arg1"])).toMatchObject({
+      flags: { "2fa": true },
+      unknown: { 123: true },
+      positionals: ["arg1"],
+    });
+    expect(digitFlagParser.parse(["--no-2fa"]).flags["2fa"]).toBeFalsy();
   });
 });

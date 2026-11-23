@@ -130,7 +130,7 @@ export function compileFlags(flags: FlagsDefinition): CompiledFlags {
       );
     }
 
-    const aliases = norm.aliases ? toArray(norm.aliases) : [];
+    const aliases = norm.aliases ? toArray(norm.aliases).map(kebabCase) : [];
     const negatable = kind === "boolean" && norm.negatable !== false;
     const entry: CompiledFlagEntry = {
       name,

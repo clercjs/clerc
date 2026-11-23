@@ -4,11 +4,11 @@ import { describe, expect, it } from "vitest";
 import {
   FlagConflictError,
   FlagImpliesError,
-  InvalidParametersError,
+  InvalidArgumentError,
   InvalidSchemaError,
   MissingFlagValueError,
+  MissingRequiredArgumentError,
   MissingRequiredFlagError,
-  MissingRequiredParameterError,
   NoCommandError,
   UnexpectedArgumentError,
   UnknownCommandError,
@@ -238,7 +238,7 @@ describe("Clerc execution pipeline", () => {
     ]);
   });
 
-  it("throws NoCommandError, UnknownCommandError, and MissingRequiredParameterError when throwOnError is true", async () => {
+  it("throws NoCommandError, UnknownCommandError, and MissingRequiredArgumentError when throwOnError is true", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestBaseCli();
     cli.command("greet <name>", { run() {} });
@@ -251,7 +251,7 @@ describe("Clerc execution pipeline", () => {
     ).rejects.toThrow(UnknownCommandError);
     await expect(
       cli.run(["greet"], { terminal, throwOnError: true }),
-    ).rejects.toThrow(MissingRequiredParameterError);
+    ).rejects.toThrow(MissingRequiredArgumentError);
   });
 
   it("rejects missing flag values, invalid boolean literals, root unknown flags, and unexpected arguments", async () => {
@@ -463,7 +463,7 @@ describe("Clerc execution pipeline", () => {
 
     await expect(
       badArgDefaultCli.run(["bad"], { terminal, throwOnError: true }),
-    ).rejects.toThrow(InvalidParametersError);
+    ).rejects.toThrow(InvalidArgumentError);
   });
 
   it("validates counter env, keeps ctx.flags clean on parse error, compiles subcommands upfront, and avoids -h collision", async () => {
