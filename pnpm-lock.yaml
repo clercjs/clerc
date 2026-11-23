@@ -351,12 +351,6 @@ importers:
 
   packages/clerc:
     dependencies:
-      '@clerc/core':
-        specifier: workspace:*
-        version: link:../core
-
-  packages/core:
-    dependencies:
       '@clerc/logger':
         specifier: workspace:*
         version: link:../logger
@@ -371,21 +365,18 @@ importers:
       '@bomb.sh/tab':
         specifier: catalog:cli
         version: 0.0.23(cac@7.1.1)(citty@0.1.6)
-      '@clerc/core':
+      clerc:
         specifier: workspace:*
-        version: link:../core
+        version: link:../clerc
 
   packages/plugin-mcp:
     devDependencies:
-      '@clerc/core':
+      clerc:
         specifier: workspace:*
-        version: link:../core
+        version: link:../clerc
 
   packages/test-utils:
     dependencies:
-      '@clerc/core':
-        specifier: workspace:*
-        version: link:../core
       clerc:
         specifier: workspace:*
         version: link:../clerc

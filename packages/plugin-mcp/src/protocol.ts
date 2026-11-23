@@ -1,8 +1,8 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
-import type { ReadonlyCliModel, RunOptions, RunResult } from "@clerc/core";
-import { createMemoryTerminal, createTheme, renderHelp } from "@clerc/core";
+import type { ReadonlyCliModel, RunOptions, RunResult } from "clerc";
+import { createMemoryTerminal, createTheme, renderHelp } from "clerc";
 
 import type {
   McpFilterOptions,

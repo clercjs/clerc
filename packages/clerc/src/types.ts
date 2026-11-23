@@ -3,7 +3,7 @@ import type { Logger, LoggerOptions } from "@clerc/logger";
 import type { ClercError } from "./errors";
 import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType } from "./parser";
-import type { StandardSchemaV1 } from "./schema";
+import type { FlagKind, StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
 import type { Theme, ThemeStyleMap } from "./theme";
 import type {
@@ -38,8 +38,8 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly default?: unknown;
-  readonly implicitValue?: unknown;
+  readonly default?: FlagDefaultValue;
+  readonly implicitValue?: FlagDefaultValue;
   readonly delimiter?: string;
   readonly required?: boolean;
   readonly env?: string;
@@ -50,14 +50,50 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
   readonly conflicts?: MaybeArray<string>;
   readonly implies?: MaybeArray<string>;
   readonly meta?: Record<string, unknown>;
-  /**
-   * @internal
-   */
-  readonly builtin?: boolean;
 }
 
 export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
+
+export interface FlagDescriptor {
+  readonly name: string;
+  readonly target: string;
+  readonly short?: string;
+  readonly aliases: readonly string[];
+  readonly kind: FlagKind;
+  readonly display: string;
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly default?: unknown;
+  readonly implicitValue?: unknown;
+  readonly delimiter?: string;
+  readonly required: boolean;
+  readonly env?: string;
+  readonly negatable: boolean;
+  readonly group?: string;
+  readonly hidden: boolean;
+  readonly deprecated?: boolean | string;
+  readonly conflicts: readonly string[];
+  readonly implies: readonly string[];
+  readonly meta?: Record<string, unknown>;
+  readonly toJsonSchema: () => Record<string, unknown>;
+}
+
+export interface ArgDescriptor {
+  readonly name: string;
+  readonly rawName: string;
+  readonly token: string;
+  readonly isRequired: boolean;
+  readonly isVariadic: boolean;
+  readonly afterDoubleDash: boolean;
+  readonly display?: string;
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly default?: unknown;
+  readonly env?: string;
+  readonly meta?: Record<string, unknown>;
+  readonly toJsonSchema: () => Record<string, unknown>;
+}
 
 type InferStandardSchemaOutput<T extends StandardSchemaV1<any, any>> =
   T["~standard"] extends {
@@ -139,7 +175,7 @@ export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
   readonly type?: T;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly default?: unknown;
+  readonly default?: FlagDefaultValue;
   readonly env?: string;
   readonly meta?: Record<string, unknown>;
 }
@@ -252,9 +288,12 @@ export interface CommandNode {
   readonly name: string;
   readonly fullPath: readonly string[];
   readonly parent?: CommandNode;
-  readonly children: Map<string, CommandNode>;
-  readonly aliasIndex: Map<string, CommandNode>;
-  command?: AnyCommandDefinition;
+  readonly children: ReadonlyMap<string, CommandNode>;
+  readonly aliasIndex: ReadonlyMap<string, CommandNode>;
+  readonly command?: AnyCommandDefinition;
+  readonly args: readonly ArgDescriptor[];
+  readonly localFlags: readonly FlagDescriptor[];
+  readonly builtinFlags: readonly FlagDescriptor[];
 }
 
 export interface ReadonlyCommandTree {
@@ -268,7 +307,7 @@ export interface ReadonlyCommandTree {
 export interface ReadonlyCliModel {
   readonly meta: ReadonlyCliMeta;
   readonly tree: ReadonlyCommandTree;
-  readonly globalFlags: Readonly<ClercFlagsDefinition>;
+  readonly globalFlags: readonly FlagDescriptor[];
   readonly groups: {
     readonly commands: readonly GroupDefinition[];
     readonly flags: readonly GroupDefinition[];

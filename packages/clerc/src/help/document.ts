@@ -1,13 +1,9 @@
-import { resolveCommandArgs, splitArgTokens } from "../args";
-import { normalizeFlagValue } from "../flags";
+import { splitArgTokens } from "../args";
 import { DOUBLE_DASH } from "../parser";
-import type { TypeDescriptor } from "../schema";
-import { describeType } from "../schema";
 import type {
-  AnyCommandDefinition,
-  ClercFlagOptions,
-  ClercFlagsDefinition,
+  ArgDescriptor,
   CommandNode,
+  FlagDescriptor,
   GroupDefinition,
   ReadonlyCliModel,
 } from "../types";
@@ -98,8 +94,6 @@ export interface HelpDocument {
   readonly notes: readonly string[];
 }
 
-type FlagEntry = readonly [name: string, options: ClercFlagOptions];
-
 export function formatDefaultValue(value: unknown): string {
   if (
     typeof value === "function" &&
@@ -120,69 +114,49 @@ export function formatDefaultValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function formatPlaceholder(
-  flag: ClercFlagOptions,
-  desc: TypeDescriptor,
-): string | undefined {
-  if (flag.placeholder) {
-    return flag.placeholder;
-  }
-
-  return desc.kind === "boolean" || desc.kind === "counter"
-    ? undefined
-    : `<${desc.display}>`;
-}
-
-function buildOptionItem(name: string, flag: ClercFlagOptions): HelpOptionItem {
-  const longName = formatFlagName(name);
-  const desc = describeType(flag.type);
-  const aliases = flag.aliases
-    ? toArray(flag.aliases)
-        .filter((a) => a.length > 0)
-        .map(formatFlagName)
-    : [];
+function buildOptionItem(flag: FlagDescriptor): HelpOptionItem {
+  const placeholder =
+    flag.placeholder ??
+    (flag.kind === "boolean" || flag.kind === "counter"
+      ? undefined
+      : `<${flag.display}>`);
   const negatedName =
-    desc.kind === "boolean" && flag.negatable !== false && flag.default === true
-      ? `--no-${longName.slice(2)}`
+    flag.kind === "boolean" && flag.negatable && flag.default === true
+      ? `--no-${flag.target.slice(2)}`
       : undefined;
   const defaultText =
     flag.default !== undefined &&
-    (desc.kind !== "boolean" || flag.default !== false)
+    (flag.kind !== "boolean" || flag.default !== false)
       ? formatDefaultValue(flag.default)
       : undefined;
 
   return {
-    name,
-    longName,
+    name: flag.name,
+    longName: flag.target,
     short: flag.short,
-    aliases,
+    aliases: flag.aliases.map(formatFlagName),
     negatedName,
-    placeholder: formatPlaceholder(flag, desc),
+    placeholder,
     optionalValue: flag.implicitValue !== undefined,
     description: flag.description,
-    required: Boolean(flag.required),
+    required: flag.required,
     defaultText,
     env: flag.env,
     deprecated: flag.deprecated,
   };
 }
 
-function getVisibleFlagEntries(
-  flags: Readonly<ClercFlagsDefinition> | undefined,
-): FlagEntry[] {
-  if (!flags) {
-    return [];
-  }
-
-  const entries = Object.entries(flags)
-    .map(([name, def]) => [name, normalizeFlagValue(def)] as const)
-    .filter(([, norm]) => !norm.hidden);
-
-  return [
-    ...entries.filter(([, norm]) => !norm.builtin),
-    ...entries.filter(([, norm]) => Boolean(norm.builtin)),
-  ];
-}
+const buildArgumentItem = (arg: ArgDescriptor): HelpArgumentItem => ({
+  name: arg.name,
+  token: arg.token,
+  typeLabel: arg.placeholder ?? arg.display,
+  description: arg.description,
+  defaultText:
+    arg.default === undefined ? undefined : formatDefaultValue(arg.default),
+  env: arg.env,
+  required: arg.isRequired,
+  variadic: arg.isVariadic,
+});
 
 function groupItems<T, R>(
   items: readonly T[],
@@ -272,34 +246,6 @@ function buildUsage(
   };
 }
 
-function buildArguments(
-  command: AnyCommandDefinition | undefined,
-): HelpArgumentItem[] {
-  if (!command) {
-    return [];
-  }
-
-  return resolveCommandArgs(command).map((arg) => {
-    const typeLabel =
-      arg.options.placeholder ??
-      (arg.options.type ? describeType(arg.options.type).display : undefined);
-
-    return {
-      name: arg.name,
-      token: arg.token,
-      typeLabel,
-      description: arg.options.description,
-      defaultText:
-        arg.options.default === undefined
-          ? undefined
-          : formatDefaultValue(arg.options.default),
-      env: arg.options.env,
-      required: arg.isRequired,
-      variadic: arg.isVariadic,
-    };
-  });
-}
-
 export async function buildHelpDocument(
   model: ReadonlyCliModel,
   node: CommandNode = model.tree.root,
@@ -313,14 +259,16 @@ export async function buildHelpDocument(
     ...visibleChildren.filter((child) => Boolean(child.command?.builtin)),
   ];
 
-  const commandFlagEntries = getVisibleFlagEntries(command?.flags);
-  const globalFlagEntries = getVisibleFlagEntries(globalFlags);
-  const hasCommandFlags = commandFlagEntries.length > 0;
-  const hasGlobalFlags = globalFlagEntries.length > 0;
+  const visibleLocalFlags = node.localFlags.filter((f) => !f.hidden);
+  const localFlagNames = new Set(node.localFlags.map((f) => f.name));
+  const visibleGlobalFlags = [
+    ...globalFlags.filter((f) => !f.hidden && !localFlagNames.has(f.name)),
+    ...node.builtinFlags.filter((f) => !f.hidden),
+  ];
+  const hasCommandFlags = visibleLocalFlags.length > 0;
+  const hasGlobalFlags = visibleGlobalFlags.length > 0;
 
-  const aliases = command?.aliases
-    ? toArray(command.aliases).filter((a) => a.length > 0)
-    : [];
+  const aliases = command?.aliases ? toArray(command.aliases) : [];
 
   const examplesSource =
     command?.examples ?? (isRoot ? meta.examples : undefined);
@@ -347,15 +295,13 @@ export async function buildHelpDocument(
       visibleChildren.length > 0,
       hasCommandFlags || hasGlobalFlags,
     ),
-    arguments: buildArguments(command),
+    arguments: node.args.map(buildArgumentItem),
     commandGroups: groupItems(
       orderedChildren,
       (child) => child.command?.group,
       (child) => ({
         name: child.name,
-        aliases: child.command?.aliases
-          ? toArray(child.command.aliases).filter((a) => a.length > 0)
-          : [],
+        aliases: child.command?.aliases ? toArray(child.command.aliases) : [],
         description: child.command?.description,
         deprecated: child.command?.deprecated,
       }),
@@ -365,9 +311,9 @@ export async function buildHelpDocument(
     ),
     optionGroups: hasCommandFlags
       ? groupItems(
-          commandFlagEntries,
-          ([, norm]) => norm.group,
-          ([name, norm]) => buildOptionItem(name, norm),
+          visibleLocalFlags,
+          (f) => f.group,
+          buildOptionItem,
           groups.flags,
           "Options",
           false,
@@ -375,9 +321,9 @@ export async function buildHelpDocument(
       : [],
     globalOptionGroups: hasGlobalFlags
       ? groupItems(
-          globalFlagEntries,
-          ([, norm]) => norm.group,
-          ([name, norm]) => buildOptionItem(name, norm),
+          visibleGlobalFlags,
+          (f) => f.group,
+          buildOptionItem,
           groups.globalFlags,
           hasCommandFlags ? "Global Options" : "Options",
           false,

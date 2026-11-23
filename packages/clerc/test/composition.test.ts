@@ -126,5 +126,6 @@ describe("Unified Plugin & CliApp composition", () => {
     await cli.run(["deploy", "--config", "prod.json"], { terminal });
 
     expect(observed).toBe("loaded:prod.json");
+    expect(Object.keys(configPlugin)).toEqual(["pluginName"]);
   });
 });

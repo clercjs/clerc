@@ -13,7 +13,7 @@ export default defineConfig({
     inlinedDependencies: false,
   },
   deps: {
-    neverBundle: [/^@clerc\//],
+    neverBundle: [/^@clerc\//, "clerc"],
     onlyBundle: false,
   },
 });

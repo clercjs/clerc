@@ -1,18 +1,10 @@
 import type {
   AnyCommandDefinition,
-  ClercFlagsDefinition,
   CommandNode,
   FlagKind,
   ReadonlyCliModel,
-} from "@clerc/core";
-import {
-  DOUBLE_DASH,
-  describeType,
-  formatFlagName,
-  kebabCase,
-  normalizeFlagValue,
-  resolveCommandArgs,
-} from "@clerc/core";
+} from "clerc";
+import { DOUBLE_DASH, formatFlagName, kebabCase } from "clerc";
 
 export interface McpCommandMeta {
   readonly enabled?: boolean;
@@ -101,10 +93,6 @@ function buildAnnotations(
   return Object.keys(annotations).length > 0 ? annotations : undefined;
 }
 
-/**
- * Shared command selection rule used by both MCP tool registration and MCP help
- * resource registration.
- */
 export function listExposedCommands(
   model: ReadonlyCliModel,
   options: McpFilterOptions = {},
@@ -159,55 +147,55 @@ function buildToolEntry(
   const mainArgs: ArgSlot[] = [];
   const doubleDashArgs: ArgSlot[] = [];
 
-  for (const arg of resolveCommandArgs(cmd)) {
+  for (const arg of node.args) {
     const slot: ArgSlot = { name: arg.name, isVariadic: arg.isVariadic };
     (arg.afterDoubleDash ? doubleDashArgs : mainArgs).push(slot);
 
-    const itemSchema = arg.options.type
-      ? describeType(arg.options.type).toJsonSchema()
-      : { type: "string" };
+    const itemSchema = arg.toJsonSchema();
     const prop: Record<string, unknown> = arg.isVariadic
       ? { type: "array", items: itemSchema }
       : itemSchema;
 
-    if (arg.options.description) {
-      prop.description = arg.options.description;
+    if (arg.description) {
+      prop.description = arg.description;
+    }
+    if (arg.default !== undefined && isJsonPrimitive(arg.default)) {
+      prop.default = arg.default;
     }
     properties[arg.name] = prop;
 
-    if (arg.isRequired) {
+    if (arg.isRequired && !arg.env) {
       required.push(arg.name);
     }
   }
 
-  const mergedFlags: ClercFlagsDefinition = {
-    ...model.globalFlags,
-    ...cmd.flags,
-  };
+  const localNames = new Set(node.localFlags.map((f) => f.name));
+  const mergedFlags = [
+    ...model.globalFlags.filter((f) => !localNames.has(f.name)),
+    ...node.localFlags,
+  ];
   const flags = new Map<string, FlagSlot>();
 
-  for (const [name, rawDef] of Object.entries(mergedFlags)) {
-    const norm = normalizeFlagValue(rawDef);
-    if (norm.hidden || norm.builtin || name in properties) {
+  for (const flag of mergedFlags) {
+    if (flag.hidden || flag.name in properties) {
       continue;
     }
 
-    const desc = describeType(norm.type);
-    const schema = desc.toJsonSchema();
-    if (norm.description) {
-      schema.description = norm.description;
+    const schema = flag.toJsonSchema();
+    if (flag.description) {
+      schema.description = flag.description;
     }
-    if (norm.default !== undefined && isJsonPrimitive(norm.default)) {
-      schema.default = norm.default;
+    if (flag.default !== undefined && isJsonPrimitive(flag.default)) {
+      schema.default = flag.default;
     }
 
-    properties[name] = schema;
-    if (norm.required && !norm.env) {
-      required.push(name);
+    properties[flag.name] = schema;
+    if (flag.required && !flag.env) {
+      required.push(flag.name);
     }
-    flags.set(name, {
-      kind: desc.kind,
-      negatable: norm.negatable !== false,
+    flags.set(flag.name, {
+      kind: flag.kind,
+      negatable: flag.negatable,
     });
   }
 

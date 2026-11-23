@@ -1,15 +1,5 @@
 import type { Command as TabCommand, RootCommand } from "@bomb.sh/tab";
-import type {
-  ClercFlagDefinitionValue,
-  ClercFlagsDefinition,
-  CommandNode,
-  ReadonlyCliModel,
-} from "@clerc/core";
-import {
-  describeType,
-  normalizeFlagValue,
-  resolveCommandArgs,
-} from "@clerc/core";
+import type { CommandNode, FlagDescriptor, ReadonlyCliModel } from "clerc";
 
 export interface CompletionMeta {
   readonly show?: boolean;
@@ -21,49 +11,43 @@ const getCompletionMeta = (
 ): CompletionMeta | undefined =>
   meta?.completions as CompletionMeta | undefined;
 
-function registerFlag(
-  tc: TabCommand,
-  flagName: string,
-  def: ClercFlagDefinitionValue,
-): void {
-  const normalized = normalizeFlagValue(def);
-  const compMeta = getCompletionMeta(normalized.meta);
-  if (normalized.hidden || compMeta?.show === false) {
+function registerFlagDescriptor(tc: TabCommand, flag: FlagDescriptor): void {
+  const compMeta = getCompletionMeta(flag.meta);
+  if (flag.hidden || compMeta?.show === false) {
     return;
   }
 
-  const desc = normalized.description ?? "";
-  const { kind } = describeType(normalized.type);
-  const aliases = normalized.aliases
-    ? Array.isArray(normalized.aliases)
-      ? normalized.aliases
-      : [normalized.aliases]
-    : [];
-  if (kind === "boolean" || kind === "counter") {
-    tc.option(flagName, desc, normalized.short);
-    for (const alias of aliases) {
+  const desc = flag.description ?? "";
+  if (flag.kind === "boolean" || flag.kind === "counter") {
+    tc.option(flag.name, desc, flag.short);
+    for (const alias of flag.aliases) {
       tc.option(alias, desc);
     }
   } else {
     const handler = compMeta?.handler ?? (async () => {});
-    tc.option(flagName, desc, handler, normalized.short);
-    for (const alias of aliases) {
+    tc.option(flag.name, desc, handler, flag.short);
+    for (const alias of flag.aliases) {
       tc.option(alias, desc, handler);
     }
   }
 }
 
-function registerGlobalFlags(
-  globalFlags: Readonly<ClercFlagsDefinition>,
+function registerFlagList(
+  flags: readonly FlagDescriptor[],
   tc: TabCommand,
+  skipNames?: ReadonlySet<string>,
 ): void {
-  for (const [flagName, def] of Object.entries(globalFlags)) {
-    registerFlag(tc, flagName, def);
+  for (const flag of flags) {
+    if (skipNames?.has(flag.name)) {
+      continue;
+    }
+    registerFlagDescriptor(tc, flag);
   }
 }
 
 export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
-  registerGlobalFlags(model.globalFlags, t);
+  registerFlagList(model.globalFlags, t);
+  registerFlagList(model.tree.root.builtinFlags, t);
 
   const commands: readonly CommandNode[] = model.tree.walkCommands();
   for (const node of commands) {
@@ -79,21 +63,21 @@ export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
 
     const fullName = node.fullPath.join(" ");
     let tabCmd: TabCommand = t;
+    const localNames = new Set(node.localFlags.map((f) => f.name));
 
     if (fullName !== "") {
       tabCmd = t.command(fullName, cmd.description ?? "");
-      registerGlobalFlags(model.globalFlags, tabCmd);
+      registerFlagList(model.globalFlags, tabCmd, localNames);
+      registerFlagList(node.builtinFlags, tabCmd);
     }
 
     compMeta?.handler?.(tabCmd);
 
-    for (const arg of resolveCommandArgs(cmd)) {
-      const argComp = getCompletionMeta(arg.options.meta);
+    for (const arg of node.args) {
+      const argComp = getCompletionMeta(arg.meta);
       tabCmd.argument(arg.name, argComp?.handler, arg.isVariadic);
     }
 
-    for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {
-      registerFlag(tabCmd, flagName, def as ClercFlagDefinitionValue);
-    }
+    registerFlagList(node.localFlags, tabCmd);
   }
 }

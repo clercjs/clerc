@@ -88,7 +88,6 @@ describe("built-in v2 editorial help", () => {
         "      --cache, --no-cache     Use build cache  [default: true]",
         "",
         "GLOBAL OPTIONS",
-        "  -V, --version               Show version",
         "  -h, --help                  Show help",
       ].join("\n"),
     );

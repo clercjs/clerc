@@ -55,6 +55,9 @@ export function joinWithAnd(values: readonly string[]): string {
   return `${values.slice(0, -1).join(", ")} and ${values.at(-1)}`;
 }
 
+export const evaluateDefault = (value: unknown): unknown =>
+  typeof value === "function" ? (value as () => unknown)() : value;
+
 export const resolveAsyncValue = async <T, Arg = void>(
   value: MaybeAsyncGetter<T, Arg>,
   arg?: Arg,

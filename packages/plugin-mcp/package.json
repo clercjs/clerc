@@ -38,9 +38,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@clerc/core": "workspace:*"
+    "clerc": "workspace:*"
   },
   "peerDependencies": {
-    "@clerc/core": "*"
+    "clerc": "*"
   }
 }

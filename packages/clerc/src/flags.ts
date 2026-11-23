@@ -8,7 +8,11 @@ import {
   ValidationError,
 } from "./errors";
 import type { ArgvFlagSpec, InvalidFlagValue } from "./parser";
-import { IMPLICIT_FLAG_VALUE, parseBooleanLiteral } from "./parser";
+import {
+  IMPLICIT_FLAG_VALUE,
+  INVALID_BOOL_MSG,
+  parseBooleanLiteral,
+} from "./parser";
 import type { FlagKind, TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
@@ -17,25 +21,23 @@ import type {
   ClercFlagOptions,
   ClercFlagsDefinition,
   CoreTypeValue,
+  FlagDescriptor,
 } from "./types";
-import { formatFlagName, toArray } from "./utils";
+import { evaluateDefault, formatFlagName, toArray } from "./utils";
 
-export interface CompiledFlagEntry {
-  readonly name: string;
-  readonly norm: ClercFlagOptions;
-  readonly target: string;
-  readonly kind: FlagKind;
+export interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
 }
 
 export interface CompiledFlags {
+  readonly descriptors: readonly FlagDescriptor[];
+  readonly entries: readonly CompiledFlagEntry[];
   readonly byName: ReadonlyMap<string, CompiledFlagEntry>;
   readonly specs: readonly ArgvFlagSpec[];
+  readonly knownNames: readonly string[];
 }
 
-export function normalizeFlagValue(
-  flag: ClercFlagDefinitionValue,
-): ClercFlagOptions {
+function normalizeFlagValue(flag: ClercFlagDefinitionValue): ClercFlagOptions {
   if (
     typeof flag === "function" ||
     Array.isArray(flag) ||
@@ -64,9 +66,31 @@ function implicitDefault(kind: FlagKind): unknown {
   }
 }
 
+export const createBuiltinFlagDescriptor = (
+  name: string,
+  short: string | undefined,
+  description: string,
+): FlagDescriptor => ({
+  name,
+  target: formatFlagName(name),
+  short,
+  aliases: [],
+  kind: "boolean",
+  display: "boolean",
+  description,
+  required: false,
+  negatable: false,
+  hidden: false,
+  conflicts: [],
+  implies: [],
+  toJsonSchema: () => ({ type: "boolean" }),
+});
+
 export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
+  const entries: CompiledFlagEntry[] = [];
   const byName = new Map<string, CompiledFlagEntry>();
   const specs: ArgvFlagSpec[] = [];
+  const knownNames: string[] = [];
 
   for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
@@ -81,7 +105,7 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
       );
     }
 
-    const { kind, convert } = describeType(norm.type);
+    const { kind, display, convert, toJsonSchema } = describeType(norm.type);
     if (norm.delimiter !== undefined) {
       if (kind !== "array") {
         throw new InvalidSchemaError(
@@ -99,36 +123,101 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
         `Flag "${name}" implicitValue can only be used with single-value flag types.`,
       );
     }
-    byName.set(name, {
+
+    const aliases = norm.aliases ? toArray(norm.aliases) : [];
+    const negatable = kind === "boolean" && norm.negatable !== false;
+    const entry: CompiledFlagEntry = {
       name,
-      norm,
       target: formatFlagName(name),
+      short: norm.short,
+      aliases,
       kind,
+      display,
+      description: norm.description,
+      placeholder: norm.placeholder,
+      default: norm.default,
+      implicitValue: norm.implicitValue,
+      delimiter: norm.delimiter,
+      required: Boolean(norm.required),
+      env: norm.env,
+      negatable,
+      group: norm.group,
+      hidden: Boolean(norm.hidden),
+      deprecated: norm.deprecated,
+      conflicts: norm.conflicts ? toArray(norm.conflicts) : [],
+      implies: norm.implies ? toArray(norm.implies) : [],
+      meta: norm.meta,
+      toJsonSchema,
       convert,
-    });
+    };
+
+    entries.push(entry);
+    byName.set(name, entry);
     specs.push({
       key: name,
       kind,
       short: norm.short,
-      aliases: norm.aliases ? toArray(norm.aliases) : undefined,
-      negatable: kind === "boolean" ? norm.negatable : undefined,
+      aliases: aliases.length > 0 ? aliases : undefined,
+      negatable: kind === "boolean" ? negatable : undefined,
       optionalValue: norm.implicitValue !== undefined,
     });
+    knownNames.push(name, ...aliases);
   }
 
-  return { byName, specs };
+  return { descriptors: entries, entries, byName, specs, knownNames };
 }
 
-async function convertValues(
-  entry: CompiledFlagEntry,
+export function mergeCompiledFlags(
+  globalFlags: CompiledFlags,
+  localFlags: CompiledFlags,
+): CompiledFlags {
+  if (localFlags.entries.length === 0) {
+    return globalFlags;
+  }
+
+  const entries: CompiledFlagEntry[] = [];
+  const byName = new Map<string, CompiledFlagEntry>();
+  const specs: ArgvFlagSpec[] = [];
+  const knownNames: string[] = [];
+
+  for (const entry of globalFlags.entries) {
+    if (localFlags.byName.has(entry.name)) {
+      continue;
+    }
+    entries.push(entry);
+    byName.set(entry.name, entry);
+    specs.push({
+      key: entry.name,
+      kind: entry.kind,
+      short: entry.short,
+      aliases: entry.aliases.length > 0 ? entry.aliases : undefined,
+      negatable: entry.kind === "boolean" ? entry.negatable : undefined,
+      optionalValue: entry.implicitValue !== undefined,
+    });
+    knownNames.push(entry.name, ...entry.aliases);
+  }
+
+  for (const [i, entry] of localFlags.entries.entries()) {
+    entries.push(entry);
+    byName.set(entry.name, entry);
+    specs.push(localFlags.specs[i]);
+    knownNames.push(entry.name, ...entry.aliases);
+  }
+
+  return { descriptors: entries, entries, byName, specs, knownNames };
+}
+
+export async function convertItemList(
+  convert: TypeConverter | undefined,
+  target: string,
   items: readonly string[],
 ): Promise<unknown[]> {
-  if (!entry.convert) {
+  if (!convert) {
     return [...items];
   }
   const converted: unknown[] = [];
   for (const item of items) {
-    converted.push(await entry.convert(item, entry.target));
+    converted.push(await convert(item, target));
   }
 
   return converted;
@@ -143,22 +232,33 @@ async function resolveEnvValue(
       const parsed = parseBooleanLiteral(envValue);
       if (parsed === undefined) {
         throw new ValidationError(entry.target, envValue, [
-          { message: "expected a boolean ('true' or 'false')" },
+          { message: INVALID_BOOL_MSG },
         ]);
       }
 
       return parsed;
     }
     case "counter": {
-      const count = Number(envValue);
+      const trimmed = envValue.trim();
+      const count = trimmed === "" ? Number.NaN : Number(trimmed);
+      if (Number.isInteger(count) && count >= 0) {
+        return count;
+      }
+      const parsedBool = parseBooleanLiteral(trimmed);
+      if (parsedBool !== undefined) {
+        return parsedBool ? 1 : 0;
+      }
 
-      return Number.isNaN(count) ? 0 : count;
+      throw new ValidationError(entry.target, envValue, [
+        { message: "expected a non-negative integer or boolean" },
+      ]);
     }
     case "array": {
-      const delimiter = entry.norm.delimiter ?? ",";
+      const delimiter = entry.delimiter ?? ",";
 
-      return convertValues(
-        entry,
+      return convertItemList(
+        entry.convert,
+        entry.target,
         envValue.split(delimiter).map((s) => s.trim()),
       );
     }
@@ -182,21 +282,18 @@ export async function resolveCompiledFlags(
   const missingRequired: string[] = [];
   const provided = new Set<string>(explicitlyProvided);
 
-  for (const entry of compiled.byName.values()) {
-    const { name, norm, kind, target, convert } = entry;
+  for (const entry of compiled.entries) {
+    const { name, kind, target, convert } = entry;
     const rawValue = rawFlags[name];
 
     if (provided.has(name)) {
       if (rawValue === IMPLICIT_FLAG_VALUE) {
-        flags[name] =
-          typeof norm.implicitValue === "function"
-            ? (norm.implicitValue as () => unknown)()
-            : norm.implicitValue;
+        flags[name] = evaluateDefault(entry.implicitValue);
       } else if (kind === "array") {
-        const items = norm.delimiter
-          ? (rawValue as string[]).flatMap((v) => v.split(norm.delimiter!))
+        const items = entry.delimiter
+          ? (rawValue as string[]).flatMap((v) => v.split(entry.delimiter!))
           : (rawValue as string[]);
-        flags[name] = await convertValues(entry, items);
+        flags[name] = await convertItemList(convert, target, items);
       } else {
         flags[name] = convert
           ? await convert(rawValue as string, target)
@@ -206,7 +303,7 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    const envValue = norm.env ? env[norm.env] : undefined;
+    const envValue = entry.env ? env[entry.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       provided.add(name);
       flags[name] = await resolveEnvValue(entry, envValue);
@@ -214,16 +311,13 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    if (norm.default !== undefined) {
-      flags[name] =
-        typeof norm.default === "function"
-          ? (norm.default as () => unknown)()
-          : norm.default;
+    if (entry.default !== undefined) {
+      flags[name] = evaluateDefault(entry.default);
 
       continue;
     }
 
-    if (norm.required) {
+    if (entry.required) {
       missingRequired.push(name);
 
       continue;
@@ -242,19 +336,18 @@ export function warnFlagDeprecations(
 ): void {
   for (const name of provided) {
     const entry = compiled.byName.get(name);
-    if (!entry?.norm.deprecated) {
+    if (!entry?.deprecated) {
       continue;
     }
     const reason =
-      typeof entry.norm.deprecated === "string"
-        ? `: ${entry.norm.deprecated}`
-        : "";
+      typeof entry.deprecated === "string" ? `: ${entry.deprecated}` : "";
     warn(`Option '${entry.target}' is deprecated${reason}`);
   }
 }
 
 export function validateParsedFlags(
   compiled: CompiledFlags,
+  knownFlagNames: readonly string[],
   parsed: {
     readonly unknown: Readonly<Record<string, unknown>>;
     readonly missingValueFlags: readonly string[];
@@ -285,21 +378,12 @@ export function validateParsedFlags(
   if (strictFlags) {
     const unknownKeys = Object.keys(parsed.unknown);
     if (unknownKeys.length > 0) {
-      const knownFlags: string[] = [];
-      for (const [name, entry] of compiled.byName) {
-        knownFlags.push(name);
-        if (entry.norm.aliases) {
-          for (const alias of toArray(entry.norm.aliases)) {
-            knownFlags.push(alias);
-          }
-        }
-      }
       const hints: string[] = [];
       for (const unknown of unknownKeys) {
         if (unknown.length <= 1) {
           continue;
         }
-        const suggestion = findClosest(unknown, knownFlags, 3);
+        const suggestion = findClosest(unknown, knownFlagNames, 3);
         if (suggestion) {
           hints.push(
             `a similar option exists: '${formatFlagName(suggestion)}'`,
@@ -332,8 +416,8 @@ export function validateResolvedFlags(
     const hints: string[] = [];
     for (const name of missingRequired) {
       const entry = compiled.byName.get(name);
-      if (entry?.norm.env) {
-        hints.push(`provide '${entry.target}' or set ${entry.norm.env}`);
+      if (entry?.env) {
+        hints.push(`provide '${entry.target}' or set ${entry.env}`);
       }
     }
 
@@ -348,19 +432,14 @@ export function validateResolvedFlags(
     if (!entry) {
       continue;
     }
-    const { norm } = entry;
-    if (norm.conflicts) {
-      for (const other of toArray(norm.conflicts)) {
-        if (provided.has(other)) {
-          throw new FlagConflictError(name, other);
-        }
+    for (const other of entry.conflicts) {
+      if (provided.has(other)) {
+        throw new FlagConflictError(name, other);
       }
     }
-    if (norm.implies) {
-      for (const required of toArray(norm.implies)) {
-        if (!provided.has(required)) {
-          throw new FlagImpliesError(name, required);
-        }
+    for (const required of entry.implies) {
+      if (!provided.has(required)) {
+        throw new FlagImpliesError(name, required);
       }
     }
   }

@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "node:stream";
 
-import { plugin } from "@clerc/core";
+import { plugin } from "clerc";
 
 import type {
   CreateMcpHandlerOptions,

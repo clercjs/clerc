@@ -1,5 +1,5 @@
 import { RootCommand } from "@bomb.sh/tab";
-import { ClercError, Types, plugin } from "@clerc/core";
+import { ClercError, Types, plugin } from "clerc";
 
 import { buildTabModel } from "./t";
 

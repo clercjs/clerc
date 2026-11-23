@@ -1,3 +1,5 @@
+import { detectColor, detectUnicode } from "@clerc/logger";
+
 export interface Terminal {
   readonly stdout: (text: string) => void;
   readonly stderr: (text: string) => void;
@@ -26,40 +28,6 @@ export interface MemoryTerminalOptions {
   color?: boolean;
   unicode?: boolean;
   columns?: number;
-}
-
-function detectColor(
-  env: Readonly<Record<string, string | undefined>>,
-  isTTY: boolean,
-): boolean {
-  if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") {
-    return false;
-  }
-  if (env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== "") {
-    return env.FORCE_COLOR !== "0";
-  }
-  if (env.TERM === "dumb") {
-    return false;
-  }
-
-  return isTTY;
-}
-
-function detectUnicode(
-  env: Readonly<Record<string, string | undefined>>,
-): boolean {
-  if (process.platform !== "win32") {
-    return env.TERM !== "linux";
-  }
-
-  return (
-    Boolean(env.WT_SESSION) ||
-    Boolean(env.TERMINUS_SUBLIME) ||
-    env.ConEmuTask === "{cmd::Cmder}" ||
-    env.TERM_PROGRAM === "vscode" ||
-    env.TERM === "xterm-256color" ||
-    env.TERM === "alacritty"
-  );
 }
 
 export const defaultPlatformArgv = (): readonly string[] =>

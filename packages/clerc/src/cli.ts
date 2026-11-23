@@ -18,13 +18,15 @@ import {
 import type { CompiledFlags } from "./flags";
 import {
   compileFlags,
+  createBuiltinFlagDescriptor,
+  mergeCompiledFlags,
   resolveCompiledFlags,
   validateParsedFlags,
   validateResolvedFlags,
   warnFlagDeprecations,
 } from "./flags";
 import { renderHelp } from "./help/renderer";
-import type { ArgvParser } from "./parser";
+import type { ArgvFlagSpec, ArgvParser } from "./parser";
 import { createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
@@ -33,11 +35,13 @@ import type {
   AnyCommandDefinition,
   ArgDefinitionValue,
   ClercFlagsDefinition,
+  CommandNode,
   CommandOptions,
   CreateCliOptions,
   ErrorContext,
   ErrorHandler,
   ExtractArgNames,
+  FlagDescriptor,
   GroupDefinition,
   GroupsInput,
   HelpOptions,
@@ -61,10 +65,24 @@ type ContextExtender = (
   ctx: RunContext<any>,
 ) => Record<string, any> | Promise<Record<string, any>>;
 
-interface CompiledCommand {
-  readonly flags: CompiledFlags;
+interface PluginState {
+  readonly flags: ClercFlagsDefinition;
+  readonly commands: AnyCommandDefinition[];
+  readonly groups: GroupBuckets;
+  readonly extenders: ContextExtender[];
+  readonly middlewares: Middleware<any, any>[];
+  readonly errorHandlers: ErrorHandler<any, any>[];
+  readonly plugins: Map<string, Plugin<any, any>>;
+  onInvalidate?: () => void;
+}
+
+interface CompiledNodeRuntime {
+  readonly userFlags: CompiledFlags;
+  readonly knownFlagNames: readonly string[];
   readonly parser: ArgvParser;
   readonly args?: CompiledArgs;
+  readonly hasBuiltinHelp: boolean;
+  readonly hasBuiltinVersion: boolean;
 }
 
 interface CompiledCli {
@@ -73,8 +91,8 @@ interface CompiledCli {
   readonly extenders: readonly ContextExtender[];
   readonly middlewares: readonly Middleware<any, any>[];
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
-  readonly global: CompiledCommand;
-  readonly commands: WeakMap<AnyCommandDefinition, CompiledCommand>;
+  readonly rootRuntime: CompiledNodeRuntime;
+  readonly runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>;
 }
 
 const GROUP_SCOPES: readonly GroupScope[] = [
@@ -83,19 +101,18 @@ const GROUP_SCOPES: readonly GroupScope[] = [
   "globalFlags",
 ];
 
-const HELP_FLAG = {
-  type: Boolean,
-  short: "h",
-  description: "Show help",
-  builtin: true,
-} as const;
+const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
 
-const VERSION_FLAG = {
-  type: Boolean,
-  short: "V",
-  description: "Show version",
-  builtin: true,
-} as const;
+const pluginStates = new WeakMap<Plugin<any, any>, PluginState>();
+
+function getPluginState(instance: Plugin<any, any>): PluginState {
+  const state = pluginStates.get(instance);
+  if (!state) {
+    throw new Error("Invalid Plugin instance");
+  }
+
+  return state;
+}
 
 const createGroupBuckets = (): GroupBuckets => ({
   commands: [],
@@ -125,18 +142,19 @@ function collectScope(
   }
   visited.add(scope.pluginName);
 
-  for (const child of scope._plugins.values()) {
+  const state = getPluginState(scope);
+  for (const child of state.plugins.values()) {
     collectScope(child, acc, visited);
   }
 
-  Object.assign(acc.globalFlags, scope._flags);
-  acc.commands.push(...scope._commands);
-  acc.extenders.push(...scope._extenders);
-  acc.middlewares.push(...scope._middlewares);
-  acc.errorHandlers.push(...scope._errorHandlers);
+  Object.assign(acc.globalFlags, state.flags);
+  acc.commands.push(...state.commands);
+  acc.extenders.push(...state.extenders);
+  acc.middlewares.push(...state.middlewares);
+  acc.errorHandlers.push(...state.errorHandlers);
 
   for (const groupScope of GROUP_SCOPES) {
-    acc.groups[groupScope].push(...scope._groups[groupScope]);
+    acc.groups[groupScope].push(...state.groups[groupScope]);
   }
 }
 
@@ -159,69 +177,98 @@ function createUnmatchedError(
   }
 }
 
+function resolveNodeBuiltins(options: {
+  readonly isRoot: boolean;
+  readonly enableVersion: boolean;
+  readonly enableHelp: boolean;
+  readonly userFlags: CompiledFlags;
+}): {
+  readonly descriptors: readonly FlagDescriptor[];
+  readonly specs: readonly ArgvFlagSpec[];
+  readonly names: readonly string[];
+  readonly hasHelp: boolean;
+  readonly hasVersion: boolean;
+} {
+  const { isRoot, enableVersion, enableHelp, userFlags } = options;
+  const usedNames = new Set(userFlags.knownNames);
+  const usedShorts = new Set<string>();
+  for (const spec of userFlags.specs) {
+    if (spec.short) {
+      usedShorts.add(spec.short);
+    }
+  }
+
+  const descriptors: FlagDescriptor[] = [];
+  const specs: ArgvFlagSpec[] = [];
+  const names: string[] = [];
+  let hasVersion = false;
+  let hasHelp = false;
+
+  if (isRoot && enableVersion && !usedNames.has("version")) {
+    const short = usedShorts.has("V") ? undefined : "V";
+    if (short) {
+      usedShorts.add(short);
+    }
+    descriptors.push(
+      createBuiltinFlagDescriptor("version", short, "Show version"),
+    );
+    specs.push({ key: "version", kind: "boolean", short, negatable: false });
+    names.push("version");
+    hasVersion = true;
+  }
+
+  if (enableHelp && !usedNames.has("help")) {
+    const short = usedShorts.has("h") ? undefined : "h";
+    descriptors.push(createBuiltinFlagDescriptor("help", short, "Show help"));
+    specs.push({ key: "help", kind: "boolean", short, negatable: false });
+    names.push("help");
+    hasHelp = true;
+  }
+
+  return { descriptors, specs, names, hasHelp, hasVersion };
+}
+
 export class Plugin<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > {
   public readonly pluginName: string;
 
-  /**
-   * @internal
-   */
-  public readonly _flags: ClercFlagsDefinition = {};
-  /**
-   * @internal
-   */
-  public readonly _commands: AnyCommandDefinition[] = [];
-  /**
-   * @internal
-   */
-  public readonly _groups: GroupBuckets = createGroupBuckets();
-  /**
-   * @internal
-   */
-  public readonly _extenders: ContextExtender[] = [];
-  /**
-   * @internal
-   */
-  public readonly _middlewares: Middleware<any, any>[] = [];
-  /**
-   * @internal
-   */
-  public readonly _errorHandlers: ErrorHandler<any, any>[] = [];
-  /**
-   * @internal
-   */
-  public readonly _plugins = new Map<string, Plugin<any, any>>();
-
   constructor(name: string) {
     this.pluginName = name;
-  }
-
-  protected _invalidate(): void {
-    // Overridden by CliApp to clear compiled state
+    pluginStates.set(this, {
+      flags: {},
+      commands: [],
+      groups: createGroupBuckets(),
+      extenders: [],
+      middlewares: [],
+      errorHandlers: [],
+      plugins: new Map(),
+    });
   }
 
   public flags<const Flags extends ClercFlagsDefinition>(
     definitions: Flags,
   ): Plugin<TGlobalFlags & Flags, TExt> {
-    Object.assign(this._flags, definitions);
-    this._invalidate();
+    const state = getPluginState(this);
+    Object.assign(state.flags, definitions);
+    state.onInvalidate?.();
 
     return this as any;
   }
 
   public groups(definitions: GroupsInput): this {
+    const state = getPluginState(this);
     for (const scope of GROUP_SCOPES) {
       const entries = definitions[scope];
       if (!entries) {
         continue;
       }
       for (const [key, title] of Object.entries(entries)) {
-        this._groups[scope].push({ key, title });
+        state.groups[scope].push({ key, title });
       }
     }
-    this._invalidate();
+    state.onInvalidate?.();
 
     return this;
   }
@@ -236,9 +283,10 @@ export class Plugin<
     spec: Spec,
     options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TExt>,
   ): this {
+    const state = getPluginState(this);
     const { name, argTokens } = parseCommandSpec(spec);
-    this._commands.push({ ...options, spec, name, argTokens });
-    this._invalidate();
+    state.commands.push({ ...options, spec, name, argTokens });
+    state.onInvalidate?.();
 
     return this;
   }
@@ -246,22 +294,25 @@ export class Plugin<
   public extend<Added extends Record<string, any>>(
     fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
   ): Plugin<TGlobalFlags, TExt & Added> {
-    this._extenders.push(fn as ContextExtender);
-    this._invalidate();
+    const state = getPluginState(this);
+    state.extenders.push(fn as ContextExtender);
+    state.onInvalidate?.();
 
     return this as any;
   }
 
   public middleware(fn: Middleware<TGlobalFlags, TExt>): this {
-    this._middlewares.push(fn as Middleware<any, any>);
-    this._invalidate();
+    const state = getPluginState(this);
+    state.middlewares.push(fn as Middleware<any, any>);
+    state.onInvalidate?.();
 
     return this;
   }
 
   public onError(fn: ErrorHandler<TGlobalFlags, TExt>): this {
-    this._errorHandlers.push(fn as ErrorHandler<any, any>);
-    this._invalidate();
+    const state = getPluginState(this);
+    state.errorHandlers.push(fn as ErrorHandler<any, any>);
+    state.onInvalidate?.();
 
     return this;
   }
@@ -270,8 +321,9 @@ export class Plugin<
     PFlags extends ClercFlagsDefinition = {},
     PExt extends Record<string, any> = {},
   >(other: Plugin<PFlags, PExt>): Plugin<TGlobalFlags & PFlags, TExt & PExt> {
-    this._plugins.set(other.pluginName, other);
-    this._invalidate();
+    const state = getPluginState(this);
+    state.plugins.set(other.pluginName, other);
+    state.onInvalidate?.();
 
     return this as any;
   }
@@ -310,10 +362,10 @@ export class CliApp<
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
-  }
 
-  protected override _invalidate(): void {
-    this.#compiled = undefined;
+    getPluginState(this).onInvalidate = () => {
+      this.#compiled = undefined;
+    };
   }
 
   public override flags<const Flags extends ClercFlagsDefinition>(
@@ -342,8 +394,9 @@ export class CliApp<
   }
 
   public disable(pluginName: string): this {
-    if (this._plugins.delete(pluginName)) {
-      this._invalidate();
+    const state = getPluginState(this);
+    if (state.plugins.delete(pluginName)) {
+      this.#compiled = undefined;
     }
 
     return this;
@@ -364,19 +417,11 @@ export class CliApp<
     };
     collectScope(this, acc);
 
-    if (this.#meta.version && !("version" in acc.globalFlags)) {
-      acc.globalFlags.version = VERSION_FLAG;
-    }
-    if (this.#helpOptions !== false && !("help" in acc.globalFlags)) {
-      acc.globalFlags.help = HELP_FLAG;
-    }
-
     const tree = new CommandTree();
     for (const cmd of acc.commands) {
       tree.register(cmd);
     }
 
-    // Register built-in version & help subcommands unless overridden by user
     if (this.#meta.version && !tree.findNode(["version"])) {
       tree.register({
         spec: "version",
@@ -415,25 +460,67 @@ export class CliApp<
       });
     }
 
+    const globalFlags = compileFlags(acc.globalFlags);
+    const enableVersion = Boolean(this.#meta.version);
+    const enableHelp = this.#helpOptions !== false;
+    const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
+
+    for (const node of tree.walkNodes()) {
+      const isRoot = node.fullPath.length === 0;
+      const cmd = node.command;
+      const localFlags = cmd?.flags ? compileFlags(cmd.flags) : undefined;
+      const userFlags = localFlags
+        ? mergeCompiledFlags(globalFlags, localFlags)
+        : globalFlags;
+      const builtins = resolveNodeBuiltins({
+        isRoot,
+        enableVersion,
+        enableHelp,
+        userFlags,
+      });
+
+      const parser = createArgvParser([...userFlags.specs, ...builtins.specs], {
+        stopAtFirstPositional: cmd?.stopAtFirstPositional,
+      });
+      const compiledArgs =
+        cmd && cmd.argTokens.length > 0
+          ? compileArgs(cmd.argTokens, cmd.args)
+          : undefined;
+
+      tree.attachCompiled(node, {
+        args: compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS,
+        localFlags: localFlags?.descriptors ?? EMPTY_DESCRIPTORS,
+        builtinFlags: builtins.descriptors,
+      });
+
+      runtimes.set(node, {
+        userFlags,
+        knownFlagNames:
+          builtins.names.length > 0
+            ? [...userFlags.knownNames, ...builtins.names]
+            : userFlags.knownNames,
+        parser,
+        args: compiledArgs,
+        hasBuiltinHelp: builtins.hasHelp,
+        hasBuiltinVersion: builtins.hasVersion,
+      });
+    }
+
     const model: ReadonlyCliModel = {
       meta: this.#meta,
       tree,
-      globalFlags: acc.globalFlags,
+      globalFlags: globalFlags.descriptors,
       groups: acc.groups,
     };
 
-    const globalFlags = compileFlags(acc.globalFlags);
     this.#compiled = {
       model,
       tree,
       extenders: acc.extenders,
       middlewares: acc.middlewares,
       errorHandlers: acc.errorHandlers,
-      global: {
-        flags: globalFlags,
-        parser: createArgvParser(globalFlags.specs),
-      },
-      commands: new WeakMap(),
+      rootRuntime: runtimes.get(tree.root)!,
+      runtimes,
     };
 
     return this.#compiled;
@@ -441,42 +528,6 @@ export class CliApp<
 
   public buildModel(): ReadonlyCliModel {
     return this.#ensureCompiled().model;
-  }
-
-  #compileCommand(
-    cli: CompiledCli,
-    cmd?: AnyCommandDefinition,
-  ): CompiledCommand {
-    if (!cmd) {
-      return cli.global;
-    }
-
-    const cached = cli.commands.get(cmd);
-    if (cached) {
-      return cached;
-    }
-
-    const hasLocalFlags = cmd.flags !== undefined;
-    const flags = hasLocalFlags
-      ? compileFlags({ ...cli.model.globalFlags, ...cmd.flags })
-      : cli.global.flags;
-    const parser =
-      !hasLocalFlags && !cmd.stopAtFirstPositional
-        ? cli.global.parser
-        : createArgvParser(flags.specs, {
-            stopAtFirstPositional: cmd.stopAtFirstPositional,
-          });
-    const compiled: CompiledCommand = {
-      flags,
-      parser,
-      args:
-        cmd.argTokens.length > 0
-          ? compileArgs(cmd.argTokens, cmd.args)
-          : undefined,
-    };
-    cli.commands.set(cmd, compiled);
-
-    return compiled;
   }
 
   #createContext(
@@ -547,8 +598,9 @@ export class CliApp<
     // 1. Resolve command match (matched | namespace | empty | unknown)
     const match = compiledCli.tree.resolveArgv(
       ctx.argv,
-      compiledCli.global.parser.scan,
+      compiledCli.rootRuntime.parser.scan,
     );
+
     ctx.commandPath = match.node.fullPath;
     if (match.kind === "matched") {
       ctx.command = match.command;
@@ -556,18 +608,16 @@ export class CliApp<
     }
 
     // 2. Parse raw argv into flags & positionals
-    const compiledCmd = this.#compileCommand(compiledCli, ctx.command);
-    const parsed = compiledCmd.parser.parse(match.remainingArgv);
-    ctx.flags = parsed.flags as any;
+    const runtime =
+      compiledCli.runtimes.get(match.node) ?? compiledCli.rootRuntime;
+    const parsed = runtime.parser.parse(match.remainingArgv);
     ctx.unknown = parsed.unknown;
     ctx.doubleDash = parsed.doubleDash;
 
-    // 3. Built-in --version and --help handling (unless shadowed by local flags)
+    // 3. Built-in --version and --help handling (only when active on target node)
     if (
-      this.#meta.version &&
-      !ctx.command?.flags?.version &&
+      runtime.hasBuiltinVersion &&
       parsed.flags.version === true &&
-      match.node.fullPath.length === 0 &&
       match.kind !== "unknown"
     ) {
       ctx.terminal.stdout(formatCliVersion(ctx.meta));
@@ -582,7 +632,7 @@ export class CliApp<
 
     if (this.#helpOptions !== false) {
       const wantsHelp =
-        !ctx.command?.flags?.help &&
+        runtime.hasBuiltinHelp &&
         parsed.flags.help === true &&
         match.kind !== "unknown";
       const implicitHelp =
@@ -600,26 +650,31 @@ export class CliApp<
     //    root/namespace flags report actionable errors instead of generic help
     if (match.kind !== "matched") {
       if (hasParseErrors) {
-        validateParsedFlags(compiledCmd.flags, parsed, this.#strictFlags);
+        validateParsedFlags(
+          runtime.userFlags,
+          runtime.knownFlagNames,
+          parsed,
+          this.#strictFlags,
+        );
       }
 
       throw createUnmatchedError(match);
     }
 
-    // 5. Validate flag syntax, resolve values/env/defaults, warn deprecations, validate constraints & args
-    validateParsedFlags(compiledCmd.flags, parsed, this.#strictFlags);
+    // 5. Validate syntax, resolve typed flags & args, warn deprecations, enforce constraints
+    validateParsedFlags(
+      runtime.userFlags,
+      runtime.knownFlagNames,
+      parsed,
+      this.#strictFlags,
+    );
 
     const { flags, missingRequired, provided } = await resolveCompiledFlags(
-      compiledCmd.flags,
+      runtime.userFlags,
       parsed.flags,
       parsed.provided,
       ctx.terminal.env,
     );
-    for (const [name, entry] of compiledCmd.flags.byName) {
-      if (entry.norm.builtin) {
-        delete flags[name];
-      }
-    }
     ctx.flags = flags as any;
 
     const matchedCommand = match.command;
@@ -631,13 +686,13 @@ export class CliApp<
       const pathLabel = ctx.commandPath.join(" ");
       ctx.log.warn(`Command '${pathLabel || "(root)"}' is deprecated${reason}`);
     }
-    warnFlagDeprecations(compiledCmd.flags, provided, ctx.log.warn);
+    warnFlagDeprecations(runtime.userFlags, provided, ctx.log.warn);
 
-    validateResolvedFlags(compiledCmd.flags, missingRequired, provided);
+    validateResolvedFlags(runtime.userFlags, missingRequired, provided);
 
-    if (compiledCmd.args) {
+    if (runtime.args) {
       ctx.args = await executeCompiledArgs(
-        compiledCmd.args,
+        runtime.args,
         parsed.parameters,
         parsed.doubleDash,
         ctx.terminal.env,

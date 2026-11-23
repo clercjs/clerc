@@ -1,7 +1,7 @@
 import { PassThrough } from "node:stream";
 
-import { Types, plugin } from "@clerc/core";
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
+import { Types, plugin } from "clerc";
 import { describe, expect, it } from "vitest";
 
 import {

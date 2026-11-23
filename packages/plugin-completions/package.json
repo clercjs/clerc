@@ -40,9 +40,9 @@
   },
   "devDependencies": {
     "@bomb.sh/tab": "catalog:cli",
-    "@clerc/core": "workspace:*"
+    "clerc": "workspace:*"
   },
   "peerDependencies": {
-    "@clerc/core": "*"
+    "clerc": "*"
   }
 }

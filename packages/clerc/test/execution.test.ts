@@ -448,4 +448,77 @@ describe("Clerc execution pipeline", () => {
       badArgDefaultCli.run(["bad"], { terminal, throwOnError: true }),
     ).rejects.toThrow(InvalidParametersError);
   });
+
+  it("validates counter env, keeps ctx.flags clean on parse error, compiles subcommands upfront, and avoids -h collision", async () => {
+    // 1. Counter env rejects invalid values instead of silently becoming 0
+    const badEnvTerm = createMemoryTerminal({ env: { VERBOSE: "banana" } });
+    const envCli = createTestBaseCli();
+    envCli.command("ping", {
+      flags: { verbose: { type: [Boolean], env: "VERBOSE" } },
+      run() {},
+    });
+
+    await expect(
+      envCli.run(["ping"], { terminal: badEnvTerm, throwOnError: true }),
+    ).rejects.toThrow(ValidationError);
+
+    // 2. Error handler never sees raw unconverted strings or internal IMPLICIT_FLAG_VALUE symbols
+    let errorFlags: Record<string, unknown> | undefined;
+    const errCli = createTestBaseCli().onError((_err, ctx) => {
+      errorFlags = { ...ctx.flags };
+
+      return true;
+    });
+    errCli.command("serve <entry>", {
+      flags: {
+        port: { type: Number },
+        inspect: { type: Number, implicitValue: 9229 },
+      },
+      run() {},
+    });
+
+    // Parse error before flag resolution: ctx.flags stays empty (no raw strings or internal symbols)
+    await errCli.run(["serve", "--port", "8080", "--inspect", "--unknown"], {
+      terminal: createMemoryTerminal(),
+    });
+
+    expect(errorFlags).toEqual({});
+
+    // Arg error after flag resolution: ctx.flags holds resolved typed values
+    await errCli.run(["serve", "--port", "8080", "--inspect"], {
+      terminal: createMemoryTerminal(),
+    });
+
+    expect(errorFlags).toEqual({ port: 8080, inspect: 9229 });
+
+    // 3. Upfront compilation catches invalid schema in unused subcommands immediately
+    const brokenSubCli = createTestBaseCli();
+    brokenSubCli.command("ok", { run() {} });
+    brokenSubCli.command("unused", {
+      flags: { bad: { type: String, delimiter: "," } },
+      run() {},
+    });
+
+    expect(() => brokenSubCli.buildModel()).toThrow(InvalidSchemaError);
+
+    // 4. User short '-h' (e.g. --host) does not crash against built-in --help
+    let hostObserved: string | undefined;
+    const hostTerm = createMemoryTerminal();
+    const hostCli = createTestBaseCli({ help: true });
+    hostCli.command("connect", {
+      flags: { host: { type: String, short: "h", description: "DB host" } },
+      run(ctx) {
+        hostObserved = ctx.flags.host;
+      },
+    });
+
+    await hostCli.run(["connect", "-h", "db.local"], { terminal: hostTerm });
+
+    expect(hostObserved).toBe("db.local");
+
+    await hostCli.run(["connect", "--help"], { terminal: hostTerm });
+
+    expect(hostTerm.stdoutText()).toContain("-h, --host <string>");
+    expect(hostTerm.stdoutText()).toContain("    --help");
+  });
 });

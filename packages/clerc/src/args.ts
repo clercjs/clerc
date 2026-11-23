@@ -3,53 +3,44 @@ import {
   MissingRequiredParameterError,
   UnexpectedArgumentError,
 } from "./errors";
+import { convertItemList } from "./flags";
 import { DOUBLE_DASH } from "./parser";
 import type { TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import type {
-  AnyCommandDefinition,
   ArgDefinitionValue,
+  ArgDescriptor,
   ArgOptions,
   CoreSingleType,
 } from "./types";
-import { camelCase } from "./utils";
+import { camelCase, evaluateDefault } from "./utils";
 
 const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
 
 const isArgToken = (token: string): boolean =>
   token === DOUBLE_DASH || token.startsWith("<") || token.startsWith("[");
 
-export interface ArgInfo {
-  readonly name: string;
-  readonly rawName: string;
-  readonly token: string;
-  readonly isRequired: boolean;
-  readonly isVariadic: boolean;
-}
-
-export interface ResolvedArg extends ArgInfo {
-  readonly options: ArgOptions;
-  readonly afterDoubleDash: boolean;
-}
+const defaultStringJsonSchema = (): Record<string, unknown> => ({
+  type: "string",
+});
 
 export interface ParsedCommandSpec {
   readonly name: string;
   readonly argTokens: readonly string[];
 }
 
-interface CompiledArgItem extends ArgInfo {
+export interface CompiledArgItem extends ArgDescriptor {
   readonly convert?: TypeConverter;
-  readonly default?: unknown;
-  readonly env?: string;
 }
 
 export interface CompiledArgs {
+  readonly descriptors: readonly ArgDescriptor[];
   readonly main: readonly CompiledArgItem[];
   readonly doubleDash: readonly CompiledArgItem[];
   readonly hasDoubleDashSpec: boolean;
 }
 
-export function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
+function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
   if (typeof arg === "function" || isStandardSchema(arg)) {
     return { type: arg as CoreSingleType };
   }
@@ -71,7 +62,13 @@ export function splitArgTokens(argTokens: readonly string[]): {
       };
 }
 
-export function extractArgInfo(token: string): ArgInfo {
+function parseArgToken(token: string): {
+  readonly name: string;
+  readonly rawName: string;
+  readonly token: string;
+  readonly isRequired: boolean;
+  readonly isVariadic: boolean;
+} {
   const match = ARG_TOKEN_REGEX.exec(token);
   if (
     !match ||
@@ -90,31 +87,6 @@ export function extractArgInfo(token: string): ArgInfo {
   };
 }
 
-export function resolveCommandArgs(
-  cmd: Pick<AnyCommandDefinition, "argTokens" | "args">,
-): readonly ResolvedArg[] {
-  const { main, doubleDash } = splitArgTokens(cmd.argTokens);
-  function toResolved(token: string, afterDoubleDash: boolean): ResolvedArg {
-    const info = extractArgInfo(token);
-    const rawDef = cmd.args?.[info.name];
-
-    return {
-      ...info,
-      options: rawDef ? normalizeArgValue(rawDef) : {},
-      afterDoubleDash,
-    };
-  }
-
-  return [
-    ...main.map((token) => toResolved(token, false)),
-    ...doubleDash.map((token) => toResolved(token, true)),
-  ];
-}
-
-/**
- * Splits a command signature like `"deploy <target> [region] -- [extra...]"`
- * into its command name (`"deploy"`) and ordered positional argument tokens.
- */
 export function parseCommandSpec(spec: string): ParsedCommandSpec {
   const trimmed = spec.trim();
   if (trimmed === "") {
@@ -146,14 +118,15 @@ export function parseCommandSpec(spec: string): ParsedCommandSpec {
 
 function compileArgSlice(
   tokens: readonly string[],
-  argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
+  argDefs: Readonly<Record<string, ArgDefinitionValue>> | undefined,
+  afterDoubleDash: boolean,
 ): CompiledArgItem[] {
   const items: CompiledArgItem[] = [];
   const seen = new Set<string>();
   let hasOptional = false;
 
   for (let i = 0; i < tokens.length; i++) {
-    const info = extractArgInfo(tokens[i]);
+    const info = parseArgToken(tokens[i]);
 
     if (seen.has(info.name)) {
       throw new InvalidParametersError(`duplicate argument name: ${info.name}`);
@@ -182,11 +155,19 @@ function compileArgSlice(
         `required argument "${info.name}" cannot have a default value`,
       );
     }
+
+    const typeDesc = norm?.type ? describeType(norm.type) : undefined;
     items.push({
       ...info,
-      convert: norm?.type ? describeType(norm.type).convert : undefined,
+      afterDoubleDash,
+      display: typeDesc?.display,
+      description: norm?.description,
+      placeholder: norm?.placeholder,
       default: norm?.default,
       env: norm?.env,
+      meta: norm?.meta,
+      toJsonSchema: typeDesc ? typeDesc.toJsonSchema : defaultStringJsonSchema,
+      convert: typeDesc?.convert,
     });
   }
 
@@ -198,27 +179,15 @@ export function compileArgs(
   argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
 ): CompiledArgs {
   const { main, doubleDash } = splitArgTokens(argTokens);
+  const compiledMain = compileArgSlice(main, argDefs, false);
+  const compiledDd = compileArgSlice(doubleDash, argDefs, true);
 
   return {
-    main: compileArgSlice(main, argDefs),
-    doubleDash: compileArgSlice(doubleDash, argDefs),
+    descriptors: [...compiledMain, ...compiledDd],
+    main: compiledMain,
+    doubleDash: compiledDd,
     hasDoubleDashSpec: argTokens.includes(DOUBLE_DASH),
   };
-}
-
-async function convertArgItems(
-  item: CompiledArgItem,
-  elements: readonly string[],
-): Promise<unknown[]> {
-  if (!item.convert) {
-    return [...elements];
-  }
-  const converted: unknown[] = [];
-  for (const element of elements) {
-    converted.push(await item.convert(element, item.token));
-  }
-
-  return converted;
 }
 
 async function applyArgSlice(
@@ -240,7 +209,7 @@ async function applyArgSlice(
 
     if (!isMissing) {
       result[item.name] = item.isVariadic
-        ? await convertArgItems(item, raw as string[])
+        ? await convertItemList(item.convert, item.token, raw as string[])
         : item.convert
           ? await item.convert(raw as string, item.token)
           : raw;
@@ -251,8 +220,9 @@ async function applyArgSlice(
     const envValue = item.env ? env[item.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       result[item.name] = item.isVariadic
-        ? await convertArgItems(
-            item,
+        ? await convertItemList(
+            item.convert,
+            item.token,
             envValue.split(",").map((s) => s.trim()),
           )
         : item.convert
@@ -263,10 +233,7 @@ async function applyArgSlice(
     }
 
     if (item.default !== undefined) {
-      result[item.name] =
-        typeof item.default === "function"
-          ? (item.default as () => unknown)()
-          : item.default;
+      result[item.name] = evaluateDefault(item.default);
 
       continue;
     }

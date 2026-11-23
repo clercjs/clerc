@@ -74,7 +74,8 @@ const CHAR_DASH = 45; // '-'
 const CHAR_EQ = 61; // '='
 const CHAR_N = 110; // 'n'
 const CHAR_O = 111; // 'o'
-const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
+export const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
+
 const EMPTY_STRINGS: readonly string[] = Object.freeze([]);
 const EMPTY_INVALID: readonly InvalidFlagValue[] = Object.freeze([]);
 const EMPTY_UNKNOWN: Readonly<Record<string, RawInputType>> = Object.freeze({});

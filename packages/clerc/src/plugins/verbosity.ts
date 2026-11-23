@@ -1,4 +1,4 @@
-import { plugin } from "@clerc/core";
+import { plugin } from "../cli";
 
 export const verbosityPlugin = () =>
   plugin("clerc:verbosity")

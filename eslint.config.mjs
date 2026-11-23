@@ -8,7 +8,7 @@ export default so1ve(
     },
   },
   {
-    files: ["packages/core/src/cli.ts"],
+    files: ["packages/clerc/src/cli.ts"],
     rules: {
       "ts/prefer-return-this-type": "off",
     },
@@ -20,8 +20,7 @@ export default so1ve(
     },
   },
   {
-    files: ["packages/*/src/**"],
-    ignores: ["packages/test-utils/**"],
+    files: ["packages/clerc/src/**", "packages/logger/src/**"],
     rules: {
       "no-restricted-imports": ["error", "clerc"],
     },

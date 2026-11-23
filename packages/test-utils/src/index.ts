@@ -2,8 +2,8 @@ import type {
   CreateCliOptions,
   MemoryTerminal,
   MemoryTerminalOptions,
-} from "@clerc/core";
-import { Cli, createMemoryTerminal } from "@clerc/core";
+} from "clerc";
+import { Cli, createMemoryTerminal } from "clerc";
 
 export { createMemoryTerminal };
 export type { MemoryTerminal, MemoryTerminalOptions };

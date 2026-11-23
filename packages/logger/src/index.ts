@@ -130,8 +130,10 @@ const COLOR_THEME: LoggerTheme = Object.freeze({
   bold: (text: string) => styleText("bold", text, { validateStream: false }),
 });
 
-function detectColor(): boolean {
-  const env = process.env;
+export function detectColor(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  isTTY = Boolean(process.stdout.isTTY),
+): boolean {
   if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") {
     return false;
   }
@@ -142,11 +144,12 @@ function detectColor(): boolean {
     return false;
   }
 
-  return Boolean(process.stdout.isTTY);
+  return isTTY;
 }
 
-function detectUnicode(): boolean {
-  const env = process.env;
+export function detectUnicode(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
   if (process.platform !== "win32") {
     return env.TERM !== "linux";
   }

@@ -127,21 +127,32 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports root command and root alias", async () => {
+  it("supports direct root command and rejects empty command aliases", async () => {
     const seen: string[] = [];
     const terminal = createMemoryTerminal();
 
     const cli = createTestBaseCli();
-    cli.command("build", {
-      aliases: [""],
+    cli.command("", {
       run(ctx) {
-        seen.push(ctx.calledAs);
+        seen.push(`root:${ctx.calledAs}`);
+      },
+    });
+    cli.command("build", {
+      run(ctx) {
+        seen.push(`sub:${ctx.calledAs}`);
       },
     });
 
     await cli.run([], { terminal });
     await cli.run(["build"], { terminal });
 
-    expect(seen).toEqual(["", "build"]);
+    expect(seen).toEqual(["root:", "sub:build"]);
+
+    const tree = new CommandTree();
+
+    expect(() => tree.register(makeDef("build", [""]))).toThrow(
+      InvalidCommandError,
+    );
   });
+
 });
