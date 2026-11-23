@@ -6,9 +6,9 @@ Expose any Clerc v2 CLI as a zero-dependency **Model Context Protocol (MCP)** st
 
 ```ts
 import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Cli, Types } from "clerc";
+import { Types, clerc } from "clerc";
 
-const cli = Cli({
+const cli = clerc({
   scriptName: "acme",
   version: "2.0.0",
   description: "Build and deploy apps",

@@ -1,6 +1,6 @@
-import { Cli } from "clerc";
+import { clerc } from "clerc";
 
-const cli = Cli({
+const cli = clerc({
   scriptName: "bumpp",
   version: "9.2.0",
   description: "Interactive CLI that bumps your version numbers and more",

@@ -22,16 +22,16 @@
 
 - **Route-Style Typed Command Signatures** — Write `"deploy <target> [region] -- [extra...]"` and get full template-literal inference + `args` key autocompletion with zero `as const`.
 - **Batteries-Included Core** — Native `--help`, `--version`, strict unknown-flag checks with typo suggestions, and Cargo/Clap-inspired diagnostics (plus JSON mode) right out of the box.
-- **Unified `Cli` & `plugin()` Primitives** — Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.middleware()`, `.onError()`, `.use()`), with async context derivation after flag resolution and atomic named overrides.
+- **Unified `Clerc` & `plugin()` Primitives** — Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.middleware()`, `.onError()`, `.use()`), with async context derivation after flag resolution and atomic named overrides.
 - **Standard Schema v1** — Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
 - **Testable by Design** — Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
 
 # 😊 Quick Start
 
 ```ts
-import { Cli, Types } from "clerc";
+import { Types, clerc } from "clerc";
 
-const cli = Cli({
+const cli = clerc({
   scriptName: "acme",
   version: "2.0.0",
   description: "Build and deploy modern TypeScript apps",
@@ -74,7 +74,7 @@ await cli.runMain();
 
 # 📦 Packages
 
-- `clerc` — Core CLI framework: POSIX argv parser, `Cli`, `plugin`, `CommandTree`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
+- `clerc` — Core CLI framework: POSIX argv parser, `clerc`, `plugin`, `CommandTree`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
 - `@clerc/logger` — Zero-dependency CLI logger with aligned word labels and JSON mode.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 - `@clerc/plugin-mcp` — Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.

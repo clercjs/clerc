@@ -1,9 +1,9 @@
 import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Cli, plugin } from "../src";
+import { clerc, plugin } from "../src";
 
-describe("Unified Plugin & CliApp composition", () => {
+describe("Unified Plugin & Clerc composition", () => {
   it("runs middleware in onion order and onError in reverse (LIFO) order", async () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal();
@@ -87,7 +87,7 @@ describe("Unified Plugin & CliApp composition", () => {
         },
       });
 
-    const cli = Cli({ scriptName: "app", version: "1.0.0" })
+    const cli = clerc({ scriptName: "app", version: "1.0.0" })
       .use(makeGreetingPlugin("v1"))
       .use(makeGreetingPlugin("v2"));
 

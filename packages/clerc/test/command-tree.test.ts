@@ -7,10 +7,10 @@ import { describe, expect, it } from "vitest";
 
 import type { AnyCommandDefinition } from "../src";
 import {
-  Cli,
   CommandTree,
   InvalidCommandError,
   UnknownCommandError,
+  clerc,
   plugin,
 } from "../src";
 
@@ -133,14 +133,15 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports direct root command and rejects empty command aliases", async () => {
+  it("supports spec-less command(options) root command and rejects empty string specs or aliases", async () => {
     const seen: string[] = [];
     const terminal = createMemoryTerminal();
 
     const cli = createTestBaseCli();
-    cli.command("", {
+    cli.command({
+      flags: { port: { type: Number, default: 3000 } },
       run(ctx) {
-        seen.push(`root:${ctx.calledAs}`);
+        seen.push(`root:${ctx.calledAs}:${ctx.flags.port}`);
       },
     });
     cli.command("build", {
@@ -150,9 +151,17 @@ describe("CommandTree", () => {
     });
 
     await cli.run([], { terminal });
+    await cli.run(["--port", "8080"], { terminal });
     await cli.run(["build"], { terminal });
 
-    expect(seen).toEqual(["root:", "sub:build"]);
+    expect(seen).toEqual(["root::3000", "root::8080", "sub:build"]);
+
+    expect(() => (cli.command as any)("", { run() {} })).toThrow(
+      InvalidCommandError,
+    );
+    expect(() => (cli.command as any)("   ", { run() {} })).toThrow(
+      InvalidCommandError,
+    );
 
     const tree = new CommandTree();
 
@@ -161,10 +170,10 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports Cli({ defaultCommand }) with smart positional routing and help tags", async () => {
+  it("supports clerc({ defaultCommand }) with smart positional routing and help tags", async () => {
     // 1. defaultCommand without positional args keeps UnknownCommandError + typo hints
     const events: string[] = [];
-    const noArgCli = Cli({
+    const noArgCli = clerc({
       scriptName: "vite",
       version: "1.0.0",
       defaultCommand: "dev",
@@ -210,7 +219,7 @@ describe("CommandTree", () => {
 
     // 2. defaultCommand with positional args forwards unmatched root args like Vite
     const dirEvents: string[] = [];
-    const argCli = Cli({
+    const argCli = clerc({
       scriptName: "vite",
       version: "1.0.0",
       defaultCommand: "dev",
@@ -246,7 +255,7 @@ describe("CommandTree", () => {
     ).rejects.toThrow(UnknownCommandError);
 
     // 3. Compile-time validation rejects missing, namespace-only, or conflicting defaultCommand
-    const missingDefault = Cli({
+    const missingDefault = clerc({
       scriptName: "vite",
       defaultCommand: "missing",
     });
@@ -254,16 +263,16 @@ describe("CommandTree", () => {
 
     expect(() => missingDefault.buildModel()).toThrow(InvalidCommandError);
 
-    const nsDefault = Cli({ scriptName: "vite", defaultCommand: "db" });
+    const nsDefault = clerc({ scriptName: "vite", defaultCommand: "db" });
     nsDefault.command("db migrate", { run() {} });
 
     expect(() => nsDefault.buildModel()).toThrow(InvalidCommandError);
 
-    const conflictDefault = Cli({
+    const conflictDefault = clerc({
       scriptName: "vite",
       defaultCommand: "dev",
     });
-    conflictDefault.command("", { run() {} });
+    conflictDefault.command({ run() {} });
     conflictDefault.command("dev", { run() {} });
 
     expect(() => conflictDefault.buildModel()).toThrow(InvalidCommandError);

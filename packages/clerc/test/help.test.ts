@@ -1,13 +1,13 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Cli, Types } from "../src";
+import { Types, clerc } from "../src";
 
 describe("built-in v2 editorial help", () => {
   it("renders single top hairline, eyebrow headings, and aligned sections", async () => {
     const terminal = createMemoryTerminal({ columns: 96 });
 
-    const cli = Cli({
+    const cli = clerc({
       scriptName: "acme",
       version: "2.0.0",
       description: "Build and deploy modern TypeScript apps",
@@ -128,7 +128,7 @@ describe("built-in v2 editorial help", () => {
 
   it("decouples command and option columns when an option is very wide", async () => {
     const terminal = createMemoryTerminal({ columns: 100 });
-    const cli = Cli({ scriptName: "acme", version: "1.0.0" }).flags({
+    const cli = clerc({ scriptName: "acme", version: "1.0.0" }).flags({
       experimentalModuleResolution: {
         type: String,
         description: "Resolution strategy",
@@ -147,7 +147,7 @@ describe("built-in v2 editorial help", () => {
 
   it("falls back to ASCII top rule and stacked examples on narrow terminals", async () => {
     const terminal = createMemoryTerminal({ columns: 68, unicode: false });
-    const cli = Cli({
+    const cli = clerc({
       scriptName: "acme",
       version: "2.0.0",
       examples: [
@@ -207,7 +207,7 @@ describe("built-in v2 editorial help", () => {
 
   it("keeps metadata tags intact across line wraps, renders arg types cleanly, and supports section overrides", async () => {
     const terminal = createMemoryTerminal({ columns: 80 });
-    const cli = Cli({
+    const cli = clerc({
       scriptName: "acme",
       version: "2.0.0",
       notes: [
@@ -257,7 +257,7 @@ describe("built-in v2 editorial help", () => {
     expect(deployOut).toContain("Cloud region  [default: us-east-1]");
 
     const customTerm = createMemoryTerminal({ columns: 80 });
-    const customCli = Cli({
+    const customCli = clerc({
       scriptName: "acme",
       version: "2.0.0",
       notes: ["Hidden note"],

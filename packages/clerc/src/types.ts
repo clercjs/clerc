@@ -214,6 +214,22 @@ export type ContextualArgs<
     : never;
 } & Partial<Record<Exclude<ExtractArgNames<Spec>, keyof Args>, ArgOptions>>;
 
+type TrimWhitespace<S extends string> = S extends
+  | ` ${infer R}`
+  | `${infer R} `
+  | `\t${infer R}`
+  | `${infer R}\t`
+  | `\n${infer R}`
+  | `${infer R}\n`
+  ? TrimWhitespace<R>
+  : S;
+
+export type NonEmptySpec<S extends string> = string extends S
+  ? S
+  : TrimWhitespace<S> extends ""
+    ? never
+    : S;
+
 type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
 
 type ExtractSingleArgName<Token extends string> = Token extends
@@ -438,6 +454,12 @@ export interface CommandOptions<
   readonly meta?: Record<string, unknown>;
 }
 
+export type RootCommandOptions<
+  Flags extends Record<string, any> = {},
+  GlobalFlags extends Record<string, any> = {},
+  TExt extends Record<string, any> = {},
+> = Omit<CommandOptions<"", {}, Flags, GlobalFlags, TExt>, "args" | "aliases">;
+
 export interface CommandDefinition<
   Spec extends string = string,
   Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
@@ -472,7 +494,7 @@ export type ErrorHandler<
   ctx: ErrorContext<TGlobalFlags> & Partial<TExt>,
 ) => boolean | void | Promise<boolean | void>;
 
-export interface CreateCliOptions {
+export interface ClercOptions {
   readonly scriptName: string;
   readonly description?: string;
   readonly version?: string;

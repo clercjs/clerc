@@ -11,7 +11,7 @@ export type {
   LoggerTheme,
 } from "@clerc/logger";
 export { createLogger } from "@clerc/logger";
-export { Cli, CliApp, Plugin, plugin } from "./cli";
+export { Clerc, Plugin, clerc, plugin } from "./cli";
 export type { CommandMatch } from "./command-tree";
 export { CommandTree } from "./command-tree";
 export type {
@@ -94,6 +94,7 @@ export type {
   ClercFlagDefinitionValue,
   ClercFlagOptions,
   ClercFlagsDefinition,
+  ClercOptions,
   CommandContext,
   CommandDefinition,
   CommandHandler,
@@ -103,7 +104,6 @@ export type {
   ContextualFlags,
   CoreSingleType,
   CoreTypeValue,
-  CreateCliOptions,
   ErrorContext,
   ErrorHandler,
   ExtractArgNames,
@@ -119,9 +119,11 @@ export type {
   MergedFlags,
   MetaAsyncGetter,
   Middleware,
+  NonEmptySpec,
   ReadonlyCliMeta,
   ReadonlyCliModel,
   ReadonlyCommandTree,
+  RootCommandOptions,
   RunContext,
   RunOptions,
   RunResult,

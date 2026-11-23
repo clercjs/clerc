@@ -35,10 +35,10 @@ import { createTheme } from "./theme";
 import type {
   AnyCommandDefinition,
   ClercFlagsDefinition,
+  ClercOptions,
   CommandNode,
   CommandOptions,
   ContextualFlags,
-  CreateCliOptions,
   ErrorContext,
   ErrorHandler,
   ExtractArgNames,
@@ -47,8 +47,10 @@ import type {
   GroupsInput,
   HelpOptions,
   Middleware,
+  NonEmptySpec,
   ReadonlyCliMeta,
   ReadonlyCliModel,
+  RootCommandOptions,
   RunContext,
   RunOptions,
   RunResult,
@@ -276,17 +278,38 @@ export class Plugin<
     return this;
   }
 
+  public command<const Flags extends Record<string, any> = {}>(
+    options: RootCommandOptions<Flags, TGlobalFlags, TExt>,
+  ): this;
   public command<
     const Spec extends string,
     const Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
     const Flags extends Record<string, any> = {},
   >(
-    spec: Spec,
+    spec: NonEmptySpec<Spec>,
     options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TExt>,
+  ): this;
+  public command(
+    specOrOptions: string | RootCommandOptions<any, any, any>,
+    maybeOptions?: CommandOptions<any, any, any, any, any>,
   ): this {
     const state = getPluginState(this);
-    const { name, argTokens } = parseCommandSpec(spec);
-    state.commands.push({ ...options, spec, name, argTokens });
+    if (typeof specOrOptions === "string") {
+      const { name, argTokens } = parseCommandSpec(specOrOptions);
+      state.commands.push({
+        ...maybeOptions,
+        spec: specOrOptions,
+        name,
+        argTokens,
+      });
+    } else {
+      state.commands.push({
+        ...specOrOptions,
+        spec: "",
+        name: "",
+        argTokens: [],
+      });
+    }
     state.onInvalidate?.();
 
     return this;
@@ -330,7 +353,7 @@ export class Plugin<
   }
 }
 
-export class CliApp<
+export class Clerc<
   TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TExt> {
@@ -342,7 +365,7 @@ export class CliApp<
   readonly #loggerOptions?: LoggerOptions;
   #compiled?: CompiledCli;
 
-  constructor(options: CreateCliOptions) {
+  constructor(options: ClercOptions) {
     super("clerc:root");
     const scriptName = options.scriptName.trim();
     if (!scriptName) {
@@ -373,7 +396,7 @@ export class CliApp<
 
   public override flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
-  ): CliApp<TGlobalFlags & Flags, TExt> {
+  ): Clerc<TGlobalFlags & Flags, TExt> {
     super.flags(definitions);
 
     return this as any;
@@ -381,7 +404,7 @@ export class CliApp<
 
   public override extend<Added extends Record<string, any>>(
     fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
-  ): CliApp<TGlobalFlags, TExt & Added> {
+  ): Clerc<TGlobalFlags, TExt & Added> {
     super.extend(fn);
 
     return this as any;
@@ -390,7 +413,7 @@ export class CliApp<
   public override use<
     PFlags extends Record<string, any> = {},
     PExt extends Record<string, any> = {},
-  >(other: Plugin<PFlags, PExt>): CliApp<TGlobalFlags & PFlags, TExt & PExt> {
+  >(other: Plugin<PFlags, PExt>): Clerc<TGlobalFlags & PFlags, TExt & PExt> {
     super.use(other);
 
     return this as any;
@@ -515,7 +538,7 @@ export class CliApp<
       const trimmedDefault = this.#defaultCommand.trim();
       if (trimmedDefault === "") {
         throw new InvalidCommandError(
-          "defaultCommand cannot be empty; register a root command with cli.command('', ...) instead",
+          "defaultCommand cannot be empty; register a root command with cli.command({ ... }) instead",
         );
       }
       if (tree.root.command) {
@@ -878,4 +901,4 @@ export class CliApp<
 
 export const plugin = (name: string): Plugin => new Plugin(name);
 
-export const Cli = (options: CreateCliOptions): CliApp => new CliApp(options);
+export const clerc = (options: ClercOptions): Clerc => new Clerc(options);

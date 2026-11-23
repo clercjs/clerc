@@ -1,6 +1,6 @@
 import { completionsPlugin } from "@clerc/plugin-completions";
 import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Cli, Types, plugin, verbosityPlugin } from "clerc";
+import { Types, clerc, plugin, verbosityPlugin } from "clerc";
 
 // 1. Custom plugin with global flag + async context derivation
 const configPlugin = plugin("acme:config")
@@ -76,7 +76,7 @@ const dbPlugin = plugin("acme:db")
   });
 
 // 4. Assemble CLI
-const cli = Cli({
+const cli = clerc({
   scriptName: "acme",
   version: "2.0.0",
   description: "Build and deploy modern TypeScript apps (Clerc v2 demo)",

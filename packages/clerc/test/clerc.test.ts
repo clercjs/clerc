@@ -1,7 +1,7 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-describe("clerc Cli() integration", () => {
+describe("clerc() integration", () => {
   it("handles --version, version, --help, help, and subcommand help natively", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();

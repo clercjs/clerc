@@ -1,6 +1,6 @@
-import { Cli } from "clerc";
+import { clerc } from "clerc";
 
-const cli = Cli({
+const cli = clerc({
   scriptName: "foo-cli",
   version: "0.0.0",
   description: "A foo CLI",

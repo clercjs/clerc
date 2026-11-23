@@ -1,4 +1,5 @@
 import {
+  InvalidCommandError,
   InvalidParametersError,
   MissingRequiredParameterError,
   UnexpectedArgumentError,
@@ -90,7 +91,9 @@ function parseArgToken(token: string): {
 export function parseCommandSpec(spec: string): ParsedCommandSpec {
   const trimmed = spec.trim();
   if (trimmed === "") {
-    return { name: "", argTokens: [] };
+    throw new InvalidCommandError(
+      "command spec cannot be empty; pass options directly to command({ ... }) to register a root command",
+    );
   }
 
   const tokens = trimmed.split(/\s+/);

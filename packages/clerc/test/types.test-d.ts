@@ -1,13 +1,13 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { ExtractArgNames, Logger, StandardSchemaV1 } from "../src";
-import { Cli, Types, plugin, verbosityPlugin } from "../src";
+import { Types, clerc, plugin, verbosityPlugin } from "../src";
 
 describe("core v2 route-signature & plugin types", () => {
   it("infers args from signature strings without as const and type-checks args keys", () => {
     const portSchema = {} as StandardSchemaV1<string, number>;
 
-    const cli = Cli({ scriptName: "app", version: "1.0.0" }).flags({
+    const cli = clerc({ scriptName: "app", version: "1.0.0" }).flags({
       config: { type: String, default: "clerc.json" },
       overrideMe: { type: String, default: "str" },
     });
@@ -45,6 +45,17 @@ describe("core v2 route-signature & plugin types", () => {
       },
     });
 
+    // @ts-expect-error empty string spec must be rejected in favor of command(options)
+    cli.command("", { run() {} });
+
+    clerc({ scriptName: "serve" }).command({
+      flags: { port: { type: Number, default: 3000 } },
+      run(ctx) {
+        expectTypeOf(ctx.args).toEqualTypeOf<{}>();
+        expectTypeOf(ctx.flags.port).toEqualTypeOf<number>();
+      },
+    });
+
     cli.command("check <entry>", {
       args: {
         // @ts-expect-error unknown option key inside arg options must be a compile error
@@ -66,7 +77,7 @@ describe("core v2 route-signature & plugin types", () => {
         },
       }));
 
-    const cli = Cli({ scriptName: "app", version: "1.0.0" }).use(authPlugin);
+    const cli = clerc({ scriptName: "app", version: "1.0.0" }).use(authPlugin);
     cli.command("me", {
       run(ctx) {
         expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
@@ -93,7 +104,7 @@ describe("core v2 route-signature & plugin types", () => {
       },
     };
 
-    Cli({ scriptName: "app", version: "1.0.0" }).command("sync <at>", {
+    clerc({ scriptName: "app", version: "1.0.0" }).command("sync <at>", {
       args: { at: typesOnlySchema },
       flags: { retries: { type: validateOnlySchema, required: true } },
       run(ctx) {
@@ -115,7 +126,7 @@ describe("core v2 route-signature & plugin types", () => {
   });
 
   it("infers arg default types and optional-value implicitValue flag types", () => {
-    Cli({ scriptName: "app", version: "1.0.0" }).command(
+    clerc({ scriptName: "app", version: "1.0.0" }).command(
       "deploy [region] [files...]",
       {
         args: {
@@ -144,7 +155,7 @@ describe("core v2 route-signature & plugin types", () => {
     );
   });
   it("provides built-in ctx.help, ctx.log, and accumulates plugin flags cleanly", () => {
-    Cli({ scriptName: "app", version: "1.0.0" })
+    clerc({ scriptName: "app", version: "1.0.0" })
       .use(verbosityPlugin())
       .command("build", {
         run(ctx) {
