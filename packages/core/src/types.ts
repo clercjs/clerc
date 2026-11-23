@@ -255,7 +255,7 @@ export interface HelpOptions {
   ) => string | Promise<string>;
 }
 
-export interface RunContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
+export interface ErrorContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
   readonly meta: ReadonlyCliMeta;
   readonly model: ReadonlyCliModel;
   readonly terminal: Terminal;
@@ -267,14 +267,21 @@ export interface RunContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
     options?: RunOptions,
   ) => Promise<RunResult>;
   readonly argv: readonly string[];
-  command?: AnyCommandDefinition;
-  commandPath: readonly string[];
-  calledAs?: string;
-  args: Record<string, any>;
-  flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
-  unknown: Record<string, RawInputType>;
-  ignored: readonly string[];
-  doubleDash: readonly string[];
+  readonly command?: AnyCommandDefinition;
+  readonly commandPath: readonly string[];
+  readonly calledAs?: string;
+  readonly args: Record<string, any>;
+  readonly flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
+  readonly unknown: Record<string, RawInputType>;
+  readonly ignored: readonly string[];
+  readonly doubleDash: readonly string[];
+}
+
+export interface RunContext<
+  TGlobalFlags extends ClercFlagsDefinition = {},
+> extends ErrorContext<TGlobalFlags> {
+  readonly command: AnyCommandDefinition;
+  readonly calledAs: string;
 }
 
 export type CommandContext<
@@ -283,26 +290,9 @@ export type CommandContext<
   Flags extends ClercFlagsDefinition = {},
   GlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
-> = {
-  readonly meta: ReadonlyCliMeta;
-  readonly model: ReadonlyCliModel;
-  readonly terminal: Terminal;
-  readonly theme: Theme;
-  readonly log: Logger;
-  readonly help: HelpHelper;
-  readonly run: (
-    argv: readonly string[],
-    options?: RunOptions,
-  ) => Promise<RunResult>;
-  readonly argv: readonly string[];
-  readonly command: AnyCommandDefinition;
-  readonly commandPath: readonly string[];
-  readonly calledAs: string;
+> = Omit<RunContext<GlobalFlags>, "args" | "flags"> & {
   readonly args: InferCommandArgs<Spec, Args>;
   readonly flags: MergedFlags<Flags, GlobalFlags>;
-  readonly unknown: Record<string, RawInputType>;
-  readonly ignored: readonly string[];
-  readonly doubleDash: readonly string[];
 } & TExt;
 
 export type CommandHandler<
@@ -373,11 +363,11 @@ export type ErrorHandler<
   TExt extends Record<string, any> = {},
 > = (
   error: unknown,
-  ctx: RunContext<TGlobalFlags> & TExt,
+  ctx: ErrorContext<TGlobalFlags> & Partial<TExt>,
 ) => boolean | void | Promise<boolean | void>;
 
 export interface CreateCliOptions {
-  readonly scriptName?: string;
+  readonly scriptName: string;
   readonly description?: string;
   readonly version?: string;
   readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;

@@ -292,4 +292,36 @@ describe("@clerc/plugin-mcp", () => {
     expect(responses[0]).toEqual({ jsonrpc: "2.0", id: 1, result: {} });
     expect(responses[1].result.content[0].text).toContain("Hello, MCP!");
   });
+
+  it("handles dash-prefixed positional args safely and rejects duplicate MCP tool names", async () => {
+    const cli = createTestCli().use(mcpPlugin());
+    cli.command("echo <text>", {
+      run(ctx) {
+        ctx.terminal.stdout(ctx.args.text);
+      },
+    });
+
+    const handler = createMcpHandler({
+      model: cli.buildModel(),
+      run: (argv, opts) => cli.run(argv, opts),
+    });
+
+    const res = await handler({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "echo", arguments: { text: "--not-a-flag" } },
+    });
+
+    expect((res?.result as any).content[0].text).toBe("--not-a-flag");
+    expect((res?.result as any).isError).toBeUndefined();
+
+    const dupCli = createTestCli();
+    dupCli.command("db migrate", { run() {} });
+    dupCli.command("db_migrate", { run() {} });
+
+    expect(() => listMcpTools(dupCli.buildModel())).toThrow(
+      "Duplicate MCP tool name: 'db_migrate'",
+    );
+  });
 });

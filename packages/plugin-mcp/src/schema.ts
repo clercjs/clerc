@@ -215,7 +215,7 @@ function buildToolEntry(
     mcpMeta?.name ??
     (node.fullPath.length > 0
       ? node.fullPath.join("_")
-      : model.meta.scriptName || "run");
+      : model.meta.scriptName);
   const description =
     mcpMeta?.description ??
     cmd.description ??
@@ -241,13 +241,24 @@ function buildToolEntry(
   };
 }
 
-export const buildToolEntries = (
+export function buildToolEntries(
   model: ReadonlyCliModel,
   options?: McpFilterOptions,
-): readonly McpToolEntry[] =>
-  listExposedCommands(model, options)
+): readonly McpToolEntry[] {
+  const entries = listExposedCommands(model, options)
     .filter(({ command }) => Boolean(command.run))
     .map(({ node, command }) => buildToolEntry(node, command, model));
+
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (seen.has(entry.tool.name)) {
+      throw new Error(`Duplicate MCP tool name: '${entry.tool.name}'`);
+    }
+    seen.add(entry.tool.name);
+  }
+
+  return entries;
+}
 
 function appendObjectFlags(
   argv: string[],
@@ -346,12 +357,22 @@ export function serializeToolArgsToArgv(
     }
   }
 
-  appendPositionals(argv, entry.mainArgs, input);
+  const mainValues: string[] = [];
+  appendPositionals(mainValues, entry.mainArgs, input);
 
   const ddValues: string[] = [];
   appendPositionals(ddValues, entry.doubleDashArgs, input);
-  if (ddValues.length > 0) {
-    argv.push(DOUBLE_DASH, ...ddValues);
+
+  if (
+    entry.doubleDashArgs.length === 0 &&
+    mainValues.some((v) => v.startsWith("-"))
+  ) {
+    argv.push(DOUBLE_DASH, ...mainValues);
+  } else {
+    argv.push(...mainValues);
+    if (ddValues.length > 0) {
+      argv.push(DOUBLE_DASH, ...ddValues);
+    }
   }
 
   return argv;

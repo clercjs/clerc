@@ -3,14 +3,13 @@ import type {
   MemoryTerminal,
   MemoryTerminalOptions,
 } from "@clerc/core";
-import { createCli, createMemoryTerminal } from "@clerc/core";
-import { Cli } from "clerc";
+import { Cli, createMemoryTerminal } from "@clerc/core";
 
 export { createMemoryTerminal };
 export type { MemoryTerminal, MemoryTerminalOptions };
 
-export const createTestBaseCli = (options?: CreateCliOptions) =>
-  createCli({
+export const createTestBaseCli = (options?: Partial<CreateCliOptions>) =>
+  Cli({
     scriptName: "test",
     description: "Test CLI",
     version: "1.0.0",
@@ -18,7 +17,7 @@ export const createTestBaseCli = (options?: CreateCliOptions) =>
     ...options,
   });
 
-export const createTestCli = (options?: CreateCliOptions) =>
+export const createTestCli = (options?: Partial<CreateCliOptions>) =>
   Cli({
     scriptName: "test",
     description: "Test CLI",

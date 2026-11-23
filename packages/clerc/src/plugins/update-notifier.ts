@@ -12,7 +12,19 @@ export interface UpdateNotifierPluginOptions {
   readonly checkIntervalMs?: number;
   readonly registryUrl?: string;
   readonly installCommand?: string;
+  /**
+   * Maximum milliseconds to wait for the npm registry check.
+   *
+   * @default 1500
+   */
   readonly timeoutMs?: number;
+  /**
+   * Maximum milliseconds to wait after command execution finishes before
+   * skipping the update banner so fast commands are never blocked.
+   *
+   * @default 250
+   */
+  readonly postRunGraceMs?: number;
   readonly cacheDir?: string;
   readonly fetch?: typeof globalThis.fetch;
   readonly now?: () => number;
@@ -25,7 +37,8 @@ interface UpdateCache {
 }
 
 const DEFAULT_INTERVAL_MS = 1000 * 60 * 60 * 24;
-const DEFAULT_TIMEOUT_MS = 3000;
+const DEFAULT_TIMEOUT_MS = 1500;
+const DEFAULT_POST_RUN_GRACE_MS = 250;
 const SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)/;
 
 function parseSemver(
@@ -118,6 +131,29 @@ async function fetchLatestVersion(
   }
 }
 
+function awaitWithin<T>(
+  promise: Promise<T>,
+  graceMs: number,
+): Promise<T | undefined> {
+  if (graceMs <= 0) {
+    return promise;
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  return Promise.race([
+    promise.finally(() => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    }),
+    new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => resolve(undefined), graceMs);
+      timer.unref();
+    }),
+  ]);
+}
+
 export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
   const {
     pkg,
@@ -126,6 +162,7 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
     registryUrl = "https://registry.npmjs.org",
     installCommand = `npm i -g ${pkg.name}`,
     timeoutMs = DEFAULT_TIMEOUT_MS,
+    postRunGraceMs = DEFAULT_POST_RUN_GRACE_MS,
     cacheDir,
     fetch: fetchFn = globalThis.fetch,
     now = () => Date.now(),
@@ -169,26 +206,21 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
     return undefined;
   }
 
-  return plugin("clerc:update-notifier")
-    .extend(() => ({
-      updateNotifier: { info: undefined as UpdateInfo | undefined },
-    }))
-    .middleware(async (ctx, next) => {
-      const checkPromise = checkForUpdate(ctx.terminal.env, ctx.terminal.isTTY);
+  return plugin("clerc:update-notifier").middleware(async (ctx, next) => {
+    const checkPromise = checkForUpdate(ctx.terminal.env, ctx.terminal.isTTY);
 
-      try {
-        await next();
-      } finally {
-        const info = await checkPromise;
+    try {
+      await next();
+    } finally {
+      const info = await awaitWithin(checkPromise, postRunGraceMs);
 
-        if (info) {
-          ctx.updateNotifier.info = info;
-          ctx.log.callout({
-            tone: "warn",
-            title: `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-            lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
-          });
-        }
+      if (info) {
+        ctx.log.callout({
+          tone: "warn",
+          title: `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
+          lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
+        });
       }
-    });
+    }
+  });
 }

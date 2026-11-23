@@ -232,9 +232,13 @@ export async function executeCompiledArgs(
   doubleDashValues: readonly string[],
 ): Promise<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
-  await applyArgSlice(compiled.main, values, result);
   if (compiled.doubleDash.length > 0) {
+    await applyArgSlice(compiled.main, values, result);
     await applyArgSlice(compiled.doubleDash, doubleDashValues, result);
+  } else {
+    const combined =
+      doubleDashValues.length > 0 ? [...values, ...doubleDashValues] : values;
+    await applyArgSlice(compiled.main, combined, result);
   }
 
   return result;

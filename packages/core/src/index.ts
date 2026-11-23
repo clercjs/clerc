@@ -5,21 +5,33 @@ export {
   KNOWN_FLAG,
   PARAMETER,
   UNKNOWN_FLAG,
-  camelCase,
-  inferDefault,
 } from "@clerc/parser";
 export type { ArgInfo, ParsedCommandSpec, ResolvedArg } from "./args";
-export {
-  extractArgInfo,
-  normalizeArgValue,
-  parseCommandSpec,
-  resolveCommandArgs,
-  splitArgTokens,
-} from "./args";
-export { CliApp, Plugin, createCli, plugin } from "./cli";
+export { resolveCommandArgs } from "./args";
+export { Cli, CliApp, Plugin, plugin } from "./cli";
 export type { ArgvScanFn, CommandMatch } from "./command-tree";
 export { CommandTree } from "./command-tree";
-export * from "./errors";
+export type {
+  ClercErrorCode,
+  ClercErrorOptions,
+  FormatDiagnosticOptions,
+  ValidationIssue,
+} from "./errors";
+export {
+  ClercError,
+  FlagConflictError,
+  FlagImpliesError,
+  InvalidCommandError,
+  InvalidParametersError,
+  MissingRequiredFlagError,
+  MissingRequiredMetadataError,
+  MissingRequiredParameterError,
+  NoCommandError,
+  UnknownCommandError,
+  UnknownFlagError,
+  ValidationError,
+  formatDiagnostic,
+} from "./errors";
 export { normalizeFlagValue } from "./flags";
 export type { RenderHelpOptions } from "./help/renderer";
 export { renderHelp } from "./help/renderer";
@@ -51,20 +63,15 @@ export type {
   MemoryTerminalOptions,
   Terminal,
 } from "./terminal";
-export {
-  createMemoryTerminal,
-  createTerminal,
-  defaultPlatformArgv,
-} from "./terminal";
+export { createMemoryTerminal, createTerminal } from "./terminal";
 export type { StyleFormat, Theme, ThemeStyleMap, ThemeToken } from "./theme";
 export { createTheme, defaultThemeStyles, monoThemeStyles } from "./theme";
 export type * from "./types";
-export type * from "./utils";
-export {
-  formatFlagName,
-  formatVersion,
-  joinWithAnd,
-  kebabCase,
-  resolveAsyncValue,
-  toArray,
+export type {
+  CamelCase,
+  IsAny,
+  MaybeArray,
+  MaybeAsyncGetter,
+  Prettify,
 } from "./utils";
+export { formatFlagName, kebabCase } from "./utils";

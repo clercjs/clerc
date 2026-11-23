@@ -71,7 +71,7 @@ function buildResourceEntries(
   model: ReadonlyCliModel,
   options?: McpFilterOptions,
 ): readonly ResourceEntry[] {
-  const scriptName = model.meta.scriptName || "cli";
+  const scriptName = model.meta.scriptName;
   const prefix = `cli://${encodeURIComponent(scriptName)}`;
   const entries: ResourceEntry[] = [
     {
@@ -222,7 +222,7 @@ export function createMcpHandler(
     run,
     env,
     cwd,
-    serverName = model.meta.scriptName || "clerc-cli",
+    serverName = model.meta.scriptName,
     mcpCommandName = "mcp",
     resources: enableResources = true,
     filter,

@@ -32,6 +32,7 @@ import type {
   ClercFlagsDefinition,
   CommandOptions,
   CreateCliOptions,
+  ErrorContext,
   ErrorHandler,
   ExtractArgNames,
   GroupDefinition,
@@ -48,6 +49,11 @@ import { formatVersion } from "./utils";
 
 type GroupScope = keyof GroupsInput;
 type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type InternalContext<
+  TGlobalFlags extends ClercFlagsDefinition,
+  TExt extends Record<string, any>,
+> = Mutable<ErrorContext<TGlobalFlags>> & Partial<TExt>;
 type ContextExtender = (
   ctx: RunContext<any>,
 ) => Record<string, any> | Promise<Record<string, any>>;
@@ -270,10 +276,14 @@ export class CliApp<
   readonly #loggerOptions?: LoggerOptions;
   #compiled?: CompiledCli;
 
-  constructor(options: CreateCliOptions = {}) {
+  constructor(options: CreateCliOptions) {
     super("clerc:root");
+    const scriptName = options.scriptName.trim();
+    if (!scriptName) {
+      throw new MissingRequiredMetadataError("scriptName");
+    }
     this.#meta = {
-      scriptName: options.scriptName ?? "",
+      scriptName,
       description: options.description ?? "",
       version: options.version ?? "",
       examples: options.examples,
@@ -459,7 +469,7 @@ export class CliApp<
     compiledCli: CompiledCli,
     argv: readonly string[] | undefined,
     options: RunOptions,
-  ): RunContext<TGlobalFlags> & TExt {
+  ): InternalContext<TGlobalFlags, TExt> {
     const terminal = options.terminal ?? createTerminal();
     const themeOverrides =
       this.#themeOverrides || options.theme
@@ -490,7 +500,7 @@ export class CliApp<
       });
     };
 
-    const baseCtx: RunContext<TGlobalFlags> = {
+    const baseCtx: Mutable<ErrorContext<TGlobalFlags>> = {
       meta: compiledCli.model.meta,
       model: compiledCli.model,
       terminal,
@@ -512,20 +522,13 @@ export class CliApp<
       doubleDash: [],
     };
 
-    return baseCtx as RunContext<TGlobalFlags> & TExt;
+    return baseCtx as InternalContext<TGlobalFlags, TExt>;
   }
 
   async #execute(
     compiledCli: CompiledCli,
-    ctx: RunContext<TGlobalFlags> & TExt,
+    ctx: InternalContext<TGlobalFlags, TExt>,
   ): Promise<RunResult> {
-    if (!ctx.meta.scriptName) {
-      throw new MissingRequiredMetadataError("scriptName");
-    }
-    if (!ctx.meta.version) {
-      throw new MissingRequiredMetadataError("version");
-    }
-
     // 1. Resolve command match (matched | namespace | empty | unknown)
     const match = compiledCli.tree.resolveArgv(
       ctx.argv,
@@ -618,23 +621,25 @@ export class CliApp<
         )
       : {};
 
+    const runCtx = ctx as RunContext<TGlobalFlags> & TExt;
+
     // 6. Derive async context extensions with resolved flags & args
     for (const extend of compiledCli.extenders) {
-      Object.assign(ctx, await extend(ctx));
+      Object.assign(runCtx, await extend(runCtx));
     }
 
     // 7. Run onion middleware chain wrapping command.run
     if (compiledCli.middlewares.length === 0) {
       if (matchedCommand.run) {
-        await matchedCommand.run(ctx as any);
+        await matchedCommand.run(runCtx as any);
       }
     } else {
       const dispatch = async (index: number): Promise<void> => {
         const mw = compiledCli.middlewares[index];
         if (mw) {
-          await mw(ctx, () => dispatch(index + 1));
+          await mw(runCtx, () => dispatch(index + 1));
         } else if (matchedCommand.run) {
-          await matchedCommand.run(ctx as any);
+          await matchedCommand.run(runCtx as any);
         }
       };
       await dispatch(0);
@@ -646,7 +651,7 @@ export class CliApp<
   async #handleError(
     error: unknown,
     compiledCli: CompiledCli,
-    ctx: RunContext<TGlobalFlags> & TExt,
+    ctx: InternalContext<TGlobalFlags, TExt>,
     throwOnError: boolean,
   ): Promise<RunResult> {
     enrichCommandError(error, compiledCli.tree);
@@ -717,5 +722,4 @@ export class CliApp<
 
 export const plugin = (name: string): Plugin => new Plugin(name);
 
-export const createCli = (options?: CreateCliOptions): CliApp =>
-  new CliApp(options);
+export const Cli = (options: CreateCliOptions): CliApp => new CliApp(options);

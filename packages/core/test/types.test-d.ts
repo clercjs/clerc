@@ -1,13 +1,13 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { StandardSchemaV1 } from "../src";
-import { Types, createCli, plugin } from "../src";
+import { Cli, Types, plugin } from "../src";
 
 describe("core v2 route-signature & plugin types", () => {
   it("infers args from signature strings without as const and type-checks args keys", () => {
     const portSchema = {} as StandardSchemaV1<string, number>;
 
-    const cli = createCli({ scriptName: "app", version: "1.0.0" }).flags({
+    const cli = Cli({ scriptName: "app", version: "1.0.0" }).flags({
       config: { type: String, default: "clerc.json" },
       overrideMe: { type: String, default: "str" },
     });
@@ -55,9 +55,7 @@ describe("core v2 route-signature & plugin types", () => {
         },
       }));
 
-    const cli = createCli({ scriptName: "app", version: "1.0.0" }).use(
-      authPlugin,
-    );
+    const cli = Cli({ scriptName: "app", version: "1.0.0" }).use(authPlugin);
     cli.command("me", {
       run(ctx) {
         expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
@@ -84,7 +82,7 @@ describe("core v2 route-signature & plugin types", () => {
       },
     };
 
-    createCli({ scriptName: "app", version: "1.0.0" }).command("sync <at>", {
+    Cli({ scriptName: "app", version: "1.0.0" }).command("sync <at>", {
       args: { at: typesOnlySchema },
       flags: { retries: { type: validateOnlySchema, required: true } },
       run(ctx) {
