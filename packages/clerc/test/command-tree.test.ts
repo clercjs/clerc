@@ -6,7 +6,13 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { AnyCommandDefinition } from "../src";
-import { CommandTree, InvalidCommandError, plugin } from "../src";
+import {
+  Cli,
+  CommandTree,
+  InvalidCommandError,
+  UnknownCommandError,
+  plugin,
+} from "../src";
 
 const makeDef = (
   name: string,
@@ -155,4 +161,111 @@ describe("CommandTree", () => {
     );
   });
 
+  it("supports Cli({ defaultCommand }) with smart positional routing and help tags", async () => {
+    // 1. defaultCommand without positional args keeps UnknownCommandError + typo hints
+    const events: string[] = [];
+    const noArgCli = Cli({
+      scriptName: "vite",
+      version: "1.0.0",
+      defaultCommand: "dev",
+    });
+    noArgCli.command("dev", {
+      description: "Start dev server",
+      flags: { port: { type: Number, short: "p", default: 5173 } },
+      run(ctx) {
+        events.push(`dev:${ctx.flags.port}`);
+      },
+    });
+    noArgCli.command("build", {
+      description: "Build app",
+      run() {
+        events.push("build");
+      },
+    });
+
+    const term = createMemoryTerminal();
+    await noArgCli.run([], { terminal: term });
+    await noArgCli.run(["-p", "8080"], { terminal: term });
+
+    expect(events).toEqual(["dev:5173", "dev:8080"]);
+
+    // Typo 'biuld' still reports UnknownCommandError with 'build' suggestion
+    const typoRes = await noArgCli.run(["biuld"], { terminal: term });
+
+    expect(typoRes.ok).toBeFalsy();
+    expect(typoRes.error).toBeInstanceOf(UnknownCommandError);
+    expect(term.stderrText()).toContain("a similar command exists: 'build'");
+
+    // Root --help and --version still work at root and mark [default]
+    term.clear();
+    await noArgCli.run(["--version"], { terminal: term });
+
+    expect(term.stdoutText()).toBe("vite v1.0.0");
+
+    term.clear();
+    await noArgCli.run(["--help"], { terminal: term });
+
+    expect(term.stdoutText()).toContain("USAGE   vite [command] [options]");
+    expect(term.stdoutText()).toContain("Start dev server  [default]");
+
+    // 2. defaultCommand with positional args forwards unmatched root args like Vite
+    const dirEvents: string[] = [];
+    const argCli = Cli({
+      scriptName: "vite",
+      version: "1.0.0",
+      defaultCommand: "dev",
+    });
+    argCli.command("dev [dir]", {
+      flags: { port: { type: Number, short: "p", default: 5173 } },
+      run(ctx) {
+        dirEvents.push(`dev:${ctx.args.dir ?? "."}:${ctx.flags.port}`);
+      },
+    });
+    argCli.command("build", {
+      run() {
+        dirEvents.push("build");
+      },
+    });
+    argCli.command("db migrate", { run() {} });
+
+    await argCli.run([], { terminal: term });
+    await argCli.run(["./my-app", "-p", "3000"], { terminal: term });
+    await argCli.run(["dev", "./web"], { terminal: term });
+    await argCli.run(["build"], { terminal: term });
+
+    expect(dirEvents).toEqual([
+      "dev:.:5173",
+      "dev:./my-app:3000",
+      "dev:./web:5173",
+      "build",
+    ]);
+
+    // Subcommand namespace typos ('vite db migrat') still report UnknownCommandError
+    await expect(
+      argCli.run(["db", "migrat"], { terminal: term, throwOnError: true }),
+    ).rejects.toThrow(UnknownCommandError);
+
+    // 3. Compile-time validation rejects missing, namespace-only, or conflicting defaultCommand
+    const missingDefault = Cli({
+      scriptName: "vite",
+      defaultCommand: "missing",
+    });
+    missingDefault.command("build", { run() {} });
+
+    expect(() => missingDefault.buildModel()).toThrow(InvalidCommandError);
+
+    const nsDefault = Cli({ scriptName: "vite", defaultCommand: "db" });
+    nsDefault.command("db migrate", { run() {} });
+
+    expect(() => nsDefault.buildModel()).toThrow(InvalidCommandError);
+
+    const conflictDefault = Cli({
+      scriptName: "vite",
+      defaultCommand: "dev",
+    });
+    conflictDefault.command("", { run() {} });
+    conflictDefault.command("dev", { run() {} });
+
+    expect(() => conflictDefault.buildModel()).toThrow(InvalidCommandError);
+  });
 });

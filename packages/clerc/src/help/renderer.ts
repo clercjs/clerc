@@ -124,11 +124,18 @@ function formatCommandRow(cmd: HelpCommandItem, theme: Theme): TwoColumnRow {
     cmd.aliases.length > 0
       ? ` ${theme.muted(`(${cmd.aliases.join(", ")})`)}`
       : "";
+  const tags: string[] = [];
+  if (cmd.isDefault) {
+    tags.push(theme.muted("[default]"));
+  }
   const depTag = formatDeprecatedTag(cmd.deprecated, theme);
+  if (depTag) {
+    tags.push(depTag);
+  }
 
   return [
     `${theme.command(cmd.name)}${aliasPart}`,
-    { text: cmd.description, tags: depTag ? [depTag] : undefined },
+    { text: cmd.description, tags },
   ];
 }
 

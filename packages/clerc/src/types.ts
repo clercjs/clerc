@@ -307,6 +307,7 @@ export interface ReadonlyCommandTree {
 export interface ReadonlyCliModel {
   readonly meta: ReadonlyCliMeta;
   readonly tree: ReadonlyCommandTree;
+  readonly defaultCommand?: readonly string[];
   readonly globalFlags: readonly FlagDescriptor[];
   readonly groups: {
     readonly commands: readonly GroupDefinition[];
@@ -445,6 +446,7 @@ export interface CreateCliOptions {
   readonly scriptName: string;
   readonly description?: string;
   readonly version?: string;
+  readonly defaultCommand?: string;
   readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
   readonly help?: boolean | HelpOptions;

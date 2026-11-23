@@ -7,6 +7,7 @@ import type { CommandMatch } from "./command-tree";
 import { CommandTree } from "./command-tree";
 import {
   ClercError,
+  InvalidCommandError,
   MissingRequiredMetadataError,
   NoCommandError,
   UnexpectedArgumentError,
@@ -27,7 +28,7 @@ import {
 } from "./flags";
 import { renderHelp } from "./help/renderer";
 import type { ArgvFlagSpec, ArgvParser } from "./parser";
-import { createArgvParser } from "./parser";
+import { DOUBLE_DASH, createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
@@ -88,6 +89,8 @@ interface CompiledNodeRuntime {
 interface CompiledCli {
   readonly model: ReadonlyCliModel;
   readonly tree: CommandTree;
+  readonly defaultNode?: CommandNode;
+  readonly defaultAcceptsArgs: boolean;
   readonly extenders: readonly ContextExtender[];
   readonly middlewares: readonly Middleware<any, any>[];
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
@@ -334,6 +337,7 @@ export class CliApp<
   TExt extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TExt> {
   readonly #meta: ReadonlyCliMeta;
+  readonly #defaultCommand?: string;
   readonly #helpOptions: false | HelpOptions;
   readonly #strictFlags: boolean;
   readonly #themeOverrides?: Partial<ThemeStyleMap>;
@@ -353,6 +357,7 @@ export class CliApp<
       examples: options.examples,
       notes: options.notes,
     };
+    this.#defaultCommand = options.defaultCommand;
     this.#helpOptions =
       options.help === false
         ? false
@@ -506,9 +511,36 @@ export class CliApp<
       });
     }
 
+    let defaultNode: CommandNode | undefined;
+    let defaultAcceptsArgs = false;
+    if (this.#defaultCommand !== undefined) {
+      const trimmedDefault = this.#defaultCommand.trim();
+      if (trimmedDefault === "") {
+        throw new InvalidCommandError(
+          "defaultCommand cannot be empty; register a root command with cli.command('', ...) instead",
+        );
+      }
+      if (tree.root.command) {
+        throw new InvalidCommandError(
+          "cannot specify defaultCommand when a root command is already registered",
+        );
+      }
+      const target = tree.findNode(trimmedDefault.split(/\s+/));
+      if (!target?.command?.run) {
+        throw new InvalidCommandError(
+          `defaultCommand "${trimmedDefault}" does not match a runnable command`,
+        );
+      }
+      defaultNode = target;
+      defaultAcceptsArgs =
+        target.args.length > 0 ||
+        Boolean(target.command.argTokens.includes(DOUBLE_DASH));
+    }
+
     const model: ReadonlyCliModel = {
       meta: this.#meta,
       tree,
+      defaultCommand: defaultNode?.fullPath,
       globalFlags: globalFlags.descriptors,
       groups: acc.groups,
     };
@@ -516,6 +548,8 @@ export class CliApp<
     this.#compiled = {
       model,
       tree,
+      defaultNode,
+      defaultAcceptsArgs,
       extenders: acc.extenders,
       middlewares: acc.middlewares,
       errorHandlers: acc.errorHandlers,
@@ -596,10 +630,50 @@ export class CliApp<
     ctx: InternalContext<TGlobalFlags, TExt>,
   ): Promise<RunResult> {
     // 1. Resolve command match (matched | namespace | empty | unknown)
-    const match = compiledCli.tree.resolveArgv(
+    let match = compiledCli.tree.resolveArgv(
       ctx.argv,
       compiledCli.rootRuntime.parser.scan,
     );
+
+    // Handle explicit root --version / --help before falling back to defaultCommand
+    if (match.kind === "empty" && compiledCli.defaultNode) {
+      const rootParsed = compiledCli.rootRuntime.parser.parse(
+        match.remainingArgv,
+      );
+      if (
+        compiledCli.rootRuntime.hasBuiltinVersion &&
+        rootParsed.flags.version === true
+      ) {
+        ctx.terminal.stdout(formatCliVersion(ctx.meta));
+
+        return { ok: true, exitCode: 0 };
+      }
+      if (
+        this.#helpOptions !== false &&
+        compiledCli.rootRuntime.hasBuiltinHelp &&
+        rootParsed.flags.help === true
+      ) {
+        await ctx.help.print([]);
+
+        return { ok: true, exitCode: 0 };
+      }
+    }
+
+    if (
+      compiledCli.defaultNode?.command &&
+      (match.kind === "empty" ||
+        (match.kind === "unknown" &&
+          match.parentPath.length === 0 &&
+          compiledCli.defaultAcceptsArgs))
+    ) {
+      match = {
+        kind: "matched",
+        node: compiledCli.defaultNode,
+        command: compiledCli.defaultNode.command,
+        calledAs: compiledCli.defaultNode.fullPath.join(" "),
+        remainingArgv: match.remainingArgv,
+      };
+    }
 
     ctx.commandPath = match.node.fullPath;
     if (match.kind === "matched") {

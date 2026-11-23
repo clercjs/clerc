@@ -50,6 +50,7 @@ export interface HelpCommandItem {
   readonly name: string;
   readonly aliases: readonly string[];
   readonly description?: string;
+  readonly isDefault?: boolean;
   readonly deprecated?: boolean | string;
 }
 
@@ -211,6 +212,7 @@ function buildUsage(
   scriptName: string,
   hasVisibleChildren: boolean,
   hasOptions: boolean,
+  hasDefaultCommand: boolean,
 ): HelpUsage {
   const command = node.command;
   const argTokens = command?.argTokens ?? [];
@@ -237,7 +239,7 @@ function buildUsage(
         ? `${scriptName} ${node.fullPath.join(" ")}`
         : scriptName,
     subcommand: hasVisibleChildren
-      ? command?.run
+      ? command?.run || hasDefaultCommand
         ? "optional"
         : "required"
       : "none",
@@ -294,6 +296,7 @@ export async function buildHelpDocument(
       meta.scriptName,
       visibleChildren.length > 0,
       hasCommandFlags || hasGlobalFlags,
+      isRoot && Boolean(model.defaultCommand),
     ),
     arguments: node.args.map(buildArgumentItem),
     commandGroups: groupItems(
@@ -303,6 +306,11 @@ export async function buildHelpDocument(
         name: child.name,
         aliases: child.command?.aliases ? toArray(child.command.aliases) : [],
         description: child.command?.description,
+        isDefault:
+          child.fullPath.length === model.defaultCommand?.length &&
+          child.fullPath.every(
+            (seg, idx) => seg === model.defaultCommand![idx],
+          ),
         deprecated: child.command?.deprecated,
       }),
       groups.commands,
