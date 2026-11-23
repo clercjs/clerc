@@ -1,7 +1,7 @@
 ![Clerc Card](.github/assets/ClercCard.png)
 
 <p align="center">
-  <a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a modern, strongly-typed CLI framework for Node.js 26+.
+  <a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a modern, strongly-typed CLI framework for Node.js 24+.
 </p>
 
 <div align="center">
@@ -16,7 +16,7 @@
 <hr/>
 
 > [!NOTE]
-> ESM-only, targeting Node.js >= 26.
+> ESM-only, targeting Node.js >= 24.
 
 # ✨ Features
 

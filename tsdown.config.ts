@@ -6,7 +6,7 @@ export default defineConfig({
     exclude: ["packages/test-utils"],
   },
   entry: ["src/index.ts"],
-  target: "node26",
+  target: "node24",
   dts: true,
   minify: true,
   exports: {
