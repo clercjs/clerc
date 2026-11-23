@@ -50,6 +50,7 @@ export interface McpToolEntry {
   readonly mainArgs: readonly ArgSlot[];
   readonly doubleDashArgs: readonly ArgSlot[];
   readonly flags: ReadonlyMap<string, FlagSlot>;
+  readonly rootSubcommands?: ReadonlySet<string>;
 }
 
 export interface McpFilterOptions {
@@ -226,6 +227,13 @@ function buildToolEntry(
     mainArgs,
     doubleDashArgs,
     flags,
+    rootSubcommands:
+      node.fullPath.length === 0
+        ? new Set([
+            ...model.tree.root.children.keys(),
+            ...model.tree.root.aliasIndex.keys(),
+          ])
+        : undefined,
   };
 }
 
@@ -301,14 +309,14 @@ export function serializeToolArgsToArgv(
       case "array": {
         if (Array.isArray(value)) {
           for (const item of value) {
-            argv.push(info.target, String(item));
+            argv.push(`${info.target}=${String(item)}`);
           }
         }
 
         break;
       }
       case "single": {
-        argv.push(info.target, String(value));
+        argv.push(`${info.target}=${String(value)}`);
 
         break;
       }
@@ -323,7 +331,8 @@ export function serializeToolArgsToArgv(
 
   if (
     entry.doubleDashArgs.length === 0 &&
-    mainValues.some((v) => v.startsWith("-"))
+    (mainValues.some((v) => v.startsWith("-")) ||
+      (mainValues.length > 0 && entry.rootSubcommands?.has(mainValues[0])))
   ) {
     argv.push(DOUBLE_DASH, ...mainValues);
   } else {

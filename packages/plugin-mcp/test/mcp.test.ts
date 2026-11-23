@@ -296,8 +296,13 @@ describe("@clerc/plugin-mcp", () => {
   it("handles dash-prefixed positional args safely and rejects duplicate MCP tool names", async () => {
     const cli = createTestCli().use(mcpPlugin());
     cli.command("echo <text>", {
+      flags: { prefix: { type: String } },
       run(ctx) {
-        ctx.terminal.stdout(ctx.args.text);
+        ctx.terminal.stdout(
+          ctx.flags.prefix
+            ? `${ctx.flags.prefix}:${ctx.args.text}`
+            : ctx.args.text,
+        );
       },
     });
 
@@ -310,10 +315,13 @@ describe("@clerc/plugin-mcp", () => {
       jsonrpc: "2.0",
       id: 1,
       method: "tools/call",
-      params: { name: "echo", arguments: { text: "--not-a-flag" } },
+      params: {
+        name: "echo",
+        arguments: { prefix: "-v", text: "--not-a-flag" },
+      },
     });
 
-    expect((res?.result as any).content[0].text).toBe("--not-a-flag");
+    expect((res?.result as any).content[0].text).toBe("-v:--not-a-flag");
     expect((res?.result as any).isError).toBeUndefined();
 
     const dupCli = createTestCli();
