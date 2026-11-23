@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { InvalidSchemaError } from "../src";
-import { IMPLICIT_FLAG_VALUE, createLexParser } from "../src/parser";
+import { IMPLICIT_FLAG_VALUE, createArgvParser } from "../src/parser";
 
-describe("core lexical parser & scanner", () => {
+describe("core argv parser & scanner", () => {
   it("parses long, short, bundled, =-attached, negated, and counter flags", () => {
-    const parser = createLexParser([
+    const parser = createArgvParser([
       { key: "verbose", kind: "counter", short: "v" },
       { key: "cache", kind: "boolean" },
       { key: "port", kind: "single", short: "p" },
@@ -44,7 +44,7 @@ describe("core lexical parser & scanner", () => {
   });
 
   it("reports missing flag values, invalid booleans, symmetric unknowns, and never eats --", () => {
-    const parser = createLexParser([
+    const parser = createArgvParser([
       { key: "config", kind: "single", short: "c" },
       { key: "flag", kind: "boolean" },
       { key: "eq", kind: "single" },
@@ -78,7 +78,7 @@ describe("core lexical parser & scanner", () => {
   });
 
   it("supports stopAtFirstPositional and scan() command-tree skipping", () => {
-    const wrapper = createLexParser(
+    const wrapper = createArgvParser(
       [{ key: "quiet", kind: "boolean", short: "q" }],
       { stopAtFirstPositional: true },
     );
@@ -88,7 +88,7 @@ describe("core lexical parser & scanner", () => {
     expect(wrapRes.flags).toEqual({ quiet: true });
     expect(wrapRes.parameters).toEqual(["git", "--status", "-s"]);
 
-    const scanner = createLexParser([
+    const scanner = createArgvParser([
       { key: "verbose", kind: "counter", short: "v" },
       { key: "config", kind: "single", short: "c" },
     ]);
@@ -114,31 +114,31 @@ describe("core lexical parser & scanner", () => {
   });
 
   it("rejects invalid flag names and duplicate short/alias conflicts", () => {
-    expect(() => createLexParser([{ key: "a", kind: "boolean" }])).toThrow(
+    expect(() => createArgvParser([{ key: "a", kind: "boolean" }])).toThrow(
       InvalidSchemaError,
     );
     expect(() =>
-      createLexParser([{ key: "bad=name", kind: "single" }]),
+      createArgvParser([{ key: "bad=name", kind: "single" }]),
     ).toThrow(InvalidSchemaError);
     expect(() =>
-      createLexParser([
+      createArgvParser([
         { key: "port", kind: "single", short: "p" },
         { key: "path", kind: "single", short: "p" },
       ]),
     ).toThrow(InvalidSchemaError);
     expect(() =>
-      createLexParser([
+      createArgvParser([
         { key: "output", kind: "single", aliases: ["out"] },
         { key: "out", kind: "single" },
       ]),
     ).toThrow(InvalidSchemaError);
     expect(() =>
-      createLexParser([{ key: "output", kind: "single", aliases: ["o"] }]),
+      createArgvParser([{ key: "output", kind: "single", aliases: ["o"] }]),
     ).toThrow(InvalidSchemaError);
   });
 
   it("supports flag aliases, optionalValue flags, and missingValueCandidates", () => {
-    const parser = createLexParser([
+    const parser = createArgvParser([
       {
         key: "output",
         kind: "single",

@@ -67,11 +67,11 @@ export {
   renderHelpDocument,
 } from "./help/renderer";
 export type {
+  ArgvFlagSpec,
+  ArgvParseResult,
+  ArgvParser,
+  ArgvParserOptions,
   InvalidFlagValue,
-  LexFlagSpec,
-  LexParseResult,
-  LexParser,
-  LexParserOptions,
   RawInputType,
   ScanCallback,
   ScanResult,

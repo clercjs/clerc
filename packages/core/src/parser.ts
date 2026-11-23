@@ -13,7 +13,7 @@ export interface InvalidFlagValue {
   readonly message: string;
 }
 
-export interface LexFlagSpec {
+export interface ArgvFlagSpec {
   readonly key: string;
   readonly kind: FlagKind;
   readonly short?: string;
@@ -22,7 +22,7 @@ export interface LexFlagSpec {
   readonly optionalValue?: boolean;
 }
 
-export interface LexParserOptions {
+export interface ArgvParserOptions {
   readonly stopAtFirstPositional?: boolean;
 }
 
@@ -31,7 +31,7 @@ export type FlagValues = Record<
   string | string[] | boolean | number | typeof IMPLICIT_FLAG_VALUE
 >;
 
-export interface LexParseResult {
+export interface ArgvParseResult {
   readonly parameters: readonly string[];
   readonly doubleDash: readonly string[];
   readonly flags: FlagValues;
@@ -48,15 +48,15 @@ export interface ScanResult {
   readonly stoppedAt: number;
 }
 
-export interface LexParser {
-  readonly parse: (args: readonly string[]) => LexParseResult;
+export interface ArgvParser {
+  readonly parse: (args: readonly string[]) => ArgvParseResult;
   readonly scan: (
     args: readonly string[],
     onPositional: ScanCallback,
   ) => ScanResult;
 }
 
-interface CompiledLexFlag {
+interface CompiledFlag {
   readonly key: string;
   readonly kind: FlagKind;
   readonly negatable: boolean;
@@ -64,9 +64,9 @@ interface CompiledLexFlag {
 }
 
 interface LookupTables {
-  readonly byName: Record<string, CompiledLexFlag>;
-  readonly byShortCode: (CompiledLexFlag | undefined)[] | undefined;
-  readonly byShortExtra: Record<string, CompiledLexFlag> | undefined;
+  readonly byName: Record<string, CompiledFlag>;
+  readonly byShortCode: (CompiledFlag | undefined)[] | undefined;
+  readonly byShortExtra: Record<string, CompiledFlag> | undefined;
   readonly hasDigitShort: boolean;
 }
 
@@ -116,9 +116,9 @@ function recordUnique(list: string[], key: string): void {
 }
 
 function registerAlias(
-  table: Record<string, CompiledLexFlag>,
+  table: Record<string, CompiledFlag>,
   alias: string,
-  entry: CompiledLexFlag,
+  entry: CompiledFlag,
   label: string,
 ): void {
   const existing = table[alias];
@@ -130,10 +130,10 @@ function registerAlias(
   table[alias] = entry;
 }
 
-function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
-  const byName: Record<string, CompiledLexFlag> = Object.create(null);
-  let byShortCode: (CompiledLexFlag | undefined)[] | undefined;
-  let byShortExtra: Record<string, CompiledLexFlag> | undefined;
+function buildLookupTables(specs: Iterable<ArgvFlagSpec>): LookupTables {
+  const byName: Record<string, CompiledFlag> = Object.create(null);
+  let byShortCode: (CompiledFlag | undefined)[] | undefined;
+  let byShortExtra: Record<string, CompiledFlag> | undefined;
   let hasDigitShort = false;
 
   for (const spec of specs) {
@@ -157,7 +157,7 @@ function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
       );
     }
 
-    const entry: CompiledLexFlag = {
+    const entry: CompiledFlag = {
       key,
       kind,
       negatable: kind === "boolean" && spec.negatable !== false,
@@ -205,7 +205,7 @@ function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
       }
       if (code < 128) {
         // eslint-disable-next-line unicorn/no-new-array -- Fixed-size ASCII lookup table avoids Array.from iterator overhead
-        byShortCode ??= new Array<CompiledLexFlag | undefined>(128);
+        byShortCode ??= new Array<CompiledFlag | undefined>(128);
         const existing = byShortCode[code];
         if (existing && existing.key !== key) {
           throw new InvalidSchemaError(
@@ -223,10 +223,10 @@ function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
   return { byName, byShortCode, byShortExtra, hasDigitShort };
 }
 
-export function createLexParser(
-  specs: Iterable<LexFlagSpec>,
-  options: LexParserOptions = {},
-): LexParser {
+export function createArgvParser(
+  specs: Iterable<ArgvFlagSpec>,
+  options: ArgvParserOptions = {},
+): ArgvParser {
   const stopAtFirstPositional = Boolean(options.stopAtFirstPositional);
   const { byName, byShortCode, byShortExtra, hasDigitShort } =
     buildLookupTables(specs);
@@ -252,7 +252,7 @@ export function createLexParser(
     return !isShortStart(c1);
   }
 
-  function parse(args: readonly string[]): LexParseResult {
+  function parse(args: readonly string[]): ArgvParseResult {
     const flags: FlagValues = {};
     const provided: string[] = [];
     let parameters: string[] | undefined;

@@ -7,7 +7,7 @@ import {
   UnknownFlagError,
   ValidationError,
 } from "./errors";
-import type { InvalidFlagValue, LexFlagSpec } from "./parser";
+import type { ArgvFlagSpec, InvalidFlagValue } from "./parser";
 import { IMPLICIT_FLAG_VALUE, parseBooleanLiteral } from "./parser";
 import type { FlagKind, TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
@@ -30,7 +30,7 @@ export interface CompiledFlagEntry {
 
 export interface CompiledFlags {
   readonly byName: ReadonlyMap<string, CompiledFlagEntry>;
-  readonly lexSpecs: readonly LexFlagSpec[];
+  readonly specs: readonly ArgvFlagSpec[];
 }
 
 export function normalizeFlagValue(
@@ -66,7 +66,7 @@ function implicitDefault(kind: FlagKind): unknown {
 
 export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
   const byName = new Map<string, CompiledFlagEntry>();
-  const lexSpecs: LexFlagSpec[] = [];
+  const specs: ArgvFlagSpec[] = [];
 
   for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
@@ -106,7 +106,7 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
       kind,
       convert,
     });
-    lexSpecs.push({
+    specs.push({
       key: name,
       kind,
       short: norm.short,
@@ -116,7 +116,7 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
     });
   }
 
-  return { byName, lexSpecs };
+  return { byName, specs };
 }
 
 async function convertValues(

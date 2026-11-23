@@ -24,8 +24,8 @@ import {
   warnFlagDeprecations,
 } from "./flags";
 import { renderHelp } from "./help/renderer";
-import type { LexParser } from "./parser";
-import { createLexParser } from "./parser";
+import type { ArgvParser } from "./parser";
+import { createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
@@ -63,7 +63,7 @@ type ContextExtender = (
 
 interface CompiledCommand {
   readonly flags: CompiledFlags;
-  readonly parser: LexParser;
+  readonly parser: ArgvParser;
   readonly args?: CompiledArgs;
 }
 
@@ -431,7 +431,7 @@ export class CliApp<
       errorHandlers: acc.errorHandlers,
       global: {
         flags: globalFlags,
-        parser: createLexParser(globalFlags.lexSpecs),
+        parser: createArgvParser(globalFlags.specs),
       },
       commands: new WeakMap(),
     };
@@ -463,7 +463,7 @@ export class CliApp<
     const parser =
       !hasLocalFlags && !cmd.stopAtFirstPositional
         ? cli.global.parser
-        : createLexParser(flags.lexSpecs, {
+        : createArgvParser(flags.specs, {
             stopAtFirstPositional: cmd.stopAtFirstPositional,
           });
     const compiled: CompiledCommand = {
@@ -555,7 +555,7 @@ export class CliApp<
       ctx.calledAs = match.calledAs;
     }
 
-    // 2. Lexically parse flags & positionals
+    // 2. Parse raw argv into flags & positionals
     const compiledCmd = this.#compileCommand(compiledCli, ctx.command);
     const parsed = compiledCmd.parser.parse(match.remainingArgv);
     ctx.flags = parsed.flags as any;
