@@ -106,7 +106,7 @@ export class MissingRequiredFlagError extends ClercError {
 export class MissingFlagValueError extends ClercError {
   public readonly flags: readonly string[];
 
-  constructor(flags: readonly string[]) {
+  constructor(flags: readonly string[], hints?: readonly string[]) {
     const formatted = flags.map((f) => `'${formatFlagName(f)}'`);
     const plural = flags.length > 1;
     super(
@@ -116,6 +116,7 @@ export class MissingFlagValueError extends ClercError {
       {
         code: "ERR_MISSING_FLAG_VALUE",
         exitCode: 2,
+        hints,
       },
     );
     this.flags = flags;
@@ -140,12 +141,17 @@ export class MissingRequiredParameterError extends ClercError {
   public readonly parameter: string;
   public readonly isVariadic: boolean;
 
-  constructor(parameter: string, isVariadic = false) {
+  constructor(
+    parameter: string,
+    isVariadic = false,
+    hints?: readonly string[],
+  ) {
     super(
       `missing required ${isVariadic ? "variadic " : ""}argument '<${parameter}${isVariadic ? "..." : ""}>'`,
       {
         code: "ERR_MISSING_PARAMETER",
         exitCode: 2,
+        hints,
       },
     );
     this.parameter = parameter;

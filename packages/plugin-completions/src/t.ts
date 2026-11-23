@@ -34,11 +34,22 @@ function registerFlag(
 
   const desc = normalized.description ?? "";
   const { kind } = describeType(normalized.type);
+  const aliases = normalized.aliases
+    ? Array.isArray(normalized.aliases)
+      ? normalized.aliases
+      : [normalized.aliases]
+    : [];
   if (kind === "boolean" || kind === "counter") {
     tc.option(flagName, desc, normalized.short);
+    for (const alias of aliases) {
+      tc.option(alias, desc);
+    }
   } else {
     const handler = compMeta?.handler ?? (async () => {});
     tc.option(flagName, desc, handler, normalized.short);
+    for (const alias of aliases) {
+      tc.option(alias, desc, handler);
+    }
   }
 }
 

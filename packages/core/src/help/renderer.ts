@@ -85,12 +85,23 @@ function formatFlagRow(
     ? `${theme.flag(`-${flag.short}`)}${theme.muted(", ")}${theme.flag(longName)}`
     : `${hasAnyShort ? "    " : ""}${theme.flag(longName)}`;
   const desc = describeType(flag.type);
+  const aliasNames = flag.aliases
+    ? toArray(flag.aliases)
+        .filter((a) => a.length > 0)
+        .map((a) => `${theme.muted(", ")}${theme.flag(formatFlagName(a))}`)
+        .join("")
+    : "";
   const negated =
     desc.kind === "boolean" && flag.negatable !== false && flag.default === true
       ? `${theme.muted(", ")}${theme.flag(`--no-${longName.slice(2)}`)}`
       : "";
   const placeholder = formatPlaceholder(flag, desc);
-  const left = `${base}${negated}${placeholder ? ` ${theme.placeholder(placeholder)}` : ""}`;
+  const placeholderPart = placeholder
+    ? flag.implicitValue === undefined
+      ? ` ${theme.placeholder(placeholder)}`
+      : theme.placeholder(`[=${placeholder}]`)
+    : "";
+  const left = `${base}${aliasNames}${negated}${placeholderPart}`;
 
   const metaTags: string[] = [];
   if (flag.required) {
@@ -220,7 +231,20 @@ function buildArgumentRows(
       ? `${theme.command(arg.token)} ${theme.placeholder(`<${typeLabel}>`)}`
       : theme.command(arg.token);
 
-    return [left, arg.options.description ?? ""] as const;
+    const metaTags: string[] = [];
+    if (arg.options.default !== undefined) {
+      metaTags.push(
+        theme.muted(`[default: ${formatDefault(arg.options.default)}]`),
+      );
+    }
+    if (arg.options.env) {
+      metaTags.push(theme.muted(`[env: ${arg.options.env}]`));
+    }
+    const right = [arg.options.description, metaTags.join(" ")]
+      .filter(Boolean)
+      .join("  ");
+
+    return [left, right] as const;
   });
 }
 

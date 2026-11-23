@@ -3,6 +3,7 @@ import type { FlagKind } from "./schema";
 import { camelCase, kebabCase } from "./utils";
 
 export const DOUBLE_DASH = "--";
+export const IMPLICIT_FLAG_VALUE = Symbol("clerc.implicitFlagValue");
 
 export type RawInputType = string | boolean;
 
@@ -16,14 +17,19 @@ export interface LexFlagSpec {
   readonly key: string;
   readonly kind: FlagKind;
   readonly short?: string;
+  readonly aliases?: readonly string[];
   readonly negatable?: boolean;
+  readonly optionalValue?: boolean;
 }
 
 export interface LexParserOptions {
   readonly stopAtFirstPositional?: boolean;
 }
 
-export type FlagValues = Record<string, string | string[] | boolean | number>;
+export type FlagValues = Record<
+  string,
+  string | string[] | boolean | number | typeof IMPLICIT_FLAG_VALUE
+>;
 
 export interface LexParseResult {
   readonly parameters: readonly string[];
@@ -32,6 +38,7 @@ export interface LexParseResult {
   readonly unknown: Readonly<Record<string, RawInputType>>;
   readonly provided: readonly string[];
   readonly missingValueFlags: readonly string[];
+  readonly missingValueCandidates: Readonly<Record<string, string>>;
   readonly invalidValues: readonly InvalidFlagValue[];
 }
 
@@ -53,6 +60,7 @@ interface CompiledLexFlag {
   readonly key: string;
   readonly kind: FlagKind;
   readonly negatable: boolean;
+  readonly optionalValue: boolean;
 }
 
 interface LookupTables {
@@ -70,6 +78,7 @@ const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
 const EMPTY_STRINGS: readonly string[] = Object.freeze([]);
 const EMPTY_INVALID: readonly InvalidFlagValue[] = Object.freeze([]);
 const EMPTY_UNKNOWN: Readonly<Record<string, RawInputType>> = Object.freeze({});
+const EMPTY_CANDIDATES: Readonly<Record<string, string>> = Object.freeze({});
 
 const isLetter = (c: number): boolean =>
   (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
@@ -152,6 +161,7 @@ function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
       key,
       kind,
       negatable: kind === "boolean" && spec.negatable !== false,
+      optionalValue: kind === "single" && Boolean(spec.optionalValue),
     };
 
     registerAlias(byName, key, entry, "name");
@@ -162,6 +172,30 @@ function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
     const kebab = kebabCase(key);
     if (kebab !== key) {
       registerAlias(byName, kebab, entry, "alias");
+    }
+
+    if (spec.aliases) {
+      for (const alias of spec.aliases) {
+        if (alias.length < 2) {
+          throw new InvalidSchemaError(
+            `Flag "${key}" alias "${alias}" must be at least 2 characters long.`,
+          );
+        }
+        if (hasReservedChar(alias)) {
+          throw new InvalidSchemaError(
+            `Flag "${key}" alias "${alias}" contains reserved characters.`,
+          );
+        }
+        registerAlias(byName, alias, entry, "alias");
+        const aliasCamel = camelCase(alias);
+        if (aliasCamel !== alias) {
+          registerAlias(byName, aliasCamel, entry, "alias");
+        }
+        const aliasKebab = kebabCase(alias);
+        if (aliasKebab !== alias) {
+          registerAlias(byName, aliasKebab, entry, "alias");
+        }
+      }
     }
 
     if (short !== undefined) {
@@ -225,6 +259,7 @@ export function createLexParser(
     let doubleDash: readonly string[] = EMPTY_STRINGS;
     let unknown: Record<string, RawInputType> | undefined;
     let missingValueFlags: string[] | undefined;
+    let missingValueCandidates: Record<string, string> | undefined;
     let invalidValues: InvalidFlagValue[] | undefined;
 
     for (let i = 0; i < args.length; i++) {
@@ -309,6 +344,14 @@ export function createLexParser(
             }
             case "single":
             case "array": {
+              if (eq === -1 && flag.optionalValue) {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = IMPLICIT_FLAG_VALUE;
+
+                break;
+              }
               const val =
                 eq === -1
                   ? canConsumeNext(args, i + 1)
@@ -317,6 +360,9 @@ export function createLexParser(
                   : current.slice(eq + 1);
               if (val === undefined) {
                 recordUnique((missingValueFlags ??= []), key);
+                if (i + 1 < args.length && args[i + 1] !== DOUBLE_DASH) {
+                  (missingValueCandidates ??= {})[key] ??= args[i + 1];
+                }
               } else if (kind === "array") {
                 const prev = flags[key] as string[] | undefined;
                 if (prev === undefined) {
@@ -366,6 +412,14 @@ export function createLexParser(
                 flags[key] = prev + 1;
               }
             } else {
+              if (j + 1 >= curLen && flag.optionalValue) {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = IMPLICIT_FLAG_VALUE;
+
+                break;
+              }
               const val =
                 j + 1 < curLen
                   ? current.slice(
@@ -376,6 +430,9 @@ export function createLexParser(
                     : undefined;
               if (val === undefined) {
                 recordUnique((missingValueFlags ??= []), key);
+                if (i + 1 < args.length && args[i + 1] !== DOUBLE_DASH) {
+                  (missingValueCandidates ??= {})[key] ??= args[i + 1];
+                }
               } else if (kind === "array") {
                 const prev = flags[key] as string[] | undefined;
                 if (prev === undefined) {
@@ -417,6 +474,7 @@ export function createLexParser(
       unknown: unknown ?? EMPTY_UNKNOWN,
       provided,
       missingValueFlags: missingValueFlags ?? EMPTY_STRINGS,
+      missingValueCandidates: missingValueCandidates ?? EMPTY_CANDIDATES,
       invalidValues: invalidValues ?? EMPTY_INVALID,
     };
   }
@@ -457,7 +515,12 @@ export function createLexParser(
           }
 
           i++;
-          if (eq === -1 && isValueKind(flag.kind) && canConsumeNext(args, i)) {
+          if (
+            eq === -1 &&
+            isValueKind(flag.kind) &&
+            !flag.optionalValue &&
+            canConsumeNext(args, i)
+          ) {
             i++;
           }
 
@@ -475,7 +538,7 @@ export function createLexParser(
               return { stoppedAt: i };
             }
             if (isValueKind(flag.kind)) {
-              takesNext = j === curLen - 1;
+              takesNext = j === curLen - 1 && !flag.optionalValue;
 
               break;
             }

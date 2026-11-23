@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { InvalidSchemaError } from "../src";
-import { createLexParser } from "../src/parser";
+import { IMPLICIT_FLAG_VALUE, createLexParser } from "../src/parser";
 
 describe("core lexical parser & scanner", () => {
   it("parses long, short, bundled, =-attached, negated, and counter flags", () => {
@@ -126,5 +126,66 @@ describe("core lexical parser & scanner", () => {
         { key: "path", kind: "single", short: "p" },
       ]),
     ).toThrow(InvalidSchemaError);
+    expect(() =>
+      createLexParser([
+        { key: "output", kind: "single", aliases: ["out"] },
+        { key: "out", kind: "single" },
+      ]),
+    ).toThrow(InvalidSchemaError);
+    expect(() =>
+      createLexParser([{ key: "output", kind: "single", aliases: ["o"] }]),
+    ).toThrow(InvalidSchemaError);
+  });
+
+  it("supports flag aliases, optionalValue flags, and missingValueCandidates", () => {
+    const parser = createLexParser([
+      {
+        key: "output",
+        kind: "single",
+        short: "o",
+        aliases: ["out", "outFile"],
+      },
+      { key: "color", kind: "boolean", aliases: ["colour"] },
+      { key: "inspect", kind: "single", short: "I", optionalValue: true },
+      { key: "pattern", kind: "single" },
+    ]);
+
+    const res = parser.parse([
+      "--out-file",
+      "dist.js",
+      "--no-colour",
+      "--inspect",
+      "deploy",
+      "--pattern",
+      "-bar",
+    ]);
+
+    expect(res.flags).toEqual({
+      output: "dist.js",
+      color: false,
+      inspect: IMPLICIT_FLAG_VALUE,
+    });
+    expect(res.parameters).toEqual(["deploy"]);
+    expect(res.missingValueFlags).toEqual(["pattern"]);
+    expect(res.missingValueCandidates).toEqual({ pattern: "-bar" });
+
+    // Explicit value via = or short attached overrides implicit value
+    expect(parser.parse(["--inspect=9230"]).flags.inspect).toBe("9230");
+    expect(parser.parse(["-I=9231"]).flags.inspect).toBe("9231");
+    expect(parser.parse(["-I9232"]).flags.inspect).toBe("9232");
+    expect(parser.parse(["-I", "deploy"])).toMatchObject({
+      flags: { inspect: IMPLICIT_FLAG_VALUE },
+      parameters: ["deploy"],
+    });
+
+    // scan() recognizes aliases and does not greedily consume next token for optionalValue
+    const seen: string[] = [];
+    parser.scan(["--out", "a.js", "--inspect", "deploy"], (tok) => {
+      seen.push(tok);
+
+      return true;
+    });
+
+    expect(seen).toEqual(["deploy"]);
   });
 });

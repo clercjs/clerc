@@ -34,9 +34,12 @@ export type CoreTypeValue<T = any> =
 export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
   readonly type: T;
   readonly short?: string;
+  readonly aliases?: MaybeArray<string>;
   readonly description?: string;
   readonly placeholder?: string;
   readonly default?: unknown;
+  readonly implicitValue?: unknown;
+  readonly delimiter?: string;
   readonly required?: boolean;
   readonly env?: string;
   readonly negatable?: boolean;
@@ -86,6 +89,12 @@ type InferFlagDefault<
   ? DefaultType
   : Fallback;
 
+type InferFlagImplicitValue<T extends ClercFlagDefinitionValue> = T extends {
+  readonly implicitValue: FlagDefaultValue<infer ImplicitType>;
+}
+  ? ImplicitType
+  : never;
+
 type IsTypeAny<T extends ClercFlagDefinitionValue> =
   IsAny<T> extends true
     ? true
@@ -107,6 +116,7 @@ type InferSingleFlag<T extends ClercFlagDefinitionValue> =
         ? InferSingleType<Item>[] | InferFlagDefault<T, never>
         : T extends { readonly type: infer Item }
           ? | InferSingleType<Item>
+            | InferFlagImplicitValue<T>
             | InferFlagDefault<
                 T,
                 [InferSingleType<Item>] extends [boolean]
@@ -128,6 +138,8 @@ export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
   readonly type?: T;
   readonly description?: string;
   readonly placeholder?: string;
+  readonly default?: unknown;
+  readonly env?: string;
   readonly meta?: Record<string, unknown>;
 }
 
@@ -160,19 +172,38 @@ type ResolveArgType<
       : string
   : string;
 
+type InferArgDefault<
+  Name extends string,
+  Args extends Partial<Record<string, ArgDefinitionValue>>,
+  Fallback,
+> = Name extends keyof Args
+  ? NonNullable<Args[Name]> extends {
+      readonly default: FlagDefaultValue<infer DefaultType>;
+    }
+    ? DefaultType
+    : Fallback
+  : Fallback;
+
 type InferTokenArg<
   Token extends string,
   Args extends Partial<Record<string, ArgDefinitionValue>>,
-> = Token extends `<${infer Name}...>` | `[${infer Name}...]`
+> = Token extends `<${infer Name}...>`
   ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
-  : Token extends `<${infer Name}>`
-    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
-    : Token extends `[${infer Name}]`
-      ? Record<
-          CamelCase<Name>,
-          ResolveArgType<CamelCase<Name>, Args> | undefined
-        >
-      : {};
+  : Token extends `[${infer Name}...]`
+    ? Record<
+        CamelCase<Name>,
+        | ResolveArgType<CamelCase<Name>, Args>[]
+        | InferArgDefault<CamelCase<Name>, Args, never>
+      >
+    : Token extends `<${infer Name}>`
+      ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
+      : Token extends `[${infer Name}]`
+        ? Record<
+            CamelCase<Name>,
+            | ResolveArgType<CamelCase<Name>, Args>
+            | InferArgDefault<CamelCase<Name>, Args, undefined>
+          >
+        : {};
 
 type InferSpecArgsAcc<
   S extends string,

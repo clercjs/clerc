@@ -39,6 +39,8 @@ export interface ParsedCommandSpec {
 
 interface CompiledArgItem extends ArgInfo {
   readonly convert?: TypeConverter;
+  readonly default?: unknown;
+  readonly env?: string;
 }
 
 export interface CompiledArgs {
@@ -175,9 +177,16 @@ function compileArgSlice(
 
     const def = argDefs?.[info.name];
     const norm = def ? normalizeArgValue(def) : undefined;
+    if (info.isRequired && norm?.default !== undefined) {
+      throw new InvalidParametersError(
+        `required argument "${info.name}" cannot have a default value`,
+      );
+    }
     items.push({
       ...info,
       convert: norm?.type ? describeType(norm.type).convert : undefined,
+      default: norm?.default,
+      env: norm?.env,
     });
   }
 
@@ -197,10 +206,26 @@ export function compileArgs(
   };
 }
 
+async function convertArgItems(
+  item: CompiledArgItem,
+  elements: readonly string[],
+): Promise<unknown[]> {
+  if (!item.convert) {
+    return [...elements];
+  }
+  const converted: unknown[] = [];
+  for (const element of elements) {
+    converted.push(await item.convert(element, item.token));
+  }
+
+  return converted;
+}
+
 async function applyArgSlice(
   items: readonly CompiledArgItem[],
   values: readonly string[],
   result: Record<string, unknown>,
+  env: Readonly<Record<string, string | undefined>>,
 ): Promise<void> {
   const hasVariadic = items.some((item) => item.isVariadic);
   if (!hasVariadic && values.length > items.length) {
@@ -209,28 +234,56 @@ async function applyArgSlice(
 
   for (const [i, item] of items.entries()) {
     const raw = item.isVariadic ? values.slice(i) : values[i];
+    const isMissing = item.isVariadic
+      ? (raw as string[]).length === 0
+      : raw === undefined;
 
-    if (
-      item.isRequired &&
-      (item.isVariadic ? (raw as string[]).length === 0 : raw === undefined)
-    ) {
-      throw new MissingRequiredParameterError(item.rawName, item.isVariadic);
+    if (!isMissing) {
+      result[item.name] = item.isVariadic
+        ? await convertArgItems(item, raw as string[])
+        : item.convert
+          ? await item.convert(raw as string, item.token)
+          : raw;
+
+      continue;
     }
 
-    if (!item.convert) {
-      result[item.name] = raw;
-    } else if (item.isVariadic) {
-      const converted: unknown[] = [];
-      for (const element of raw as string[]) {
-        converted.push(await item.convert(element, item.token));
-      }
-      result[item.name] = converted;
-    } else {
+    const envValue = item.env ? env[item.env] : undefined;
+    if (envValue !== undefined && envValue !== "") {
+      result[item.name] = item.isVariadic
+        ? await convertArgItems(
+            item,
+            envValue.split(",").map((s) => s.trim()),
+          )
+        : item.convert
+          ? await item.convert(envValue, item.token)
+          : envValue;
+
+      continue;
+    }
+
+    if (item.default !== undefined) {
       result[item.name] =
-        raw === undefined
-          ? undefined
-          : await item.convert(raw as string, item.token);
+        typeof item.default === "function"
+          ? (item.default as () => unknown)()
+          : item.default;
+
+      continue;
     }
+
+    if (item.isRequired) {
+      const hints = item.env
+        ? [`provide '${item.token}' or set ${item.env}`]
+        : undefined;
+
+      throw new MissingRequiredParameterError(
+        item.rawName,
+        item.isVariadic,
+        hints,
+      );
+    }
+
+    result[item.name] = item.isVariadic ? [] : undefined;
   }
 }
 
@@ -238,17 +291,18 @@ export async function executeCompiledArgs(
   compiled: CompiledArgs,
   values: readonly string[],
   doubleDashValues: readonly string[],
+  env: Readonly<Record<string, string | undefined>> = {},
 ): Promise<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
   if (compiled.doubleDash.length > 0) {
-    await applyArgSlice(compiled.main, values, result);
-    await applyArgSlice(compiled.doubleDash, doubleDashValues, result);
+    await applyArgSlice(compiled.main, values, result, env);
+    await applyArgSlice(compiled.doubleDash, doubleDashValues, result, env);
   } else if (compiled.hasDoubleDashSpec) {
-    await applyArgSlice(compiled.main, values, result);
+    await applyArgSlice(compiled.main, values, result, env);
   } else {
     const combined =
       doubleDashValues.length > 0 ? [...values, ...doubleDashValues] : values;
-    await applyArgSlice(compiled.main, combined, result);
+    await applyArgSlice(compiled.main, combined, result, env);
   }
 
   return result;

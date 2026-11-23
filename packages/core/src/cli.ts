@@ -639,6 +639,7 @@ export class CliApp<
         compiledCmd.args,
         parsed.parameters,
         parsed.doubleDash,
+        ctx.terminal.env,
       );
     } else {
       const extraArgs = [...parsed.parameters, ...parsed.doubleDash];

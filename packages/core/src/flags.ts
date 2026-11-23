@@ -8,7 +8,7 @@ import {
   ValidationError,
 } from "./errors";
 import type { InvalidFlagValue, LexFlagSpec } from "./parser";
-import { parseBooleanLiteral } from "./parser";
+import { IMPLICIT_FLAG_VALUE, parseBooleanLiteral } from "./parser";
 import type { FlagKind, TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
@@ -82,6 +82,23 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
     }
 
     const { kind, convert } = describeType(norm.type);
+    if (norm.delimiter !== undefined) {
+      if (kind !== "array") {
+        throw new InvalidSchemaError(
+          `Flag "${name}" delimiter can only be used with array flag types.`,
+        );
+      }
+      if (norm.delimiter.length === 0) {
+        throw new InvalidSchemaError(
+          `Flag "${name}" delimiter must be a non-empty string.`,
+        );
+      }
+    }
+    if (norm.implicitValue !== undefined && kind !== "single") {
+      throw new InvalidSchemaError(
+        `Flag "${name}" implicitValue can only be used with single-value flag types.`,
+      );
+    }
     byName.set(name, {
       name,
       norm,
@@ -93,7 +110,9 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
       key: name,
       kind,
       short: norm.short,
+      aliases: norm.aliases ? toArray(norm.aliases) : undefined,
       negatable: kind === "boolean" ? norm.negatable : undefined,
+      optionalValue: norm.implicitValue !== undefined,
     });
   }
 
@@ -136,9 +155,11 @@ async function resolveEnvValue(
       return Number.isNaN(count) ? 0 : count;
     }
     case "array": {
+      const delimiter = entry.norm.delimiter ?? ",";
+
       return convertValues(
         entry,
-        envValue.split(",").map((s) => s.trim()),
+        envValue.split(delimiter).map((s) => s.trim()),
       );
     }
     case "single": {
@@ -166,11 +187,21 @@ export async function resolveCompiledFlags(
     const rawValue = rawFlags[name];
 
     if (provided.has(name)) {
-      flags[name] = convert
-        ? kind === "array"
-          ? await convertValues(entry, rawValue as string[])
-          : await convert(rawValue as string, target)
-        : rawValue;
+      if (rawValue === IMPLICIT_FLAG_VALUE) {
+        flags[name] =
+          typeof norm.implicitValue === "function"
+            ? (norm.implicitValue as () => unknown)()
+            : norm.implicitValue;
+      } else if (kind === "array") {
+        const items = norm.delimiter
+          ? (rawValue as string[]).flatMap((v) => v.split(norm.delimiter!))
+          : (rawValue as string[]);
+        flags[name] = await convertValues(entry, items);
+      } else {
+        flags[name] = convert
+          ? await convert(rawValue as string, target)
+          : rawValue;
+      }
 
       continue;
     }
@@ -227,14 +258,42 @@ export function validateParsedFlags(
   parsed: {
     readonly unknown: Readonly<Record<string, unknown>>;
     readonly missingValueFlags: readonly string[];
+    readonly missingValueCandidates?: Readonly<Record<string, string>>;
     readonly invalidValues: readonly InvalidFlagValue[];
   },
   strictFlags = true,
 ): void {
+  if (parsed.missingValueFlags.length > 0) {
+    const hints: string[] = [];
+    for (const flag of parsed.missingValueFlags) {
+      const candidate = parsed.missingValueCandidates?.[flag];
+      if (candidate) {
+        const target =
+          compiled.byName.get(flag)?.target ?? formatFlagName(flag);
+        hints.push(
+          `if '${candidate}' is intended as the value, pass it as '${target}=${candidate}'`,
+        );
+      }
+    }
+
+    throw new MissingFlagValueError(
+      parsed.missingValueFlags,
+      hints.length > 0 ? hints : undefined,
+    );
+  }
+
   if (strictFlags) {
     const unknownKeys = Object.keys(parsed.unknown);
     if (unknownKeys.length > 0) {
-      const knownFlags = [...compiled.byName.keys()];
+      const knownFlags: string[] = [];
+      for (const [name, entry] of compiled.byName) {
+        knownFlags.push(name);
+        if (entry.norm.aliases) {
+          for (const alias of toArray(entry.norm.aliases)) {
+            knownFlags.push(alias);
+          }
+        }
+      }
       const hints: string[] = [];
       for (const unknown of unknownKeys) {
         if (unknown.length <= 1) {
@@ -250,10 +309,6 @@ export function validateParsedFlags(
 
       throw new UnknownFlagError(unknownKeys, hints);
     }
-  }
-
-  if (parsed.missingValueFlags.length > 0) {
-    throw new MissingFlagValueError(parsed.missingValueFlags);
   }
 
   const firstInvalid = parsed.invalidValues[0];

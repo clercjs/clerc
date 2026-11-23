@@ -102,4 +102,34 @@ describe("core v2 route-signature & plugin types", () => {
       },
     });
   });
+
+  it("infers arg default types and optional-value implicitValue flag types", () => {
+    Cli({ scriptName: "app", version: "1.0.0" }).command(
+      "deploy [region] [files...]",
+      {
+        args: {
+          region: { type: String, default: "us-east-1" },
+          files: { type: String, default: () => ["index.ts"] },
+        },
+        flags: {
+          inspect: { type: Number, implicitValue: 9229 },
+          color: {
+            type: Types.Enum("auto", "always", "never"),
+            default: "auto",
+            implicitValue: "always",
+          },
+          tags: { type: [String], delimiter: ",", aliases: ["tag"] },
+        },
+        run(ctx) {
+          expectTypeOf(ctx.args.region).toEqualTypeOf<string>();
+          expectTypeOf(ctx.args.files).toEqualTypeOf<string[]>();
+          expectTypeOf(ctx.flags.inspect).toEqualTypeOf<number | undefined>();
+          expectTypeOf(ctx.flags.color).toEqualTypeOf<
+            "auto" | "always" | "never"
+          >();
+          expectTypeOf(ctx.flags.tags).toEqualTypeOf<string[]>();
+        },
+      },
+    );
+  });
 });
