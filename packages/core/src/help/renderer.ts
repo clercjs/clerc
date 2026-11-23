@@ -223,7 +223,9 @@ function renderUsage(
   const parts = [
     meta.scriptName,
     node.fullPath.length > 0 ? node.fullPath.join(" ") : "",
-    hasVisibleChildren ? theme.muted(command ? "[command]" : "<command>") : "",
+    hasVisibleChildren
+      ? theme.muted(command?.run ? "[command]" : "<command>")
+      : "",
     hasOptions ? theme.muted("[options]") : "",
     ...displayArgs,
   ].filter(Boolean);

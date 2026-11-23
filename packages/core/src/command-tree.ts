@@ -199,7 +199,10 @@ export class CommandTree implements ReadonlyCommandTree {
       remainingArgv = argv.filter((_, index) => !matchedSet.has(index));
     }
 
-    if (current.command) {
+    if (
+      current.command &&
+      (current.command.run || current.children.size === 0)
+    ) {
       return {
         kind: "matched",
         node: current,

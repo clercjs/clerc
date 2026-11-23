@@ -1,4 +1,8 @@
-import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
+import {
+  createMemoryTerminal,
+  createTestBaseCli,
+  createTestCli,
+} from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import type { AnyCommandDefinition } from "../src";
@@ -29,7 +33,7 @@ describe("CommandTree", () => {
         },
       });
 
-    const cli = createTestBaseCli().use(dbPlugin);
+    const cli = createTestCli().use(dbPlugin);
     cli.command("db seed", {
       description: "Seed database",
       run(ctx) {
@@ -46,6 +50,21 @@ describe("CommandTree", () => {
       "migrate:db m",
       "seed:db seed",
     ]);
+
+    // A metadata-only parent command (no run) behaves as a namespace
+    const helpTerm = createMemoryTerminal();
+    const nsRes = await cli.run(["db"], { terminal: helpTerm });
+
+    expect(nsRes.ok).toBeTruthy();
+    expect(helpTerm.stdoutText()).toContain("Database commands");
+    expect(helpTerm.stdoutText()).toContain("db <command>");
+    expect(helpTerm.stdoutText()).toContain("migrate");
+
+    const typoTerm = createMemoryTerminal();
+    const typoRes = await cli.run(["db", "migrat"], { terminal: typoTerm });
+
+    expect(typoRes.ok).toBeFalsy();
+    expect(typoTerm.stderrText()).toContain("db migrate");
   });
 
   it("resolves subcommands even when leading global flags precede the command", async () => {
