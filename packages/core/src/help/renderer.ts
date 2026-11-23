@@ -1,5 +1,4 @@
 import { DOUBLE_DASH } from "@clerc/parser";
-import stringWidth from "fast-string-width";
 
 import { resolveCommandArgs, splitArgTokens } from "../args";
 import { normalizeFlagValue } from "../flags";
@@ -385,35 +384,9 @@ function highlightExampleCommand(cmd: string, theme: Theme): string {
 function renderExamples(
   examples: readonly (readonly [string, string])[],
   theme: Theme,
-  columns: number,
 ): string[] {
   if (examples.length === 0) {
     return [];
-  }
-
-  const maxReadable = Math.min(columns, 120);
-  let maxCmdWidth = 0;
-  for (const [cmd] of examples) {
-    const w = stringWidth(cmd);
-    if (w > maxCmdWidth) {
-      maxCmdWidth = w;
-    }
-  }
-
-  const canUseTwoColumn = columns >= 90 && maxCmdWidth + 6 + 24 <= maxReadable;
-
-  if (canUseTwoColumn) {
-    const rows: TwoColumnRow[] = examples.map(([cmd, desc]) => [
-      highlightExampleCommand(cmd, theme),
-      theme.muted(desc),
-    ]);
-
-    return formatTwoColumn(rows, {
-      indent: 2,
-      gap: 4,
-      maxWidth: maxReadable,
-      colWidth: maxCmdWidth,
-    });
   }
 
   const lines: string[] = [];
@@ -560,7 +533,7 @@ export async function renderHelp(
     ...globalFlagSections.map((section) =>
       formatSection(section.title, formatOptions(section.rows), theme),
     ),
-    formatSection("Examples", renderExamples(examples, theme, columns), theme),
+    formatSection("Examples", renderExamples(examples, theme), theme),
     formatSection(
       "Notes",
       notes.map((n) => `  ${theme.muted(n)}`),

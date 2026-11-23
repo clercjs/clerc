@@ -120,7 +120,7 @@ describe("built-in v2 editorial help", () => {
     expect(buildDescCol).toBe(helpFlagDescCol);
     expect(rootOut).toContain("\nEXAMPLES\n");
     expect(rootOut).toContain(
-      "  $ acme build src/index.ts -p 8080    Build with custom port",
+      "  # Build with custom port\n  $ acme build src/index.ts -p 8080",
     );
     expect(rootOut).toContain(
       "\nNOTES\n  Set NO_COLOR=1 to disable ANSI colors.",
