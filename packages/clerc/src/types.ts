@@ -55,11 +55,18 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
 export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
 
-export type ContextualFlags<Flags extends ClercFlagsDefinition> = {
-  readonly [K in keyof Flags]: Flags[K] extends
-    CoreSingleType | readonly [CoreSingleType]
-    ? Flags[K]
-    : Flags[K] & ClercFlagOptions;
+type StrictOptions<T, Allowed> = T extends object
+  ? Allowed & Readonly<Partial<Record<Exclude<keyof T, keyof Allowed>, never>>>
+  : Allowed;
+
+type ContextualFlagValue<V> = [V] extends [never]
+  ? ClercFlagOptions
+  : V extends CoreSingleType | readonly [CoreSingleType]
+    ? V
+    : StrictOptions<V, ClercFlagOptions>;
+
+export type ContextualFlags<Flags extends Record<string, any>> = {
+  readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
 };
 
 export interface FlagDescriptor {
@@ -174,8 +181,10 @@ type InferSingleFlag<T extends ClercFlagDefinitionValue> =
               | ([InferSingleType<T>] extends [boolean] ? never : undefined)
             : never;
 
-export type InferClercFlags<T extends ClercFlagsDefinition> = Prettify<{
-  [K in keyof T]: InferSingleFlag<T[K]>;
+export type InferClercFlags<T extends Record<string, any>> = Prettify<{
+  [K in keyof T]: T[K] extends ClercFlagDefinitionValue
+    ? InferSingleFlag<T[K]>
+    : never;
 }>;
 
 export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
@@ -190,10 +199,20 @@ export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
 export type ArgDefinitionValue = CoreSingleType | ArgOptions;
 export type ArgsDefinition = Record<string, ArgDefinitionValue>;
 
+type ContextualArgValue<V> = [V] extends [never]
+  ? ArgOptions
+  : V extends CoreSingleType
+    ? V
+    : StrictOptions<V, ArgOptions>;
+
 export type ContextualArgs<
   Spec extends string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>>,
-> = Args & Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>>;
+  Args extends Partial<Record<ExtractArgNames<Spec>, any>>,
+> = {
+  readonly [K in keyof Args]: K extends ExtractArgNames<Spec>
+    ? ContextualArgValue<Args[K]>
+    : never;
+} & Partial<Record<Exclude<ExtractArgNames<Spec>, keyof Args>, ArgOptions>>;
 
 type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
 
@@ -209,7 +228,7 @@ export type ExtractArgNames<S extends string> =
 
 type ResolveArgType<
   Name extends string,
-  Args extends Partial<Record<string, ArgDefinitionValue>>,
+  Args extends Partial<Record<string, any>>,
 > = Name extends keyof Args
   ? NonNullable<Args[Name]> extends { readonly type: infer T }
     ? [T] extends [undefined]
@@ -222,7 +241,7 @@ type ResolveArgType<
 
 type InferArgDefault<
   Name extends string,
-  Args extends Partial<Record<string, ArgDefinitionValue>>,
+  Args extends Partial<Record<string, any>>,
   Fallback,
 > = Name extends keyof Args
   ? NonNullable<Args[Name]> extends {
@@ -234,7 +253,7 @@ type InferArgDefault<
 
 type InferTokenArg<
   Token extends string,
-  Args extends Partial<Record<string, ArgDefinitionValue>>,
+  Args extends Partial<Record<string, any>>,
 > = Token extends `<${infer Name}...>`
   ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
   : Token extends `[${infer Name}...]`
@@ -255,14 +274,14 @@ type InferTokenArg<
 
 type InferSpecArgsAcc<
   S extends string,
-  Args extends Partial<Record<string, ArgDefinitionValue>>,
+  Args extends Partial<Record<string, any>>,
 > = S extends `${infer Head} ${infer Rest}`
   ? InferTokenArg<Head, Args> & InferSpecArgsAcc<Rest, Args>
   : InferTokenArg<S, Args>;
 
 export type InferCommandArgs<
   Spec extends string,
-  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
+  Args extends Partial<Record<string, any>> = {},
 > = string extends Spec
   ? Record<string, any>
   : Prettify<InferSpecArgsAcc<Spec, Args>>;
@@ -270,8 +289,8 @@ export type InferCommandArgs<
 type KnownKeys<T> = string extends keyof T ? never : keyof T;
 
 export type MergedFlags<
-  LocalFlags extends ClercFlagsDefinition,
-  GlobalFlags extends ClercFlagsDefinition,
+  LocalFlags extends Record<string, any>,
+  GlobalFlags extends Record<string, any>,
 > = InferClercFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
 
 export interface GroupDefinition {
@@ -365,7 +384,7 @@ export interface ErrorContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
 }
 
 export interface RunContext<
-  TGlobalFlags extends ClercFlagsDefinition = {},
+  TGlobalFlags extends Record<string, any> = {},
 > extends ErrorContext<TGlobalFlags> {
   readonly command: AnyCommandDefinition;
   readonly calledAs: string;
@@ -373,9 +392,9 @@ export interface RunContext<
 
 export type CommandContext<
   Spec extends string = string,
-  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
-  Flags extends ClercFlagsDefinition = {},
-  GlobalFlags extends ClercFlagsDefinition = {},
+  Args extends Partial<Record<string, any>> = {},
+  Flags extends Record<string, any> = {},
+  GlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > = Omit<RunContext<GlobalFlags>, "args" | "flags"> & {
   readonly args: InferCommandArgs<Spec, Args>;
@@ -384,9 +403,9 @@ export type CommandContext<
 
 export type CommandHandler<
   Spec extends string = string,
-  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
-  Flags extends ClercFlagsDefinition = {},
-  GlobalFlags extends ClercFlagsDefinition = {},
+  Args extends Partial<Record<string, any>> = {},
+  Flags extends Record<string, any> = {},
+  GlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > = (
   ctx: CommandContext<Spec, Args, Flags, GlobalFlags, TExt>,
@@ -394,9 +413,9 @@ export type CommandHandler<
 
 export interface CommandOptions<
   Spec extends string = string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>> = {},
-  Flags extends ClercFlagsDefinition = {},
-  GlobalFlags extends ClercFlagsDefinition = {},
+  Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
+  Flags extends Record<string, any> = {},
+  GlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > {
   readonly aliases?: MaybeArray<string>;
@@ -417,28 +436,28 @@ export interface CommandOptions<
     NoInfer<TExt>
   >;
   readonly meta?: Record<string, unknown>;
+}
+
+export interface CommandDefinition<
+  Spec extends string = string,
+  Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
+  Flags extends Record<string, any> = {},
+  GlobalFlags extends Record<string, any> = {},
+  TExt extends Record<string, any> = {},
+> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TExt> {
+  readonly spec: Spec;
+  readonly name: string;
+  readonly argTokens: readonly string[];
   /**
    * @internal
    */
   readonly builtin?: boolean;
 }
 
-export interface CommandDefinition<
-  Spec extends string = string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>> = {},
-  Flags extends ClercFlagsDefinition = {},
-  GlobalFlags extends ClercFlagsDefinition = {},
-  TExt extends Record<string, any> = {},
-> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TExt> {
-  readonly spec: Spec;
-  readonly name: string;
-  readonly argTokens: readonly string[];
-}
-
 export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
 
 export type Middleware<
-  TGlobalFlags extends ClercFlagsDefinition = {},
+  TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > = (
   ctx: RunContext<TGlobalFlags> & TExt,
@@ -446,7 +465,7 @@ export type Middleware<
 ) => void | Promise<void>;
 
 export type ErrorHandler<
-  TGlobalFlags extends ClercFlagsDefinition = {},
+  TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > = (
   error: unknown,

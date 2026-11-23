@@ -44,6 +44,17 @@ describe("core v2 route-signature & plugin types", () => {
         typoKey: String,
       },
     });
+
+    cli.command("check <entry>", {
+      args: {
+        // @ts-expect-error unknown option key inside arg options must be a compile error
+        entry: { unknownOption: true },
+      },
+      flags: {
+        // @ts-expect-error unknown option key inside flag options must be a compile error
+        badFlag: { type: Boolean, unknownOption: true },
+      },
+    });
   });
 
   it("accumulates plugin flags and extend() types cleanly across .use()", () => {

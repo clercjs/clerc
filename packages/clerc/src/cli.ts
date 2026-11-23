@@ -34,7 +34,6 @@ import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
 import type {
   AnyCommandDefinition,
-  ArgDefinitionValue,
   ClercFlagsDefinition,
   CommandNode,
   CommandOptions,
@@ -60,7 +59,7 @@ type GroupScope = keyof GroupsInput;
 type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type InternalContext<
-  TGlobalFlags extends ClercFlagsDefinition,
+  TGlobalFlags extends Record<string, any>,
   TExt extends Record<string, any>,
 > = Mutable<ErrorContext<TGlobalFlags>> & Partial<TExt>;
 type ContextExtender = (
@@ -233,7 +232,7 @@ function resolveNodeBuiltins(options: {
 }
 
 export class Plugin<
-  TGlobalFlags extends ClercFlagsDefinition = {},
+  TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > {
   public readonly pluginName: string;
@@ -251,7 +250,7 @@ export class Plugin<
     });
   }
 
-  public flags<const Flags extends ClercFlagsDefinition>(
+  public flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
   ): Plugin<TGlobalFlags & Flags, TExt> {
     const state = getPluginState(this);
@@ -279,10 +278,8 @@ export class Plugin<
 
   public command<
     const Spec extends string,
-    const Args extends Partial<
-      Record<ExtractArgNames<Spec>, ArgDefinitionValue>
-    > = {},
-    const Flags extends ClercFlagsDefinition = {},
+    const Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
+    const Flags extends Record<string, any> = {},
   >(
     spec: Spec,
     options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TExt>,
@@ -322,7 +319,7 @@ export class Plugin<
   }
 
   public use<
-    PFlags extends ClercFlagsDefinition = {},
+    PFlags extends Record<string, any> = {},
     PExt extends Record<string, any> = {},
   >(other: Plugin<PFlags, PExt>): Plugin<TGlobalFlags & PFlags, TExt & PExt> {
     const state = getPluginState(this);
@@ -334,7 +331,7 @@ export class Plugin<
 }
 
 export class CliApp<
-  TGlobalFlags extends ClercFlagsDefinition = {},
+  TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TExt> {
   readonly #meta: ReadonlyCliMeta;
@@ -374,7 +371,7 @@ export class CliApp<
     };
   }
 
-  public override flags<const Flags extends ClercFlagsDefinition>(
+  public override flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
   ): CliApp<TGlobalFlags & Flags, TExt> {
     super.flags(definitions);
@@ -391,7 +388,7 @@ export class CliApp<
   }
 
   public override use<
-    PFlags extends ClercFlagsDefinition = {},
+    PFlags extends Record<string, any> = {},
     PExt extends Record<string, any> = {},
   >(other: Plugin<PFlags, PExt>): CliApp<TGlobalFlags & PFlags, TExt & PExt> {
     super.use(other);
