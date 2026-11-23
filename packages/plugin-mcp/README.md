@@ -1,6 +1,6 @@
 # @clerc/plugin-mcp
 
-Expose any Clerc v2 CLI as a zero-dependency **Model Context Protocol (MCP)** stdio server — turning every CLI command into a typed MCP tool and every help page into an MCP resource.
+Expose any Clerc v2 CLI as a zero-dependency **Model Context Protocol (MCP)** stdio server - turning every CLI command into a typed MCP tool and every help page into an MCP resource.
 
 ## Usage
 
