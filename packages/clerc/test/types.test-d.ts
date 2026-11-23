@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import type { Logger, StandardSchemaV1 } from "../src";
+import type { ExtractArgNames, Logger, StandardSchemaV1 } from "../src";
 import { Cli, Types, plugin, verbosityPlugin } from "../src";
 
 describe("core v2 route-signature & plugin types", () => {
@@ -142,6 +142,9 @@ describe("core v2 route-signature & plugin types", () => {
           expectTypeOf(ctx.log).toEqualTypeOf<Logger>();
           expectTypeOf(ctx.flags.quiet).toEqualTypeOf<boolean>();
           expectTypeOf(ctx.flags.verbose).toEqualTypeOf<number>();
+          expectTypeOf<
+            ExtractArgNames<"exec <cmd> -- [args...]">
+          >().toEqualTypeOf<"cmd" | "args">();
         },
       });
   });

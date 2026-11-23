@@ -55,6 +55,13 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
 export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
 
+export type ContextualFlags<Flags extends ClercFlagsDefinition> = {
+  readonly [K in keyof Flags]: Flags[K] extends
+    CoreSingleType | readonly [CoreSingleType]
+    ? Flags[K]
+    : Flags[K] & ClercFlagOptions;
+};
+
 export interface FlagDescriptor {
   readonly name: string;
   readonly target: string;
@@ -183,12 +190,16 @@ export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
 export type ArgDefinitionValue = CoreSingleType | ArgOptions;
 export type ArgsDefinition = Record<string, ArgDefinitionValue>;
 
+export type ContextualArgs<
+  Spec extends string,
+  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>>,
+> = Args & Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>>;
+
+type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
+
 type ExtractSingleArgName<Token extends string> = Token extends
-  | `<${infer Name}...>`
-  | `[${infer Name}...]`
-  | `<${infer Name}>`
-  | `[${infer Name}]`
-  ? CamelCase<Name>
+  `<${infer Raw}>` | `[${infer Raw}]`
+  ? CamelCase<StripVariadic<Raw>>
   : never;
 
 export type ExtractArgNames<S extends string> =
@@ -390,8 +401,8 @@ export interface CommandOptions<
 > {
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
-  readonly args?: Args;
-  readonly flags?: Flags;
+  readonly args?: ContextualArgs<Spec, Args>;
+  readonly flags?: ContextualFlags<Flags>;
   readonly stopAtFirstPositional?: boolean;
   readonly group?: string;
   readonly hidden?: boolean;

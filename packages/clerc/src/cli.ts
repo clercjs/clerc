@@ -38,6 +38,7 @@ import type {
   ClercFlagsDefinition,
   CommandNode,
   CommandOptions,
+  ContextualFlags,
   CreateCliOptions,
   ErrorContext,
   ErrorHandler,
@@ -251,7 +252,7 @@ export class Plugin<
   }
 
   public flags<const Flags extends ClercFlagsDefinition>(
-    definitions: Flags,
+    definitions: ContextualFlags<Flags>,
   ): Plugin<TGlobalFlags & Flags, TExt> {
     const state = getPluginState(this);
     Object.assign(state.flags, definitions);
@@ -374,7 +375,7 @@ export class CliApp<
   }
 
   public override flags<const Flags extends ClercFlagsDefinition>(
-    definitions: Flags,
+    definitions: ContextualFlags<Flags>,
   ): CliApp<TGlobalFlags & Flags, TExt> {
     super.flags(definitions);
 

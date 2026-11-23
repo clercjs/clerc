@@ -99,6 +99,8 @@ export type {
   CommandHandler,
   CommandNode,
   CommandOptions,
+  ContextualArgs,
+  ContextualFlags,
   CoreSingleType,
   CoreTypeValue,
   CreateCliOptions,
