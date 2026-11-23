@@ -9,14 +9,31 @@ import type {
 } from "./types";
 import { toArray } from "./utils";
 
-export interface ArgvResolution {
-  readonly node: CommandNode;
-  readonly command?: AnyCommandDefinition;
-  readonly calledAs?: string;
-  readonly matchedPath: readonly string[];
-  readonly remainingArgv: readonly string[];
-  readonly leadingPositional?: string;
-}
+export type CommandMatch =
+  | {
+      readonly kind: "matched";
+      readonly node: CommandNode;
+      readonly command: AnyCommandDefinition;
+      readonly calledAs: string;
+      readonly remainingArgv: readonly string[];
+    }
+  | {
+      readonly kind: "namespace";
+      readonly node: CommandNode;
+      readonly remainingArgv: readonly string[];
+    }
+  | {
+      readonly kind: "empty";
+      readonly node: CommandNode;
+      readonly remainingArgv: readonly string[];
+    }
+  | {
+      readonly kind: "unknown";
+      readonly node: CommandNode;
+      readonly commandName: string;
+      readonly parentPath: readonly string[];
+      readonly remainingArgv: readonly string[];
+    };
 
 export type ArgvScanFn = (
   args: readonly string[],
@@ -150,10 +167,7 @@ export class CommandTree implements ReadonlyCommandTree {
    * Resolves the longest matching command in the tree using a flag-aware
    * positional scanner (from `@clerc/parser`).
    */
-  public resolveArgv(
-    argv: readonly string[],
-    scan: ArgvScanFn,
-  ): ArgvResolution {
+  public resolveArgv(argv: readonly string[], scan: ArgvScanFn): CommandMatch {
     let current: CommandNode = this.root;
     const calledTokens: string[] = [];
     const matchedIndices: number[] = [];
@@ -185,6 +199,29 @@ export class CommandTree implements ReadonlyCommandTree {
       remainingArgv = argv.filter((_, index) => !matchedSet.has(index));
     }
 
+    if (current.command) {
+      return {
+        kind: "matched",
+        node: current,
+        command: current.command,
+        calledAs: calledTokens.join(" "),
+        remainingArgv,
+      };
+    }
+
+    if (calledTokens.length === 0) {
+      const rootAliasTarget = this.root.aliasIndex.get("");
+      if (rootAliasTarget?.command) {
+        return {
+          kind: "matched",
+          node: rootAliasTarget,
+          command: rootAliasTarget.command,
+          calledAs: "",
+          remainingArgv,
+        };
+      }
+    }
+
     const stoppedToken = argv[stoppedAt];
     const leadingPositional =
       stoppedToken &&
@@ -193,30 +230,34 @@ export class CommandTree implements ReadonlyCommandTree {
         ? stoppedToken
         : undefined;
 
-    if (!current.command && calledTokens.length === 0) {
-      const rootAliasTarget = this.root.aliasIndex.get("");
-      if (rootAliasTarget?.command) {
-        return {
-          node: rootAliasTarget,
-          command: rootAliasTarget.command,
-          calledAs: "",
-          matchedPath: rootAliasTarget.fullPath,
-          remainingArgv,
-          leadingPositional,
-        };
-      }
+    if (leadingPositional) {
+      const parentPath = current.fullPath;
+      const commandName =
+        parentPath.length > 0
+          ? [...parentPath, leadingPositional].join(" ")
+          : leadingPositional;
+
+      return {
+        kind: "unknown",
+        node: current,
+        commandName,
+        parentPath,
+        remainingArgv,
+      };
+    }
+
+    if (current.fullPath.length > 0) {
+      return {
+        kind: "namespace",
+        node: current,
+        remainingArgv,
+      };
     }
 
     return {
+      kind: "empty",
       node: current,
-      command: current.command,
-      calledAs:
-        current.command || calledTokens.length > 0
-          ? calledTokens.join(" ")
-          : undefined,
-      matchedPath: current.fullPath,
       remainingArgv,
-      leadingPositional,
     };
   }
 }

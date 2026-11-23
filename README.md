@@ -21,9 +21,9 @@
 # ✨ Features
 
 - **Route-Style Typed Command Signatures** — Write `"deploy <target> [region] -- [extra...]"` and get full template-literal inference + `args` key autocompletion with zero `as const`.
-- **Unified `Cli` & `plugin()` Primitives** — Plugins and apps share the exact same 6 verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.hook()`, `.use()`), with atomic named override via `.use()` and `.disable()`.
+- **Batteries-Included Core** — Native `--help`, `--version`, strict unknown-flag checks with typo suggestions, and Cargo/Clap-inspired diagnostics (plus JSON mode) right out of the box.
+- **Unified `Cli` & `plugin()` Primitives** — Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.middleware()`, `.onError()`, `.use()`), with async context derivation after flag resolution and atomic named overrides.
 - **Standard Schema v1** — Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
-- **Modern Precision UI & First-Class Logger** — Built-in `ctx.log` (compact, rail, and JSON/NDJSON modes), Cargo/Clap-inspired diagnostics, and aligned terminal-width-aware help output powered by `node:util` `styleText`.
 - **Testable by Design** — Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
 
 # 😊 Quick Start
@@ -74,8 +74,8 @@ await cli.runMain();
 
 # 📦 Packages
 
-- `clerc` — Batteries-included CLI package with built-in plugins (`help`, `version`, `errors`, `strict-flags`, `verbosity`, `update-notifier`).
-- `@clerc/core` — Core runtime: `createCli`, `plugin`, `CommandTree`, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
+- `clerc` — Main CLI package re-exporting `@clerc/core` as `Cli` plus optional first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
+- `@clerc/core` — Core runtime: `createCli`, `plugin`, `CommandTree`, native help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
 - `@clerc/parser` — Zero-dependency, high-performance argument parser.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 

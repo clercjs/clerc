@@ -12,10 +12,6 @@ const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
 const isArgToken = (token: string): boolean =>
   token === DOUBLE_DASH || token.startsWith("<") || token.startsWith("[");
 
-const isArgBracketsValid = (token: string): boolean =>
-  (token.startsWith("<") && token.endsWith(">")) ||
-  (token.startsWith("[") && token.endsWith("]"));
-
 export interface ArgInfo {
   readonly name: string;
   readonly rawName: string;
@@ -48,7 +44,11 @@ export function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
 
 export function extractArgInfo(token: string): ArgInfo {
   const match = ARG_TOKEN_REGEX.exec(token);
-  if (!match || !isArgBracketsValid(token)) {
+  if (
+    !match ||
+    (match[1] === "<" && match[4] !== ">") ||
+    (match[1] === "[" && match[4] !== "]")
+  ) {
     throw new InvalidParametersError(`invalid argument definition: ${token}`);
   }
 

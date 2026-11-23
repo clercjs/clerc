@@ -24,7 +24,7 @@ interface UpdateCache {
   readonly latest?: string;
 }
 
-const DEFAULT_INTERVAL_MS = 1000 * 60 * 60 * 24; // 24 hours
+const DEFAULT_INTERVAL_MS = 1000 * 60 * 60 * 24;
 const DEFAULT_TIMEOUT_MS = 3000;
 const SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)/;
 
@@ -132,51 +132,63 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
     forceCheckInCI = false,
   } = options;
 
+  async function checkForUpdate(
+    env: Readonly<Record<string, string | undefined>>,
+    isTTY: boolean,
+  ): Promise<UpdateInfo | undefined> {
+    if (
+      !forceCheckInCI &&
+      (Boolean(env.CI) || Boolean(env.NO_UPDATE_NOTIFIER) || !isTTY)
+    ) {
+      return undefined;
+    }
+
+    const cacheFile = await resolveCacheFile(pkg.name, env, cacheDir);
+    const cache = await readCache(cacheFile);
+    const currentTime = now();
+    let latest = cache?.latest;
+
+    if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {
+      const fetched = await fetchLatestVersion(
+        pkg.name,
+        distTag,
+        registryUrl,
+        timeoutMs,
+        fetchFn,
+      );
+      if (fetched) {
+        latest = fetched;
+      }
+      await writeCache(cacheFile, { lastCheck: currentTime, latest });
+    }
+
+    if (latest && isNewerVersion(pkg.version, latest)) {
+      return { name: pkg.name, current: pkg.version, latest };
+    }
+
+    return undefined;
+  }
+
   return plugin("clerc:update-notifier")
     .extend(() => ({
       updateNotifier: { info: undefined as UpdateInfo | undefined },
     }))
-    .hook("beforeRun", async (ctx) => {
-      const env = ctx.terminal.env;
-      if (
-        !forceCheckInCI &&
-        (Boolean(env.CI) ||
-          Boolean(env.NO_UPDATE_NOTIFIER) ||
-          !ctx.terminal.isTTY)
-      ) {
-        return;
-      }
+    .middleware(async (ctx, next) => {
+      const checkPromise = checkForUpdate(ctx.terminal.env, ctx.terminal.isTTY);
 
-      const cacheFile = await resolveCacheFile(pkg.name, env, cacheDir);
-      const cache = await readCache(cacheFile);
-      const currentTime = now();
-      let latest = cache?.latest;
+      try {
+        await next();
+      } finally {
+        const info = await checkPromise;
 
-      if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {
-        const fetched = await fetchLatestVersion(
-          pkg.name,
-          distTag,
-          registryUrl,
-          timeoutMs,
-          fetchFn,
-        );
-        if (fetched) {
-          latest = fetched;
+        if (info) {
+          ctx.updateNotifier.info = info;
+          ctx.log.callout({
+            tone: "warn",
+            title: `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
+            lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
+          });
         }
-        await writeCache(cacheFile, { lastCheck: currentTime, latest });
-      }
-
-      if (latest && isNewerVersion(pkg.version, latest)) {
-        ctx.updateNotifier.info = {
-          name: pkg.name,
-          current: pkg.version,
-          latest,
-        };
-        ctx.log.callout({
-          tone: "warn",
-          title: `Update available: ${ctx.theme.muted(pkg.version)} → ${ctx.theme.success(latest)}`,
-          lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
-        });
       }
     });
 }

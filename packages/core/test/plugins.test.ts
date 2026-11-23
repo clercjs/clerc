@@ -4,32 +4,30 @@ import { describe, expect, it } from "vitest";
 import { createCli, plugin } from "../src";
 
 describe("Unified Plugin & CliApp composition", () => {
-  it("runs beforeRun in registration order and afterRun / renderError in reverse (LIFO) order", async () => {
+  it("runs middleware in onion order and onError in reverse (LIFO) order", async () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal();
 
     const first = plugin("first")
-      .hook("beforeRun", () => {
+      .middleware(async (_, next) => {
         events.push("before:first");
-      })
-      .hook("afterRun", () => {
+        await next();
         events.push("after:first");
       })
-      .hook("renderError", () => {
-        events.push("render:first");
+      .onError(() => {
+        events.push("error:first");
 
         return true;
       });
 
     const second = plugin("second")
-      .hook("beforeRun", () => {
+      .middleware(async (_, next) => {
         events.push("before:second");
-      })
-      .hook("afterRun", () => {
+        await next();
         events.push("after:second");
       })
-      .hook("renderError", (err) => {
-        events.push("render:second");
+      .onError((err) => {
+        events.push("error:second");
 
         return err instanceof Error && err.message === "custom";
       });
@@ -64,18 +62,18 @@ describe("Unified Plugin & CliApp composition", () => {
     events.length = 0;
     const customRes = await cli.run(["custom-fail"], { terminal });
 
-    expect(customRes.handledBy).toBe("second");
-    expect(events).toEqual(["before:first", "before:second", "render:second"]);
+    expect(customRes.ok).toBeFalsy();
+    expect(events).toEqual(["before:first", "before:second", "error:second"]);
 
     events.length = 0;
     const fallbackRes = await cli.run(["fallback-fail"], { terminal });
 
-    expect(fallbackRes.handledBy).toBe("first");
+    expect(fallbackRes.ok).toBeFalsy();
     expect(events).toEqual([
       "before:first",
       "before:second",
-      "render:second",
-      "render:first",
+      "error:second",
+      "error:first",
     ]);
   });
 
@@ -98,43 +96,35 @@ describe("Unified Plugin & CliApp composition", () => {
     expect(terminal.stdoutText()).toBe("v2");
 
     cli.disable("demo:greet");
+    const res = await cli.run(["hi"], { terminal });
 
-    await expect(cli.run(["hi"], { terminal })).rejects.toThrow();
+    expect(res.ok).toBeFalsy();
+    expect(res.exitCode).toBe(2);
   });
 
-  it("extends context with typed plugin helpers and short-circuits in intercept before validation", async () => {
+  it("derives async context in extend() using resolved flags", async () => {
     const terminal = createMemoryTerminal();
-    let greeting = "";
+    let observed = "";
 
-    const greeterPlugin = plugin("test:greeter")
-      .flags({ dry: Boolean })
-      .extend((ctx) => ({
-        greet: (who: string) => `hello ${who} from ${ctx.meta.scriptName}`,
-      }))
-      .hook("intercept", (ctx) => {
-        if (ctx.flags.dry) {
-          ctx.terminal.stdout("dry-run");
+    const configPlugin = plugin("test:config")
+      .flags({ config: { type: String, default: "default.json" } })
+      .extend(async (ctx) => ({
+        loadedConfig: await Promise.resolve(`loaded:${ctx.flags.config}`),
+      }));
 
-          return { handled: true, exitCode: 0 };
-        }
-      });
-
-    const cli = createTestBaseCli().use(greeterPlugin);
+    const cli = createTestBaseCli().use(configPlugin);
     cli.command("deploy", {
-      flags: { token: { type: String, required: true } },
       run(ctx) {
-        greeting = ctx.greet("world");
+        observed = ctx.loadedConfig;
       },
     });
 
-    const dryRes = await cli.run(["deploy", "--dry"], { terminal });
+    await cli.run(["deploy"], { terminal });
 
-    expect(dryRes.ok).toBeTruthy();
-    expect(dryRes.handledBy).toBe("test:greeter");
-    expect(terminal.stdoutText()).toBe("dry-run");
+    expect(observed).toBe("loaded:default.json");
 
-    await cli.run(["deploy", "--token", "abc"], { terminal });
+    await cli.run(["deploy", "--config", "prod.json"], { terminal });
 
-    expect(greeting).toBe("hello world from test");
+    expect(observed).toBe("loaded:prod.json");
   });
 });

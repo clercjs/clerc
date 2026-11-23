@@ -2,7 +2,6 @@ import type {
   FlagDefaultValue,
   IgnoreFunction,
   ObjectInputType,
-  ParsedResult,
   RawInputType,
   TypeFunction,
 } from "@clerc/parser";
@@ -237,25 +236,37 @@ export interface ReadonlyCliModel {
   };
 }
 
-export interface BaseRunContext<
-  TGlobalFlags extends ClercFlagsDefinition = {},
-> {
+export interface HelpHelper {
+  readonly render: (commandPath?: readonly string[]) => Promise<string>;
+  readonly print: (commandPath?: readonly string[]) => Promise<void>;
+}
+
+export interface HelpOptions {
+  readonly command?: boolean;
+  readonly header?: MetaAsyncGetter<string | undefined | void>;
+  readonly footer?: MetaAsyncGetter<string | undefined | void>;
+  readonly render?: (
+    model: ReadonlyCliModel,
+    commandPath?: readonly string[],
+  ) => string | Promise<string>;
+}
+
+export interface RunContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
   readonly meta: ReadonlyCliMeta;
   readonly model: ReadonlyCliModel;
   readonly terminal: Terminal;
   readonly theme: Theme;
   readonly log: Logger;
+  readonly help: HelpHelper;
   readonly argv: readonly string[];
-  node?: CommandNode;
   command?: AnyCommandDefinition;
+  commandPath: readonly string[];
   calledAs?: string;
   args: Record<string, any>;
   flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
   unknown: Record<string, RawInputType>;
   ignored: readonly string[];
   doubleDash: readonly string[];
-  rawParsed?: ParsedResult<any>;
-  missingRequiredFlags: readonly string[];
 }
 
 export type CommandContext<
@@ -270,16 +281,16 @@ export type CommandContext<
   readonly terminal: Terminal;
   readonly theme: Theme;
   readonly log: Logger;
+  readonly help: HelpHelper;
   readonly argv: readonly string[];
-  readonly node: CommandNode;
   readonly command: AnyCommandDefinition;
+  readonly commandPath: readonly string[];
   readonly calledAs: string;
   readonly args: InferCommandArgs<Spec, Args>;
   readonly flags: MergedFlags<Flags, GlobalFlags>;
   readonly unknown: Record<string, RawInputType>;
   readonly ignored: readonly string[];
   readonly doubleDash: readonly string[];
-  readonly rawParsed: ParsedResult<any>;
 } & TExt;
 
 export type CommandHandler<
@@ -333,45 +344,32 @@ export interface CommandDefinition<
 
 export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
 
-export type InterceptResult =
-  void | undefined | { readonly handled: true; readonly exitCode?: number };
-
-export interface HookHandlerMap<
+export type Middleware<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
-> {
-  readonly intercept: (
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => InterceptResult | Promise<InterceptResult>;
-  readonly validate: (
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => void | Promise<void>;
-  readonly beforeRun: (
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => void | Promise<void>;
-  readonly afterRun: (
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => void | Promise<void>;
-  readonly error: (
-    error: unknown,
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => unknown | Promise<unknown>;
-  readonly renderError: (
-    error: unknown,
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-  ) => boolean | void | Promise<boolean | void>;
-}
+> = (
+  ctx: RunContext<TGlobalFlags> & TExt,
+  next: () => Promise<void>,
+) => void | Promise<void>;
 
-export type HookPhase = keyof HookHandlerMap;
+export type ErrorHandler<
+  TGlobalFlags extends ClercFlagsDefinition = {},
+  TExt extends Record<string, any> = {},
+> = (
+  error: unknown,
+  ctx: RunContext<TGlobalFlags> & TExt,
+) => boolean | void | Promise<boolean | void>;
 
 export interface CreateCliOptions {
   readonly scriptName?: string;
   readonly description?: string;
   readonly version?: string;
-  readonly theme?: Partial<ThemeStyleMap>;
-  readonly logger?: LoggerOptions;
   readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
+  readonly help?: boolean | HelpOptions;
+  readonly strictFlags?: boolean;
+  readonly theme?: Partial<ThemeStyleMap>;
+  readonly logger?: LoggerOptions;
 }
 
 export interface RunOptions {
@@ -379,17 +377,18 @@ export interface RunOptions {
   readonly theme?: Partial<ThemeStyleMap>;
   readonly logger?: LoggerOptions;
   /**
-   * When true (default), rethrows errors if no plugin handled rendering them.
-   * Set to false to always receive a structured RunResult.
+   * When true, rethrows unhandled errors instead of rendering diagnostics to
+   * stderr. Useful in tests asserting on thrown error instances.
+   *
+   * @default false
    */
-  readonly throwOnUnhandled?: boolean;
+  readonly throwOnError?: boolean;
 }
 
 export interface RunResult {
   readonly ok: boolean;
   readonly exitCode: number;
   readonly error?: unknown;
-  readonly handledBy?: string;
 }
 
 export type { ClercError };

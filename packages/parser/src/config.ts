@@ -1,29 +1,25 @@
 import { InvalidSchemaError } from "./errors";
-import { camelCase, looseIsArray } from "./helpers";
+import { camelCase, kebabCase } from "./helpers";
 import type {
   FlagDefinitionValue,
   FlagOptions,
   FlagsDefinition,
+  TypeValue,
 } from "./types";
 
 export const DEFAULT_DELIMITERS = ["=", ":"];
 
 const normalizeConfig = (config: FlagDefinitionValue): FlagOptions =>
-  typeof config === "function" || looseIsArray(config)
-    ? { type: config }
-    : config;
+  typeof config === "function" || Array.isArray(config)
+    ? { type: config as TypeValue }
+    : (config as FlagOptions);
 
 function hasInvalidChar(name: string, delimiters: readonly string[]): boolean {
   if (name.includes(" ") || name.includes(".")) {
     return true;
   }
-  for (const delimiter of delimiters) {
-    if (name.includes(delimiter)) {
-      return true;
-    }
-  }
 
-  return false;
+  return delimiters.some((delimiter) => name.includes(delimiter));
 }
 
 function validateFlagOptions(
@@ -84,6 +80,10 @@ export function buildConfigsAndAliases(
     const camel = camelCase(name);
     if (camel !== name) {
       aliases.set(camel, name);
+    }
+    const kebab = kebabCase(name);
+    if (kebab !== name) {
+      aliases.set(kebab, name);
     }
     if (normalized.short) {
       aliases.set(normalized.short, name);

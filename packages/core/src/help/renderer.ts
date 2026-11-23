@@ -1,3 +1,9 @@
+import { DOUBLE_DASH } from "@clerc/parser";
+
+import { extractArgInfo, normalizeArgValue } from "../args";
+import { normalizeFlagValue } from "../flags";
+import { isStandardSchema } from "../schema";
+import type { Theme } from "../theme";
 import type {
   AnyCommandDefinition,
   ClercFlagOptions,
@@ -7,20 +13,13 @@ import type {
   MetaAsyncGetter,
   ReadonlyCliMeta,
   ReadonlyCliModel,
-  Theme,
-} from "@clerc/core";
+} from "../types";
 import {
-  DOUBLE_DASH,
-  extractArgInfo,
   formatFlagName,
   formatVersion,
-  isStandardSchema,
-  normalizeArgValue,
-  normalizeFlagValue,
   resolveAsyncValue,
   toArray,
-} from "@clerc/core";
-
+} from "../utils";
 import { formatTwoColumn } from "./layout";
 
 export interface RenderHelpOptions {
@@ -165,10 +164,7 @@ function renderGroupedRows<T>(
       : [];
 
   const titleByKey = new Map(groups.map((g) => [g.key, g.title]));
-  const orderedKeys = [
-    ...groups.map((g) => g.key),
-    ...[...buckets.keys()].filter((k) => !titleByKey.has(k)),
-  ];
+  const orderedKeys = new Set([...titleByKey.keys(), ...buckets.keys()]);
 
   for (const key of orderedKeys) {
     const list = buckets.get(key);

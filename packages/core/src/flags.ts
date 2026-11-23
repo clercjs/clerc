@@ -3,8 +3,14 @@ import type {
   FlagsDefinition as ParserFlagsDefinition,
 } from "@clerc/parser";
 
-import { FlagConflictError, FlagImpliesError } from "./errors";
+import {
+  FlagConflictError,
+  FlagImpliesError,
+  MissingRequiredFlagError,
+  UnknownFlagError,
+} from "./errors";
 import { convertValue, isStandardSchema } from "./schema";
+import { findClosest } from "./suggest";
 import type {
   ClercFlagDefinitionValue,
   ClercFlagOptions,
@@ -73,19 +79,11 @@ function classifyFlagType(type: CoreTypeValue): {
     };
   }
 
-  if (type === Boolean) {
+  if (type === Boolean || type === Object) {
     return {
-      kind: "boolean",
-      valueType: Boolean,
-      parserType: Boolean,
-      needsConvert: false,
-    };
-  }
-  if (type === Object) {
-    return {
-      kind: "object",
-      valueType: Object,
-      parserType: Object,
+      kind: type === Boolean ? "boolean" : "object",
+      valueType: type,
+      parserType: type,
       needsConvert: false,
     };
   }
@@ -153,6 +151,21 @@ export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
   return { entries, byName, parserFlags };
 }
 
+async function convertValues(
+  entry: CompiledFlagEntry,
+  items: readonly string[],
+): Promise<unknown[]> {
+  if (!entry.needsConvert) {
+    return [...items];
+  }
+  const converted: unknown[] = [];
+  for (const item of items) {
+    converted.push(await convertValue(entry.valueType, item, entry.target));
+  }
+
+  return converted;
+}
+
 async function resolveEnvValue(
   entry: CompiledFlagEntry,
   envValue: string,
@@ -168,17 +181,10 @@ async function resolveEnvValue(
       return Number.isNaN(count) ? 0 : count;
     }
     case "array": {
-      const converted: unknown[] = [];
-      for (const item of envValue.split(",")) {
-        const trimmed = item.trim();
-        converted.push(
-          entry.needsConvert
-            ? await convertValue(entry.valueType, trimmed, entry.target)
-            : trimmed,
-        );
-      }
-
-      return converted;
+      return convertValues(
+        entry,
+        envValue.split(",").map((s) => s.trim()),
+      );
     }
     case "object": {
       return rawValue ?? {};
@@ -209,24 +215,16 @@ export async function resolveCompiledFlags(
     const { name, norm, kind, valueType, target, needsConvert } = entry;
     const rawValue = rawFlags[name];
 
-    // 1. Explicitly supplied on CLI
     if (provided.has(name)) {
-      if (!needsConvert) {
-        flags[name] = rawValue;
-      } else if (kind === "array") {
-        const converted: unknown[] = [];
-        for (const item of rawValue as string[]) {
-          converted.push(await convertValue(valueType, item, target));
-        }
-        flags[name] = converted;
-      } else {
-        flags[name] = await convertValue(valueType, rawValue as string, target);
-      }
+      flags[name] = needsConvert
+        ? kind === "array"
+          ? await convertValues(entry, rawValue as string[])
+          : await convertValue(valueType, rawValue as string, target)
+        : rawValue;
 
       continue;
     }
 
-    // 2. Environment variable fallback
     const envValue = norm.env ? env[norm.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       provided.add(name);
@@ -235,7 +233,6 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    // 3. Explicit default
     if (norm.default !== undefined) {
       flags[name] =
         typeof norm.default === "function"
@@ -245,24 +242,79 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    // 4. Required check
     if (norm.required) {
       missingRequired.push(name);
 
       continue;
     }
 
-    // 5. Implicit default from kind (fresh instance per run)
     flags[name] = createImplicitDefault(kind);
   }
 
   return { flags, missingRequired, provided };
 }
 
-export function checkFlagConstraints(
+export function warnFlagDeprecations(
   compiled: CompiledFlags,
   provided: ReadonlySet<string>,
+  warn: (message: string) => void,
 ): void {
+  for (const name of provided) {
+    const entry = compiled.byName.get(name);
+    if (!entry?.norm.deprecated) {
+      continue;
+    }
+    const reason =
+      typeof entry.norm.deprecated === "string"
+        ? `: ${entry.norm.deprecated}`
+        : "";
+    warn(`Option '${entry.target}' is deprecated${reason}`);
+  }
+}
+
+export function validateCompiledFlags(
+  compiled: CompiledFlags,
+  missingRequired: readonly string[],
+  provided: ReadonlySet<string>,
+  unknownFlags?: Readonly<Record<string, unknown>>,
+  strictFlags = true,
+): void {
+  if (strictFlags && unknownFlags) {
+    const unknownKeys = Object.keys(unknownFlags);
+    if (unknownKeys.length > 0) {
+      const knownFlags = [...compiled.byName.keys()];
+      const hints: string[] = [];
+      for (const unknown of unknownKeys) {
+        if (unknown.length <= 1) {
+          continue;
+        }
+        const suggestion = findClosest(unknown, knownFlags, 3);
+        if (suggestion) {
+          hints.push(
+            `a similar option exists: '${formatFlagName(suggestion)}'`,
+          );
+        }
+      }
+
+      throw new UnknownFlagError(unknownKeys, hints);
+    }
+  }
+
+  if (missingRequired.length > 0) {
+    const hints: string[] = [];
+    for (const name of missingRequired) {
+      const entry = compiled.byName.get(name);
+      if (entry?.norm.env) {
+        hints.push(`provide '${entry.target}' or set ${entry.norm.env}`);
+      }
+    }
+
+    throw new MissingRequiredFlagError(
+      missingRequired,
+      hints.length > 0 ? hints : undefined,
+    );
+  }
+
   for (const name of provided) {
     const entry = compiled.byName.get(name);
     if (!entry) {

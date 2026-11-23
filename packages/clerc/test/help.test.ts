@@ -1,13 +1,13 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Types, createCli, helpPlugin } from "../src";
+import { Cli, Types } from "../src";
 
-describe("helpPlugin v2 Modern Precision layout", () => {
+describe("built-in v2 Modern Precision help", () => {
   it("renders crisp aligned help without Boolean or default:false noise", async () => {
     const terminal = createMemoryTerminal({ columns: 90 });
 
-    const cli = createCli({
+    const cli = Cli({
       scriptName: "acme",
       version: "2.0.0",
       description: "Build and deploy modern TypeScript apps",
@@ -15,9 +15,7 @@ describe("helpPlugin v2 Modern Precision layout", () => {
         ["$ acme build src/index.ts -p 8080", "Build with custom port"],
       ],
       notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-    })
-      .use(helpPlugin())
-      .groups({ flags: { input: "Input Options" } });
+    }).groups({ flags: { input: "Input Options" } });
 
     cli.command("build <entry>", {
       aliases: ["b"],
@@ -87,7 +85,8 @@ describe("helpPlugin v2 Modern Precision layout", () => {
         "    --cache, --no-cache  Use build cache  (default: true)",
         "",
         "Global Options:",
-        "  -h, --help  Show help",
+        "  -V, --version  Show version",
+        "  -h, --help     Show help",
       ].join("\n"),
     );
 

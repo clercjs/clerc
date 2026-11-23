@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { isNewerVersion, updateNotifierPlugin, verbosityPlugin } from "../src";
 
-describe("built-in v2 plugins", () => {
+describe("built-in strict flags & optional v2 plugins", () => {
   const tempDirs: string[] = [];
 
   afterEach(async () => {
@@ -16,7 +16,7 @@ describe("built-in v2 plugins", () => {
     }
   });
 
-  it("strictFlagsPlugin is enabled by default in Cli(), rejects unknown flags, and never blocks --help", async () => {
+  it("rejects unknown flags natively with suggestions and never blocks --help", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();
     cli.command("build", { flags: { output: String }, run() {} });
@@ -63,7 +63,7 @@ describe("built-in v2 plugins", () => {
     expect(terminal.stdoutText()).toBe("");
   });
 
-  it("updateNotifierPlugin checks registry with native fetch, caches, and prints Left-Rail callout", async () => {
+  it("updateNotifierPlugin checks registry concurrently and prints callout after command completes", async () => {
     const cacheDir = await mkdtemp(path.join(os.tmpdir(), "clerc-update-"));
     tempDirs.push(cacheDir);
 

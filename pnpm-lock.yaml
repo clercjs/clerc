@@ -375,15 +375,15 @@ importers:
       '@clerc/core':
         specifier: workspace:*
         version: link:../core
-      fast-string-width:
-        specifier: catalog:cli
-        version: 3.0.2
 
   packages/core:
     dependencies:
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
+      fast-string-width:
+        specifier: catalog:cli
+        version: 3.0.2
 
   packages/parser:
     devDependencies:

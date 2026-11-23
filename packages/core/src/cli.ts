@@ -2,21 +2,24 @@ import { createParser } from "@clerc/parser";
 
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
-import type { ArgvResolution } from "./command-tree";
 import { CommandTree } from "./command-tree";
 import {
   ClercError,
-  MissingRequiredFlagError,
   MissingRequiredMetadataError,
   NoCommandError,
   UnknownCommandError,
+  enrichCommandError,
+  formatDiagnostic,
+  formatJsonError,
 } from "./errors";
 import type { CompiledFlags } from "./flags";
 import {
-  checkFlagConstraints,
   compileFlags,
   resolveCompiledFlags,
+  validateCompiledFlags,
+  warnFlagDeprecations,
 } from "./flags";
+import { renderHelp } from "./help/renderer";
 import type { LoggerOptions } from "./logger";
 import { createLogger } from "./logger";
 import { createTerminal } from "./terminal";
@@ -25,37 +28,28 @@ import { createTheme } from "./theme";
 import type {
   AnyCommandDefinition,
   ArgDefinitionValue,
-  BaseRunContext,
   ClercFlagsDefinition,
   CommandOptions,
   CreateCliOptions,
+  ErrorHandler,
   ExtractArgNames,
   GroupDefinition,
   GroupsInput,
-  HookHandlerMap,
-  HookPhase,
-  MetaAsyncGetter,
+  HelpOptions,
+  Middleware,
   ReadonlyCliMeta,
   ReadonlyCliModel,
+  RunContext,
   RunOptions,
   RunResult,
 } from "./types";
+import { formatVersion } from "./utils";
 
-interface HookEntry<K extends HookPhase = HookPhase> {
-  readonly source?: string;
-  readonly fn: HookHandlerMap<any, any>[K];
-}
-
-interface HookBuckets {
-  intercept: HookEntry<"intercept">[];
-  validate: HookEntry<"validate">[];
-  beforeRun: HookEntry<"beforeRun">[];
-  afterRun: HookEntry<"afterRun">[];
-  error: HookEntry<"error">[];
-  renderError: HookEntry<"renderError">[];
-}
-
-type ContextExtender = (ctx: BaseRunContext<any>) => Record<string, any>;
+type GroupScope = keyof GroupsInput;
+type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
+type ContextExtender = (
+  ctx: RunContext<any>,
+) => Record<string, any> | Promise<Record<string, any>>;
 
 interface CompiledCommand {
   readonly flags: CompiledFlags;
@@ -67,35 +61,70 @@ interface CompiledCli {
   readonly model: ReadonlyCliModel;
   readonly tree: CommandTree;
   readonly extenders: readonly ContextExtender[];
-  readonly hooks: HookBuckets;
+  readonly middlewares: readonly Middleware<any, any>[];
+  readonly errorHandlers: readonly ErrorHandler<any, any>[];
+  readonly builtinFlags: readonly string[];
   readonly global: CompiledCommand;
   readonly commands: WeakMap<AnyCommandDefinition, CompiledCommand>;
 }
 
-const createHookBuckets = (): HookBuckets => ({
-  intercept: [],
-  validate: [],
-  beforeRun: [],
-  afterRun: [],
-  error: [],
-  renderError: [],
+const GROUP_SCOPES: readonly GroupScope[] = [
+  "commands",
+  "flags",
+  "globalFlags",
+];
+
+const HELP_FLAG = {
+  type: Boolean,
+  short: "h",
+  description: "Show help",
+} as const;
+
+const VERSION_FLAG = {
+  type: Boolean,
+  short: "V",
+  description: "Show version",
+} as const;
+
+const createGroupBuckets = (): GroupBuckets => ({
+  commands: [],
+  flags: [],
+  globalFlags: [],
 });
 
-const GROUP_SCOPES = ["commands", "flags", "globalFlags"] as const;
+const formatCliVersion = (meta: ReadonlyCliMeta): string =>
+  `${meta.scriptName} ${formatVersion(meta.version)}`.trim();
 
-function createMissingCommandError(resolution: ArgvResolution): ClercError {
-  if (resolution.matchedPath.length > 0) {
-    const attempted = resolution.leadingPositional
-      ? [...resolution.matchedPath, resolution.leadingPositional].join(" ")
-      : resolution.matchedPath.join(" ");
-
-    return new UnknownCommandError(attempted, resolution.matchedPath);
+function collectScope(
+  scope: Plugin<any, any>,
+  globalFlags: ClercFlagsDefinition,
+  commands: AnyCommandDefinition[],
+  groups: GroupBuckets,
+  extenders: ContextExtender[],
+  middlewares: Middleware<any, any>[],
+  errorHandlers: ErrorHandler<any, any>[],
+): void {
+  for (const child of scope._plugins.values()) {
+    collectScope(
+      child,
+      globalFlags,
+      commands,
+      groups,
+      extenders,
+      middlewares,
+      errorHandlers,
+    );
   }
-  if (resolution.leadingPositional) {
-    return new UnknownCommandError(resolution.leadingPositional, []);
-  }
 
-  return new NoCommandError();
+  Object.assign(globalFlags, scope._flags);
+  commands.push(...scope._commands);
+  extenders.push(...scope._extenders);
+  middlewares.push(...scope._middlewares);
+  errorHandlers.push(...scope._errorHandlers);
+
+  for (const groupScope of GROUP_SCOPES) {
+    groups[groupScope].push(...scope._groups[groupScope]);
+  }
 }
 
 export class Plugin<
@@ -115,12 +144,7 @@ export class Plugin<
   /**
    * @internal
    */
-  public readonly _groups = {
-    commands: [] as GroupDefinition[],
-    flags: [] as GroupDefinition[],
-    globalFlags: [] as GroupDefinition[],
-  };
-
+  public readonly _groups: GroupBuckets = createGroupBuckets();
   /**
    * @internal
    */
@@ -128,7 +152,11 @@ export class Plugin<
   /**
    * @internal
    */
-  public readonly _hooks: HookBuckets = createHookBuckets();
+  public readonly _middlewares: Middleware<any, any>[] = [];
+  /**
+   * @internal
+   */
+  public readonly _errorHandlers: ErrorHandler<any, any>[] = [];
   /**
    * @internal
    */
@@ -184,7 +212,7 @@ export class Plugin<
   }
 
   public extend<Added extends Record<string, any>>(
-    fn: (ctx: BaseRunContext<TGlobalFlags> & TExt) => Added,
+    fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
   ): Plugin<TGlobalFlags, TExt & Added> {
     this._extenders.push(fn as ContextExtender);
     this._invalidate();
@@ -192,14 +220,15 @@ export class Plugin<
     return this as any;
   }
 
-  public hook<K extends HookPhase>(
-    phase: K,
-    handler: HookHandlerMap<TGlobalFlags, TExt>[K],
-  ): this {
-    (this._hooks[phase] as HookEntry<K>[]).push({
-      source: this.pluginName,
-      fn: handler,
-    });
+  public middleware(fn: Middleware<TGlobalFlags, TExt>): this {
+    this._middlewares.push(fn as Middleware<any, any>);
+    this._invalidate();
+
+    return this;
+  }
+
+  public onError(fn: ErrorHandler<TGlobalFlags, TExt>): this {
+    this._errorHandlers.push(fn as ErrorHandler<any, any>);
     this._invalidate();
 
     return this;
@@ -220,39 +249,31 @@ export class CliApp<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TExt> {
-  #scriptName = "";
-  #description = "";
-  #version = "";
-  #examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
-  #notes?: MetaAsyncGetter<readonly string[]>;
-  #themeOverrides?: Partial<ThemeStyleMap>;
-  #loggerOptions?: LoggerOptions;
+  readonly #meta: ReadonlyCliMeta;
+  readonly #helpOptions: false | HelpOptions;
+  readonly #strictFlags: boolean;
+  readonly #themeOverrides?: Partial<ThemeStyleMap>;
+  readonly #loggerOptions?: LoggerOptions;
   #compiled?: CompiledCli;
 
   constructor(options: CreateCliOptions = {}) {
     super("clerc:root");
-
-    if (options.scriptName) {
-      this.#scriptName = options.scriptName;
-    }
-    if (options.description) {
-      this.#description = options.description;
-    }
-    if (options.version) {
-      this.#version = options.version;
-    }
-    if (options.examples) {
-      this.#examples = options.examples;
-    }
-    if (options.notes) {
-      this.#notes = options.notes;
-    }
-    if (options.theme) {
-      this.#themeOverrides = options.theme;
-    }
-    if (options.logger) {
-      this.#loggerOptions = options.logger;
-    }
+    this.#meta = {
+      scriptName: options.scriptName ?? "",
+      description: options.description ?? "",
+      version: options.version ?? "",
+      examples: options.examples,
+      notes: options.notes,
+    };
+    this.#helpOptions =
+      options.help === false
+        ? false
+        : typeof options.help === "object"
+          ? options.help
+          : {};
+    this.#strictFlags = options.strictFlags ?? true;
+    this.#themeOverrides = options.theme;
+    this.#loggerOptions = options.logger;
   }
 
   protected override _invalidate(): void {
@@ -268,7 +289,7 @@ export class CliApp<
   }
 
   public override extend<Added extends Record<string, any>>(
-    fn: (ctx: BaseRunContext<TGlobalFlags> & TExt) => Added,
+    fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
   ): CliApp<TGlobalFlags, TExt & Added> {
     super.extend(fn);
 
@@ -292,93 +313,95 @@ export class CliApp<
     return this;
   }
 
-  #collectScope(
-    scope: Plugin<any, any>,
-    globalFlags: ClercFlagsDefinition,
-    commands: AnyCommandDefinition[],
-    groups: {
-      commands: GroupDefinition[];
-      flags: GroupDefinition[];
-      globalFlags: GroupDefinition[];
-    },
-    extenders: ContextExtender[],
-    hooks: HookBuckets,
-  ): void {
-    for (const child of scope._plugins.values()) {
-      this.#collectScope(
-        child,
-        globalFlags,
-        commands,
-        groups,
-        extenders,
-        hooks,
-      );
-    }
-
-    Object.assign(globalFlags, scope._flags);
-    commands.push(...scope._commands);
-    groups.commands.push(...scope._groups.commands);
-    groups.flags.push(...scope._groups.flags);
-    groups.globalFlags.push(...scope._groups.globalFlags);
-    extenders.push(...scope._extenders);
-    hooks.intercept.push(...scope._hooks.intercept);
-    hooks.validate.push(...scope._hooks.validate);
-    hooks.beforeRun.push(...scope._hooks.beforeRun);
-    hooks.afterRun.push(...scope._hooks.afterRun);
-    hooks.error.push(...scope._hooks.error);
-    hooks.renderError.push(...scope._hooks.renderError);
-  }
-
   #ensureCompiled(): CompiledCli {
     if (this.#compiled) {
       return this.#compiled;
     }
 
-    const meta: ReadonlyCliMeta = {
-      scriptName: this.#scriptName,
-      description: this.#description,
-      version: this.#version,
-      examples: this.#examples,
-      notes: this.#notes,
-    };
-
-    const mergedGlobalFlags: ClercFlagsDefinition = {};
-    const collectedCommands: AnyCommandDefinition[] = [];
-    const groups = {
-      commands: [] as GroupDefinition[],
-      flags: [] as GroupDefinition[],
-      globalFlags: [] as GroupDefinition[],
-    };
+    const globalFlagsDef: ClercFlagsDefinition = {};
+    const commands: AnyCommandDefinition[] = [];
+    const groups = createGroupBuckets();
     const extenders: ContextExtender[] = [];
-    const hooks = createHookBuckets();
+    const middlewares: Middleware<any, any>[] = [];
+    const errorHandlers: ErrorHandler<any, any>[] = [];
 
-    this.#collectScope(
+    collectScope(
       this,
-      mergedGlobalFlags,
-      collectedCommands,
+      globalFlagsDef,
+      commands,
       groups,
       extenders,
-      hooks,
+      middlewares,
+      errorHandlers,
     );
 
+    const builtinFlags: string[] = [];
+    if (this.#meta.version && !("version" in globalFlagsDef)) {
+      globalFlagsDef.version = VERSION_FLAG;
+      builtinFlags.push("version");
+    }
+    if (this.#helpOptions !== false && !("help" in globalFlagsDef)) {
+      globalFlagsDef.help = HELP_FLAG;
+      builtinFlags.push("help");
+    }
+
     const tree = new CommandTree();
-    for (const cmd of collectedCommands) {
+    for (const cmd of commands) {
       tree.register(cmd);
     }
 
+    // Register built-in version & help subcommands unless overridden by user
+    if (this.#meta.version && !tree.findNode(["version"])) {
+      tree.register({
+        spec: "version",
+        name: "version",
+        argTokens: [],
+        description: "Show version",
+        run(ctx) {
+          ctx.terminal.stdout(formatCliVersion(ctx.meta));
+        },
+      });
+    }
+    if (
+      this.#helpOptions !== false &&
+      this.#helpOptions.command !== false &&
+      !tree.findNode(["help"])
+    ) {
+      const { name, argTokens } = parseCommandSpec("help [command...]");
+      tree.register({
+        spec: "help [command...]",
+        name,
+        argTokens,
+        description: "Show help for a command",
+        examples: (meta) => [
+          [`$ ${meta.scriptName} help`, "Show general help"],
+          [`$ ${meta.scriptName} help <command>`, "Show help for a command"],
+        ],
+        async run(ctx) {
+          const path = ctx.args.command as string[];
+          if (path.length > 0 && !ctx.model.tree.findNode(path)) {
+            throw new UnknownCommandError(path.join(" "), []);
+          }
+          await ctx.help.print(path.length > 0 ? path : undefined);
+        },
+      });
+    }
+
     const model: ReadonlyCliModel = {
-      meta,
+      meta: this.#meta,
       tree,
-      globalFlags: mergedGlobalFlags,
+      globalFlags: globalFlagsDef,
       groups,
     };
 
-    const globalFlags = compileFlags(mergedGlobalFlags);
+    const globalFlags = compileFlags(globalFlagsDef);
     this.#compiled = {
       model,
       tree,
       extenders,
-      hooks,
+      middlewares,
+      errorHandlers,
+      builtinFlags,
       global: {
         flags: globalFlags,
         parser: createParser({ flags: globalFlags.parserFlags }),
@@ -427,85 +450,12 @@ export class CliApp<
     return compiled;
   }
 
-  #validateMetadata(meta: ReadonlyCliMeta): void {
-    if (!meta.scriptName) {
-      throw new MissingRequiredMetadataError("scriptName");
-    }
-    if (!meta.version) {
-      throw new MissingRequiredMetadataError("version");
-    }
-  }
-
-  #warnDeprecations(
-    ctx: BaseRunContext<TGlobalFlags>,
-    compiledFlags: CompiledFlags,
-    provided: ReadonlySet<string>,
-  ): void {
-    if (ctx.command?.deprecated) {
-      const reason =
-        typeof ctx.command.deprecated === "string"
-          ? `: ${ctx.command.deprecated}`
-          : "";
-      const pathLabel = ctx.node?.fullPath.join(" ");
-      ctx.log.warn(
-        `Command '${pathLabel && pathLabel.length > 0 ? pathLabel : "(root)"}' is deprecated${reason}`,
-      );
-    }
-    for (const name of provided) {
-      const entry = compiledFlags.byName.get(name);
-      if (entry?.norm.deprecated) {
-        const reason =
-          typeof entry.norm.deprecated === "string"
-            ? `: ${entry.norm.deprecated}`
-            : "";
-        ctx.log.warn(`Option '${entry.target}' is deprecated${reason}`);
-      }
-    }
-  }
-
-  async #handleError(
-    caughtError: unknown,
-    hooks: HookBuckets,
-    ctx: BaseRunContext<TGlobalFlags> & TExt,
-    throwOnUnhandled: boolean,
-  ): Promise<RunResult> {
-    let currentError: unknown = caughtError;
-
-    for (const entry of hooks.error) {
-      const transformed = await entry.fn(currentError, ctx);
-      if (transformed !== undefined) {
-        currentError = transformed;
-      }
-    }
-
-    const exitCode =
-      currentError instanceof ClercError ? currentError.exitCode : 1;
-
-    for (let i = hooks.renderError.length - 1; i >= 0; i--) {
-      const entry = hooks.renderError[i];
-      if (await entry.fn(currentError, ctx)) {
-        return {
-          ok: false,
-          exitCode,
-          error: currentError,
-          handledBy: entry.source,
-        };
-      }
-    }
-
-    if (throwOnUnhandled) {
-      throw currentError;
-    }
-
-    return { ok: false, exitCode, error: currentError };
-  }
-
-  public async run(
-    argv?: readonly string[],
-    options: RunOptions = {},
-  ): Promise<RunResult> {
+  #createContext(
+    compiledCli: CompiledCli,
+    argv: readonly string[] | undefined,
+    options: RunOptions,
+  ): RunContext<TGlobalFlags> & TExt {
     const terminal = options.terminal ?? createTerminal();
-    const effectiveArgv = argv ?? terminal.argv;
     const themeOverrides =
       this.#themeOverrides || options.theme
         ? { ...this.#themeOverrides, ...options.theme }
@@ -517,127 +467,234 @@ export class CliApp<
       ...this.#loggerOptions,
       ...options.logger,
     });
+    const helpOpts =
+      this.#helpOptions === false ? undefined : this.#helpOptions;
+    const render = async (commandPath?: readonly string[]): Promise<string> => {
+      if (helpOpts?.render) {
+        return helpOpts.render(compiledCli.model, commandPath);
+      }
 
-    const compiledCli = this.#ensureCompiled();
-    const { model, tree, extenders, hooks } = compiledCli;
-    const throwOnUnhandled = options.throwOnUnhandled ?? true;
+      return renderHelp(compiledCli.model, {
+        node: commandPath
+          ? compiledCli.model.tree.findNode(commandPath)
+          : compiledCli.model.tree.root,
+        theme,
+        columns: terminal.columns,
+        header: helpOpts?.header,
+        footer: helpOpts?.footer,
+      });
+    };
 
-    const baseCtx: BaseRunContext<TGlobalFlags> = {
-      meta: model.meta,
-      model,
+    const baseCtx: RunContext<TGlobalFlags> = {
+      meta: compiledCli.model.meta,
+      model: compiledCli.model,
       terminal,
       theme,
       log,
-      argv: effectiveArgv,
+      help: {
+        render,
+        print: async (commandPath?: readonly string[]) => {
+          terminal.stdout(await render(commandPath));
+        },
+      },
+      argv: argv ?? terminal.argv,
+      commandPath: [],
       args: {},
       flags: {} as any,
       unknown: {},
       ignored: [],
       doubleDash: [],
-      missingRequiredFlags: [],
     };
 
-    const ctx = baseCtx as BaseRunContext<TGlobalFlags> & TExt;
-    for (const extend of extenders) {
-      Object.assign(ctx, extend(baseCtx));
+    return baseCtx as RunContext<TGlobalFlags> & TExt;
+  }
+
+  async #execute(
+    compiledCli: CompiledCli,
+    ctx: RunContext<TGlobalFlags> & TExt,
+  ): Promise<RunResult> {
+    if (!ctx.meta.scriptName) {
+      throw new MissingRequiredMetadataError("scriptName");
+    }
+    if (!ctx.meta.version) {
+      throw new MissingRequiredMetadataError("version");
     }
 
-    try {
-      this.#validateMetadata(model.meta);
+    // 1. Resolve command match (matched | namespace | empty | unknown)
+    const match = compiledCli.tree.resolveArgv(
+      ctx.argv,
+      compiledCli.global.parser.scan,
+    );
+    ctx.commandPath = match.node.fullPath;
+    if (match.kind === "matched") {
+      ctx.command = match.command;
+      ctx.calledAs = match.calledAs;
+    }
 
-      // Stage 1: Resolve command tree
-      const resolution = tree.resolveArgv(
-        effectiveArgv,
-        compiledCli.global.parser.scan,
-      );
-      ctx.node = resolution.node;
-      ctx.command = resolution.command;
-      ctx.calledAs = resolution.calledAs;
+    // 2. Lexically parse flags & positionals
+    const compiledCmd = this.#compileCommand(compiledCli, ctx.command);
+    const parsed = compiledCmd.parser.parse(match.remainingArgv);
+    ctx.flags = parsed.flags as any;
+    ctx.unknown = parsed.unknown;
+    ctx.ignored = parsed.ignored;
+    ctx.doubleDash = parsed.doubleDash;
 
-      // Stage 2: Lexical parse
-      const compiledCmd = this.#compileCommand(compiledCli, ctx.command);
-      const parsed = compiledCmd.parser.parse(resolution.remainingArgv);
-
-      ctx.rawParsed = parsed;
-      ctx.flags = parsed.flags as any;
-      ctx.unknown = parsed.unknown;
-      ctx.ignored = parsed.ignored;
-      ctx.doubleDash = parsed.doubleDash;
-
-      // Stage 3: Intercept (--version, --help, verbosity)
-      for (const entry of hooks.intercept) {
-        const res = await entry.fn(ctx);
-        if (res?.handled) {
-          return {
-            ok: (res.exitCode ?? 0) === 0,
-            exitCode: res.exitCode ?? 0,
-            handledBy: entry.source,
-          };
-        }
-      }
-
-      // Stage 4: Validate command, flags, schemas, env, constraints & args
-      if (!ctx.command) {
-        throw createMissingCommandError(resolution);
-      }
-
-      const { flags, missingRequired, provided } = await resolveCompiledFlags(
-        compiledCmd.flags,
-        parsed.flags,
-        parsed.provided,
-        terminal.env,
-      );
-      ctx.flags = flags as any;
-      ctx.missingRequiredFlags = missingRequired;
-
-      this.#warnDeprecations(ctx, compiledCmd.flags, provided);
-
-      for (const entry of hooks.validate) {
-        await entry.fn(ctx);
-      }
-
-      if (missingRequired.length > 0) {
-        const hints: string[] = [];
-        for (const name of missingRequired) {
-          const entry = compiledCmd.flags.byName.get(name);
-          if (entry?.norm.env) {
-            hints.push(`provide '${entry.target}' or set ${entry.norm.env}`);
-          }
-        }
-
-        throw new MissingRequiredFlagError(
-          missingRequired,
-          hints.length > 0 ? hints : undefined,
-        );
-      }
-
-      checkFlagConstraints(compiledCmd.flags, provided);
-
-      ctx.args = compiledCmd.args
-        ? await executeCompiledArgs(
-            compiledCmd.args,
-            parsed.parameters,
-            parsed.doubleDash,
-          )
-        : {};
-
-      // Stage 5: Lifecycle hooks & command execution (afterRun runs in reverse)
-      for (const entry of hooks.beforeRun) {
-        await entry.fn(ctx);
-      }
-
-      if (ctx.command.run) {
-        await ctx.command.run(ctx as any);
-      }
-
-      for (let i = hooks.afterRun.length - 1; i >= 0; i--) {
-        await hooks.afterRun[i].fn(ctx);
-      }
+    // 3. Built-in --version and --help handling (unless shadowed by local flags)
+    if (
+      this.#meta.version &&
+      !ctx.command?.flags?.version &&
+      parsed.flags.version === true &&
+      match.node.fullPath.length === 0 &&
+      match.kind !== "unknown"
+    ) {
+      ctx.terminal.stdout(formatCliVersion(ctx.meta));
 
       return { ok: true, exitCode: 0 };
+    }
+
+    if (this.#helpOptions !== false) {
+      const wantsHelp =
+        !ctx.command?.flags?.help &&
+        parsed.flags.help === true &&
+        match.kind !== "unknown";
+      const implicitHelp = match.kind === "empty" || match.kind === "namespace";
+
+      if (wantsHelp || implicitHelp) {
+        await ctx.help.print(match.node.fullPath);
+
+        return { ok: true, exitCode: 0 };
+      }
+    }
+
+    // 4. Require a matched command
+    if (match.kind !== "matched") {
+      throw match.kind === "unknown"
+        ? new UnknownCommandError(match.commandName, match.parentPath)
+        : match.kind === "namespace"
+          ? new UnknownCommandError(
+              match.node.fullPath.join(" "),
+              match.node.fullPath,
+            )
+          : new NoCommandError();
+    }
+
+    // 5. Resolve flags, warn deprecations, validate flags & args
+    const { flags, missingRequired, provided } = await resolveCompiledFlags(
+      compiledCmd.flags,
+      parsed.flags,
+      parsed.provided,
+      ctx.terminal.env,
+    );
+    const localFlags = match.command.flags;
+    for (const builtin of compiledCli.builtinFlags) {
+      if (!localFlags || !(builtin in localFlags)) {
+        delete flags[builtin];
+      }
+    }
+    ctx.flags = flags as any;
+
+    const matchedCommand = match.command;
+    if (matchedCommand.deprecated) {
+      const reason =
+        typeof matchedCommand.deprecated === "string"
+          ? `: ${matchedCommand.deprecated}`
+          : "";
+      const pathLabel = ctx.commandPath.join(" ");
+      ctx.log.warn(`Command '${pathLabel || "(root)"}' is deprecated${reason}`);
+    }
+    warnFlagDeprecations(compiledCmd.flags, provided, ctx.log.warn);
+
+    validateCompiledFlags(
+      compiledCmd.flags,
+      missingRequired,
+      provided,
+      parsed.unknown,
+      this.#strictFlags,
+    );
+
+    ctx.args = compiledCmd.args
+      ? await executeCompiledArgs(
+          compiledCmd.args,
+          parsed.parameters,
+          parsed.doubleDash,
+        )
+      : {};
+
+    // 6. Derive async context extensions with resolved flags & args
+    for (const extend of compiledCli.extenders) {
+      Object.assign(ctx, await extend(ctx));
+    }
+
+    // 7. Run onion middleware chain wrapping command.run
+    const dispatch = async (index: number): Promise<void> => {
+      const mw = compiledCli.middlewares[index];
+      if (mw) {
+        await mw(ctx, () => dispatch(index + 1));
+      } else if (ctx.command?.run) {
+        await ctx.command.run(ctx as any);
+      }
+    };
+    await dispatch(0);
+
+    return { ok: true, exitCode: 0 };
+  }
+
+  async #handleError(
+    error: unknown,
+    compiledCli: CompiledCli,
+    ctx: RunContext<TGlobalFlags> & TExt,
+    throwOnError: boolean,
+  ): Promise<RunResult> {
+    enrichCommandError(error, compiledCli.tree);
+
+    const exitCode = error instanceof ClercError ? error.exitCode : 1;
+
+    for (let i = compiledCli.errorHandlers.length - 1; i >= 0; i--) {
+      if (await compiledCli.errorHandlers[i](error, ctx)) {
+        return { ok: false, exitCode, error };
+      }
+    }
+
+    if (throwOnError) {
+      throw error;
+    }
+
+    if (ctx.log.format === "json") {
+      ctx.terminal.stderr(formatJsonError(error));
+    } else {
+      const verbose =
+        ctx.log.level === "debug" ||
+        Boolean(ctx.terminal.env.DEBUG && ctx.terminal.env.DEBUG !== "0");
+      ctx.terminal.stderr(
+        formatDiagnostic(error, {
+          theme: ctx.theme,
+          scriptName: ctx.meta.scriptName,
+          commandPath: ctx.commandPath,
+          verbose,
+          showHelpHint: this.#helpOptions !== false,
+        }),
+      );
+    }
+
+    return { ok: false, exitCode, error };
+  }
+
+  public async run(
+    argv?: readonly string[],
+    options: RunOptions = {},
+  ): Promise<RunResult> {
+    const compiledCli = this.#ensureCompiled();
+    const ctx = this.#createContext(compiledCli, argv, options);
+
+    try {
+      return await this.#execute(compiledCli, ctx);
     } catch (caughtError) {
-      // Stage 6: Error enrichment & rendering pipeline
-      return this.#handleError(caughtError, hooks, ctx, throwOnUnhandled);
+      return this.#handleError(
+        caughtError,
+        compiledCli,
+        ctx,
+        options.throwOnError ?? false,
+      );
     }
   }
 
@@ -645,10 +702,7 @@ export class CliApp<
     argv?: readonly string[],
     options?: RunOptions,
   ): Promise<RunResult> {
-    const result = await this.run(argv, {
-      ...options,
-      throwOnUnhandled: options?.throwOnUnhandled ?? false,
-    });
+    const result = await this.run(argv, options);
     if (!result.ok) {
       process.exitCode = result.exitCode;
     }

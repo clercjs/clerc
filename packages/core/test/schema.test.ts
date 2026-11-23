@@ -56,20 +56,29 @@ describe("Types and Standard Schema v1", () => {
       flags: { port: 8080, tag: "v2", workers: 4 },
     });
 
-    await expect(cli.run(["run", "qa"], { terminal })).rejects.toThrow(
-      ValidationError,
-    );
-
     await expect(
-      cli.run(["run", "dev", "--port", "99999"], { terminal }),
+      cli.run(["run", "qa"], { terminal, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--workers", "1.5"], { terminal }),
+      cli.run(["run", "dev", "--port", "99999"], {
+        terminal,
+        throwOnError: true,
+      }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--workers", ""], { terminal }),
+      cli.run(["run", "dev", "--workers", "1.5"], {
+        terminal,
+        throwOnError: true,
+      }),
+    ).rejects.toThrow(ValidationError);
+
+    await expect(
+      cli.run(["run", "dev", "--workers", ""], {
+        terminal,
+        throwOnError: true,
+      }),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -113,7 +122,6 @@ describe("Types and Standard Schema v1", () => {
 
     const res = await cli.run(["invite", "ab", "--email", "invalid"], {
       terminal,
-      throwOnUnhandled: false,
     });
 
     expect(res.ok).toBeFalsy();

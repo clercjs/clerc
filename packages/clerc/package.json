@@ -39,7 +39,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@clerc/core": "workspace:*",
-    "fast-string-width": "catalog:cli"
+    "@clerc/core": "workspace:*"
   }
 }

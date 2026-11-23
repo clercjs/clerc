@@ -14,10 +14,12 @@ export const verbosityPlugin = () =>
         description: "Enable verbose debug logging",
       },
     })
-    .hook("intercept", (ctx) => {
+    .middleware(async (ctx, next) => {
       if (ctx.flags.quiet) {
         ctx.log.setLevel("error");
       } else if (ctx.flags.verbose > 0) {
         ctx.log.setLevel("debug");
       }
+
+      await next();
     });

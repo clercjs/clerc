@@ -1,10 +1,8 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { helpPlugin } from "../src";
-
 describe("clerc Cli() integration", () => {
-  it("handles --version, version, --help, help, and subcommand help", async () => {
+  it("handles --version, version, --help, help, and subcommand help natively", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();
     cli.command("build", {
@@ -34,11 +32,12 @@ describe("clerc Cli() integration", () => {
     expect(terminal.stdoutText()).toContain("-p, --port <number>");
   });
 
-  it("allows overriding built-in plugins cleanly via .use() and disabling via .disable()", async () => {
+  it("supports customizing help header and disabling strictFlags cleanly", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(helpPlugin({ header: "=== Custom Banner ===" }))
-      .disable("clerc:strict-flags");
+    const cli = createTestCli({
+      help: { header: "=== Custom Banner ===" },
+      strictFlags: false,
+    });
     cli.command("run", { run() {} });
 
     await cli.run(["--help"], { terminal });
@@ -50,7 +49,7 @@ describe("clerc Cli() integration", () => {
     expect(res.ok).toBeTruthy();
   });
 
-  it("renders Cargo/Clap diagnostics with did-you-mean hints via built-in errorPlugin", async () => {
+  it("renders Cargo/Clap diagnostics with did-you-mean hints natively", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();
     cli.command("build", { description: "Build project", run() {} });
@@ -69,6 +68,13 @@ describe("clerc Cli() integration", () => {
         "For more information, try 'test --help'.",
       ].join("\n"),
     );
+
+    // Unknown command with --help still reports the typo instead of root help
+    terminal.clear();
+    const typoHelpRes = await cli.run(["buid", "--help"], { terminal });
+
+    expect(typoHelpRes.ok).toBeFalsy();
+    expect(terminal.stderrText()).toContain("unknown command 'buid'");
   });
 
   it("renders structured JSON errors when logger format is json", async () => {

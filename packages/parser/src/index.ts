@@ -10,4 +10,4 @@ export {
   parse,
 } from "./parse";
 export type * from "./types";
-export { inferDefault, setDotValues } from "./utils";
+export { inferDefault } from "./utils";

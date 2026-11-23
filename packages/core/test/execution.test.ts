@@ -67,9 +67,9 @@ describe("Clerc execution pipeline", () => {
       run() {},
     });
 
-    await expect(cli.run(["wait", "abc"], { terminal })).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      cli.run(["wait", "abc"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(ValidationError);
   });
 
   it("resolves env fallbacks for flags and skips missing required error when env is set", async () => {
@@ -114,20 +114,29 @@ describe("Clerc execution pipeline", () => {
       run() {},
     });
 
-    await expect(cli.run(["deploy"], { terminal })).rejects.toThrow(
-      MissingRequiredFlagError,
-    );
+    await expect(
+      cli.run(["deploy"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(MissingRequiredFlagError);
 
     await expect(
-      cli.run(["deploy", "--token", "ok", "--port", "not-a-num"], { terminal }),
+      cli.run(["deploy", "--token", "ok", "--port", "not-a-num"], {
+        terminal,
+        throwOnError: true,
+      }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["deploy", "--token", "ok", "--json", "--yaml"], { terminal }),
+      cli.run(["deploy", "--token", "ok", "--json", "--yaml"], {
+        terminal,
+        throwOnError: true,
+      }),
     ).rejects.toThrow(FlagConflictError);
 
     await expect(
-      cli.run(["deploy", "--token", "ok", "--tls-key", "k.pem"], { terminal }),
+      cli.run(["deploy", "--token", "ok", "--tls-key", "k.pem"], {
+        terminal,
+        throwOnError: true,
+      }),
     ).rejects.toThrow(FlagImpliesError);
   });
 
@@ -174,15 +183,13 @@ describe("Clerc execution pipeline", () => {
     expect(terminal.stderrText()).toContain("Option '--legacy' is deprecated");
   });
 
-  it("runs beforeRun and afterRun hooks in order and is purely re-entrant", async () => {
+  it("runs onion middleware in order and is purely re-entrant", async () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.hook("beforeRun", (ctx) => {
+    const cli = createTestBaseCli().middleware(async (ctx, next) => {
       events.push(`before:${ctx.calledAs}`);
-    });
-    cli.hook("afterRun", (ctx) => {
+      await next();
       events.push(`after:${ctx.calledAs}`);
     });
     cli.command("a", {
@@ -209,17 +216,19 @@ describe("Clerc execution pipeline", () => {
     ]);
   });
 
-  it("throws NoCommandError, UnknownCommandError, and MissingRequiredParameterError", async () => {
+  it("throws NoCommandError, UnknownCommandError, and MissingRequiredParameterError when throwOnError is true", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestBaseCli();
     cli.command("greet <name>", { run() {} });
 
-    await expect(cli.run([], { terminal })).rejects.toThrow(NoCommandError);
-    await expect(cli.run(["nope"], { terminal })).rejects.toThrow(
-      UnknownCommandError,
+    await expect(cli.run([], { terminal, throwOnError: true })).rejects.toThrow(
+      NoCommandError,
     );
-    await expect(cli.run(["greet"], { terminal })).rejects.toThrow(
-      MissingRequiredParameterError,
-    );
+    await expect(
+      cli.run(["nope"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(UnknownCommandError);
+    await expect(
+      cli.run(["greet"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(MissingRequiredParameterError);
   });
 });

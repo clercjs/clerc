@@ -1,4 +1,6 @@
+import { findClosest } from "./suggest";
 import type { Theme } from "./theme";
+import type { ReadonlyCommandTree } from "./types";
 import { formatFlagName, joinWithAnd } from "./utils";
 
 export type ClercErrorCode =
@@ -213,6 +215,68 @@ export class MissingRequiredMetadataError extends ClercError {
       exitCode: 1,
     });
   }
+}
+
+export function enrichCommandError(
+  error: unknown,
+  tree: ReadonlyCommandTree,
+  distanceThreshold = 4,
+): void {
+  if (distanceThreshold <= 0) {
+    return;
+  }
+
+  if (error instanceof NoCommandError) {
+    const visible = tree
+      .listVisibleChildren(tree.root)
+      .map((node) => node.name);
+    if (visible.length > 0 && error.hints.length === 0) {
+      error.addHint(`available commands: ${visible.join(", ")}`);
+    }
+
+    return;
+  }
+
+  if (error instanceof UnknownCommandError && error.hints.length === 0) {
+    const parentNode =
+      error.parentPath.length > 0 ? tree.findNode(error.parentPath) : tree.root;
+    const visible = tree.listVisibleChildren(parentNode);
+    const candidates = visible.map((node) => node.fullPath.join(" "));
+    if (candidates.length === 0) {
+      return;
+    }
+
+    const match = findClosest(error.commandName, candidates, distanceThreshold);
+    if (match) {
+      error.addHint(`a similar command exists: '${match}'`);
+    } else if (error.parentPath.length > 0) {
+      error.addHint(
+        `available subcommands: ${visible.map((node) => node.name).join(", ")}`,
+      );
+    }
+  }
+}
+
+export function formatJsonError(error: unknown): string {
+  const payload =
+    error instanceof ClercError
+      ? {
+          error: {
+            code: error.code,
+            message: error.message,
+            detail: error.detail,
+            hints: error.hints,
+            exitCode: error.exitCode,
+          },
+        }
+      : {
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+            exitCode: 1,
+          },
+        };
+
+  return JSON.stringify(payload);
 }
 
 export interface FormatDiagnosticOptions {

@@ -1,43 +1,17 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import {
-  Cli,
-  createCli,
-  helpPlugin,
-  verbosityPlugin,
-  versionPlugin,
-} from "../src";
+import { Cli, verbosityPlugin } from "../src";
 
-describe("clerc plugin type inference", () => {
-  it("infers Cli() default flags and help context", () => {
-    Cli({ scriptName: "app", version: "1.0.0" }).command("build", {
-      run(ctx) {
-        expectTypeOf(ctx.flags.help).toEqualTypeOf<boolean>();
-        expectTypeOf(ctx.flags.version).toEqualTypeOf<boolean>();
-        expectTypeOf(ctx.help.render).toBeFunction();
-      },
-    });
-  });
-
-  it("infers verbosityPlugin and optional help/version flags accurately", () => {
-    createCli({ scriptName: "app", version: "1.0.0" })
+describe("clerc plugin & built-in context type inference", () => {
+  it("provides built-in ctx.help and accumulates plugin flags cleanly", () => {
+    Cli({ scriptName: "app", version: "1.0.0" })
       .use(verbosityPlugin())
-      .command("a", {
+      .command("build", {
         run(ctx) {
+          expectTypeOf(ctx.help.render).toBeFunction();
+          expectTypeOf(ctx.help.print).toBeFunction();
           expectTypeOf(ctx.flags.quiet).toEqualTypeOf<boolean>();
           expectTypeOf(ctx.flags.verbose).toEqualTypeOf<number>();
-        },
-      });
-
-    createCli({ scriptName: "app", version: "1.0.0" })
-      .use(versionPlugin({ flag: false }))
-      .use(helpPlugin({ flag: false }))
-      .command("b", {
-        run(ctx) {
-          // @ts-expect-error version flag is disabled
-          void ctx.flags.version;
-          // @ts-expect-error help flag is disabled
-          void ctx.flags.help;
         },
       });
   });

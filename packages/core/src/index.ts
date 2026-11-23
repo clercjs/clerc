@@ -11,10 +11,12 @@ export {
 export type { ArgInfo, ParsedCommandSpec } from "./args";
 export { extractArgInfo, normalizeArgValue, parseCommandSpec } from "./args";
 export { CliApp, Plugin, createCli, plugin } from "./cli";
-export type { ArgvResolution, ArgvScanFn } from "./command-tree";
+export type { ArgvScanFn, CommandMatch } from "./command-tree";
 export { CommandTree } from "./command-tree";
 export * from "./errors";
 export { normalizeFlagValue } from "./flags";
+export type { RenderHelpOptions } from "./help/renderer";
+export { renderHelp } from "./help/renderer";
 export { createStopAtFirstParameter } from "./helpers";
 export type {
   CalloutOptions,
