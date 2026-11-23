@@ -324,7 +324,7 @@ export function formatJsonError(error: unknown): string {
         }
       : {
           error: {
-            message: error instanceof Error ? error.message : String(error),
+            message: Error.isError(error) ? error.message : String(error),
             exitCode: 1,
           },
         };
@@ -354,7 +354,7 @@ export function formatDiagnostic(
     verbose = false,
     showHelpHint = true,
   } = options;
-  const message = error instanceof Error ? error.message : String(error);
+  const message = Error.isError(error) ? error.message : String(error);
   const lines: string[] = [
     `${formatLogLabel("error", theme.error)}  ${message}`,
   ];
@@ -390,13 +390,14 @@ export function formatDiagnostic(
         )}`,
       );
     }
-  } else if (error instanceof Error && error.cause !== undefined) {
-    const causeMsg =
-      error.cause instanceof Error ? error.cause.message : String(error.cause);
+  } else if (Error.isError(error) && error.cause !== undefined) {
+    const causeMsg = Error.isError(error.cause)
+      ? error.cause.message
+      : String(error.cause);
     lines.push(`${LOG_GUTTER}${theme.muted(`caused by: ${causeMsg}`)}`);
   }
 
-  if (verbose && error instanceof Error && error.stack) {
+  if (verbose && Error.isError(error) && error.stack) {
     lines.push("");
     lines.push(theme.muted(error.stack));
   }

@@ -312,7 +312,7 @@ export function createMcpHandler(
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = Error.isError(error) ? error.message : String(error);
 
       return errorResponse(id, -32_603, message);
     }

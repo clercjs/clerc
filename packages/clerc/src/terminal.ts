@@ -31,7 +31,12 @@ export interface MemoryTerminalOptions {
 }
 
 export const defaultPlatformArgv = (): readonly string[] =>
-  process.argv.slice("electron" in process.versions ? 1 : 2);
+  process.argv.slice(
+    process.versions.electron &&
+      !(process as { readonly defaultApp?: boolean }).defaultApp
+      ? 1
+      : 2,
+  );
 
 export function createTerminal(overrides: Partial<Terminal> = {}): Terminal {
   const env = overrides.env ?? process.env;

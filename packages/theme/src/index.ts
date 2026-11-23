@@ -1,3 +1,4 @@
+import { WriteStream } from "node:tty";
 import { styleText } from "node:util";
 
 export type StyleFormat = Parameters<typeof styleText>[0];
@@ -98,17 +99,13 @@ export function detectColor(
   env: Readonly<Record<string, string | undefined>> = process.env,
   isTTY = Boolean(process.stdout.isTTY),
 ): boolean {
-  if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") {
-    return false;
-  }
-  if (env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== "") {
-    return env.FORCE_COLOR !== "0";
-  }
-  if (env.TERM === "dumb") {
+  if (!isTTY && env.FORCE_COLOR === undefined && env.CI === undefined) {
     return false;
   }
 
-  return isTTY;
+  return WriteStream.prototype.hasColors(
+    isTTY && env.TERM === undefined ? { ...env, TERM: "xterm-256color" } : env,
+  );
 }
 
 export function detectUnicode(

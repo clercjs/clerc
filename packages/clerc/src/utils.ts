@@ -47,13 +47,13 @@ export const formatFlagName = (name: string): string =>
 export const formatVersion = (version: string): string =>
   version.length === 0 ? "" : version.startsWith("v") ? version : `v${version}`;
 
-export function joinWithAnd(values: readonly string[]): string {
-  if (values.length <= 1) {
-    return values[0] ?? "";
-  }
+const conjunctionFormat = new Intl.ListFormat("en", {
+  style: "long",
+  type: "conjunction",
+});
 
-  return `${values.slice(0, -1).join(", ")} and ${values.at(-1)}`;
-}
+export const joinWithAnd = (values: readonly string[]): string =>
+  conjunctionFormat.format(values);
 
 export const evaluateDefault = (value: unknown): unknown =>
   typeof value === "function" ? (value as () => unknown)() : value;

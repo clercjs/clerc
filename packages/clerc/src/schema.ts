@@ -112,7 +112,7 @@ const createFunctionConverter =
     try {
       return fn(raw);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = Error.isError(error) ? error.message : String(error);
 
       throw new ValidationError(target, raw, [{ message }], error);
     }

@@ -73,15 +73,27 @@ export function isNewerVersion(current: string, latest: string): boolean {
     : l[0] > c[0];
 }
 
+let fsDepsPromise:
+  | Promise<{
+      readonly fs: typeof import("node:fs/promises");
+      readonly os: typeof import("node:os");
+      readonly path: typeof import("node:path");
+    }>
+  | undefined;
+
+const loadFsDeps = () =>
+  (fsDepsPromise ??= Promise.all([
+    import("node:fs/promises"),
+    import("node:os"),
+    import("node:path"),
+  ]).then(([fs, os, path]) => ({ fs, os, path })));
+
 async function resolveCacheFile(
   pkgName: string,
   env: Readonly<Record<string, string | undefined>>,
   overrideDir?: string,
 ): Promise<string> {
-  const [os, path] = await Promise.all([
-    import("node:os"),
-    import("node:path"),
-  ]);
+  const { os, path } = await loadFsDeps();
   const baseDir =
     overrideDir ?? env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache");
   const safeName = pkgName.replace(/[^\w.-]/g, "_");
@@ -91,8 +103,10 @@ async function resolveCacheFile(
 
 async function readCache(filePath: string): Promise<UpdateCache | null> {
   try {
-    const { readFile } = await import("node:fs/promises");
-    const parsed = JSON.parse(await readFile(filePath, "utf8")) as UpdateCache;
+    const { fs } = await loadFsDeps();
+    const parsed = JSON.parse(
+      await fs.readFile(filePath, "utf8"),
+    ) as UpdateCache;
 
     return typeof parsed.lastCheck === "number" ? parsed : null;
   } catch {
@@ -102,12 +116,9 @@ async function readCache(filePath: string): Promise<UpdateCache | null> {
 
 async function writeCache(filePath: string, cache: UpdateCache): Promise<void> {
   try {
-    const [{ mkdir, writeFile }, path] = await Promise.all([
-      import("node:fs/promises"),
-      import("node:path"),
-    ]);
-    await mkdir(path.dirname(filePath), { recursive: true });
-    await writeFile(filePath, JSON.stringify(cache), "utf8");
+    const { fs, path } = await loadFsDeps();
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(cache), "utf8");
   } catch {
     // Ignore cache write errors in read-only environments
   }
@@ -138,7 +149,7 @@ async function fetchLatestVersion(
   }
 }
 
-function awaitWithin<T>(
+async function awaitWithin<T>(
   promise: Promise<T>,
   graceMs: number,
 ): Promise<T | undefined> {
@@ -146,18 +157,14 @@ function awaitWithin<T>(
     return promise;
   }
 
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const { setTimeout: delay } = await import("node:timers/promises");
+  const ac = new AbortController();
 
   return Promise.race([
-    promise.finally(() => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    }),
-    new Promise<undefined>((resolve) => {
-      timer = setTimeout(() => resolve(undefined), graceMs);
-      timer.unref();
-    }),
+    promise.finally(() => ac.abort()),
+    delay(graceMs, undefined, { ref: false, signal: ac.signal }).catch(
+      () => undefined,
+    ),
   ]);
 }
 
