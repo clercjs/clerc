@@ -1,5 +1,5 @@
-import type { ReadonlyCliMeta } from "@clerc/core";
-import { definePlugin, formatVersion } from "@clerc/core";
+import type { Plugin, ReadonlyCliMeta } from "@clerc/core";
+import { formatVersion, plugin } from "@clerc/core";
 
 export interface VersionPluginOptions<Flag extends boolean = true> {
   readonly command?: boolean;
@@ -7,12 +7,10 @@ export interface VersionPluginOptions<Flag extends boolean = true> {
   readonly format?: (meta: ReadonlyCliMeta) => string;
 }
 
-const VERSION_GLOBAL_FLAGS = {
-  version: {
-    type: Boolean,
-    short: "V",
-    description: "Show version",
-  },
+const VERSION_FLAG = {
+  type: Boolean,
+  short: "V",
+  description: "Show version",
 } as const;
 
 const defaultFormat = (meta: ReadonlyCliMeta): string =>
@@ -24,32 +22,27 @@ export function versionPlugin<const Flag extends boolean = true>(
   const command = options?.command ?? true;
   const flag = options?.flag ?? true;
   const format = options?.format ?? defaultFormat;
-  const globalFlags = (
-    flag ? VERSION_GLOBAL_FLAGS : undefined
-  ) as Flag extends true ? typeof VERSION_GLOBAL_FLAGS : {};
 
-  return definePlugin({
-    name: "clerc:version",
-    globalFlags,
-    commands: command
-      ? () => [
-          {
-            name: "version",
-            description: "Show version",
-            run: (ctx) => {
-              ctx.terminal.stdout(format(ctx.meta));
-            },
-          },
-        ]
-      : undefined,
-    hooks: {
-      onIntercept: (ctx) => {
-        if (flag && ctx.flags.version) {
-          ctx.terminal.stdout(format(ctx.meta));
-
-          return { handled: true, exitCode: 0 };
-        }
+  const p = plugin("clerc:version");
+  if (command) {
+    p.command("version", {
+      description: "Show version",
+      run(ctx) {
+        ctx.terminal.stdout(format(ctx.meta));
       },
-    },
-  });
+    });
+  }
+  if (flag) {
+    p.flags({ version: VERSION_FLAG }).hook("intercept", (ctx) => {
+      if (ctx.flags.version) {
+        ctx.terminal.stdout(format(ctx.meta));
+
+        return { handled: true, exitCode: 0 };
+      }
+    });
+  }
+
+  return p as Plugin<
+    Flag extends true ? { readonly version: typeof VERSION_FLAG } : {}
+  >;
 }

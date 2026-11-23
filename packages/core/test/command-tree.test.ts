@@ -1,36 +1,41 @@
 import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { CommandTree, InvalidCommandError, defineCommand } from "../src";
+import type { AnyCommandDefinition } from "../src";
+import { CommandTree, InvalidCommandError, plugin } from "../src";
+
+const makeDef = (
+  name: string,
+  aliases?: string | string[],
+): AnyCommandDefinition => ({
+  spec: name,
+  name,
+  argTokens: [],
+  aliases,
+});
 
 describe("CommandTree", () => {
-  it("resolves nested subcommands and space-delimited subcommands", async () => {
+  it("resolves space-delimited subcommands and plugin-composed namespaces", async () => {
     const called: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const dbCmd = defineCommand({
-      name: "db",
-      description: "Database commands",
-      subcommands: [
-        defineCommand({
-          name: "migrate",
-          aliases: ["m"],
-          description: "Run migrations",
-          run: (ctx) => {
-            called.push(`migrate:${ctx.calledAs}`);
-          },
-        }),
-      ],
-    });
-
-    const cli = createTestBaseCli()
-      .command(dbCmd)
-      .command("db seed", {
-        description: "Seed database",
-        run: (ctx) => {
-          called.push(`seed:${ctx.calledAs}`);
+    const dbPlugin = plugin("db")
+      .command("db", { description: "Database commands" })
+      .command("db migrate", {
+        aliases: "m",
+        description: "Run migrations",
+        run(ctx) {
+          called.push(`migrate:${ctx.calledAs}`);
         },
       });
+
+    const cli = createTestBaseCli().use(dbPlugin);
+    cli.command("db seed", {
+      description: "Seed database",
+      run(ctx) {
+        called.push(`seed:${ctx.calledAs}`);
+      },
+    });
 
     await cli.run(["db", "migrate"], { terminal });
     await cli.run(["db", "m"], { terminal });
@@ -48,19 +53,20 @@ describe("CommandTree", () => {
       { verbose: boolean; config?: string; target: string } | undefined;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli()
-      .globalFlag("verbose", { type: Boolean, short: "v" })
-      .globalFlag("config", { type: String, short: "c" })
-      .command("deploy", {
-        parameters: ["<target>"] as const,
-        run: (ctx) => {
-          observed = {
-            verbose: ctx.flags.verbose,
-            config: ctx.flags.config,
-            target: ctx.parameters.target,
-          };
-        },
-      });
+    const cli = createTestBaseCli().flags({
+      verbose: { type: Boolean, short: "v" },
+      config: { type: String, short: "c" },
+    });
+
+    cli.command("deploy <target>", {
+      run(ctx) {
+        observed = {
+          verbose: ctx.flags.verbose,
+          config: ctx.flags.config,
+          target: ctx.args.target,
+        };
+      },
+    });
 
     await cli.run(["-v", "--config", "app.json", "deploy", "prod"], {
       terminal,
@@ -83,8 +89,8 @@ describe("CommandTree", () => {
 
   it("lists canonical children without leaking aliases", () => {
     const tree = new CommandTree();
-    tree.register({ name: "build", aliases: ["b", "compile"] });
-    tree.register({ name: "dev", aliases: ["d"] });
+    tree.register(makeDef("build", ["b", "compile"]));
+    tree.register(makeDef("dev", ["d"]));
 
     const children = tree.listChildren();
 
@@ -93,11 +99,11 @@ describe("CommandTree", () => {
 
   it("throws InvalidCommandError on duplicate commands or conflicting aliases", () => {
     const tree = new CommandTree();
-    tree.register({ name: "build", aliases: ["b"] });
+    tree.register(makeDef("build", ["b"]));
 
-    expect(() => tree.register({ name: "build" })).toThrow(InvalidCommandError);
-    expect(() => tree.register({ name: "b" })).toThrow(InvalidCommandError);
-    expect(() => tree.register({ name: "bundle", aliases: ["b"] })).toThrow(
+    expect(() => tree.register(makeDef("build"))).toThrow(InvalidCommandError);
+    expect(() => tree.register(makeDef("b"))).toThrow(InvalidCommandError);
+    expect(() => tree.register(makeDef("bundle", ["b"]))).toThrow(
       InvalidCommandError,
     );
   });
@@ -106,9 +112,10 @@ describe("CommandTree", () => {
     const seen: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("build", {
+    const cli = createTestBaseCli();
+    cli.command("build", {
       aliases: [""],
-      run: (ctx) => {
+      run(ctx) {
         seen.push(ctx.calledAs);
       },
     });

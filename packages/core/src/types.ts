@@ -18,7 +18,6 @@ import type {
   MaybeArray,
   MaybeAsyncGetter,
   Prettify,
-  UnionToIntersection,
 } from "./utils";
 
 export type CoreSingleType<T = any> =
@@ -47,9 +46,24 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
 export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
 export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
 
+type InferStandardSchemaOutput<T extends StandardSchemaV1<any, any>> =
+  T["~standard"] extends {
+    readonly types?: { readonly output: infer Output } | undefined;
+  }
+    ? IsAny<Output> extends true
+      ? any
+      : unknown extends Output
+        ? T extends StandardSchemaV1<any, infer U>
+          ? U
+          : Output
+        : Output
+    : T extends StandardSchemaV1<any, infer U>
+      ? U
+      : never;
+
 type InferSingleType<T> =
-  T extends StandardSchemaV1<any, infer U>
-    ? U
+  T extends StandardSchemaV1<any, any>
+    ? InferStandardSchemaOutput<T>
     : T extends TypeFunction<infer U>
       ? U
       : never;
@@ -103,41 +117,69 @@ export type InferClercFlags<T extends ClercFlagsDefinition> = Prettify<{
   [K in keyof T]: InferSingleFlag<T[K]>;
 }>;
 
-export interface ParameterOptions<T extends CoreSingleType = CoreSingleType> {
-  readonly key: string;
+export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
+  readonly type?: T;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly type?: T;
   readonly meta?: Record<string, unknown>;
 }
 
-export type ParameterDefinitionValue = string | ParameterOptions;
+export type ArgDefinitionValue = CoreSingleType | ArgOptions;
+export type ArgsDefinition = Record<string, ArgDefinitionValue>;
 
-type InferStringParameter<T extends string, Type = string> = T extends
-  `<${infer Name extends string}...>` | `[${infer Name extends string}...]`
-  ? Record<CamelCase<Name>, Type[]>
-  : T extends `<${infer Name extends string}>`
-    ? Record<CamelCase<Name>, Type>
-    : T extends `[${infer Name extends string}]`
-      ? Record<CamelCase<Name>, Type | undefined>
-      : never;
+type ExtractSingleArgName<Token extends string> = Token extends
+  | `<${infer Name}...>`
+  | `[${infer Name}...]`
+  | `<${infer Name}>`
+  | `[${infer Name}]`
+  ? CamelCase<Name>
+  : never;
 
-type InferParameter<T extends ParameterDefinitionValue> = T extends string
-  ? InferStringParameter<T>
-  : T extends { readonly key: infer K extends string; readonly type: infer PT }
-    ? InferStringParameter<K, InferSingleType<PT>>
-    : T extends { readonly key: infer K extends string }
-      ? InferStringParameter<K>
-      : never;
+export type ExtractArgNames<S extends string> =
+  S extends `${infer Head} ${infer Rest}`
+    ? ExtractSingleArgName<Head> | ExtractArgNames<Rest>
+    : ExtractSingleArgName<S>;
 
-export type InferParameters<T extends readonly ParameterDefinitionValue[]> =
-  T extends readonly (infer U extends ParameterDefinitionValue)[]
-    ? [U] extends [never]
-      ? {}
-      : string extends U
-        ? {}
-        : Prettify<UnionToIntersection<InferParameter<U>>>
-    : {};
+type ResolveArgType<
+  Name extends string,
+  Args extends Partial<Record<string, ArgDefinitionValue>>,
+> = Name extends keyof Args
+  ? NonNullable<Args[Name]> extends { readonly type: infer T }
+    ? [T] extends [undefined]
+      ? string
+      : InferSingleType<T>
+    : NonNullable<Args[Name]> extends CoreSingleType
+      ? InferSingleType<NonNullable<Args[Name]>>
+      : string
+  : string;
+
+type InferTokenArg<
+  Token extends string,
+  Args extends Partial<Record<string, ArgDefinitionValue>>,
+> = Token extends `<${infer Name}...>` | `[${infer Name}...]`
+  ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
+  : Token extends `<${infer Name}>`
+    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
+    : Token extends `[${infer Name}]`
+      ? Record<
+          CamelCase<Name>,
+          ResolveArgType<CamelCase<Name>, Args> | undefined
+        >
+      : {};
+
+type InferSpecArgsAcc<
+  S extends string,
+  Args extends Partial<Record<string, ArgDefinitionValue>>,
+> = S extends `${infer Head} ${infer Rest}`
+  ? InferTokenArg<Head, Args> & InferSpecArgsAcc<Rest, Args>
+  : InferTokenArg<S, Args>;
+
+export type InferCommandArgs<
+  Spec extends string,
+  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
+> = string extends Spec
+  ? Record<string, any>
+  : Prettify<InferSpecArgsAcc<Spec, Args>>;
 
 type KnownKeys<T> = string extends keyof T ? never : keyof T;
 
@@ -151,10 +193,20 @@ export interface GroupDefinition {
   readonly title: string;
 }
 
+export interface GroupsInput {
+  readonly commands?: Readonly<Record<string, string>>;
+  readonly flags?: Readonly<Record<string, string>>;
+  readonly globalFlags?: Readonly<Record<string, string>>;
+}
+
+export type MetaAsyncGetter<T> = MaybeAsyncGetter<T, ReadonlyCliMeta>;
+
 export interface ReadonlyCliMeta {
   readonly scriptName: string;
   readonly description: string;
   readonly version: string;
+  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
 export interface CommandNode {
@@ -178,7 +230,6 @@ export interface ReadonlyCliModel {
   readonly meta: ReadonlyCliMeta;
   readonly tree: ReadonlyCommandTree;
   readonly globalFlags: Readonly<ClercFlagsDefinition>;
-  readonly plugins: readonly AnyClercPlugin[];
   readonly groups: {
     readonly commands: readonly GroupDefinition[];
     readonly flags: readonly GroupDefinition[];
@@ -198,7 +249,7 @@ export interface BaseRunContext<
   node?: CommandNode;
   command?: AnyCommandDefinition;
   calledAs?: string;
-  parameters: Record<string, any>;
+  args: Record<string, any>;
   flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
   unknown: Record<string, RawInputType>;
   ignored: readonly string[];
@@ -208,8 +259,8 @@ export interface BaseRunContext<
 }
 
 export type CommandContext<
-  Parameters extends readonly ParameterDefinitionValue[] =
-    readonly ParameterDefinitionValue[],
+  Spec extends string = string,
+  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
   Flags extends ClercFlagsDefinition = {},
   GlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
@@ -223,7 +274,7 @@ export type CommandContext<
   readonly node: CommandNode;
   readonly command: AnyCommandDefinition;
   readonly calledAs: string;
-  readonly parameters: InferParameters<Parameters>;
+  readonly args: InferCommandArgs<Spec, Args>;
   readonly flags: MergedFlags<Flags, GlobalFlags>;
   readonly unknown: Record<string, RawInputType>;
   readonly ignored: readonly string[];
@@ -232,52 +283,35 @@ export type CommandContext<
 } & TExt;
 
 export type CommandHandler<
-  Parameters extends readonly ParameterDefinitionValue[] =
-    readonly ParameterDefinitionValue[],
+  Spec extends string = string,
+  Args extends Partial<Record<string, ArgDefinitionValue>> = {},
   Flags extends ClercFlagsDefinition = {},
   GlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > = (
-  ctx: CommandContext<Parameters, Flags, GlobalFlags, TExt>,
+  ctx: CommandContext<Spec, Args, Flags, GlobalFlags, TExt>,
 ) => void | Promise<void>;
 
-export type LazyCommandLoader<
-  Parameters extends readonly ParameterDefinitionValue[] =
-    readonly ParameterDefinitionValue[],
-  Flags extends ClercFlagsDefinition = {},
-  GlobalFlags extends ClercFlagsDefinition = {},
-  TExt extends Record<string, any> = {},
-> = () => Promise<
-  | CommandHandler<Parameters, Flags, GlobalFlags, TExt>
-  | { readonly default: CommandHandler<Parameters, Flags, GlobalFlags, TExt> }
->;
-
 export interface CommandOptions<
-  Parameters extends readonly ParameterDefinitionValue[] =
-    readonly ParameterDefinitionValue[],
+  Spec extends string = string,
+  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>> = {},
   Flags extends ClercFlagsDefinition = {},
   GlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > {
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
-  readonly parameters?: Parameters;
+  readonly args?: Args;
   readonly flags?: Flags;
   readonly ignore?: IgnoreFunction;
   readonly group?: string;
   readonly hidden?: boolean;
   readonly deprecated?: boolean | string;
-  readonly examples?: MaybeAsyncGetter<readonly (readonly [string, string])[]>;
-  readonly notes?: MaybeAsyncGetter<readonly string[]>;
-  readonly subcommands?: readonly AnyCommandDefinition[];
+  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly notes?: MetaAsyncGetter<readonly string[]>;
   readonly run?: CommandHandler<
-    NoInfer<Parameters>,
-    NoInfer<Flags>,
-    NoInfer<GlobalFlags>,
-    NoInfer<TExt>
-  >;
-  readonly load?: LazyCommandLoader<
-    NoInfer<Parameters>,
+    Spec,
+    NoInfer<Args>,
     NoInfer<Flags>,
     NoInfer<GlobalFlags>,
     NoInfer<TExt>
@@ -286,14 +320,15 @@ export interface CommandOptions<
 }
 
 export interface CommandDefinition<
-  Name extends string = string,
-  Parameters extends readonly ParameterDefinitionValue[] =
-    readonly ParameterDefinitionValue[],
+  Spec extends string = string,
+  Args extends Partial<Record<ExtractArgNames<Spec>, ArgDefinitionValue>> = {},
   Flags extends ClercFlagsDefinition = {},
   GlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
-> extends CommandOptions<Parameters, Flags, GlobalFlags, TExt> {
-  readonly name: Name;
+> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TExt> {
+  readonly spec: Spec;
+  readonly name: string;
+  readonly argTokens: readonly string[];
 }
 
 export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
@@ -301,53 +336,42 @@ export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
 export type InterceptResult =
   void | undefined | { readonly handled: true; readonly exitCode?: number };
 
-export interface PluginHooks<
+export interface HookHandlerMap<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > {
-  readonly onIntercept?: (
+  readonly intercept: (
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => InterceptResult | Promise<InterceptResult>;
-  readonly onValidate?: (
+  readonly validate: (
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => void | Promise<void>;
-  readonly beforeRun?: (
+  readonly beforeRun: (
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => void | Promise<void>;
-  readonly afterRun?: (
+  readonly afterRun: (
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => void | Promise<void>;
-  readonly onError?: (
+  readonly error: (
     error: unknown,
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => unknown | Promise<unknown>;
-  readonly onRenderError?: (
+  readonly renderError: (
     error: unknown,
     ctx: BaseRunContext<TGlobalFlags> & TExt,
   ) => boolean | void | Promise<boolean | void>;
 }
 
-export interface ClercPlugin<
-  TGlobalFlags extends ClercFlagsDefinition = {},
-  TExt extends Record<string, any> = {},
-> {
-  readonly name: string;
-  readonly globalFlags?: TGlobalFlags;
-  readonly commands?: (
-    meta: ReadonlyCliMeta,
-  ) => readonly AnyCommandDefinition[];
-  readonly extendContext?: (ctx: BaseRunContext<TGlobalFlags>) => TExt;
-  readonly hooks?: PluginHooks<NoInfer<TGlobalFlags>, NoInfer<TExt>>;
-}
+export type HookPhase = keyof HookHandlerMap;
 
-export type AnyClercPlugin = ClercPlugin<any, any>;
-
-export interface CreateOptions {
+export interface CreateCliOptions {
   readonly scriptName?: string;
   readonly description?: string;
   readonly version?: string;
   readonly theme?: Partial<ThemeStyleMap>;
   readonly logger?: LoggerOptions;
+  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
 export interface RunOptions {
@@ -367,18 +391,5 @@ export interface RunResult {
   readonly error?: unknown;
   readonly handledBy?: string;
 }
-
-export type LifecycleHook<
-  TGlobalFlags extends ClercFlagsDefinition = {},
-  TExt extends Record<string, any> = {},
-> = (ctx: BaseRunContext<TGlobalFlags> & TExt) => void | Promise<void>;
-
-export type ErrorLifecycleHook<
-  TGlobalFlags extends ClercFlagsDefinition = {},
-  TExt extends Record<string, any> = {},
-> = (
-  error: unknown,
-  ctx: BaseRunContext<TGlobalFlags> & TExt,
-) => unknown | Promise<unknown>;
 
 export type { ClercError };

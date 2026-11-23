@@ -7,9 +7,9 @@ import type {
 } from "@clerc/core";
 import {
   DOUBLE_DASH,
-  extractParameterInfo,
+  extractArgInfo,
+  normalizeArgValue,
   normalizeFlagValue,
-  normalizeParameterValue,
 } from "@clerc/core";
 
 export interface CompletionMeta {
@@ -76,14 +76,15 @@ export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
 
     compMeta?.handler?.(tabCmd);
 
-    for (const def of cmd.parameters ?? []) {
-      if (def === DOUBLE_DASH) {
+    for (const token of cmd.argTokens) {
+      if (token === DOUBLE_DASH) {
         continue;
       }
-      const normalized = normalizeParameterValue(def);
-      const paramComp = getCompletionMeta(normalized.meta);
-      const { name, isVariadic } = extractParameterInfo(normalized.key);
-      tabCmd.argument(name, paramComp?.handler, isVariadic);
+      const { name, isVariadic } = extractArgInfo(token);
+      const rawDef = cmd.args?.[name];
+      const norm = rawDef ? normalizeArgValue(rawDef) : undefined;
+      const argComp = getCompletionMeta(norm?.meta);
+      tabCmd.argument(name, argComp?.handler, isVariadic);
     }
 
     for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {

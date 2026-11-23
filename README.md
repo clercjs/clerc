@@ -20,8 +20,8 @@
 
 # ✨ Features
 
-- **Command Tree & Lazy Loading** — First-class nested subcommands, aliases, leading global flags, and `load()` for instant startup.
-- **Typed Hook Plugin System** — Structured lifecycle hooks (`onIntercept`, `onValidate`, `beforeRun`, `afterRun`, `onError`, `onRenderError`) and type-safe `extendContext` without global module pollution.
+- **Route-Style Typed Command Signatures** — Write `"deploy <target> [region] -- [extra...]"` and get full template-literal inference + `args` key autocompletion with zero `as const`.
+- **Unified `Cli` & `plugin()` Primitives** — Plugins and apps share the exact same 6 verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.hook()`, `.use()`), with atomic named override via `.use()` and `.disable()`.
 - **Standard Schema v1** — Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
 - **Modern Precision UI & First-Class Logger** — Built-in `ctx.log` (compact, rail, and JSON/NDJSON modes), Cargo/Clap-inspired diagnostics, and aligned terminal-width-aware help output powered by `node:util` `styleText`.
 - **Testable by Design** — Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
@@ -31,55 +31,51 @@
 ```ts
 import { Cli, Types } from "clerc";
 
-await Cli({
+const cli = Cli({
   scriptName: "acme",
-  description: "Build and deploy modern TypeScript apps",
   version: "2.0.0",
-})
-  .command(
-    "deploy",
-    {
-      description: "Deploy application to target environment",
-      parameters: [
-        {
-          key: "<target>",
-          type: Types.Enum("staging", "prod"),
-          description: "Target environment",
-        },
-      ] as const,
-      flags: {
-        port: {
-          type: Number,
-          short: "p",
-          default: 3000,
-          env: "PORT",
-          description: "Server port",
-        },
-        dryRun: {
-          type: Boolean,
-          short: "n",
-          description: "Preview without deploying",
-        },
-      },
+  description: "Build and deploy modern TypeScript apps",
+});
+
+cli.command("deploy <target> [region]", {
+  description: "Deploy application to target environment",
+  args: {
+    target: {
+      type: Types.Enum("staging", "prod"),
+      description: "Target environment",
     },
-    (ctx) => {
-      ctx.log.step(
-        `Deploying to ${ctx.parameters.target} on port ${ctx.flags.port}`,
-      );
-      if (ctx.flags.dryRun) {
-        ctx.log.info("Dry run enabled, no changes applied.");
-      } else {
-        ctx.log.success("Deployed!");
-      }
+  },
+  flags: {
+    port: {
+      type: Number,
+      short: "p",
+      default: 3000,
+      env: "PORT",
+      description: "Server port",
     },
-  )
-  .runMain();
+    dryRun: {
+      type: Boolean,
+      short: "n",
+      description: "Preview without deploying",
+    },
+  },
+  run(ctx) {
+    ctx.log.step(`Deploying to ${ctx.args.target} on port ${ctx.flags.port}`);
+    if (ctx.flags.dryRun) {
+      ctx.log.info("Dry run enabled, no changes applied.");
+    } else {
+      ctx.log.success("Deployed!");
+    }
+  },
+});
+
+await cli.runMain();
 ```
 
 # 📦 Packages
 
-- `clerc` — Batteries-included CLI package with built-in plugins (`help`, `version`, `not-found`, `error`, `strict-flags`, `verbosity`, `update-notifier`).
-- `@clerc/core` — Core runtime: CommandTree, execution pipeline, typed plugin engine, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
+- `clerc` — Batteries-included CLI package with built-in plugins (`help`, `version`, `errors`, `strict-flags`, `verbosity`, `update-notifier`).
+- `@clerc/core` — Core runtime: `createCli`, `plugin`, `CommandTree`, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
 - `@clerc/parser` — Zero-dependency, high-performance argument parser.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 

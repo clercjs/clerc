@@ -1,14 +1,16 @@
 import { Cli } from "clerc";
 
-await Cli({
+const cli = Cli({
   scriptName: "foo-cli",
-  description: "A foo CLI",
   version: "0.0.0",
-})
-  .command("bar", {
-    description: "A bar command",
-    run: (ctx) => {
-      ctx.log.success("Hello, world from Clerc v2!");
-    },
-  })
-  .runMain();
+  description: "A foo CLI",
+});
+
+cli.command("bar [name]", {
+  description: "A bar command",
+  run(ctx) {
+    ctx.log.success(`Hello, ${ctx.args.name ?? "world"} from Clerc v2!`);
+  },
+});
+
+await cli.runMain();

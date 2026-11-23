@@ -1,5 +1,7 @@
 import { createParser } from "@clerc/parser";
 
+import type { CompiledArgs } from "./args";
+import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
 import type { ArgvResolution } from "./command-tree";
 import { CommandTree } from "./command-tree";
 import {
@@ -17,44 +19,69 @@ import {
 } from "./flags";
 import type { LoggerOptions } from "./logger";
 import { createLogger } from "./logger";
-import type { CompiledParameters } from "./parameter";
-import { compileParameters, executeCompiledParameters } from "./parameter";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
 import type {
-  AnyClercPlugin,
   AnyCommandDefinition,
+  ArgDefinitionValue,
   BaseRunContext,
-  ClercFlagDefinitionValue,
   ClercFlagsDefinition,
-  ClercPlugin,
-  CommandDefinition,
-  CommandHandler,
   CommandOptions,
-  CreateOptions,
-  ErrorLifecycleHook,
+  CreateCliOptions,
+  ExtractArgNames,
   GroupDefinition,
-  LifecycleHook,
-  ParameterDefinitionValue,
+  GroupsInput,
+  HookHandlerMap,
+  HookPhase,
+  MetaAsyncGetter,
   ReadonlyCliMeta,
   ReadonlyCliModel,
   RunOptions,
   RunResult,
 } from "./types";
 
+interface HookEntry<K extends HookPhase = HookPhase> {
+  readonly source?: string;
+  readonly fn: HookHandlerMap<any, any>[K];
+}
+
+interface HookBuckets {
+  intercept: HookEntry<"intercept">[];
+  validate: HookEntry<"validate">[];
+  beforeRun: HookEntry<"beforeRun">[];
+  afterRun: HookEntry<"afterRun">[];
+  error: HookEntry<"error">[];
+  renderError: HookEntry<"renderError">[];
+}
+
+type ContextExtender = (ctx: BaseRunContext<any>) => Record<string, any>;
+
 interface CompiledCommand {
   readonly flags: CompiledFlags;
   readonly parser: ReturnType<typeof createParser>;
-  readonly parameters?: CompiledParameters;
+  readonly args?: CompiledArgs;
 }
 
 interface CompiledCli {
   readonly model: ReadonlyCliModel;
   readonly tree: CommandTree;
+  readonly extenders: readonly ContextExtender[];
+  readonly hooks: HookBuckets;
   readonly global: CompiledCommand;
   readonly commands: WeakMap<AnyCommandDefinition, CompiledCommand>;
 }
+
+const createHookBuckets = (): HookBuckets => ({
+  intercept: [],
+  validate: [],
+  beforeRun: [],
+  afterRun: [],
+  error: [],
+  renderError: [],
+});
+
+const GROUP_SCOPES = ["commands", "flags", "globalFlags"] as const;
 
 function createMissingCommandError(resolution: ArgvResolution): ClercError {
   if (resolution.matchedPath.length > 0) {
@@ -71,30 +98,140 @@ function createMissingCommandError(resolution: ArgvResolution): ClercError {
   return new NoCommandError();
 }
 
-export class Clerc<
+export class Plugin<
   TGlobalFlags extends ClercFlagsDefinition = {},
   TExt extends Record<string, any> = {},
 > {
-  #scriptName = "";
-  #description = "";
-  #version = "";
-  #themeOverrides?: Partial<ThemeStyleMap>;
-  #loggerOptions?: LoggerOptions;
-  #globalFlags: ClercFlagsDefinition = {};
-  #commands: AnyCommandDefinition[] = [];
-  #plugins = new Map<string, AnyClercPlugin>();
-  #beforeRunHooks: LifecycleHook<any, any>[] = [];
-  #afterRunHooks: LifecycleHook<any, any>[] = [];
-  #onErrorHooks: ErrorLifecycleHook<any, any>[] = [];
-  #groups = {
+  public readonly pluginName: string;
+
+  /**
+   * @internal
+   */
+  public readonly _flags: ClercFlagsDefinition = {};
+  /**
+   * @internal
+   */
+  public readonly _commands: AnyCommandDefinition[] = [];
+  /**
+   * @internal
+   */
+  public readonly _groups = {
     commands: [] as GroupDefinition[],
     flags: [] as GroupDefinition[],
     globalFlags: [] as GroupDefinition[],
   };
 
+  /**
+   * @internal
+   */
+  public readonly _extenders: ContextExtender[] = [];
+  /**
+   * @internal
+   */
+  public readonly _hooks: HookBuckets = createHookBuckets();
+  /**
+   * @internal
+   */
+  public readonly _plugins = new Map<string, Plugin<any, any>>();
+
+  constructor(name: string) {
+    this.pluginName = name;
+  }
+
+  protected _invalidate(): void {
+    // Overridden by CliApp to clear compiled state
+  }
+
+  public flags<const Flags extends ClercFlagsDefinition>(
+    definitions: Flags,
+  ): Plugin<TGlobalFlags & Flags, TExt> {
+    Object.assign(this._flags, definitions);
+    this._invalidate();
+
+    return this as any;
+  }
+
+  public groups(definitions: GroupsInput): this {
+    for (const scope of GROUP_SCOPES) {
+      const entries = definitions[scope];
+      if (!entries) {
+        continue;
+      }
+      for (const [key, title] of Object.entries(entries)) {
+        this._groups[scope].push({ key, title });
+      }
+    }
+    this._invalidate();
+
+    return this;
+  }
+
+  public command<
+    const Spec extends string,
+    const Args extends Partial<
+      Record<ExtractArgNames<Spec>, ArgDefinitionValue>
+    > = {},
+    const Flags extends ClercFlagsDefinition = {},
+  >(
+    spec: Spec,
+    options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TExt>,
+  ): this {
+    const { name, argTokens } = parseCommandSpec(spec);
+    this._commands.push({ ...options, spec, name, argTokens });
+    this._invalidate();
+
+    return this;
+  }
+
+  public extend<Added extends Record<string, any>>(
+    fn: (ctx: BaseRunContext<TGlobalFlags> & TExt) => Added,
+  ): Plugin<TGlobalFlags, TExt & Added> {
+    this._extenders.push(fn as ContextExtender);
+    this._invalidate();
+
+    return this as any;
+  }
+
+  public hook<K extends HookPhase>(
+    phase: K,
+    handler: HookHandlerMap<TGlobalFlags, TExt>[K],
+  ): this {
+    (this._hooks[phase] as HookEntry<K>[]).push({
+      source: this.pluginName,
+      fn: handler,
+    });
+    this._invalidate();
+
+    return this;
+  }
+
+  public use<
+    PFlags extends ClercFlagsDefinition = {},
+    PExt extends Record<string, any> = {},
+  >(other: Plugin<PFlags, PExt>): Plugin<TGlobalFlags & PFlags, TExt & PExt> {
+    this._plugins.set(other.pluginName, other);
+    this._invalidate();
+
+    return this as any;
+  }
+}
+
+export class CliApp<
+  TGlobalFlags extends ClercFlagsDefinition = {},
+  TExt extends Record<string, any> = {},
+> extends Plugin<TGlobalFlags, TExt> {
+  #scriptName = "";
+  #description = "";
+  #version = "";
+  #examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  #notes?: MetaAsyncGetter<readonly string[]>;
+  #themeOverrides?: Partial<ThemeStyleMap>;
+  #loggerOptions?: LoggerOptions;
   #compiled?: CompiledCli;
 
-  private constructor(options: CreateOptions = {}) {
+  constructor(options: CreateCliOptions = {}) {
+    super("clerc:root");
+
     if (options.scriptName) {
       this.#scriptName = options.scriptName;
     }
@@ -104,6 +241,12 @@ export class Clerc<
     if (options.version) {
       this.#version = options.version;
     }
+    if (options.examples) {
+      this.#examples = options.examples;
+    }
+    if (options.notes) {
+      this.#notes = options.notes;
+    }
     if (options.theme) {
       this.#themeOverrides = options.theme;
     }
@@ -112,143 +255,78 @@ export class Clerc<
     }
   }
 
-  public static create(options?: CreateOptions): Clerc {
-    return new Clerc(options);
-  }
-
-  #invalidate(): void {
+  protected override _invalidate(): void {
     this.#compiled = undefined;
   }
 
-  public scriptName(scriptName: string): this {
-    this.#scriptName = scriptName;
-    this.#invalidate();
-
-    return this;
-  }
-
-  public description(description: string): this {
-    this.#description = description;
-    this.#invalidate();
-
-    return this;
-  }
-
-  public version(version: string): this {
-    this.#version = version;
-    this.#invalidate();
-
-    return this;
-  }
-
-  public theme(overrides: Partial<ThemeStyleMap>): this {
-    this.#themeOverrides = { ...this.#themeOverrides, ...overrides };
-
-    return this;
-  }
-
-  public logger(options: LoggerOptions): this {
-    this.#loggerOptions = { ...this.#loggerOptions, ...options };
-
-    return this;
-  }
-
-  public group(
-    scope: "commands" | "flags" | "globalFlags",
-    key: string,
-    title: string,
-  ): this {
-    this.#groups[scope].push({ key, title });
-    this.#invalidate();
-
-    return this;
-  }
-
-  public globalFlag<
-    const Name extends string,
-    const Flag extends ClercFlagDefinitionValue,
-  >(name: Name, flag: Flag): Clerc<TGlobalFlags & Record<Name, Flag>, TExt> {
-    this.#globalFlags[name] = flag;
-    this.#invalidate();
-
-    return this;
-  }
-
-  public command<
-    const Name extends string,
-    const Parameters extends readonly ParameterDefinitionValue[] =
-      readonly ParameterDefinitionValue[],
-    const Flags extends ClercFlagsDefinition = {},
-  >(
-    definition: CommandDefinition<Name, Parameters, Flags, TGlobalFlags, TExt>,
-  ): this;
-  public command<
-    const Name extends string,
-    const Parameters extends readonly ParameterDefinitionValue[] =
-      readonly ParameterDefinitionValue[],
-    const Flags extends ClercFlagsDefinition = {},
-  >(
-    name: Name,
-    options?: CommandOptions<Parameters, Flags, TGlobalFlags, TExt>,
-    run?: CommandHandler<
-      NoInfer<Parameters>,
-      NoInfer<Flags>,
-      TGlobalFlags,
-      TExt
-    >,
-  ): this;
-  public command(
-    nameOrDef: string | AnyCommandDefinition,
-    options?: CommandOptions<any, any, any, any>,
-    run?: CommandHandler<any, any, any, any>,
-  ): this {
-    const def: AnyCommandDefinition =
-      typeof nameOrDef === "string"
-        ? { name: nameOrDef, ...options, ...(run ? { run } : {}) }
-        : nameOrDef;
-    this.#commands.push(def);
-    this.#invalidate();
-
-    return this;
-  }
-
-  public commands(defs: readonly AnyCommandDefinition[]): this {
-    this.#commands.push(...defs);
-    this.#invalidate();
-
-    return this;
-  }
-
-  public use<
-    PFlags extends ClercFlagsDefinition = {},
-    PExt extends Record<string, any> = {},
-  >(
-    plugin: ClercPlugin<PFlags, PExt>,
-  ): Clerc<TGlobalFlags & PFlags, TExt & PExt> {
-    if (!this.#plugins.has(plugin.name)) {
-      this.#plugins.set(plugin.name, plugin);
-      this.#invalidate();
-    }
+  public override flags<const Flags extends ClercFlagsDefinition>(
+    definitions: Flags,
+  ): CliApp<TGlobalFlags & Flags, TExt> {
+    super.flags(definitions);
 
     return this as any;
   }
 
-  public beforeRun(hook: LifecycleHook<TGlobalFlags, TExt>): this {
-    this.#beforeRunHooks.push(hook);
+  public override extend<Added extends Record<string, any>>(
+    fn: (ctx: BaseRunContext<TGlobalFlags> & TExt) => Added,
+  ): CliApp<TGlobalFlags, TExt & Added> {
+    super.extend(fn);
+
+    return this as any;
+  }
+
+  public override use<
+    PFlags extends ClercFlagsDefinition = {},
+    PExt extends Record<string, any> = {},
+  >(other: Plugin<PFlags, PExt>): CliApp<TGlobalFlags & PFlags, TExt & PExt> {
+    super.use(other);
+
+    return this as any;
+  }
+
+  public disable(pluginName: string): this {
+    if (this._plugins.delete(pluginName)) {
+      this._invalidate();
+    }
 
     return this;
   }
 
-  public afterRun(hook: LifecycleHook<TGlobalFlags, TExt>): this {
-    this.#afterRunHooks.push(hook);
+  #collectScope(
+    scope: Plugin<any, any>,
+    globalFlags: ClercFlagsDefinition,
+    commands: AnyCommandDefinition[],
+    groups: {
+      commands: GroupDefinition[];
+      flags: GroupDefinition[];
+      globalFlags: GroupDefinition[];
+    },
+    extenders: ContextExtender[],
+    hooks: HookBuckets,
+  ): void {
+    for (const child of scope._plugins.values()) {
+      this.#collectScope(
+        child,
+        globalFlags,
+        commands,
+        groups,
+        extenders,
+        hooks,
+      );
+    }
 
-    return this;
-  }
-
-  public onError(hook: ErrorLifecycleHook<TGlobalFlags, TExt>): this {
-    this.#onErrorHooks.push(hook);
-
-    return this;
+    Object.assign(globalFlags, scope._flags);
+    commands.push(...scope._commands);
+    groups.commands.push(...scope._groups.commands);
+    groups.flags.push(...scope._groups.flags);
+    groups.globalFlags.push(...scope._groups.globalFlags);
+    extenders.push(...scope._extenders);
+    hooks.intercept.push(...scope._hooks.intercept);
+    hooks.validate.push(...scope._hooks.validate);
+    hooks.beforeRun.push(...scope._hooks.beforeRun);
+    hooks.afterRun.push(...scope._hooks.afterRun);
+    hooks.error.push(...scope._hooks.error);
+    hooks.renderError.push(...scope._hooks.renderError);
   }
 
   #ensureCompiled(): CompiledCli {
@@ -260,45 +338,47 @@ export class Clerc<
       scriptName: this.#scriptName,
       description: this.#description,
       version: this.#version,
+      examples: this.#examples,
+      notes: this.#notes,
     };
 
-    const plugins = [...this.#plugins.values()];
     const mergedGlobalFlags: ClercFlagsDefinition = {};
-    for (const plugin of plugins) {
-      if (plugin.globalFlags) {
-        Object.assign(mergedGlobalFlags, plugin.globalFlags);
-      }
-    }
-    Object.assign(mergedGlobalFlags, this.#globalFlags);
+    const collectedCommands: AnyCommandDefinition[] = [];
+    const groups = {
+      commands: [] as GroupDefinition[],
+      flags: [] as GroupDefinition[],
+      globalFlags: [] as GroupDefinition[],
+    };
+    const extenders: ContextExtender[] = [];
+    const hooks = createHookBuckets();
+
+    this.#collectScope(
+      this,
+      mergedGlobalFlags,
+      collectedCommands,
+      groups,
+      extenders,
+      hooks,
+    );
 
     const tree = new CommandTree();
-    for (const cmd of this.#commands) {
+    for (const cmd of collectedCommands) {
       tree.register(cmd);
-    }
-    for (const plugin of plugins) {
-      if (plugin.commands) {
-        for (const cmd of plugin.commands(meta)) {
-          tree.register(cmd);
-        }
-      }
     }
 
     const model: ReadonlyCliModel = {
       meta,
       tree,
       globalFlags: mergedGlobalFlags,
-      plugins,
-      groups: {
-        commands: [...this.#groups.commands],
-        flags: [...this.#groups.flags],
-        globalFlags: [...this.#groups.globalFlags],
-      },
+      groups,
     };
 
     const globalFlags = compileFlags(mergedGlobalFlags);
     this.#compiled = {
       model,
       tree,
+      extenders,
+      hooks,
       global: {
         flags: globalFlags,
         parser: createParser({ flags: globalFlags.parserFlags }),
@@ -337,9 +417,10 @@ export class Clerc<
     const compiled: CompiledCommand = {
       flags,
       parser,
-      parameters: cmd.parameters
-        ? compileParameters(cmd.parameters)
-        : undefined,
+      args:
+        cmd.argTokens.length > 0
+          ? compileArgs(cmd.argTokens, cmd.args)
+          : undefined,
     };
     cli.commands.set(cmd, compiled);
 
@@ -384,23 +465,14 @@ export class Clerc<
 
   async #handleError(
     caughtError: unknown,
-    model: ReadonlyCliModel,
+    hooks: HookBuckets,
     ctx: BaseRunContext<TGlobalFlags> & TExt,
     throwOnUnhandled: boolean,
   ): Promise<RunResult> {
     let currentError: unknown = caughtError;
 
-    for (const plugin of model.plugins) {
-      const onError = plugin.hooks?.onError;
-      if (onError) {
-        const transformed = await onError(currentError, ctx);
-        if (transformed !== undefined) {
-          currentError = transformed;
-        }
-      }
-    }
-    for (const hook of this.#onErrorHooks) {
-      const transformed = await hook(currentError, ctx);
+    for (const entry of hooks.error) {
+      const transformed = await entry.fn(currentError, ctx);
       if (transformed !== undefined) {
         currentError = transformed;
       }
@@ -409,15 +481,14 @@ export class Clerc<
     const exitCode =
       currentError instanceof ClercError ? currentError.exitCode : 1;
 
-    for (let i = model.plugins.length - 1; i >= 0; i--) {
-      const plugin = model.plugins[i];
-      const onRenderError = plugin.hooks?.onRenderError;
-      if (onRenderError && (await onRenderError(currentError, ctx))) {
+    for (let i = hooks.renderError.length - 1; i >= 0; i--) {
+      const entry = hooks.renderError[i];
+      if (await entry.fn(currentError, ctx)) {
         return {
           ok: false,
           exitCode,
           error: currentError,
-          handledBy: plugin.name,
+          handledBy: entry.source,
         };
       }
     }
@@ -448,7 +519,7 @@ export class Clerc<
     });
 
     const compiledCli = this.#ensureCompiled();
-    const { model, tree } = compiledCli;
+    const { model, tree, extenders, hooks } = compiledCli;
     const throwOnUnhandled = options.throwOnUnhandled ?? true;
 
     const baseCtx: BaseRunContext<TGlobalFlags> = {
@@ -458,7 +529,7 @@ export class Clerc<
       theme,
       log,
       argv: effectiveArgv,
-      parameters: {},
+      args: {},
       flags: {} as any,
       unknown: {},
       ignored: [],
@@ -467,10 +538,8 @@ export class Clerc<
     };
 
     const ctx = baseCtx as BaseRunContext<TGlobalFlags> & TExt;
-    for (const plugin of model.plugins) {
-      if (plugin.extendContext) {
-        Object.assign(ctx, plugin.extendContext(baseCtx));
-      }
+    for (const extend of extenders) {
+      Object.assign(ctx, extend(baseCtx));
     }
 
     try {
@@ -496,18 +565,18 @@ export class Clerc<
       ctx.doubleDash = parsed.doubleDash;
 
       // Stage 3: Intercept (--version, --help, verbosity)
-      for (const plugin of model.plugins) {
-        const res = await plugin.hooks?.onIntercept?.(ctx);
+      for (const entry of hooks.intercept) {
+        const res = await entry.fn(ctx);
         if (res?.handled) {
           return {
             ok: (res.exitCode ?? 0) === 0,
             exitCode: res.exitCode ?? 0,
-            handledBy: plugin.name,
+            handledBy: entry.source,
           };
         }
       }
 
-      // Stage 4: Validate command, flags, schemas, env, constraints & parameters
+      // Stage 4: Validate command, flags, schemas, env, constraints & args
       if (!ctx.command) {
         throw createMissingCommandError(resolution);
       }
@@ -523,8 +592,8 @@ export class Clerc<
 
       this.#warnDeprecations(ctx, compiledCmd.flags, provided);
 
-      for (const plugin of model.plugins) {
-        await plugin.hooks?.onValidate?.(ctx);
+      for (const entry of hooks.validate) {
+        await entry.fn(ctx);
       }
 
       if (missingRequired.length > 0) {
@@ -544,42 +613,31 @@ export class Clerc<
 
       checkFlagConstraints(compiledCmd.flags, provided);
 
-      ctx.parameters = compiledCmd.parameters
-        ? await executeCompiledParameters(
-            compiledCmd.parameters,
+      ctx.args = compiledCmd.args
+        ? await executeCompiledArgs(
+            compiledCmd.args,
             parsed.parameters,
             parsed.doubleDash,
           )
         : {};
 
-      // Stage 5: Middleware & Command execution (afterRun runs in reverse)
-      for (const plugin of model.plugins) {
-        await plugin.hooks?.beforeRun?.(ctx);
-      }
-      for (const hook of this.#beforeRunHooks) {
-        await hook(ctx);
+      // Stage 5: Lifecycle hooks & command execution (afterRun runs in reverse)
+      for (const entry of hooks.beforeRun) {
+        await entry.fn(ctx);
       }
 
-      let handler = ctx.command.run;
-      if (!handler && ctx.command.load) {
-        const loaded = await ctx.command.load();
-        handler = typeof loaded === "function" ? loaded : loaded.default;
-      }
-      if (handler) {
-        await handler(ctx as any);
+      if (ctx.command.run) {
+        await ctx.command.run(ctx as any);
       }
 
-      for (let i = this.#afterRunHooks.length - 1; i >= 0; i--) {
-        await this.#afterRunHooks[i](ctx);
-      }
-      for (let i = model.plugins.length - 1; i >= 0; i--) {
-        await model.plugins[i].hooks?.afterRun?.(ctx);
+      for (let i = hooks.afterRun.length - 1; i >= 0; i--) {
+        await hooks.afterRun[i].fn(ctx);
       }
 
       return { ok: true, exitCode: 0 };
     } catch (caughtError) {
       // Stage 6: Error enrichment & rendering pipeline
-      return this.#handleError(caughtError, model, ctx, throwOnUnhandled);
+      return this.#handleError(caughtError, hooks, ctx, throwOnUnhandled);
     }
   }
 
@@ -598,3 +656,8 @@ export class Clerc<
     return result;
   }
 }
+
+export const plugin = (name: string): Plugin => new Plugin(name);
+
+export const createCli = (options?: CreateCliOptions): CliApp =>
+  new CliApp(options);

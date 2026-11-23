@@ -1,69 +1,67 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Clerc, Types, helpPlugin } from "../src";
+import { Types, createCli, helpPlugin } from "../src";
 
 describe("helpPlugin v2 Modern Precision layout", () => {
   it("renders crisp aligned help without Boolean or default:false noise", async () => {
     const terminal = createMemoryTerminal({ columns: 90 });
 
-    const cli = Clerc.create({
+    const cli = createCli({
       scriptName: "acme",
       version: "2.0.0",
       description: "Build and deploy modern TypeScript apps",
+      examples: [
+        ["$ acme build src/index.ts -p 8080", "Build with custom port"],
+      ],
+      notes: ["Set NO_COLOR=1 to disable ANSI colors."],
     })
-      .use(
-        helpPlugin({
-          examples: [
-            ["$ acme build src/index.ts -p 8080", "Build with custom port"],
-          ],
-          notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-        }),
-      )
-      .group("flags", "input", "Input Options")
-      .command("build", {
-        aliases: ["b"],
-        description: "Compile source files",
-        parameters: [
-          { key: "<entry>", description: "Entry file path" },
-        ] as const,
-        flags: {
-          output: { type: String, short: "o", description: "Output directory" },
-          port: {
-            type: Number,
-            short: "p",
-            default: 3000,
-            env: "PORT",
-            description: "Server port",
-          },
-          verbose: {
-            type: Boolean,
-            short: "v",
-            description: "Enable verbose output",
-          },
-          format: {
-            type: Types.Enum("json", "yaml"),
-            default: "json",
-            description: "Output format",
-          },
-          src: {
-            type: String,
-            group: "input",
-            description: "Source directory",
-          },
-          cache: {
-            type: Boolean,
-            default: true,
-            group: "input",
-            description: "Use build cache",
-          },
-          secret: {
-            type: String,
-            hidden: true,
-          },
+      .use(helpPlugin())
+      .groups({ flags: { input: "Input Options" } });
+
+    cli.command("build <entry>", {
+      aliases: ["b"],
+      description: "Compile source files",
+      args: {
+        entry: { description: "Entry file path" },
+      },
+      flags: {
+        output: { type: String, short: "o", description: "Output directory" },
+        port: {
+          type: Number,
+          short: "p",
+          default: 3000,
+          env: "PORT",
+          description: "Server port",
         },
-        run: () => {},
-      });
+        verbose: {
+          type: Boolean,
+          short: "v",
+          description: "Enable verbose output",
+        },
+        format: {
+          type: Types.Enum("json", "yaml"),
+          default: "json",
+          description: "Output format",
+        },
+        src: {
+          type: String,
+          group: "input",
+          description: "Source directory",
+        },
+        cache: {
+          type: Boolean,
+          default: true,
+          group: "input",
+          description: "Use build cache",
+        },
+        secret: {
+          type: String,
+          hidden: true,
+        },
+      },
+      run() {},
+    });
 
     await cli.run(["build", "--help"], { terminal });
 
@@ -93,7 +91,6 @@ describe("helpPlugin v2 Modern Precision layout", () => {
       ].join("\n"),
     );
 
-    // Re-running root --help must NOT leak the previous "build" command (v1 bug fixed!)
     terminal.clear();
     await cli.run(["--help"], { terminal });
 
@@ -108,9 +105,9 @@ describe("helpPlugin v2 Modern Precision layout", () => {
 
   it("shows subcommands when a namespace-only parent command is invoked", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .command("db migrate", { description: "Run migrations", run: () => {} })
-      .command("db seed", { description: "Seed data", run: () => {} });
+    const cli = createTestCli();
+    cli.command("db migrate", { description: "Run migrations", run() {} });
+    cli.command("db seed", { description: "Seed data", run() {} });
 
     await cli.run(["db"], { terminal });
 
@@ -122,10 +119,8 @@ describe("helpPlugin v2 Modern Precision layout", () => {
 
   it("does not render blank Arguments section when only -- parameter is defined", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().command("exec", {
-      parameters: ["--"] as const,
-      run: () => {},
-    });
+    const cli = createTestCli();
+    cli.command("exec --", { run() {} });
 
     await cli.run(["exec", "--help"], { terminal });
 
@@ -133,12 +128,12 @@ describe("helpPlugin v2 Modern Precision layout", () => {
     expect(terminal.stdoutText()).toContain("test exec [options] [--]");
   });
 
-  it("populates real scriptName in help command examples even when scriptName is set after Cli()", async () => {
+  it("renders dynamic scriptName in help command examples", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().scriptName("renamed-cli");
+    const cli = createTestCli();
 
     await cli.run(["help", "help"], { terminal });
 
-    expect(terminal.stdoutText()).toContain("$ renamed-cli help");
+    expect(terminal.stdoutText()).toContain("$ test help");
   });
 });

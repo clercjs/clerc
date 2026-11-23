@@ -1,15 +1,18 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
+import { helpPlugin } from "../src";
+
 describe("clerc Cli() integration", () => {
   it("handles --version, version, --help, help, and subcommand help", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().command("build", {
+    const cli = createTestCli();
+    cli.command("build", {
       description: "Build project",
       flags: {
         port: { type: Number, short: "p", default: 3000, description: "Port" },
       },
-      run: () => {},
+      run() {},
     });
 
     const vRes = await cli.run(["--version"], { terminal });
@@ -31,11 +34,27 @@ describe("clerc Cli() integration", () => {
     expect(terminal.stdoutText()).toContain("-p, --port <number>");
   });
 
-  it("renders Cargo/Clap diagnostics with did-you-mean hints via errorPlugin + notFoundPlugin", async () => {
+  it("allows overriding built-in plugins cleanly via .use() and disabling via .disable()", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli()
-      .command("build", { description: "Build project", run: () => {} })
-      .command("dev", { description: "Start dev server", run: () => {} });
+      .use(helpPlugin({ header: "=== Custom Banner ===" }))
+      .disable("clerc:strict-flags");
+    cli.command("run", { run() {} });
+
+    await cli.run(["--help"], { terminal });
+
+    expect(terminal.stdoutText()).toContain("=== Custom Banner ===");
+
+    const res = await cli.run(["run", "--extra"], { terminal });
+
+    expect(res.ok).toBeTruthy();
+  });
+
+  it("renders Cargo/Clap diagnostics with did-you-mean hints via built-in errorPlugin", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli();
+    cli.command("build", { description: "Build project", run() {} });
+    cli.command("dev", { description: "Start dev server", run() {} });
 
     const res = await cli.run(["buid"], { terminal });
 
@@ -54,10 +73,8 @@ describe("clerc Cli() integration", () => {
 
   it("renders structured JSON errors when logger format is json", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().command("build", {
-      description: "Build project",
-      run: () => {},
-    });
+    const cli = createTestCli();
+    cli.command("build", { description: "Build project", run() {} });
 
     const res = await cli.run(["buid"], {
       terminal,

@@ -5,12 +5,7 @@ import path from "node:path";
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  isNewerVersion,
-  strictFlagsPlugin,
-  updateNotifierPlugin,
-  verbosityPlugin,
-} from "../src";
+import { isNewerVersion, updateNotifierPlugin, verbosityPlugin } from "../src";
 
 describe("built-in v2 plugins", () => {
   const tempDirs: string[] = [];
@@ -21,16 +16,11 @@ describe("built-in v2 plugins", () => {
     }
   });
 
-  it("strictFlagsPlugin rejects unknown flags with suggestion but never blocks --help", async () => {
+  it("strictFlagsPlugin is enabled by default in Cli(), rejects unknown flags, and never blocks --help", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(strictFlagsPlugin())
-      .command("build", {
-        flags: { output: String },
-        run: () => {},
-      });
+    const cli = createTestCli();
+    cli.command("build", { flags: { output: String }, run() {} });
 
-    // --help wins during onIntercept before strictFlags runs in onValidate!
     const helpRes = await cli.run(["build", "--help", "--outpt"], { terminal });
 
     expect(helpRes.ok).toBeTruthy();
@@ -49,14 +39,13 @@ describe("built-in v2 plugins", () => {
 
   it("verbosityPlugin wires -q and -v to ctx.log", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(verbosityPlugin())
-      .command("check", {
-        run: (ctx) => {
-          ctx.log.info("info-msg");
-          ctx.log.debug("debug-msg");
-        },
-      });
+    const cli = createTestCli().use(verbosityPlugin());
+    cli.command("check", {
+      run(ctx) {
+        ctx.log.info("info-msg");
+        ctx.log.debug("debug-msg");
+      },
+    });
 
     await cli.run(["check"], { terminal });
 
@@ -91,17 +80,16 @@ describe("built-in v2 plugins", () => {
     let currentTime = 1_000_000;
     const terminal = createMemoryTerminal({ isTTY: true, color: false });
 
-    const cli = createTestCli()
-      .use(
-        updateNotifierPlugin({
-          pkg: { name: "acme-cli", version: "2.0.0" },
-          cacheDir,
-          fetch: mockFetch,
-          now: () => currentTime,
-          checkIntervalMs: 60_000,
-        }),
-      )
-      .command("run", { run: () => {} });
+    const cli = createTestCli().use(
+      updateNotifierPlugin({
+        pkg: { name: "acme-cli", version: "2.0.0" },
+        cacheDir,
+        fetch: mockFetch,
+        now: () => currentTime,
+        checkIntervalMs: 60_000,
+      }),
+    );
+    cli.command("run", { run() {} });
 
     await cli.run(["run"], { terminal });
 
@@ -109,7 +97,6 @@ describe("built-in v2 plugins", () => {
     expect(terminal.stderrText()).toContain("Update available: 2.0.0 → 2.1.0");
     expect(terminal.stderrText()).toContain("Run npm i -g acme-cli to update");
 
-    // Second run within interval uses cache without re-fetching
     terminal.clear();
     currentTime += 10_000;
     await cli.run(["run"], { terminal });
@@ -117,7 +104,6 @@ describe("built-in v2 plugins", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(terminal.stderrText()).toContain("Update available: 2.0.0 → 2.1.0");
 
-    // Skips in CI
     const ciTerminal = createMemoryTerminal({
       isTTY: true,
       env: { CI: "true" },

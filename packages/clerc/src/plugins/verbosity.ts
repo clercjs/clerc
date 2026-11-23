@@ -1,9 +1,8 @@
-import { definePlugin } from "@clerc/core";
+import { plugin } from "@clerc/core";
 
 export const verbosityPlugin = () =>
-  definePlugin({
-    name: "clerc:verbosity",
-    globalFlags: {
+  plugin("clerc:verbosity")
+    .flags({
       quiet: {
         type: Boolean,
         short: "q",
@@ -14,14 +13,11 @@ export const verbosityPlugin = () =>
         short: "v",
         description: "Enable verbose debug logging",
       },
-    } as const,
-    hooks: {
-      onIntercept: (ctx) => {
-        if (ctx.flags.quiet) {
-          ctx.log.setLevel("error");
-        } else if (ctx.flags.verbose > 0) {
-          ctx.log.setLevel("debug");
-        }
-      },
-    },
-  });
+    })
+    .hook("intercept", (ctx) => {
+      if (ctx.flags.quiet) {
+        ctx.log.setLevel("error");
+      } else if (ctx.flags.verbose > 0) {
+        ctx.log.setLevel("debug");
+      }
+    });

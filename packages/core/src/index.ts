@@ -8,16 +8,14 @@ export {
   camelCase,
   inferDefault,
 } from "@clerc/parser";
-export { Clerc } from "./cli";
+export type { ArgInfo, ParsedCommandSpec } from "./args";
+export { extractArgInfo, normalizeArgValue, parseCommandSpec } from "./args";
+export { CliApp, Plugin, createCli, plugin } from "./cli";
 export type { ArgvResolution, ArgvScanFn } from "./command-tree";
 export { CommandTree } from "./command-tree";
 export * from "./errors";
 export { normalizeFlagValue } from "./flags";
-export {
-  createStopAtFirstParameter,
-  defineCommand,
-  definePlugin,
-} from "./helpers";
+export { createStopAtFirstParameter } from "./helpers";
 export type {
   CalloutOptions,
   CalloutTone,
@@ -29,13 +27,8 @@ export type {
   LoggerOptions,
 } from "./logger";
 export { createLogger } from "./logger";
-export type { ParameterInfo } from "./parameter";
-export {
-  extractParameterInfo,
-  normalizeParameterValue,
-  parseParameters,
-} from "./parameter";
 export type {
+  ClercSchema,
   StandardSchemaV1,
   StandardSchemaV1FailureResult,
   StandardSchemaV1Issue,
@@ -46,11 +39,6 @@ export type {
   StandardSchemaV1Types,
 } from "./schema";
 export {
-  Enum,
-  FlagValidationError,
-  Integer,
-  Range,
-  Regex,
   Types,
   convertValue,
   isStandardSchema,

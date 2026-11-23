@@ -12,33 +12,28 @@ import {
 } from "../src";
 
 describe("Clerc execution pipeline", () => {
-  it("supports parameters, variadic, double-dash, and flags", async () => {
+  it("supports route-style args, variadic, double-dash, and flags", async () => {
     let result: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("copy", {
-      parameters: ["<src>", "[dest]", "--", "[extra...]"] as const,
+    const cli = createTestBaseCli();
+    cli.command("copy <src> [dest] -- [extra...]", {
       flags: {
         force: { type: Boolean, short: "f" },
         retries: { type: Number, short: "r", default: 3 },
       },
-      run: (ctx) => {
-        result = {
-          parameters: ctx.parameters,
-          flags: ctx.flags,
-        };
+      run(ctx) {
+        result = { args: ctx.args, flags: ctx.flags };
       },
     });
 
     await cli.run(
       ["copy", "a.txt", "b.txt", "-f", "--retries", "5", "--", "x", "y"],
-      {
-        terminal,
-      },
+      { terminal },
     );
 
     expect(result).toEqual({
-      parameters: { src: "a.txt", dest: "b.txt", extra: ["x", "y"] },
+      args: { src: "a.txt", dest: "b.txt", extra: ["x", "y"] },
       flags: { force: true, retries: 5 },
     });
   });
@@ -47,11 +42,10 @@ describe("Clerc execution pipeline", () => {
     let captured: boolean | undefined;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("build", {
-      flags: {
-        cache: { type: Boolean, default: true },
-      },
-      run: (ctx) => {
+    const cli = createTestBaseCli();
+    cli.command("build", {
+      flags: { cache: { type: Boolean, default: true } },
+      run(ctx) {
         captured = ctx.flags.cache;
       },
     });
@@ -65,11 +59,12 @@ describe("Clerc execution pipeline", () => {
     expect(captured).toBeFalsy();
   });
 
-  it("validates Number parameters with ValidationError on NaN", async () => {
+  it("validates Number arguments with ValidationError on NaN", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli().command("wait", {
-      parameters: [{ key: "<seconds>", type: Number }] as const,
-      run: () => {},
+    const cli = createTestBaseCli();
+    cli.command("wait <seconds>", {
+      args: { seconds: Number },
+      run() {},
     });
 
     await expect(cli.run(["wait", "abc"], { terminal })).rejects.toThrow(
@@ -83,13 +78,14 @@ describe("Clerc execution pipeline", () => {
       env: { API_TOKEN: "secret-123", PORT: "4000", ENABLE_CACHE: "true" },
     });
 
-    const cli = createTestBaseCli().command("serve", {
+    const cli = createTestBaseCli();
+    cli.command("serve", {
       flags: {
         token: { type: String, required: true, env: "API_TOKEN" },
         port: { type: Number, env: "PORT", default: 3000 },
         cache: { type: Boolean, env: "ENABLE_CACHE" },
       },
-      run: (ctx) => {
+      run(ctx) {
         captured = ctx.flags;
       },
     });
@@ -105,7 +101,8 @@ describe("Clerc execution pipeline", () => {
 
   it("enforces required flags, conflicts, implies, and validates Number", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli().command("deploy", {
+    const cli = createTestBaseCli();
+    cli.command("deploy", {
       flags: {
         token: { type: String, required: true, env: "DEPLOY_TOKEN" },
         port: { type: Number },
@@ -114,7 +111,7 @@ describe("Clerc execution pipeline", () => {
         tlsKey: { type: String, implies: "tlsCert" },
         tlsCert: { type: String },
       },
-      run: () => {},
+      run() {},
     });
 
     await expect(cli.run(["deploy"], { terminal })).rejects.toThrow(
@@ -134,17 +131,22 @@ describe("Clerc execution pipeline", () => {
     ).rejects.toThrow(FlagImpliesError);
   });
 
-  it("supports lazy command loading via load()", async () => {
+  it("supports async handlers including dynamic lazy loading", async () => {
     let ran = false;
     const terminal = createMemoryTerminal();
+    const loadHeavy = async () => ({
+      default: async (ctx: { log: { success: (msg: string) => void } }) => {
+        ran = true;
+        ctx.log.success("loaded");
+      },
+    });
 
-    const cli = createTestBaseCli().command("heavy", {
-      load: async () => ({
-        default: async (ctx) => {
-          ran = true;
-          ctx.log.success("loaded");
-        },
-      }),
+    const cli = createTestBaseCli();
+    cli.command("heavy", {
+      async run(ctx) {
+        const mod = await loadHeavy();
+        await mod.default(ctx);
+      },
     });
 
     const res = await cli.run(["heavy"], { terminal });
@@ -157,12 +159,11 @@ describe("Clerc execution pipeline", () => {
   it("emits deprecation warnings for deprecated commands and flags", async () => {
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("old", {
+    const cli = createTestBaseCli();
+    cli.command("old", {
       deprecated: "use new instead",
-      flags: {
-        legacy: { type: Boolean, deprecated: true },
-      },
-      run: () => {},
+      flags: { legacy: { type: Boolean, deprecated: true } },
+      run() {},
     });
 
     await cli.run(["old", "--legacy"], { terminal });
@@ -177,23 +178,23 @@ describe("Clerc execution pipeline", () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli()
-      .beforeRun((ctx) => {
-        events.push(`before:${ctx.calledAs}`);
-      })
-      .afterRun((ctx) => {
-        events.push(`after:${ctx.calledAs}`);
-      })
-      .command("a", {
-        run: () => {
-          events.push("run:a");
-        },
-      })
-      .command("b", {
-        run: () => {
-          events.push("run:b");
-        },
-      });
+    const cli = createTestBaseCli();
+    cli.hook("beforeRun", (ctx) => {
+      events.push(`before:${ctx.calledAs}`);
+    });
+    cli.hook("afterRun", (ctx) => {
+      events.push(`after:${ctx.calledAs}`);
+    });
+    cli.command("a", {
+      run() {
+        events.push("run:a");
+      },
+    });
+    cli.command("b", {
+      run() {
+        events.push("run:b");
+      },
+    });
 
     await cli.run(["a"], { terminal });
     await cli.run(["b"], { terminal });
@@ -210,10 +211,8 @@ describe("Clerc execution pipeline", () => {
 
   it("throws NoCommandError, UnknownCommandError, and MissingRequiredParameterError", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli().command("greet", {
-      parameters: ["<name>"] as const,
-      run: () => {},
-    });
+    const cli = createTestBaseCli();
+    cli.command("greet <name>", { run() {} });
 
     await expect(cli.run([], { terminal })).rejects.toThrow(NoCommandError);
     await expect(cli.run(["nope"], { terminal })).rejects.toThrow(

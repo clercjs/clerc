@@ -1,4 +1,4 @@
-import { definePlugin } from "@clerc/core";
+import { plugin } from "@clerc/core";
 
 export interface UpdateInfo {
   readonly current: string;
@@ -132,56 +132,51 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
     forceCheckInCI = false,
   } = options;
 
-  return definePlugin({
-    name: "clerc:update-notifier",
-    extendContext: () => ({
+  return plugin("clerc:update-notifier")
+    .extend(() => ({
       updateNotifier: { info: undefined as UpdateInfo | undefined },
-    }),
-    hooks: {
-      beforeRun: async (ctx) => {
-        const env = ctx.terminal.env;
-        if (
-          !forceCheckInCI &&
-          (Boolean(env.CI) ||
-            Boolean(env.NO_UPDATE_NOTIFIER) ||
-            !ctx.terminal.isTTY)
-        ) {
-          return;
+    }))
+    .hook("beforeRun", async (ctx) => {
+      const env = ctx.terminal.env;
+      if (
+        !forceCheckInCI &&
+        (Boolean(env.CI) ||
+          Boolean(env.NO_UPDATE_NOTIFIER) ||
+          !ctx.terminal.isTTY)
+      ) {
+        return;
+      }
+
+      const cacheFile = await resolveCacheFile(pkg.name, env, cacheDir);
+      const cache = await readCache(cacheFile);
+      const currentTime = now();
+      let latest = cache?.latest;
+
+      if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {
+        const fetched = await fetchLatestVersion(
+          pkg.name,
+          distTag,
+          registryUrl,
+          timeoutMs,
+          fetchFn,
+        );
+        if (fetched) {
+          latest = fetched;
         }
+        await writeCache(cacheFile, { lastCheck: currentTime, latest });
+      }
 
-        const cacheFile = await resolveCacheFile(pkg.name, env, cacheDir);
-
-        const cache = await readCache(cacheFile);
-        const currentTime = now();
-        let latest = cache?.latest;
-
-        if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {
-          const fetched = await fetchLatestVersion(
-            pkg.name,
-            distTag,
-            registryUrl,
-            timeoutMs,
-            fetchFn,
-          );
-          if (fetched) {
-            latest = fetched;
-          }
-          await writeCache(cacheFile, { lastCheck: currentTime, latest });
-        }
-
-        if (latest && isNewerVersion(pkg.version, latest)) {
-          ctx.updateNotifier.info = {
-            name: pkg.name,
-            current: pkg.version,
-            latest,
-          };
-          ctx.log.callout({
-            tone: "warn",
-            title: `Update available: ${ctx.theme.muted(pkg.version)} → ${ctx.theme.success(latest)}`,
-            lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
-          });
-        }
-      },
-    },
-  });
+      if (latest && isNewerVersion(pkg.version, latest)) {
+        ctx.updateNotifier.info = {
+          name: pkg.name,
+          current: pkg.version,
+          latest,
+        };
+        ctx.log.callout({
+          tone: "warn",
+          title: `Update available: ${ctx.theme.muted(pkg.version)} → ${ctx.theme.success(latest)}`,
+          lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
+        });
+      }
+    });
 }

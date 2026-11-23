@@ -64,19 +64,13 @@ export class CommandTree implements ReadonlyCommandTree {
     return current;
   }
 
-  public register(
-    cmd: AnyCommandDefinition,
-    parentPath: readonly string[] = [],
-  ): CommandNode {
+  public register(cmd: AnyCommandDefinition): CommandNode {
     const rawName = cmd.name.trim();
     const segments = rawName === "" ? [] : rawName.split(/\s+/);
-    const fullSegments = [...parentPath, ...segments];
-
-    const current = this.#ensurePath(fullSegments, true);
+    const current = this.#ensurePath(segments, true);
 
     if (current.command) {
-      const label =
-        fullSegments.length === 0 ? "(root)" : fullSegments.join(" ");
+      const label = segments.length === 0 ? "(root)" : segments.join(" ");
 
       throw new InvalidCommandError(`command "${label}" already exists`);
     }
@@ -109,10 +103,6 @@ export class CommandTree implements ReadonlyCommandTree {
         throw new InvalidCommandError(`alias "${alias}" already exists`);
       }
       host.aliasIndex.set(leaf, current);
-    }
-
-    for (const sub of cmd.subcommands ?? []) {
-      this.register(sub, fullSegments);
     }
 
     return current;

@@ -1,15 +1,10 @@
 export type MaybeArray<T> = T | readonly T[];
-export type MaybeAsyncGetter<T> = T | (() => T | Promise<T>);
+export type MaybeAsyncGetter<T, Arg = void> =
+  T | ((arg: Arg) => T | Promise<T>);
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
-
-export type UnionToIntersection<U> = (
-  U extends any ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
 
 export type CamelCase<S extends string> =
   S extends `${infer Head} ${infer Tail}`
@@ -40,7 +35,10 @@ export function joinWithAnd(values: readonly string[]): string {
   return `${values.slice(0, -1).join(", ")} and ${values.at(-1)}`;
 }
 
-export const resolveAsyncValue = async <T>(
-  value: MaybeAsyncGetter<T>,
+export const resolveAsyncValue = async <T, Arg = void>(
+  value: MaybeAsyncGetter<T, Arg>,
+  arg?: Arg,
 ): Promise<T> =>
-  typeof value === "function" ? (value as () => T | Promise<T>)() : value;
+  typeof value === "function"
+    ? (value as (a: Arg) => T | Promise<T>)(arg as Arg)
+    : value;

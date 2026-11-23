@@ -1,5 +1,3 @@
-import type { TypeFunction } from "@clerc/parser";
-
 import type { ValidationIssue } from "./errors";
 import { ValidationError } from "./errors";
 import type { CoreSingleType } from "./types";
@@ -48,6 +46,16 @@ export interface StandardSchemaV1Props<Input = unknown, Output = Input> {
  */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly "~standard": StandardSchemaV1Props<Input, Output>;
+}
+
+/**
+ * Built-in Standard Schema v1 validator with a help display label.
+ */
+export interface ClercSchema<Output = unknown> extends StandardSchemaV1<
+  string,
+  Output
+> {
+  readonly display: string;
 }
 
 export function isStandardSchema(
@@ -128,69 +136,70 @@ export async function convertValue(
   }
 }
 
-export class FlagValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "FlagValidationError";
-  }
-}
-
-export function Enum<T extends string>(
-  ...values: readonly T[]
-): TypeFunction<T> {
-  const fn = ((value: string) => {
-    if (!values.includes(value as T)) {
-      throw new FlagValidationError(
-        `expected one of: ${values.map((v) => `'${v}'`).join(", ")}`,
-      );
-    }
-
-    return value as T;
-  }) as TypeFunction<T>;
-  fn.display = values.join("|");
-
-  return fn;
-}
-
-export function Range(min: number, max: number): TypeFunction<number> {
-  const fn = ((value: string) => {
-    const num = parseNumber(value);
-    if (Number.isNaN(num) || num < min || num > max) {
-      throw new FlagValidationError(
-        `expected a number between ${min} and ${max}`,
-      );
-    }
-
-    return num;
-  }) as TypeFunction<number>;
-  fn.display = `${min}..${max}`;
-
-  return fn;
-}
-
-export function Regex(pattern: RegExp, display?: string): TypeFunction<string> {
-  const fn = ((value: string) => {
-    if (!pattern.test(value)) {
-      throw new FlagValidationError(`expected value matching ${pattern}`);
-    }
-
-    return value;
-  }) as TypeFunction<string>;
-  fn.display = display ?? pattern.toString();
-
-  return fn;
-}
-
-export const Integer: TypeFunction<number> = Object.assign(
-  (value: string): number => {
-    const num = parseNumber(value);
-    if (!Number.isInteger(num)) {
-      throw new FlagValidationError("expected an integer");
-    }
-
-    return num;
+const createSchema = <T>(
+  display: string,
+  validate: (raw: string) => StandardSchemaV1Result<T>,
+): ClercSchema<T> => ({
+  display,
+  "~standard": {
+    version: 1,
+    vendor: "clerc",
+    validate: (value) => validate(String(value)),
   },
-  { display: "integer" },
+});
+
+export const Enum = <const T extends string>(
+  ...values: readonly T[]
+): ClercSchema<T> =>
+  createSchema<T>(values.join("|"), (raw) => {
+    if (!values.includes(raw as T)) {
+      return {
+        issues: [
+          {
+            message: `expected one of: ${values.map((v) => `'${v}'`).join(", ")}`,
+          },
+        ],
+      };
+    }
+
+    return { value: raw as T };
+  });
+
+export const Range = (min: number, max: number): ClercSchema<number> =>
+  createSchema<number>(`${min}..${max}`, (raw) => {
+    const num = parseNumber(raw);
+    if (Number.isNaN(num) || num < min || num > max) {
+      return {
+        issues: [{ message: `expected a number between ${min} and ${max}` }],
+      };
+    }
+
+    return { value: num };
+  });
+
+export const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
+  createSchema<string>(display ?? pattern.toString(), (raw) => {
+    if (!pattern.test(raw)) {
+      return {
+        issues: [{ message: `expected value matching ${pattern}` }],
+      };
+    }
+
+    return { value: raw };
+  });
+
+export const Integer: ClercSchema<number> = createSchema<number>(
+  "integer",
+  (raw) => {
+    const num = parseNumber(raw);
+    if (!Number.isInteger(num)) {
+      return {
+        issues: [{ message: "expected an integer" }],
+      };
+    }
+
+    return { value: num };
+  },
 );
 
 export const Types = {

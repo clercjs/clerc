@@ -33,15 +33,16 @@ describe("Types and Standard Schema v1", () => {
     let captured: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("run", {
-      parameters: [{ key: "<env>", type: Types.Enum("dev", "prod") }] as const,
+    const cli = createTestBaseCli();
+    cli.command("run <env>", {
+      args: { env: Types.Enum("dev", "prod") },
       flags: {
         port: { type: Types.Range(1, 65_535) },
         tag: { type: Types.Regex(/^v\d+$/, "v<n>") },
         workers: { type: Types.Integer },
       },
-      run: (ctx) => {
-        captured = { params: ctx.parameters, flags: ctx.flags };
+      run(ctx) {
+        captured = { args: ctx.args, flags: ctx.flags };
       },
     });
 
@@ -51,7 +52,7 @@ describe("Types and Standard Schema v1", () => {
     );
 
     expect(captured).toEqual({
-      params: { env: "prod" },
+      args: { env: "prod" },
       flags: { port: 8080, tag: "v2", workers: 4 },
     });
 
@@ -66,9 +67,13 @@ describe("Types and Standard Schema v1", () => {
     await expect(
       cli.run(["run", "dev", "--workers", "1.5"], { terminal }),
     ).rejects.toThrow(ValidationError);
+
+    await expect(
+      cli.run(["run", "dev", "--workers", ""], { terminal }),
+    ).rejects.toThrow(ValidationError);
   });
 
-  it("supports sync and async Standard Schema v1 on flags and parameters", async () => {
+  it("supports sync and async Standard Schema v1 on flags and args", async () => {
     const emailSchema = createSyncSchema<string>((val) => {
       if (typeof val === "string" && val.includes("@")) {
         return { value: val.toLowerCase() };
@@ -88,20 +93,21 @@ describe("Types and Standard Schema v1", () => {
     let captured: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().command("invite", {
-      parameters: [{ key: "<codeId>", type: asyncUpperSchema }] as const,
+    const cli = createTestBaseCli();
+    cli.command("invite <code-id>", {
+      args: { codeId: asyncUpperSchema },
       flags: {
         email: { type: emailSchema, required: true },
       },
-      run: (ctx) => {
-        captured = { params: ctx.parameters, flags: ctx.flags };
+      run(ctx) {
+        captured = { args: ctx.args, flags: ctx.flags };
       },
     });
 
     await cli.run(["invite", "ab", "--email", "Ray@Example.COM"], { terminal });
 
     expect(captured).toEqual({
-      params: { codeId: "AB" },
+      args: { codeId: "AB" },
       flags: { email: "ray@example.com" },
     });
 
