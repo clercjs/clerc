@@ -1,20 +1,30 @@
 import { RootCommand } from "@bomb.sh/tab";
 import { ClercError, Types, plugin } from "clerc";
 
-import type { CompletionMeta } from "./t";
+import type {
+  ArgCompletionMeta,
+  CommandCompletionMeta,
+  CompletionMeta,
+  FlagCompletionMeta,
+} from "./t";
 import { buildTabModel } from "./t";
 
-export type { CompletionMeta };
+export type {
+  ArgCompletionMeta,
+  CommandCompletionMeta,
+  CompletionMeta,
+  FlagCompletionMeta,
+};
 
 declare module "clerc" {
   interface CommandCustomMeta {
-    readonly completions?: CompletionMeta;
+    readonly completions?: CommandCompletionMeta;
   }
   interface FlagCustomMeta {
-    readonly completions?: CompletionMeta;
+    readonly completions?: FlagCompletionMeta;
   }
   interface ArgCustomMeta {
-    readonly completions?: CompletionMeta;
+    readonly completions?: ArgCompletionMeta;
   }
 }
 
@@ -43,7 +53,7 @@ export const completionsPlugin = () =>
           throw new ClercError(
             "shell type is required (zsh, bash, fish, or powershell)",
             {
-              code: "ERR_MISSING_PARAMETER",
+              code: "ERR_MISSING_ARGUMENT",
               exitCode: 2,
               hints: [
                 `run '${ctx.meta.name} completions zsh' or pass '--shell zsh'`,

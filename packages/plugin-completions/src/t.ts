@@ -1,31 +1,70 @@
-import type { Command as TabCommand, RootCommand } from "@bomb.sh/tab";
-import type { CliModel, CommandNode, FlagDescriptor } from "clerc";
+import type {
+  ArgumentHandler,
+  Command as TabCommand,
+  Complete,
+  OptionHandler,
+  RootCommand,
+} from "@bomb.sh/tab";
+import type {
+  ArgDescriptor,
+  CliModel,
+  CommandNode,
+  FlagDescriptor,
+} from "clerc";
 
-export interface CompletionMeta {
+export interface CommandCompletionMeta {
   readonly show?: boolean;
-  readonly handler?: (...args: any[]) => any;
+  readonly handler?: (command: TabCommand) => void;
 }
 
-const getCompletionMeta = (
-  meta?: Record<string, unknown>,
-): CompletionMeta | undefined =>
-  meta?.completions as CompletionMeta | undefined;
+export interface FlagCompletionMeta {
+  readonly show?: boolean;
+  readonly handler?: OptionHandler;
+}
+
+export interface ArgCompletionMeta {
+  readonly show?: boolean;
+  readonly handler?: ArgumentHandler;
+}
+
+export type CompletionMeta =
+  CommandCompletionMeta | FlagCompletionMeta | ArgCompletionMeta;
+
+function createEnumCompleter(
+  toJsonSchema: () => Record<string, unknown>,
+): ((complete: Complete) => void) | undefined {
+  const rawEnum = toJsonSchema().enum;
+  if (!Array.isArray(rawEnum) || rawEnum.length === 0) {
+    return undefined;
+  }
+  const values = rawEnum.map(String);
+
+  return (complete) => {
+    for (const val of values) {
+      complete(val, "");
+    }
+  };
+}
 
 function registerFlagDescriptor(tc: TabCommand, flag: FlagDescriptor): void {
-  const compMeta = getCompletionMeta(flag.meta);
+  const compMeta = flag.meta?.completions;
   if (flag.hidden || compMeta?.show === false) {
     return;
   }
 
+  const longName = flag.target.slice(2);
   const desc = flag.description ?? "";
   if (flag.kind === "boolean" || flag.kind === "counter") {
-    tc.option(flag.name, desc, flag.short);
+    tc.option(longName, desc, flag.short);
     for (const alias of flag.aliases) {
       tc.option(alias, desc);
     }
   } else {
-    const handler = compMeta?.handler ?? (async () => {});
-    tc.option(flag.name, desc, handler, flag.short);
+    const handler: OptionHandler =
+      compMeta?.handler ??
+      createEnumCompleter(flag.toJsonSchema) ??
+      (async () => {});
+    tc.option(longName, desc, handler, flag.short);
     for (const alias of flag.aliases) {
       tc.option(alias, desc, handler);
     }
@@ -45,6 +84,31 @@ function registerFlagList(
   }
 }
 
+function registerNodeArgs(
+  args: readonly ArgDescriptor[],
+  tc: TabCommand,
+): void {
+  for (const arg of args) {
+    const argComp = arg.meta?.completions;
+    const handler: ArgumentHandler | undefined =
+      argComp?.handler ?? createEnumCompleter(arg.toJsonSchema);
+    tc.argument(arg.name, handler, arg.isVariadic);
+  }
+}
+
+function populateSubcommand(
+  tabCmd: TabCommand,
+  node: CommandNode,
+  model: CliModel,
+  localNames: ReadonlySet<string>,
+): void {
+  registerFlagList(model.globalFlags, tabCmd, localNames);
+  registerFlagList(node.builtinFlags, tabCmd);
+  node.command?.meta?.completions?.handler?.(tabCmd);
+  registerNodeArgs(node.args, tabCmd);
+  registerFlagList(node.localFlags, tabCmd);
+}
+
 export function buildTabModel(t: RootCommand, model: CliModel): void {
   const defaultNode =
     !model.tree.root.command && model.defaultCommand
@@ -57,13 +121,10 @@ export function buildTabModel(t: RootCommand, model: CliModel): void {
   registerFlagList(model.tree.root.builtinFlags, t);
 
   if (defaultNode && !defaultNode.command?.hidden) {
-    const defaultComp = getCompletionMeta(defaultNode.command?.meta);
+    const defaultComp = defaultNode.command?.meta?.completions;
     if (defaultComp?.show !== false) {
       defaultComp?.handler?.(t);
-      for (const arg of defaultNode.args) {
-        const argComp = getCompletionMeta(arg.meta);
-        t.argument(arg.name, argComp?.handler, arg.isVariadic);
-      }
+      registerNodeArgs(defaultNode.args, t);
       registerFlagList(defaultNode.localFlags, t);
     }
   }
@@ -75,28 +136,38 @@ export function buildTabModel(t: RootCommand, model: CliModel): void {
       continue;
     }
 
-    const compMeta = getCompletionMeta(cmd.meta);
+    const compMeta = cmd.meta?.completions;
     if (cmd.hidden || compMeta?.show === false) {
       continue;
     }
 
     const fullName = node.fullPath.join(" ");
-    let tabCmd: TabCommand = t;
     const localNames = new Set(node.localFlags.map((f) => f.name));
 
-    if (fullName !== "") {
-      tabCmd = t.command(fullName, cmd.description ?? "");
-      registerFlagList(model.globalFlags, tabCmd, localNames);
-      registerFlagList(node.builtinFlags, tabCmd);
+    if (fullName === "") {
+      compMeta?.handler?.(t);
+      registerNodeArgs(node.args, t);
+      registerFlagList(node.localFlags, t);
+
+      continue;
     }
 
-    compMeta?.handler?.(tabCmd);
+    const tabCmd = t.command(fullName, cmd.description ?? "");
+    populateSubcommand(tabCmd, node, model, localNames);
 
-    for (const arg of node.args) {
-      const argComp = getCompletionMeta(arg.meta);
-      tabCmd.argument(arg.name, argComp?.handler, arg.isVariadic);
+    const rawAliases = cmd.aliases
+      ? Array.isArray(cmd.aliases)
+        ? cmd.aliases
+        : [cmd.aliases]
+      : [];
+    const parentPrefix = node.fullPath.slice(0, -1);
+    for (const rawAlias of rawAliases) {
+      const trimmed = rawAlias.trim();
+      const aliasFullName = trimmed.includes(" ")
+        ? trimmed
+        : [...parentPrefix, trimmed].join(" ");
+      const aliasCmd = t.command(aliasFullName, cmd.description ?? "");
+      populateSubcommand(aliasCmd, node, model, localNames);
     }
-
-    registerFlagList(node.localFlags, tabCmd);
   }
 }

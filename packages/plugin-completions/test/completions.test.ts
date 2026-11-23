@@ -15,10 +15,27 @@ describe("plugin-completions v2", () => {
       const cli = createTestCli({ defaultCommand: "build" }).use(
         completionsPlugin(),
       );
-      cli.command("build", {
+      cli.command("build [env]", {
         aliases: ["b"],
         description: "Build project",
+        args: {
+          env: {
+            description: "Target env",
+            type: {
+              "display": "dev|prod",
+              "~standard": {
+                version: 1,
+                vendor: "test",
+                validate: (v) => ({ value: String(v) }),
+                jsonSchema: {
+                  input: () => ({ type: "string", enum: ["dev", "prod"] }),
+                },
+              },
+            },
+          },
+        },
         flags: {
+          dryRun: { type: Boolean, short: "n", description: "Dry run" },
           watch: { type: Boolean, short: "w", description: "Watch mode" },
         },
         run() {},
@@ -46,6 +63,19 @@ describe("plugin-completions v2", () => {
       // Regression check: ShellCompDirectiveError must be defined inside the function scope in fish
       expect(fishScript).toContain("function __test_perform_completion");
       expect(fishScript).toContain("set -l directive");
+
+      // Dynamic runtime completion: kebab-case flags (--dry-run), alias ('b'), and automatic enum values
+      outputs.length = 0;
+      await cli.run(["complete", "--", "--dry"], { terminal });
+
+      expect(outputs.join("\n")).toContain("--dry-run");
+      expect(outputs.join("\n")).not.toContain("--dryRun");
+
+      outputs.length = 0;
+      await cli.run(["complete", "--", "b", ""], { terminal });
+
+      expect(outputs.join("\n")).toContain("dev");
+      expect(outputs.join("\n")).toContain("prod");
     } finally {
       logSpy.mockRestore();
     }

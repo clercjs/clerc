@@ -71,7 +71,18 @@ describe("core v2 route-signature & plugin types", () => {
         customKey: 123,
       },
       flags: {
-        env: { type: String, meta: { completions: { show: true } } },
+        env: {
+          type: String,
+          meta: {
+            completions: {
+              show: true,
+              handler(complete) {
+                expectTypeOf(complete).toBeFunction();
+                complete("prod", "Production");
+              },
+            },
+          },
+        },
       },
     });
 
