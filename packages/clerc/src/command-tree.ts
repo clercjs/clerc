@@ -110,10 +110,12 @@ export class CommandTreeBuilder implements CommandTree {
     const segments = rawName === "" ? [] : rawName.split(/\s+/);
     const current = this.#ensurePath(segments, true);
 
+    const targetLabel =
+      segments.length === 0
+        ? "root command"
+        : `command "${segments.join(" ")}"`;
     if (current.command) {
-      const label = segments.length === 0 ? "(root)" : segments.join(" ");
-
-      throw new InvalidCommandError(`command "${label}" already exists`);
+      throw new InvalidCommandError(`${targetLabel} already exists`);
     }
 
     current.command = cmd;
@@ -125,7 +127,7 @@ export class CommandTreeBuilder implements CommandTree {
       const alias = rawAlias.trim();
       if (alias === "") {
         throw new InvalidCommandError(
-          `command "${cmd.name || "(root)"}" cannot have an empty alias`,
+          `${targetLabel} cannot have an empty alias`,
         );
       }
       normalizedAliases.push(alias);

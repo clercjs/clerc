@@ -777,10 +777,8 @@ export class Clerc<
           typeof matchedCommand.deprecated === "string"
             ? `: ${matchedCommand.deprecated}`
             : "";
-        const pathLabel = ctx.commandPath.join(" ");
-        ctx.log.warn(
-          `Command '${pathLabel || "(root)"}' is deprecated${reason}`,
-        );
+        const commandLabel = ctx.commandPath.join(" ") || ctx.meta.name;
+        ctx.log.warn(`Command '${commandLabel}' is deprecated${reason}`);
       }
       warnFlagDeprecations(runtime.userFlags, provided, ctx.log.warn);
       if (matchedCommand.run) {

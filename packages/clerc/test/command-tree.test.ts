@@ -131,6 +131,12 @@ describe("CommandTree", () => {
     expect(() => tree.register(makeDef("bundle", ["b"]))).toThrow(
       InvalidCommandError,
     );
+
+    tree.register(makeDef(""));
+
+    expect(() => tree.register(makeDef(""))).toThrow(
+      "root command already exists",
+    );
   });
 
   it("supports spec-less command(options) root command and rejects empty string specs or aliases", async () => {

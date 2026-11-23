@@ -203,6 +203,17 @@ describe("Clerc execution pipeline", () => {
       "Command 'old' is deprecated: use new instead",
     );
     expect(terminal.stderrText()).toContain("Option '--legacy' is deprecated");
+
+    terminal.clear();
+    const rootCli = createTestBaseCli({ name: "legacy-cli" }).command({
+      deprecated: "use modern-cli instead",
+      run() {},
+    });
+    await rootCli.run([], { terminal });
+
+    expect(terminal.stderrText()).toContain(
+      "Command 'legacy-cli' is deprecated: use modern-cli instead",
+    );
   });
 
   it("runs onion middleware in order and is purely re-entrant", async () => {
