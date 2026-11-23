@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createLogger } from "../src";
 
 describe("@clerc/logger", () => {
-  it("renders flush-left word labels with body-aligned rail and compact styles", () => {
+  it("renders flush-left word labels, rail/compact details, and grid-aligned Clack notes", () => {
     const unicodeTerm = createMemoryTerminal({ color: false, unicode: true });
     const log = createLogger({ terminal: unicodeTerm, level: "debug" });
 
@@ -32,21 +32,24 @@ describe("@clerc/logger", () => {
       ].join("\n"),
     );
 
+    const noteTerm = createMemoryTerminal({ color: false, unicode: true });
+    const noteLog = createLogger({ terminal: noteTerm });
+    noteLog.note("No remote resources mutated.", "Dry run");
+    noteLog.note("Run npm i -g test", "Update available", { tone: "warn" });
+
+    expect(noteTerm.stdoutText()).toMatch(/^note {3}╭─ Dry run /);
+    expect(noteTerm.stdoutText()).toContain(
+      "\n       │  No remote resources mutated.",
+    );
+    expect(noteTerm.stderrText()).toMatch(/^warn {3}╭─ Update available /);
+    expect(noteTerm.stderrText()).toContain("\n       │  Run npm i -g test");
+
     const asciiTerm = createMemoryTerminal({ color: false, unicode: false });
     const asciiLog = createLogger({ terminal: asciiTerm });
-    asciiLog.withScope("db").step("Init", "loading config");
-    asciiLog.callout({
-      tone: "warn",
-      title: "Update available",
-      lines: ["Run npm i -g test"],
-    });
+    asciiLog.note("ASCII body", "ASCII title");
 
-    expect(asciiTerm.stdoutText()).toBe(
-      ["step   db > Init", "       | loading config"].join("\n"),
-    );
-    expect(asciiTerm.stderrText()).toBe(
-      ["warn   Update available", "       | Run npm i -g test"].join("\n"),
-    );
+    expect(asciiTerm.stdoutText()).toMatch(/^note {3}\+- ASCII title /);
+    expect(asciiTerm.stdoutText()).toContain("\n       |  ASCII body");
 
     const compactTerm = createMemoryTerminal({ color: false });
     const compactLog = createLogger({
@@ -60,43 +63,55 @@ describe("@clerc/logger", () => {
     );
   });
 
-  it("supports scoped loggers, ANSI colors, and JSON output mode", () => {
-    const colorTerm = createMemoryTerminal({ color: true });
-    const colored = createLogger({ terminal: colorTerm });
-    colored.step("Running");
-
-    expect(colorTerm.stdoutText()).toContain("\u001B[");
-
+  it("formats Error chains cleanly, inspects objects via node:util, and serializes JSON", () => {
     const term = createMemoryTerminal({ color: false });
-    const log = createLogger({ terminal: term, format: "json" });
-    const scoped = log.withScope("parser");
-    scoped.info("parsed args", "3 flags");
+    const log = createLogger({ terminal: term, level: "debug" });
 
-    expect(JSON.parse(term.stdoutText())).toEqual({
-      level: "info",
-      scope: "parser",
-      message: "parsed args",
-      detail: "3 flags",
+    log.debug("Resolved config", { port: 3000, nested: { ok: true } });
+    log.error(
+      new TypeError("Invalid port", {
+        cause: new Error("PORT env malformed"),
+      }),
+    );
+
+    expect(term.stdoutText()).toContain("debug  Resolved config");
+    expect(term.stdoutText()).toContain("port: 3000");
+    expect(term.stderrText()).toContain("error  Invalid port");
+    expect(term.stderrText()).toContain("│ TypeError: Invalid port");
+    expect(term.stderrText()).toContain("│   at ");
+    expect(term.stderrText()).toContain(
+      "│ Caused by: Error: PORT env malformed",
+    );
+    expect(term.stderrText()).not.toContain("[cause]");
+
+    const jsonTerm = createMemoryTerminal({ color: false });
+    const jsonLog = createLogger({ terminal: jsonTerm, format: "json" });
+    jsonLog.withScope("api").error("Boom", new Error("ECONNREFUSED"));
+
+    const parsed = JSON.parse(jsonTerm.stderrText());
+
+    expect(parsed).toMatchObject({
+      level: "error",
+      scope: "api",
+      message: "Boom",
+      detail: {
+        name: "Error",
+        message: "ECONNREFUSED",
+      },
     });
   });
 
-  it("supports streaming .line() appends on callout and log entries while respecting levels", () => {
+  it("supports streaming .line() appends and graceful non-TTY spinner fallback", () => {
     const term = createMemoryTerminal({ color: false });
     const log = createLogger({ terminal: term, level: "warn" });
 
-    // Filtered info callout returns a no-op handle — never prints orphaned rail lines
-    const mutedBox = log.callout({ tone: "info", title: "Hidden" });
-    mutedBox.line("Should not appear");
+    const mutedStep = log.step("Hidden");
+    mutedStep.line("Should not appear");
 
     expect(term.stdoutText()).toBe("");
 
-    // Active warn callout streams appended lines to stderr
-    const warnBox = log.callout({
-      tone: "warn",
-      title: "Preflight warnings",
-      lines: ["Initial check"],
-    });
-    warnBox.line("Slow upstream response").line("Line A\nLine B");
+    const warnEntry = log.warn("Preflight warnings", "Initial check");
+    warnEntry.line("Slow upstream response").line("Line A\nLine B");
 
     expect(term.stderrText()).toBe(
       [
@@ -108,17 +123,16 @@ describe("@clerc/logger", () => {
       ].join("\n"),
     );
 
-    // Step streaming on info level
     log.setLevel("info");
-    const step = log.step("Migrating");
-    step.line("0001_init.sql").line("0002_index.sql");
+    const s = log.spinner();
+    s.start("Bundling");
+    s.message("2 chunks");
+    s.stop("Bundled in 40ms");
 
     expect(term.stdoutText()).toBe(
-      [
-        "step   Migrating",
-        "       │ 0001_init.sql",
-        "       │ 0002_index.sql",
-      ].join("\n"),
+      ["step   Bundling", "       │ 2 chunks", "done   Bundled in 40ms"].join(
+        "\n",
+      ),
     );
   });
 });

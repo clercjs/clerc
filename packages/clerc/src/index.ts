@@ -9,6 +9,7 @@ export type {
   LoggerTerminal,
   LoggerTheme,
   NoteOptions,
+  NoteTone,
   SpinnerHandle,
   SpinnerOptions,
 } from "@clerc/logger";

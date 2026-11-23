@@ -37,6 +37,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@clack/prompts": "catalog:cli",
     "@clerc/theme": "workspace:*"
   }
 }

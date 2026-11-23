@@ -2,107 +2,79 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { createLogger, createTheme, monoThemeStyles } from "clerc";
 
+const theme = createTheme(true);
+const faintDivider = (text: string) => theme.dim(theme.muted(text));
+
 function divider(title: string): void {
-  console.log(`\n${"─".repeat(14)} ${title} ${"─".repeat(14)}\n`);
+  console.log(
+    `\n${faintDivider("─".repeat(10))} ${theme.muted(title)} ${faintDivider("─".repeat(10))}\n`,
+  );
 }
 
-// 1. 默认左对齐词标 + 正文列内缩导轨（rail）
-divider("1. Default Rail Style & All Log Kinds");
+// 1. 统一左脊词标 + node:util inspect + 分层 Error 堆栈
+divider("1. Word Labels, Inspect & Layered Error Stack");
 const log = createLogger({ level: "debug" });
 
-log.step(
-  "Resolving workspace packages",
-  "packages/theme\npackages/logger\npackages/clerc",
-);
-log.info("Found 5 build targets");
-log.debug("Compiler flags: --target=node26 --minify");
+log.info("Found 5 build targets", {
+  entry: "src/index.ts",
+  minify: true,
+  sourcemap: false,
+});
+log.debug("Resolved compiler options", {
+  target: "node26",
+  isolatedDeclarations: true,
+});
 log.warn("Deprecated option '--legacy' detected", "Use '--modern' instead");
 log.error(
   "Failed to connect to remote cache",
-  "ECONNREFUSED 127.0.0.1:8787\nRetrying locally...",
+  new Error("connect ECONNREFUSED 127.0.0.1:8787", {
+    cause: new Error("cache daemon offline"),
+  }),
 );
-log.success("Build finished", "total: 580ms");
 
-// 2. withScope 作用域嵌套
-divider("2. Scoped Loggers (withScope)");
-const dbLog = log.withScope("db");
-const migrateLog = dbLog.withScope("migrate");
-
-dbLog.info("Connected to SQLite");
-migrateLog.step("Applying 0004_init.sql", "3 tables created");
-migrateLog.debug("Query took 1.2ms");
-
-// 3. 全部 4 种一次性 Callout 语气
-divider("3. Static Callout Tones");
-log.callout({
-  tone: "info",
-  title: "Dry run preview",
-  lines: ["No remote resources will be mutated.", "Pass --confirm to apply."],
-});
-log.callout({
-  tone: "warn",
-  title: "Update available: v2.0.0 → v2.1.0",
-  lines: ["Run pnpm up clerc to update"],
-});
-log.callout({
-  tone: "error",
-  title: "Health check failed",
-  lines: ["2 of 3 replicas returned HTTP 503"],
-});
-log.callout({
-  tone: "success",
-  title: "Release v2.1.0 published",
-  lines: ["https://npmjs.com/package/@clerc/logger"],
-});
-
-// 4. 实时延迟追加模拟（Streaming step.line & callout.line）
-divider("4. Live Streaming Appends (Simulated Async Delay)");
+// 2. withScope 作用域嵌套 + 实时延迟流式 .line() 追加
+divider("2. Scoped Logger + Live Delayed .line() Streaming");
+const migrateLog = log.withScope("db").withScope("migrate");
 
 const migrationStep = migrateLog.step("Running pending migrations");
 for (const [file, ms] of [
-  ["0001_create_users.sql", 320],
-  ["0002_create_sessions.sql", 280],
-  ["0003_add_indexes.sql", 360],
+  ["0001_create_users.sql", 280],
+  ["0002_create_sessions.sql", 240],
+  ["0003_add_indexes.sql", 300],
 ] as const) {
   await delay(ms);
   migrationStep.line(`Applied ${file} (${ms}ms)`);
 }
 
-await delay(250);
-const preflight = log.callout({
-  tone: "info",
-  title: "Preflight environment checks",
-});
-for (const [check, ms] of [
-  ["API gateway       200 OK (42ms)", 350],
-  ["Primary database  read/write ready", 350],
-  ["Edge CDN          18 regions healthy", 350],
-] as const) {
-  await delay(ms);
-  preflight.line(check);
-}
+// 3. Clack Spinner（对齐第 7 列网格 + @clerc/theme 品牌色，完成后收敛为 done）
+divider("3. Clack Spinner (Unified Theme & 7-Col Grid)");
+const spin = log.spinner();
+spin.start("Building production bundle...");
+await delay(500);
+spin.message("Compiling TypeScript declarations...");
+await delay(500);
+spin.stop("Production bundle ready in 1.0s");
 
-await delay(200);
-log.success("All preflight checks passed");
+// 4. Clack Note 面板（对齐第 7 列网格 + 语义色左标 + 层次化框线/正文）
+divider("4. Clack Boxed Note Panel (Semantic Tones & Grid)");
+log.note(
+  `No remote resources were mutated.\nRun ${theme.accent("acme deploy prod --confirm")} to publish.`,
+  "Dry run summary",
+);
+log.note(
+  `Run ${theme.accent("pnpm up clerc")} to update`,
+  `Update available: ${theme.muted("v2.0.0")} → ${theme.success("v2.1.0")}`,
+  { tone: "warn" },
+);
 
-// 5. Compact 无竖线缩进样式 & ASCII / Mono 降级
-divider("5. Compact Style & ASCII Mono Fallback");
-log.setStyle("compact");
-log.step("Compact style (no rail bar)", "packages/theme\npackages/logger");
-
+// 5. Compact 样式 & ASCII / Mono 降级 & JSON 模式
+divider("5. Compact Style, ASCII Mono & JSON Mode");
 const asciiMonoLog = createLogger({
-  level: "debug",
   unicode: false,
   theme: createTheme(true, monoThemeStyles),
 });
 asciiMonoLog.withScope("ci").step("ASCII fallback", "Uses '>' and '|'");
+asciiMonoLog.note("ASCII border fallback when unicode is off.", "CI notice");
 
-// 6. JSON 结构化输出模式（含流式 .line 事件）
-divider("6. Structured JSON Format");
 log.setFormat("json");
-const jsonBox = log.callout({
-  tone: "info",
-  title: "Deploying",
-  lines: ["region=ap-northeast-1"],
-});
-jsonBox.line("replica 1 healthy");
+log.error("JSON error serialization", new RangeError("Port out of bounds"));

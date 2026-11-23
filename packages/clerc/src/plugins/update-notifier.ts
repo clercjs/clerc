@@ -244,11 +244,11 @@ export function updateNotifierPlugin(
 
       if (info) {
         const updateCmd = installCommand ?? `npm i -g ${info.name}`;
-        ctx.log.callout({
-          tone: "warn",
-          title: `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-          lines: [`Run ${ctx.theme.accent(updateCmd)} to update`],
-        });
+        ctx.log.note(
+          `Run ${ctx.theme.accent(updateCmd)} to update`,
+          `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
+          { tone: "warn" },
+        );
       }
     }
   });

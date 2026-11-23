@@ -16,6 +16,7 @@ packageExtensions:
 catalogs:
   cli:
     "@bomb.sh/tab": "^0.0.23"
+    "@clack/prompts": "^1.9.0"
     fast-string-width: "^3.0.2"
   dev:
     "@antfu/ni": "^30.6.0"

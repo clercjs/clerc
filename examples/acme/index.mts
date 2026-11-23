@@ -197,11 +197,7 @@ cli.command("deploy <env> [region]", {
     }
 
     if (summary.dryRun) {
-      ctx.log.callout({
-        tone: "info",
-        title: "Dry run complete",
-        lines: ["No remote resources were modified."],
-      });
+      ctx.log.note("No remote resources were modified.", "Dry run complete");
     } else {
       ctx.log.success(`Deployed ${summary.env} successfully!`);
     }

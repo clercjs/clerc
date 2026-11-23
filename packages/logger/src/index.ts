@@ -1,24 +1,57 @@
+import { Writable } from "node:stream";
+import { inspect } from "node:util";
+
+import type {
+  BoxAlignment,
+  SpinnerOptions as ClackSpinnerOptions,
+} from "@clack/prompts";
+import * as prompts from "@clack/prompts";
 import type { Theme } from "@clerc/theme";
 import { createTheme, detectColor, detectUnicode } from "@clerc/theme";
+
+export { prompts };
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
 export type LogStyle = "rail" | "compact";
 export type LogFormat = "pretty" | "json";
-export type CalloutTone = "info" | "warn" | "error" | "success";
+export type NoteTone = "info" | "warn" | "error" | "success";
 
-export interface CalloutOptions {
-  readonly title: string;
-  readonly lines?: readonly string[];
-  readonly tone?: CalloutTone;
+export interface NoteOptions {
+  readonly tone?: NoteTone;
+  readonly contentAlign?: BoxAlignment;
+  readonly titleAlign?: BoxAlignment;
+  readonly width?: number | "auto";
+  readonly rounded?: boolean;
+  readonly stream?: "stdout" | "stderr";
+}
+
+export interface SpinnerOptions {
+  readonly indicator?: ClackSpinnerOptions["indicator"];
+  readonly cancelMessage?: string;
+  readonly errorMessage?: string;
+  readonly frames?: string[];
+  readonly delay?: number;
+  readonly signal?: AbortSignal;
+}
+
+export interface SpinnerHandle {
+  start: (message?: string) => void;
+  message: (message?: string) => void;
+  stop: (message?: string) => void;
+  error: (message?: string) => void;
+  cancel: (message?: string) => void;
+  clear: () => void;
+  readonly isCancelled: boolean;
 }
 
 export interface LogEntry {
-  readonly line: (text: string) => LogEntry;
+  readonly line: (value: unknown) => LogEntry;
 }
 
 export interface LoggerTerminal {
   readonly stdout: (text: string) => void;
   readonly stderr: (text: string) => void;
+  readonly isTTY?: boolean;
   readonly color?: boolean;
   readonly unicode?: boolean;
 }
@@ -50,14 +83,15 @@ export interface Logger {
   setLevel: (level: LogLevel) => void;
   setStyle: (style: LogStyle) => void;
   setFormat: (format: LogFormat) => void;
-  step: (message: string, detail?: string) => LogEntry;
-  info: (message: string, detail?: string) => LogEntry;
-  success: (message: string, detail?: string) => LogEntry;
-  warn: (message: string, detail?: string) => LogEntry;
-  error: (message: string, detail?: string) => LogEntry;
-  debug: (message: string, detail?: string) => LogEntry;
+  step: (message: unknown, detail?: unknown) => LogEntry;
+  info: (message: unknown, detail?: unknown) => LogEntry;
+  success: (message: unknown, detail?: unknown) => LogEntry;
+  warn: (message: unknown, detail?: unknown) => LogEntry;
+  error: (message: unknown, detail?: unknown) => LogEntry;
+  debug: (message: unknown, detail?: unknown) => LogEntry;
   raw: (text: string) => void;
-  callout: (options: CalloutOptions) => LogEntry;
+  note: (message: string, title?: string, options?: NoteOptions) => void;
+  spinner: (options?: SpinnerOptions) => SpinnerHandle;
   withScope: (scope: string) => Logger;
 }
 
@@ -82,21 +116,73 @@ const KIND_META: Record<
     readonly stderr: boolean;
     readonly token: LoggerThemeToken;
     readonly label: string;
+    readonly boldLabel: boolean;
+    readonly boldBody: boolean;
   }
 > = {
-  step: { level: "info", stderr: false, token: "brand", label: "step" },
-  info: { level: "info", stderr: false, token: "info", label: "info" },
-  success: { level: "info", stderr: false, token: "success", label: "done" },
-  warn: { level: "warn", stderr: true, token: "warn", label: "warn" },
-  error: { level: "error", stderr: true, token: "error", label: "error" },
-  debug: { level: "debug", stderr: false, token: "muted", label: "debug" },
+  step: {
+    level: "info",
+    stderr: false,
+    token: "brand",
+    label: "step",
+    boldLabel: true,
+    boldBody: true,
+  },
+  info: {
+    level: "info",
+    stderr: false,
+    token: "info",
+    label: "info",
+    boldLabel: true,
+    boldBody: false,
+  },
+  success: {
+    level: "info",
+    stderr: false,
+    token: "success",
+    label: "done",
+    boldLabel: true,
+    boldBody: false,
+  },
+  warn: {
+    level: "warn",
+    stderr: true,
+    token: "warn",
+    label: "warn",
+    boldLabel: true,
+    boldBody: false,
+  },
+  error: {
+    level: "error",
+    stderr: true,
+    token: "error",
+    label: "error",
+    boldLabel: true,
+    boldBody: true,
+  },
+  debug: {
+    level: "debug",
+    stderr: false,
+    token: "muted",
+    label: "debug",
+    boldLabel: false,
+    boldBody: false,
+  },
 };
 
-const CALLOUT_LABELS: Record<CalloutTone, string> = {
-  info: "note",
-  warn: "warn",
-  error: "error",
-  success: "done",
+const NOTE_TONE_META: Record<
+  NoteTone,
+  {
+    readonly level: Exclude<LogLevel, "silent">;
+    readonly stderr: boolean;
+    readonly token: LoggerThemeToken;
+    readonly label: string;
+  }
+> = {
+  info: { level: "info", stderr: false, token: "info", label: "note" },
+  warn: { level: "warn", stderr: true, token: "warn", label: "warn" },
+  error: { level: "error", stderr: true, token: "error", label: "error" },
+  success: { level: "info", stderr: false, token: "success", label: "done" },
 };
 
 interface SharedLoggerState {
@@ -109,6 +195,16 @@ const identity = (text: string): string => text;
 
 const NOOP_ENTRY: LogEntry = Object.freeze({
   line: () => NOOP_ENTRY,
+});
+
+const NOOP_SPINNER: SpinnerHandle = Object.freeze({
+  start: () => {},
+  message: () => {},
+  stop: () => {},
+  error: () => {},
+  cancel: () => {},
+  clear: () => {},
+  isCancelled: false,
 });
 
 const DEFAULT_TERMINAL: LoggerTerminal = {
@@ -126,10 +222,101 @@ const formatLabel = (
   label: string,
   theme: LoggerTheme,
   token: LoggerThemeToken,
-): string => formatLogLabel(label, theme[token]);
+  bold: boolean,
+): string =>
+  formatLogLabel(label, (text) =>
+    bold ? theme.bold(theme[token](text)) : theme[token](text),
+  );
+
+function serializeJsonValue(value: unknown): unknown {
+  if (Error.isError(value)) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+      ...(value.cause === undefined
+        ? {}
+        : { cause: serializeJsonValue(value.cause) }),
+    };
+  }
+
+  return value;
+}
+
+function extractStackFrames(err: Error): string[] {
+  if (!err.stack) {
+    return [];
+  }
+  const header =
+    err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
+  const rawBody = err.stack.startsWith(header)
+    ? err.stack.slice(header.length)
+    : err.stack;
+  const frames = rawBody
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("at "));
+  const appFrames = frames.filter((line) => !line.includes("node:internal/"));
+
+  return appFrames.length > 0 ? appFrames : frames;
+}
+
+function formatErrorLines(
+  err: Error,
+  styleSummary: (text: string) => string,
+  styleFrame: (text: string) => string,
+  includeHeader: boolean,
+  seen = new Set<unknown>(),
+): string[] {
+  seen.add(err);
+  const lines: string[] = [];
+  if (includeHeader) {
+    const summary =
+      err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
+    lines.push(styleSummary(summary));
+  }
+  for (const frame of extractStackFrames(err)) {
+    lines.push(styleFrame(`  ${frame}`));
+  }
+  if (err.cause !== undefined && !seen.has(err.cause)) {
+    if (Error.isError(err.cause)) {
+      const causeSummary =
+        err.cause.message.length > 0
+          ? `${err.cause.name}: ${err.cause.message}`
+          : err.cause.name;
+      lines.push(styleSummary(`Caused by: ${causeSummary}`));
+      lines.push(
+        ...formatErrorLines(err.cause, styleSummary, styleFrame, false, seen),
+      );
+    } else {
+      lines.push(
+        styleSummary(
+          `Caused by: ${inspect(err.cause, { colors: false, depth: 2 })}`,
+        ),
+      );
+    }
+  }
+
+  return lines;
+}
+
+const createLineWritable = (writeLine: (text: string) => void): Writable =>
+  new Writable({
+    write(chunk, _encoding, callback) {
+      const text = String(chunk).replace(/\n$/, "");
+      if (text.length > 0) {
+        for (const line of text.split("\n")) {
+          writeLine(line);
+        }
+      }
+      callback();
+    },
+  });
 
 function createLoggerWithState(
   terminal: LoggerTerminal,
+  isDefaultTerminal: boolean,
+  color: boolean,
   theme: LoggerTheme,
   unicode: boolean,
   state: SharedLoggerState,
@@ -155,14 +342,33 @@ function createLoggerWithState(
       : `${theme.muted(scope)} ${faint(sep)} `;
   }
 
+  function formatDetailLines(value: unknown, isDebug: boolean): string[] {
+    const styleSummary = isDebug ? faint : theme.muted;
+    if (typeof value === "string") {
+      return value.split("\n").map((part) => styleSummary(part));
+    }
+    if (Error.isError(value)) {
+      return formatErrorLines(value, styleSummary, faint, true);
+    }
+    if (isDebug) {
+      return inspect(value, { colors: false, depth: 4 })
+        .split("\n")
+        .map((part) => faint(part));
+    }
+
+    return inspect(value, { colors: color, depth: 4 })
+      .split("\n")
+      .map((part) => theme.muted(part));
+  }
+
   function createEntry(
     targetLevel: Exclude<LogLevel, "silent">,
     write: (text: string) => void,
-    formatLine: (text: string) => string,
+    isDebug: boolean,
     jsonBase: Readonly<Record<string, unknown>>,
   ): LogEntry {
     const entry: LogEntry = {
-      line(text) {
+      line(value) {
         if (!shouldLog(targetLevel)) {
           return entry;
         }
@@ -171,15 +377,15 @@ function createLoggerWithState(
             JSON.stringify({
               ...jsonBase,
               ...(scope ? { scope } : {}),
-              line: text,
+              line: serializeJsonValue(value),
             }),
           );
 
           return entry;
         }
         const prefix = detailPrefix();
-        for (const part of text.split("\n")) {
-          write(`${prefix}${formatLine(part)}`);
+        for (const part of formatDetailLines(value, isDebug)) {
+          write(`${prefix}${part}`);
         }
 
         return entry;
@@ -189,44 +395,87 @@ function createLoggerWithState(
     return entry;
   }
 
-  function emit(kind: LogKind, message: string, detail?: string): LogEntry {
+  function emit(
+    kind: LogKind,
+    rawMessage: unknown,
+    rawDetail?: unknown,
+  ): LogEntry {
     const meta = KIND_META[kind];
     if (!shouldLog(meta.level)) {
       return NOOP_ENTRY;
     }
 
-    const write = meta.stderr ? terminal.stderr : terminal.stdout;
     const isDebug = kind === "debug";
-    const formatDetail = isDebug ? faint : theme.muted;
-    const entry = createEntry(meta.level, write, formatDetail, {
+    let messageText: string;
+    let extraHeadlineLines: string[] | undefined;
+
+    if (typeof rawMessage === "string") {
+      messageText = rawMessage;
+    } else if (Error.isError(rawMessage) && rawDetail === undefined) {
+      messageText =
+        rawMessage.message.length > 0 ? rawMessage.message : rawMessage.name;
+      extraHeadlineLines = formatErrorLines(
+        rawMessage,
+        isDebug ? faint : theme.muted,
+        faint,
+        rawMessage.name !== "Error",
+      );
+    } else {
+      const inspected = inspect(rawMessage, {
+        colors: isDebug ? false : color,
+        depth: 4,
+      }).split("\n");
+      messageText = inspected[0] ?? "";
+      if (inspected.length > 1) {
+        extraHeadlineLines = inspected
+          .slice(1)
+          .map((part) => (isDebug ? faint(part) : theme.muted(part)));
+      }
+    }
+
+    const write = meta.stderr ? terminal.stderr : terminal.stdout;
+    const jsonMessage =
+      typeof rawMessage === "string"
+        ? rawMessage
+        : serializeJsonValue(rawMessage);
+    const entry = createEntry(meta.level, write, isDebug, {
       level: kind,
-      message,
+      message: jsonMessage,
     });
 
     if (state.format === "json") {
-      const payload: Record<string, unknown> = { level: kind, message };
+      const payload: Record<string, unknown> = {
+        level: kind,
+        message: jsonMessage,
+      };
       if (scope) {
         payload.scope = scope;
       }
-      if (detail !== undefined) {
-        payload.detail = detail;
+      if (rawDetail !== undefined) {
+        payload.detail = serializeJsonValue(rawDetail);
       }
       write(JSON.stringify(payload));
 
       return entry;
     }
 
-    const label = formatLabel(meta.label, theme, meta.token);
+    const label = formatLabel(meta.label, theme, meta.token, meta.boldLabel);
     const scopePrefix = formatScope(isDebug);
     const body = isDebug
-      ? faint(message)
-      : kind === "step"
-        ? theme.bold(message)
-        : message;
+      ? faint(messageText)
+      : meta.boldBody
+        ? theme.bold(messageText)
+        : messageText;
 
     write(`${label}  ${scopePrefix}${body}`);
-    if (detail !== undefined) {
-      entry.line(detail);
+    if (extraHeadlineLines !== undefined && extraHeadlineLines.length > 0) {
+      const prefix = detailPrefix();
+      for (const line of extraHeadlineLines) {
+        write(`${prefix}${line}`);
+      }
+    }
+    if (rawDetail !== undefined) {
+      entry.line(rawDetail);
     }
 
     return entry;
@@ -263,46 +512,182 @@ function createLoggerWithState(
         terminal.stdout(text);
       }
     },
-    callout: ({ title, lines = [], tone = "info" }) => {
-      const meta = KIND_META[tone];
+    note: (message, title, options) => {
+      const tone = options?.tone ?? "info";
+      const meta = NOTE_TONE_META[tone];
       if (!shouldLog(meta.level)) {
-        return NOOP_ENTRY;
+        return;
       }
-
-      const write = meta.stderr ? terminal.stderr : terminal.stdout;
-      const entry = createEntry(meta.level, write, theme.muted, {
-        level: tone,
-        title,
-      });
+      const useStderr =
+        options?.stream === undefined
+          ? meta.stderr
+          : options.stream === "stderr";
+      const write = useStderr ? terminal.stderr : terminal.stdout;
 
       if (state.format === "json") {
         write(
           JSON.stringify({
             level: tone,
             ...(scope ? { scope } : {}),
-            title,
-            lines,
+            ...(title ? { title } : {}),
+            message,
           }),
         );
 
-        return entry;
+        return;
       }
 
-      const label = formatLabel(CALLOUT_LABELS[tone], theme, meta.token);
-      const prefix = detailPrefix();
-      const output = [
-        `${label}  ${theme.bold(title)}`,
-        ...lines.flatMap((line) =>
-          line.split("\n").map((part) => `${prefix}${theme.muted(part)}`),
-        ),
-      ];
-      write(output.join("\n"));
+      const rawLines: string[] = [];
+      const streamColumns =
+        (useStderr ? process.stderr.columns : process.stdout.columns) ?? 80;
+      const output = Object.assign(
+        createLineWritable((line) => {
+          rawLines.push(line);
+        }),
+        { columns: Math.max(40, streamColumns - LOG_GUTTER.length) },
+      );
 
-      return entry;
+      const styledBody = message
+        .split("\n")
+        .map((line) => theme.muted(line))
+        .join("\n");
+
+      const headerParts: string[] = [];
+      if (scope) {
+        headerParts.push(`${theme.muted(scope)} ${faint(sep)}`);
+      }
+      if (title) {
+        headerParts.push(theme.bold(title));
+      }
+      const styledTitle =
+        headerParts.length > 0 ? ` ${headerParts.join(" ")} ` : undefined;
+
+      prompts.box(styledBody, styledTitle, {
+        output,
+        withGuide: false,
+        rounded: options?.rounded ?? unicode,
+        width: options?.width ?? "auto",
+        titlePadding: 1,
+        contentPadding: 2,
+        contentAlign: options?.contentAlign ?? "left",
+        titleAlign: options?.titleAlign ?? "left",
+        formatBorder: (ch) => {
+          if (!unicode) {
+            if (ch === "─") {
+              return faint("-");
+            }
+            if (ch === "│") {
+              return faint("|");
+            }
+
+            return faint("+");
+          }
+
+          return faint(ch);
+        },
+      });
+
+      const label = formatLabel(meta.label, theme, meta.token, true);
+      for (const [index, line] of rawLines.entries()) {
+        write(`${index === 0 ? `${label}  ` : LOG_GUTTER}${line}`);
+      }
+    },
+    spinner: (options) => {
+      if (!shouldLog("info")) {
+        return NOOP_SPINNER;
+      }
+
+      const canAnimate =
+        isDefaultTerminal &&
+        Boolean(process.stdout.isTTY) &&
+        state.format === "pretty";
+
+      if (canAnimate) {
+        let cancelled = false;
+        const scopePrefix = formatScope(false);
+        const rawSpinner = prompts.spinner({
+          ...options,
+          output: process.stdout,
+          withGuide: false,
+          frames:
+            options?.frames ??
+            (unicode ? ["◒", "◐", "◓", "◑"] : ["-", "\\", "|", "/"]),
+          styleFrame: (frame) =>
+            formatLogLabel(frame, (s) => theme.bold(theme.brand(s))),
+        });
+
+        return {
+          start(msg) {
+            rawSpinner.start(
+              msg ? `${scopePrefix}${msg}` : scopePrefix.trimEnd(),
+            );
+          },
+          message(msg) {
+            if (msg !== undefined) {
+              rawSpinner.message(`${scopePrefix}${msg}`);
+            }
+          },
+          stop(msg) {
+            rawSpinner.clear();
+            if (msg) {
+              emit("success", msg);
+            }
+          },
+          error(msg) {
+            rawSpinner.clear();
+            emit("error", msg ?? options?.errorMessage ?? "Failed");
+          },
+          cancel(msg) {
+            cancelled = true;
+            rawSpinner.clear();
+            emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
+          },
+          clear() {
+            rawSpinner.clear();
+          },
+          get isCancelled() {
+            return cancelled || rawSpinner.isCancelled;
+          },
+        };
+      }
+
+      let cancelled = false;
+      let activeEntry: LogEntry = NOOP_ENTRY;
+
+      return {
+        start(msg) {
+          if (msg) {
+            activeEntry = emit("step", msg);
+          }
+        },
+        message(msg) {
+          if (msg) {
+            activeEntry.line(msg);
+          }
+        },
+        stop(msg) {
+          if (msg) {
+            emit("success", msg);
+          }
+        },
+        error(msg) {
+          emit("error", msg ?? options?.errorMessage ?? "Failed");
+        },
+        cancel(msg) {
+          cancelled = true;
+          emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
+        },
+        clear() {},
+        get isCancelled() {
+          return cancelled;
+        },
+      };
     },
     withScope: (childScope) =>
       createLoggerWithState(
         terminal,
+        isDefaultTerminal,
+        color,
         theme,
         unicode,
         state,
@@ -312,6 +697,7 @@ function createLoggerWithState(
 }
 
 export function createLogger(options: CreateLoggerOptions = {}): Logger {
+  const isDefaultTerminal = options.terminal === undefined;
   const terminal = options.terminal ?? DEFAULT_TERMINAL;
   const color = options.color ?? terminal.color ?? detectColor();
   const unicode = options.unicode ?? terminal.unicode ?? detectUnicode();
@@ -322,5 +708,13 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
     format: options.format ?? "pretty",
   };
 
-  return createLoggerWithState(terminal, theme, unicode, state, options.scope);
+  return createLoggerWithState(
+    terminal,
+    isDefaultTerminal,
+    color,
+    theme,
+    unicode,
+    state,
+    options.scope,
+  );
 }
