@@ -17,13 +17,19 @@ import type { FlagKind, TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
 import type {
-  ClercFlagDefinitionValue,
-  ClercFlagOptions,
-  ClercFlagsDefinition,
-  CoreTypeValue,
+  FlagDefinitionValue,
   FlagDescriptor,
+  FlagOptions,
+  FlagsDefinition,
+  TypeValue,
 } from "./types";
-import { evaluateDefault, formatFlagName, toArray } from "./utils";
+import {
+  camelCase,
+  evaluateDefault,
+  formatFlagName,
+  kebabCase,
+  toArray,
+} from "./utils";
 
 export interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
@@ -37,16 +43,16 @@ export interface CompiledFlags {
   readonly knownNames: readonly string[];
 }
 
-function normalizeFlagValue(flag: ClercFlagDefinitionValue): ClercFlagOptions {
+function normalizeFlagValue(flag: FlagDefinitionValue): FlagOptions {
   if (
     typeof flag === "function" ||
     Array.isArray(flag) ||
     isStandardSchema(flag)
   ) {
-    return { type: flag as CoreTypeValue };
+    return { type: flag as TypeValue };
   }
 
-  return flag as ClercFlagOptions;
+  return flag as FlagOptions;
 }
 
 function implicitDefault(kind: FlagKind): unknown {
@@ -86,7 +92,7 @@ export const createBuiltinFlagDescriptor = (
   toJsonSchema: () => ({ type: "boolean" }),
 });
 
-export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
+export function compileFlags(flags: FlagsDefinition): CompiledFlags {
   const entries: CompiledFlagEntry[] = [];
   const byName = new Map<string, CompiledFlagEntry>();
   const specs: ArgvFlagSpec[] = [];
@@ -205,6 +211,74 @@ export function mergeCompiledFlags(
   }
 
   return { descriptors: entries, entries, byName, specs, knownNames };
+}
+
+export function finalizeCompiledFlags(compiled: CompiledFlags): CompiledFlags {
+  const canonicalByRef = new Map<string, string>();
+  for (const entry of compiled.entries) {
+    for (const raw of [entry.name, ...entry.aliases]) {
+      canonicalByRef.set(raw, entry.name);
+      canonicalByRef.set(camelCase(raw), entry.name);
+      canonicalByRef.set(kebabCase(raw), entry.name);
+    }
+    if (entry.short) {
+      canonicalByRef.set(entry.short, entry.name);
+    }
+  }
+
+  function resolveRef(
+    owner: string,
+    raw: string,
+    relation: "conflicts with" | "implies",
+  ): string {
+    const stripped = raw.replace(/^-+/, "");
+    const target = stripped ? canonicalByRef.get(stripped) : undefined;
+    if (!target) {
+      throw new InvalidSchemaError(
+        `Flag "${owner}" ${relation} unknown flag "${raw}".`,
+      );
+    }
+    if (target === owner) {
+      throw new InvalidSchemaError(
+        `Flag "${owner}" cannot ${relation === "implies" ? "imply" : "conflict with"} itself.`,
+      );
+    }
+
+    return target;
+  }
+
+  let changed = false;
+  const entries = compiled.entries.map((entry) => {
+    if (entry.conflicts.length === 0 && entry.implies.length === 0) {
+      return entry;
+    }
+    changed = true;
+    const conflicts = [
+      ...new Set(
+        entry.conflicts.map((c) => resolveRef(entry.name, c, "conflicts with")),
+      ),
+    ];
+    const implies = [
+      ...new Set(
+        entry.implies.map((im) => resolveRef(entry.name, im, "implies")),
+      ),
+    ];
+
+    return { ...entry, conflicts, implies };
+  });
+
+  if (!changed) {
+    return compiled;
+  }
+
+  const byName = new Map(entries.map((e) => [e.name, e]));
+
+  return {
+    ...compiled,
+    descriptors: entries,
+    entries,
+    byName,
+  };
 }
 
 export async function convertItemList(

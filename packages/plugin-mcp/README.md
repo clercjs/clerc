@@ -9,7 +9,7 @@ import { mcpPlugin } from "@clerc/plugin-mcp";
 import { Types, clerc } from "clerc";
 
 const cli = clerc({
-  scriptName: "acme",
+  name: "acme",
   version: "2.0.0",
   description: "Build and deploy apps",
 }).use(mcpPlugin());

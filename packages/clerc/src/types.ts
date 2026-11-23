@@ -26,13 +26,19 @@ export interface TypeFunction<T = unknown> {
   display?: string;
 }
 
-export type CoreSingleType<T = any> =
-  TypeFunction<T> | StandardSchemaV1<any, T>;
+export type SingleType<T = any> = TypeFunction<T> | StandardSchemaV1<any, T>;
 
-export type CoreTypeValue<T = any> =
-  CoreSingleType<T> | readonly [CoreSingleType<T>];
+export type TypeValue<T = any> = SingleType<T> | readonly [SingleType<T>];
 
-export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
+export interface CommandCustomMeta {}
+export interface FlagCustomMeta {}
+export interface ArgCustomMeta {}
+
+export type CommandMeta = CommandCustomMeta & Record<string, unknown>;
+export type FlagMeta = FlagCustomMeta & Record<string, unknown>;
+export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
+
+export interface FlagOptions<T extends TypeValue = TypeValue> {
   readonly type: T;
   readonly short?: string;
   readonly aliases?: MaybeArray<string>;
@@ -49,21 +55,21 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
   readonly deprecated?: boolean | string;
   readonly conflicts?: MaybeArray<string>;
   readonly implies?: MaybeArray<string>;
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: FlagMeta;
 }
 
-export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
-export type ClercFlagsDefinition = Record<string, ClercFlagDefinitionValue>;
+export type FlagDefinitionValue = FlagOptions | TypeValue;
+export type FlagsDefinition = Record<string, FlagDefinitionValue>;
 
 type StrictOptions<T, Allowed> = T extends object
   ? Allowed & Readonly<Partial<Record<Exclude<keyof T, keyof Allowed>, never>>>
   : Allowed;
 
 type ContextualFlagValue<V> = [V] extends [never]
-  ? ClercFlagOptions
-  : V extends CoreSingleType | readonly [CoreSingleType]
+  ? FlagOptions
+  : V extends SingleType | readonly [SingleType]
     ? V
-    : StrictOptions<V, ClercFlagOptions>;
+    : StrictOptions<V, FlagOptions>;
 
 export type ContextualFlags<Flags extends Record<string, any>> = {
   readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
@@ -89,7 +95,7 @@ export interface FlagDescriptor {
   readonly deprecated?: boolean | string;
   readonly conflicts: readonly string[];
   readonly implies: readonly string[];
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: FlagMeta;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
 
@@ -105,7 +111,7 @@ export interface ArgDescriptor {
   readonly placeholder?: string;
   readonly default?: unknown;
   readonly env?: string;
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: ArgMeta;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
 
@@ -131,22 +137,19 @@ type InferSingleType<T> =
       ? U
       : never;
 
-type InferFlagDefault<
-  T extends ClercFlagDefinitionValue,
-  Fallback,
-> = T extends {
+type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
   readonly default: FlagDefaultValue<infer DefaultType>;
 }
   ? DefaultType
   : Fallback;
 
-type InferFlagImplicitValue<T extends ClercFlagDefinitionValue> = T extends {
+type InferFlagImplicitValue<T extends FlagDefinitionValue> = T extends {
   readonly implicitValue: FlagDefaultValue<infer ImplicitType>;
 }
   ? ImplicitType
   : never;
 
-type IsTypeAny<T extends ClercFlagDefinitionValue> =
+type IsTypeAny<T extends FlagDefinitionValue> =
   IsAny<T> extends true
     ? true
     : T extends { readonly type: infer Type }
@@ -155,7 +158,7 @@ type IsTypeAny<T extends ClercFlagDefinitionValue> =
         : false
       : false;
 
-type InferSingleFlag<T extends ClercFlagDefinitionValue> =
+type InferSingleFlag<T extends FlagDefinitionValue> =
   IsTypeAny<T> extends true
     ? any
     : T extends
@@ -176,32 +179,31 @@ type InferSingleFlag<T extends ClercFlagDefinitionValue> =
                     ? never
                     : undefined
               >
-          : T extends CoreSingleType
+          : T extends SingleType
             ? | InferSingleType<T>
               | ([InferSingleType<T>] extends [boolean] ? never : undefined)
             : never;
 
-export type InferClercFlags<T extends Record<string, any>> = Prettify<{
-  [K in keyof T]: T[K] extends ClercFlagDefinitionValue
+export type InferFlags<T extends Record<string, any>> = Prettify<{
+  [K in keyof T]: T[K] extends FlagDefinitionValue
     ? InferSingleFlag<T[K]>
     : never;
 }>;
 
-export interface ArgOptions<T extends CoreSingleType = CoreSingleType> {
+export interface ArgOptions<T extends SingleType = SingleType> {
   readonly type?: T;
   readonly description?: string;
   readonly placeholder?: string;
   readonly default?: FlagDefaultValue;
   readonly env?: string;
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: ArgMeta;
 }
 
-export type ArgDefinitionValue = CoreSingleType | ArgOptions;
-export type ArgsDefinition = Record<string, ArgDefinitionValue>;
+export type ArgDefinitionValue = SingleType | ArgOptions;
 
 type ContextualArgValue<V> = [V] extends [never]
   ? ArgOptions
-  : V extends CoreSingleType
+  : V extends SingleType
     ? V
     : StrictOptions<V, ArgOptions>;
 
@@ -250,7 +252,7 @@ type ResolveArgType<
     ? [T] extends [undefined]
       ? string
       : InferSingleType<T>
-    : NonNullable<Args[Name]> extends CoreSingleType
+    : NonNullable<Args[Name]> extends SingleType
       ? InferSingleType<NonNullable<Args[Name]>>
       : string
   : string;
@@ -307,7 +309,7 @@ type KnownKeys<T> = string extends keyof T ? never : keyof T;
 export type MergedFlags<
   LocalFlags extends Record<string, any>,
   GlobalFlags extends Record<string, any>,
-> = InferClercFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
+> = InferFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
 
 export interface GroupDefinition {
   readonly key: string;
@@ -320,13 +322,16 @@ export interface GroupsInput {
   readonly globalFlags?: Readonly<Record<string, string>>;
 }
 
-export type MetaAsyncGetter<T> = MaybeAsyncGetter<T, ReadonlyCliMeta>;
+export type ExampleInput =
+  string | readonly [command: string, description?: string];
 
-export interface ReadonlyCliMeta {
-  readonly scriptName: string;
+export type MetaAsyncGetter<T> = MaybeAsyncGetter<T, CliMeta>;
+
+export interface CliMeta {
+  readonly name: string;
   readonly description: string;
   readonly version: string;
-  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
@@ -342,7 +347,7 @@ export interface CommandNode {
   readonly builtinFlags: readonly FlagDescriptor[];
 }
 
-export interface ReadonlyCommandTree {
+export interface CommandTree {
   readonly root: CommandNode;
   findNode: (path: readonly string[]) => CommandNode | undefined;
   listChildren: (node?: CommandNode) => readonly CommandNode[];
@@ -350,9 +355,9 @@ export interface ReadonlyCommandTree {
   walkCommands: () => readonly CommandNode[];
 }
 
-export interface ReadonlyCliModel {
-  readonly meta: ReadonlyCliMeta;
-  readonly tree: ReadonlyCommandTree;
+export interface CliModel {
+  readonly meta: CliMeta;
+  readonly tree: CommandTree;
   readonly defaultCommand?: readonly string[];
   readonly globalFlags: readonly FlagDescriptor[];
   readonly groups: {
@@ -373,14 +378,14 @@ export interface HelpOptions {
   readonly footer?: MetaAsyncGetter<string | undefined | void>;
   readonly sections?: Partial<HelpSectionRenderers>;
   readonly render?: (
-    model: ReadonlyCliModel,
+    model: CliModel,
     commandPath?: readonly string[],
   ) => string | Promise<string>;
 }
 
-export interface ErrorContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
-  readonly meta: ReadonlyCliMeta;
-  readonly model: ReadonlyCliModel;
+export interface ErrorContext<TGlobalFlags extends Record<string, any> = {}> {
+  readonly meta: CliMeta;
+  readonly model: CliModel;
   readonly terminal: Terminal;
   readonly theme: Theme;
   readonly log: Logger;
@@ -394,7 +399,7 @@ export interface ErrorContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
   readonly commandPath: readonly string[];
   readonly calledAs?: string;
   readonly args: Record<string, any>;
-  readonly flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
+  readonly flags: InferFlags<TGlobalFlags> & Record<string, any>;
   readonly unknown: Record<string, RawInputType>;
   readonly doubleDash: readonly string[];
 }
@@ -442,7 +447,7 @@ export interface CommandOptions<
   readonly group?: string;
   readonly hidden?: boolean;
   readonly deprecated?: boolean | string;
-  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
   readonly run?: CommandHandler<
     Spec,
@@ -451,7 +456,7 @@ export interface CommandOptions<
     NoInfer<GlobalFlags>,
     NoInfer<TExt>
   >;
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: CommandMeta;
 }
 
 export type RootCommandOptions<
@@ -495,11 +500,11 @@ export type ErrorHandler<
 ) => boolean | void | Promise<boolean | void>;
 
 export interface ClercOptions {
-  readonly scriptName: string;
+  readonly name: string;
   readonly description?: string;
   readonly version?: string;
   readonly defaultCommand?: string;
-  readonly examples?: MetaAsyncGetter<readonly (readonly [string, string])[]>;
+  readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
   readonly help?: boolean | HelpOptions;
   readonly strictFlags?: boolean;

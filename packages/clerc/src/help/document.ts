@@ -2,10 +2,10 @@ import { splitArgTokens } from "../args";
 import { DOUBLE_DASH } from "../parser";
 import type {
   ArgDescriptor,
+  CliModel,
   CommandNode,
   FlagDescriptor,
   GroupDefinition,
-  ReadonlyCliModel,
 } from "../types";
 import {
   formatFlagName,
@@ -15,7 +15,7 @@ import {
 } from "../utils";
 
 export interface HelpHeader {
-  readonly scriptName: string;
+  readonly name: string;
   readonly commandPath: readonly string[];
   readonly version: string;
   readonly description?: string;
@@ -209,7 +209,7 @@ function groupItems<T, R>(
 
 function buildUsage(
   node: CommandNode,
-  scriptName: string,
+  name: string,
   hasVisibleChildren: boolean,
   hasOptions: boolean,
   hasDefaultCommand: boolean,
@@ -235,9 +235,7 @@ function buildUsage(
 
   return {
     command:
-      node.fullPath.length > 0
-        ? `${scriptName} ${node.fullPath.join(" ")}`
-        : scriptName,
+      node.fullPath.length > 0 ? `${name} ${node.fullPath.join(" ")}` : name,
     subcommand: hasVisibleChildren
       ? command?.run || hasDefaultCommand
         ? "optional"
@@ -249,7 +247,7 @@ function buildUsage(
 }
 
 export async function buildHelpDocument(
-  model: ReadonlyCliModel,
+  model: CliModel,
   node: CommandNode = model.tree.root,
 ): Promise<HelpDocument> {
   const { meta, tree, globalFlags, groups } = model;
@@ -283,7 +281,7 @@ export async function buildHelpDocument(
 
   return {
     header: {
-      scriptName: meta.scriptName,
+      name: meta.name,
       commandPath: node.fullPath,
       version: formatVersion(meta.version),
       description: isRoot
@@ -293,7 +291,7 @@ export async function buildHelpDocument(
     },
     usage: buildUsage(
       node,
-      meta.scriptName,
+      meta.name,
       visibleChildren.length > 0,
       hasCommandFlags || hasGlobalFlags,
       isRoot && Boolean(model.defaultCommand),
@@ -337,10 +335,14 @@ export async function buildHelpDocument(
           false,
         )
       : [],
-    examples: rawExamples.map(([cmd, description]) => ({
-      command: cmd,
-      description: description || undefined,
-    })),
+    examples: rawExamples.map((entry) =>
+      typeof entry === "string"
+        ? { command: entry }
+        : {
+            command: entry[0],
+            description: entry[1]?.length ? entry[1] : undefined,
+          },
+    ),
     notes,
   };
 }

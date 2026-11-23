@@ -1,5 +1,5 @@
 import { ValidationError } from "./errors";
-import type { CoreSingleType, CoreTypeValue, TypeFunction } from "./types";
+import type { SingleType, TypeFunction, TypeValue } from "./types";
 
 export interface StandardSchemaV1Issue {
   readonly message: string;
@@ -170,7 +170,7 @@ function readStandardJsonSchema(
   }
 }
 
-function getDisplayLabel(type: CoreSingleType): string {
+function getDisplayLabel(type: SingleType): string {
   if ("display" in type && typeof type.display === "string") {
     return type.display;
   }
@@ -180,7 +180,7 @@ function getDisplayLabel(type: CoreSingleType): string {
     : "value";
 }
 
-function describeSingle(type: CoreSingleType): TypeDescriptor {
+function describeSingle(type: SingleType): TypeDescriptor {
   const builtin = BUILTIN_DESCRIPTORS.get(type);
   if (builtin) {
     return builtin;
@@ -208,12 +208,12 @@ function describeSingle(type: CoreSingleType): TypeDescriptor {
  * Single source of truth for classifying any flag or argument type across flag
  * compilation, help rendering, completions, and MCP JSON Schema export.
  */
-export function describeType(type: CoreTypeValue): TypeDescriptor {
+export function describeType(type: TypeValue): TypeDescriptor {
   if (!Array.isArray(type)) {
-    return describeSingle(type as CoreSingleType);
+    return describeSingle(type as SingleType);
   }
 
-  const inner = type[0] as CoreSingleType;
+  const inner = type[0] as SingleType;
   if (inner === Boolean) {
     return COUNTER_DESCRIPTOR;
   }

@@ -1,7 +1,7 @@
 import { clerc } from "clerc";
 
 const cli = clerc({
-  scriptName: "bumpp",
+  name: "bumpp",
   version: "9.2.0",
   description: "Interactive CLI that bumps your version numbers and more",
 });

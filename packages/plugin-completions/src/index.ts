@@ -1,9 +1,22 @@
 import { RootCommand } from "@bomb.sh/tab";
 import { ClercError, Types, plugin } from "clerc";
 
+import type { CompletionMeta } from "./t";
 import { buildTabModel } from "./t";
 
-export type { CompletionMeta } from "./t";
+export type { CompletionMeta };
+
+declare module "clerc" {
+  interface CommandCustomMeta {
+    readonly completions?: CompletionMeta;
+  }
+  interface FlagCustomMeta {
+    readonly completions?: CompletionMeta;
+  }
+  interface ArgCustomMeta {
+    readonly completions?: CompletionMeta;
+  }
+}
 
 const supportedShellEnum = Types.Enum("zsh", "bash", "fish", "powershell");
 
@@ -33,7 +46,7 @@ export const completionsPlugin = () =>
               code: "ERR_MISSING_PARAMETER",
               exitCode: 2,
               hints: [
-                `run '${ctx.meta.scriptName} completions zsh' or pass '--shell zsh'`,
+                `run '${ctx.meta.name} completions zsh' or pass '--shell zsh'`,
               ],
             },
           );
@@ -41,7 +54,7 @@ export const completionsPlugin = () =>
 
         const t = new RootCommand();
         buildTabModel(t, ctx.model);
-        t.setup(ctx.meta.scriptName, ctx.meta.scriptName, shell);
+        t.setup(ctx.meta.name, ctx.meta.name, shell);
       },
     })
     .command("complete -- [input...]", {

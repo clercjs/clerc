@@ -1,13 +1,21 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import type { ExtractArgNames, Logger, StandardSchemaV1 } from "../src";
+import type {
+  ExtractArgNames,
+  FlagsDefinition,
+  Logger,
+  StandardSchemaV1,
+} from "../src";
 import { Types, clerc, plugin, verbosityPlugin } from "../src";
+
+import "@clerc/plugin-completions";
+import "@clerc/plugin-mcp";
 
 describe("core v2 route-signature & plugin types", () => {
   it("infers args from signature strings without as const and type-checks args keys", () => {
     const portSchema = {} as StandardSchemaV1<string, number>;
 
-    const cli = clerc({ scriptName: "app", version: "1.0.0" }).flags({
+    const cli = clerc({ name: "app", version: "1.0.0" }).flags({
       config: { type: String, default: "clerc.json" },
       overrideMe: { type: String, default: "str" },
     });
@@ -48,13 +56,34 @@ describe("core v2 route-signature & plugin types", () => {
     // @ts-expect-error empty string spec must be rejected in favor of command(options)
     cli.command("", { run() {} });
 
-    clerc({ scriptName: "serve" }).command({
+    clerc({ name: "serve" }).command({
       flags: { port: { type: Number, default: 3000 } },
       run(ctx) {
         expectTypeOf(ctx.args).toEqualTypeOf<{}>();
         expectTypeOf(ctx.flags.port).toEqualTypeOf<number>();
       },
     });
+
+    cli.command("augmented", {
+      meta: {
+        mcp: { idempotent: true, readOnly: true },
+        completions: { show: false },
+        customKey: 123,
+      },
+      flags: {
+        env: { type: String, meta: { completions: { show: true } } },
+      },
+    });
+
+    cli.command("bad-meta", {
+      meta: {
+        // @ts-expect-error augmented McpCommandMeta must reject wrong value types
+        mcp: { idempotent: "nope" },
+      },
+    });
+
+    const reusableFlags: FlagsDefinition = { debug: Boolean };
+    cli.flags(reusableFlags);
 
     cli.command("check <entry>", {
       args: {
@@ -77,7 +106,7 @@ describe("core v2 route-signature & plugin types", () => {
         },
       }));
 
-    const cli = clerc({ scriptName: "app", version: "1.0.0" }).use(authPlugin);
+    const cli = clerc({ name: "app", version: "1.0.0" }).use(authPlugin);
     cli.command("me", {
       run(ctx) {
         expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
@@ -104,7 +133,7 @@ describe("core v2 route-signature & plugin types", () => {
       },
     };
 
-    clerc({ scriptName: "app", version: "1.0.0" }).command("sync <at>", {
+    clerc({ name: "app", version: "1.0.0" }).command("sync <at>", {
       args: { at: typesOnlySchema },
       flags: { retries: { type: validateOnlySchema, required: true } },
       run(ctx) {
@@ -126,7 +155,7 @@ describe("core v2 route-signature & plugin types", () => {
   });
 
   it("infers arg default types and optional-value implicitValue flag types", () => {
-    clerc({ scriptName: "app", version: "1.0.0" }).command(
+    clerc({ name: "app", version: "1.0.0" }).command(
       "deploy [region] [files...]",
       {
         args: {
@@ -155,7 +184,7 @@ describe("core v2 route-signature & plugin types", () => {
     );
   });
   it("provides built-in ctx.help, ctx.log, and accumulates plugin flags cleanly", () => {
-    clerc({ scriptName: "app", version: "1.0.0" })
+    clerc({ name: "app", version: "1.0.0" })
       .use(verbosityPlugin())
       .command("build", {
         run(ctx) {

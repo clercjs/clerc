@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
-import type { ReadonlyCliModel, RunOptions, RunResult } from "clerc";
+import type { CliModel, RunOptions, RunResult } from "clerc";
 import { createMemoryTerminal, createTheme, renderHelp } from "clerc";
 
 import type {
@@ -50,7 +50,7 @@ interface ResourceEntry {
 }
 
 export interface CreateMcpHandlerOptions extends McpFilterOptions {
-  readonly model: ReadonlyCliModel;
+  readonly model: CliModel;
   readonly run: (
     argv: readonly string[],
     options?: RunOptions,
@@ -68,18 +68,18 @@ export type McpRequestHandler = (
 const PLAIN_THEME = createTheme(false);
 
 function buildResourceEntries(
-  model: ReadonlyCliModel,
+  model: CliModel,
   options?: McpFilterOptions,
 ): readonly ResourceEntry[] {
-  const scriptName = model.meta.scriptName;
-  const prefix = `cli://${encodeURIComponent(scriptName)}`;
+  const cliName = model.meta.name;
+  const prefix = `cli://${encodeURIComponent(cliName)}`;
   const entries: ResourceEntry[] = [
     {
       resource: {
         uri: `${prefix}/help`,
-        name: `${scriptName} help`,
+        name: `${cliName} help`,
         description:
-          model.meta.description || `Overview and usage help for ${scriptName}`,
+          model.meta.description || `Overview and usage help for ${cliName}`,
         mimeType: "text/plain",
       },
       commandPath: [],
@@ -92,7 +92,7 @@ function buildResourceEntries(
     }
 
     const encodedPath = node.fullPath.map(encodeURIComponent).join("/");
-    const label = `${scriptName} ${node.fullPath.join(" ")}`;
+    const label = `${cliName} ${node.fullPath.join(" ")}`;
     entries.push({
       resource: {
         uri: `${prefix}/commands/${encodedPath}`,
@@ -108,13 +108,13 @@ function buildResourceEntries(
 }
 
 export const listMcpTools = (
-  model: ReadonlyCliModel,
+  model: CliModel,
   options?: McpFilterOptions,
 ): readonly McpToolDefinition[] =>
   buildToolEntries(model, options).map((entry) => entry.tool);
 
 export const listMcpResources = (
-  model: ReadonlyCliModel,
+  model: CliModel,
   options?: McpFilterOptions,
 ): readonly McpResourceDefinition[] =>
   buildResourceEntries(model, options).map((entry) => entry.resource);
@@ -187,7 +187,7 @@ async function handleResourcesRead(
   id: string | number | null,
   params: Record<string, unknown> | undefined,
   resourcesByUri: ReadonlyMap<string, ResourceEntry>,
-  model: ReadonlyCliModel,
+  model: CliModel,
 ): Promise<McpJsonRpcResponse> {
   const uri = params?.uri;
   if (typeof uri !== "string") {
@@ -222,7 +222,7 @@ export function createMcpHandler(
     run,
     env,
     cwd,
-    serverName = model.meta.scriptName,
+    serverName = model.meta.name,
     mcpCommandName = "mcp",
     resources: enableResources = true,
     filter,

@@ -6,7 +6,7 @@ import { createTheme } from "@clerc/theme";
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
 import type { CommandMatch } from "./command-tree";
-import { CommandTree } from "./command-tree";
+import { CommandTreeBuilder } from "./command-tree";
 import {
   ClercError,
   InvalidCommandError,
@@ -22,6 +22,7 @@ import type { CompiledFlags } from "./flags";
 import {
   compileFlags,
   createBuiltinFlagDescriptor,
+  finalizeCompiledFlags,
   mergeCompiledFlags,
   resolveCompiledFlags,
   validateParsedFlags,
@@ -34,8 +35,9 @@ import { DOUBLE_DASH, createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type {
   AnyCommandDefinition,
-  ClercFlagsDefinition,
   ClercOptions,
+  CliMeta,
+  CliModel,
   CommandNode,
   CommandOptions,
   ContextualFlags,
@@ -43,13 +45,12 @@ import type {
   ErrorHandler,
   ExtractArgNames,
   FlagDescriptor,
+  FlagsDefinition,
   GroupDefinition,
   GroupsInput,
   HelpOptions,
   Middleware,
   NonEmptySpec,
-  ReadonlyCliMeta,
-  ReadonlyCliModel,
   RootCommandOptions,
   RunContext,
   RunOptions,
@@ -69,7 +70,7 @@ type ContextExtender = (
 ) => Record<string, any> | Promise<Record<string, any>>;
 
 interface PluginState {
-  readonly flags: ClercFlagsDefinition;
+  readonly flags: FlagsDefinition;
   readonly commands: AnyCommandDefinition[];
   readonly groups: GroupBuckets;
   readonly extenders: ContextExtender[];
@@ -89,8 +90,8 @@ interface CompiledNodeRuntime {
 }
 
 interface CompiledCli {
-  readonly model: ReadonlyCliModel;
-  readonly tree: CommandTree;
+  readonly model: CliModel;
+  readonly tree: CommandTreeBuilder;
   readonly defaultNode?: CommandNode;
   readonly defaultAcceptsArgs: boolean;
   readonly extenders: readonly ContextExtender[];
@@ -125,11 +126,11 @@ const createGroupBuckets = (): GroupBuckets => ({
   globalFlags: [],
 });
 
-const formatCliVersion = (meta: ReadonlyCliMeta): string =>
-  `${meta.scriptName} ${formatVersion(meta.version)}`.trim();
+const formatCliVersion = (meta: CliMeta): string =>
+  `${meta.name} ${formatVersion(meta.version)}`.trim();
 
 interface ScopeCollector {
-  readonly globalFlags: ClercFlagsDefinition;
+  readonly globalFlags: FlagsDefinition;
   readonly commands: AnyCommandDefinition[];
   readonly groups: GroupBuckets;
   readonly extenders: ContextExtender[];
@@ -357,7 +358,7 @@ export class Clerc<
   TGlobalFlags extends Record<string, any> = {},
   TExt extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TExt> {
-  readonly #meta: ReadonlyCliMeta;
+  readonly #meta: CliMeta;
   readonly #defaultCommand?: string;
   readonly #helpOptions: false | HelpOptions;
   readonly #strictFlags: boolean;
@@ -367,12 +368,12 @@ export class Clerc<
 
   constructor(options: ClercOptions) {
     super("clerc:root");
-    const scriptName = options.scriptName.trim();
-    if (!scriptName) {
-      throw new MissingRequiredMetadataError("scriptName");
+    const name = options.name.trim();
+    if (!name) {
+      throw new MissingRequiredMetadataError("name");
     }
     this.#meta = {
-      scriptName,
+      name,
       description: options.description ?? "",
       version: options.version ?? "",
       examples: options.examples,
@@ -443,7 +444,7 @@ export class Clerc<
     };
     collectScope(this, acc);
 
-    const tree = new CommandTree();
+    const tree = new CommandTreeBuilder();
     for (const cmd of acc.commands) {
       tree.register(cmd);
     }
@@ -473,8 +474,8 @@ export class Clerc<
         description: "Show help for a command",
         builtin: true,
         examples: (meta) => [
-          [`$ ${meta.scriptName} help`, "Show general help"],
-          [`$ ${meta.scriptName} help <command>`, "Show help for a command"],
+          [`$ ${meta.name} help`, "Show general help"],
+          [`$ ${meta.name} help <command>`, "Show help for a command"],
         ],
         async run(ctx) {
           const path = ctx.args.command as string[];
@@ -486,7 +487,8 @@ export class Clerc<
       });
     }
 
-    const globalFlags = compileFlags(acc.globalFlags);
+    const rawGlobalFlags = compileFlags(acc.globalFlags);
+    const globalFlags = finalizeCompiledFlags(rawGlobalFlags);
     const enableVersion = Boolean(this.#meta.version);
     const enableHelp = this.#helpOptions !== false;
     const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
@@ -496,8 +498,11 @@ export class Clerc<
       const cmd = node.command;
       const localFlags = cmd?.flags ? compileFlags(cmd.flags) : undefined;
       const userFlags = localFlags
-        ? mergeCompiledFlags(globalFlags, localFlags)
+        ? finalizeCompiledFlags(mergeCompiledFlags(rawGlobalFlags, localFlags))
         : globalFlags;
+      const localDescriptors = localFlags
+        ? localFlags.entries.map((e) => userFlags.byName.get(e.name)!)
+        : EMPTY_DESCRIPTORS;
       const builtins = resolveNodeBuiltins({
         isRoot,
         enableVersion,
@@ -515,7 +520,7 @@ export class Clerc<
 
       tree.attachCompiled(node, {
         args: compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS,
-        localFlags: localFlags?.descriptors ?? EMPTY_DESCRIPTORS,
+        localFlags: localDescriptors,
         builtinFlags: builtins.descriptors,
       });
 
@@ -558,7 +563,7 @@ export class Clerc<
         Boolean(target.command.argTokens.includes(DOUBLE_DASH));
     }
 
-    const model: ReadonlyCliModel = {
+    const model: CliModel = {
       meta: this.#meta,
       tree,
       defaultCommand: defaultNode?.fullPath,
@@ -581,7 +586,7 @@ export class Clerc<
     return this.#compiled;
   }
 
-  public buildModel(): ReadonlyCliModel {
+  public buildModel(): CliModel {
     return this.#ensureCompiled().model;
   }
 
@@ -856,7 +861,7 @@ export class Clerc<
       ctx.terminal.stderr(
         formatDiagnostic(error, {
           theme: ctx.theme,
-          scriptName: ctx.meta.scriptName,
+          name: ctx.meta.name,
           commandPath: ctx.commandPath,
           verbose,
           showHelpHint: this.#helpOptions !== false,

@@ -7,7 +7,14 @@ export interface UpdateInfo {
 }
 
 export interface UpdateNotifierPluginOptions {
-  readonly pkg: { readonly name: string; readonly version: string };
+  /**
+   * Package name on npm. Defaults to `ctx.meta.name`.
+   */
+  readonly packageName?: string;
+  /**
+   * Current CLI version. Defaults to `ctx.meta.version`.
+   */
+  readonly version?: string;
   readonly distTag?: string;
   readonly checkIntervalMs?: number;
   readonly registryUrl?: string;
@@ -154,13 +161,16 @@ function awaitWithin<T>(
   ]);
 }
 
-export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
+export function updateNotifierPlugin(
+  options: UpdateNotifierPluginOptions = {},
+) {
   const {
-    pkg,
+    packageName,
+    version,
     distTag = "latest",
     checkIntervalMs = DEFAULT_INTERVAL_MS,
     registryUrl = "https://registry.npmjs.org",
-    installCommand = `npm i -g ${pkg.name}`,
+    installCommand,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     postRunGraceMs = DEFAULT_POST_RUN_GRACE_MS,
     cacheDir,
@@ -170,24 +180,28 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
   } = options;
 
   async function checkForUpdate(
+    pkgName: string,
+    currentVersion: string,
     env: Readonly<Record<string, string | undefined>>,
     isTTY: boolean,
   ): Promise<UpdateInfo | undefined> {
     if (
-      !forceCheckInCI &&
-      (Boolean(env.CI) || Boolean(env.NO_UPDATE_NOTIFIER) || !isTTY)
+      !pkgName ||
+      !currentVersion ||
+      (!forceCheckInCI &&
+        (Boolean(env.CI) || Boolean(env.NO_UPDATE_NOTIFIER) || !isTTY))
     ) {
       return undefined;
     }
 
-    const cacheFile = await resolveCacheFile(pkg.name, env, cacheDir);
+    const cacheFile = await resolveCacheFile(pkgName, env, cacheDir);
     const cache = await readCache(cacheFile);
     const currentTime = now();
     let latest = cache?.latest;
 
     if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {
       const fetched = await fetchLatestVersion(
-        pkg.name,
+        pkgName,
         distTag,
         registryUrl,
         timeoutMs,
@@ -199,15 +213,22 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
       await writeCache(cacheFile, { lastCheck: currentTime, latest });
     }
 
-    if (latest && isNewerVersion(pkg.version, latest)) {
-      return { name: pkg.name, current: pkg.version, latest };
+    if (latest && isNewerVersion(currentVersion, latest)) {
+      return { name: pkgName, current: currentVersion, latest };
     }
 
     return undefined;
   }
 
   return plugin("clerc:update-notifier").middleware(async (ctx, next) => {
-    const checkPromise = checkForUpdate(ctx.terminal.env, ctx.terminal.isTTY);
+    const pkgName = packageName ?? ctx.meta.name;
+    const currentVersion = version ?? ctx.meta.version;
+    const checkPromise = checkForUpdate(
+      pkgName,
+      currentVersion,
+      ctx.terminal.env,
+      ctx.terminal.isTTY,
+    );
 
     try {
       await next();
@@ -215,10 +236,11 @@ export function updateNotifierPlugin(options: UpdateNotifierPluginOptions) {
       const info = await awaitWithin(checkPromise, postRunGraceMs);
 
       if (info) {
+        const updateCmd = installCommand ?? `npm i -g ${info.name}`;
         ctx.log.callout({
           tone: "warn",
           title: `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-          lines: [`Run ${ctx.theme.accent(installCommand)} to update`],
+          lines: [`Run ${ctx.theme.accent(updateCmd)} to update`],
         });
       }
     }

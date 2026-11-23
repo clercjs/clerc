@@ -2,7 +2,7 @@ import { LOG_GUTTER, formatLogLabel } from "@clerc/logger";
 import type { Theme } from "@clerc/theme";
 
 import { findClosest } from "./suggest";
-import type { ReadonlyCommandTree } from "./types";
+import type { CommandTree } from "./types";
 import { formatFlagName, joinWithAnd } from "./utils";
 
 export type ClercErrorCode =
@@ -272,7 +272,7 @@ export class MissingRequiredMetadataError extends ClercError {
 
 export function enrichCommandError(
   error: unknown,
-  tree: ReadonlyCommandTree,
+  tree: CommandTree,
   distanceThreshold = 4,
 ): void {
   if (distanceThreshold <= 0) {
@@ -334,7 +334,7 @@ export function formatJsonError(error: unknown): string {
 
 export interface FormatDiagnosticOptions {
   readonly theme: Theme;
-  readonly scriptName?: string;
+  readonly name?: string;
   readonly commandPath?: readonly string[];
   readonly verbose?: boolean;
   readonly showHelpHint?: boolean;
@@ -349,7 +349,7 @@ export function formatDiagnostic(
 ): string {
   const {
     theme,
-    scriptName,
+    name,
     commandPath,
     verbose = false,
     showHelpHint = true,
@@ -378,7 +378,7 @@ export function formatDiagnostic(
       lines.push(`${formatLogLabel("usage", theme.heading)}  ${error.usage}`);
     }
 
-    if (showHelpHint && scriptName && error.exitCode === 2) {
+    if (showHelpHint && name && error.exitCode === 2) {
       const cmdPart =
         commandPath && commandPath.length > 0
           ? ` ${commandPath.join(" ")}`
@@ -386,7 +386,7 @@ export function formatDiagnostic(
       lines.push("");
       lines.push(
         `${LOG_GUTTER}${theme.muted(
-          `For more information, try '${scriptName}${cmdPart} --help'.`,
+          `For more information, try '${name}${cmdPart} --help'.`,
         )}`,
       );
     }

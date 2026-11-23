@@ -7,12 +7,12 @@ import { describe, expect, it } from "vitest";
 
 import type { AnyCommandDefinition } from "../src";
 import {
-  CommandTree,
   InvalidCommandError,
   UnknownCommandError,
   clerc,
   plugin,
 } from "../src";
+import { CommandTreeBuilder } from "../src/command-tree";
 
 const makeDef = (
   name: string,
@@ -113,7 +113,7 @@ describe("CommandTree", () => {
   });
 
   it("lists canonical children without leaking aliases", () => {
-    const tree = new CommandTree();
+    const tree = new CommandTreeBuilder();
     tree.register(makeDef("build", ["b", "compile"]));
     tree.register(makeDef("dev", ["d"]));
 
@@ -123,7 +123,7 @@ describe("CommandTree", () => {
   });
 
   it("throws InvalidCommandError on duplicate commands or conflicting aliases", () => {
-    const tree = new CommandTree();
+    const tree = new CommandTreeBuilder();
     tree.register(makeDef("build", ["b"]));
 
     expect(() => tree.register(makeDef("build"))).toThrow(InvalidCommandError);
@@ -163,7 +163,7 @@ describe("CommandTree", () => {
       InvalidCommandError,
     );
 
-    const tree = new CommandTree();
+    const tree = new CommandTreeBuilder();
 
     expect(() => tree.register(makeDef("build", [""]))).toThrow(
       InvalidCommandError,
@@ -174,7 +174,7 @@ describe("CommandTree", () => {
     // 1. defaultCommand without positional args keeps UnknownCommandError + typo hints
     const events: string[] = [];
     const noArgCli = clerc({
-      scriptName: "vite",
+      name: "vite",
       version: "1.0.0",
       defaultCommand: "dev",
     });
@@ -220,7 +220,7 @@ describe("CommandTree", () => {
     // 2. defaultCommand with positional args forwards unmatched root args like Vite
     const dirEvents: string[] = [];
     const argCli = clerc({
-      scriptName: "vite",
+      name: "vite",
       version: "1.0.0",
       defaultCommand: "dev",
     });
@@ -256,20 +256,20 @@ describe("CommandTree", () => {
 
     // 3. Compile-time validation rejects missing, namespace-only, or conflicting defaultCommand
     const missingDefault = clerc({
-      scriptName: "vite",
+      name: "vite",
       defaultCommand: "missing",
     });
     missingDefault.command("build", { run() {} });
 
     expect(() => missingDefault.buildModel()).toThrow(InvalidCommandError);
 
-    const nsDefault = clerc({ scriptName: "vite", defaultCommand: "db" });
+    const nsDefault = clerc({ name: "vite", defaultCommand: "db" });
     nsDefault.command("db migrate", { run() {} });
 
     expect(() => nsDefault.buildModel()).toThrow(InvalidCommandError);
 
     const conflictDefault = clerc({
-      scriptName: "vite",
+      name: "vite",
       defaultCommand: "dev",
     });
     conflictDefault.command({ run() {} });

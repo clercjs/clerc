@@ -32,7 +32,7 @@
 import { Types, clerc } from "clerc";
 
 const cli = clerc({
-  scriptName: "acme",
+  name: "acme",
   version: "2.0.0",
   description: "Build and deploy modern TypeScript apps",
 });
@@ -74,7 +74,7 @@ await cli.runMain();
 
 # 📦 Packages
 
-- `clerc` — Core CLI framework: POSIX argv parser, `clerc`, `plugin`, `CommandTree`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
+- `clerc` — Core CLI framework: POSIX argv parser, `clerc`, `plugin`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
 - `@clerc/theme` — Zero-dependency semantic CLI theme and terminal capability detection.
 - `@clerc/logger` — Minimal CLI logger with aligned word labels and JSON mode.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.

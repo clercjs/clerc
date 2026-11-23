@@ -12,7 +12,7 @@ import type {
   ArgDefinitionValue,
   ArgDescriptor,
   ArgOptions,
-  CoreSingleType,
+  SingleType,
 } from "./types";
 import { camelCase, evaluateDefault } from "./utils";
 
@@ -43,7 +43,7 @@ export interface CompiledArgs {
 
 function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
   if (typeof arg === "function" || isStandardSchema(arg)) {
-    return { type: arg as CoreSingleType };
+    return { type: arg as SingleType };
   }
 
   return arg as ArgOptions;

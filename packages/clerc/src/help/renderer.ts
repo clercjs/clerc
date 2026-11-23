@@ -1,5 +1,6 @@
 import type { Theme } from "@clerc/theme";
-import type { CommandNode, MetaAsyncGetter, ReadonlyCliModel } from "../types";
+
+import type { CliModel, CommandNode, MetaAsyncGetter } from "../types";
 import { resolveAsyncValue } from "../utils";
 import type {
   HelpArgumentItem,
@@ -251,12 +252,11 @@ function renderExampleLines(
 
 export const defaultHelpSections: HelpSectionRenderers = {
   header(doc, { theme, columns }) {
-    const { scriptName, commandPath, version, description, aliases } =
-      doc.header;
+    const { name, commandPath, version, description, aliases } = doc.header;
     const titleLeft =
       commandPath.length === 0
-        ? theme.brand(scriptName)
-        : `${theme.muted(scriptName)} ${theme.brand(commandPath.join(" "))}`;
+        ? theme.brand(name)
+        : `${theme.muted(name)} ${theme.brand(commandPath.join(" "))}`;
     const titleParts = [
       titleLeft,
       version ? theme.muted(version) : undefined,
@@ -471,7 +471,7 @@ export function renderHelpDocument(
 }
 
 export async function renderHelp(
-  model: ReadonlyCliModel,
+  model: CliModel,
   options: RenderHelpOptions,
 ): Promise<string> {
   const doc = await buildHelpDocument(model, options.node);

@@ -77,7 +77,7 @@ const dbPlugin = plugin("acme:db")
 
 // 4. Assemble CLI
 const cli = clerc({
-  scriptName: "acme",
+  name: "acme",
   version: "2.0.0",
   description: "Build and deploy modern TypeScript apps (Clerc v2 demo)",
   examples: [

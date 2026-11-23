@@ -10,7 +10,7 @@ export type { MemoryTerminal, MemoryTerminalOptions };
 
 export const createTestBaseCli = (options?: Partial<ClercOptions>) =>
   clerc({
-    scriptName: "test",
+    name: "test",
     description: "Test CLI",
     version: "1.0.0",
     help: false,
@@ -19,7 +19,7 @@ export const createTestBaseCli = (options?: Partial<ClercOptions>) =>
 
 export const createTestCli = (options?: Partial<ClercOptions>) =>
   clerc({
-    scriptName: "test",
+    name: "test",
     description: "Test CLI",
     version: "1.0.0",
     ...options,

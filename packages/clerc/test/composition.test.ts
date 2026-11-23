@@ -87,7 +87,7 @@ describe("Unified Plugin & Clerc composition", () => {
         },
       });
 
-    const cli = clerc({ scriptName: "app", version: "1.0.0" })
+    const cli = clerc({ name: "app", version: "1.0.0" })
       .use(makeGreetingPlugin("v1"))
       .use(makeGreetingPlugin("v2"));
 

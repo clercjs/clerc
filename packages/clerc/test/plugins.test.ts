@@ -80,9 +80,8 @@ describe("built-in strict flags & optional v2 plugins", () => {
     let currentTime = 1_000_000;
     const terminal = createMemoryTerminal({ isTTY: true, color: false });
 
-    const cli = createTestCli().use(
+    const cli = createTestCli({ name: "acme-cli", version: "2.0.0" }).use(
       updateNotifierPlugin({
-        pkg: { name: "acme-cli", version: "2.0.0" },
         cacheDir,
         fetch: mockFetch,
         now: () => currentTime,

@@ -8,7 +8,7 @@ describe("built-in v2 editorial help", () => {
     const terminal = createMemoryTerminal({ columns: 96 });
 
     const cli = clerc({
-      scriptName: "acme",
+      name: "acme",
       version: "2.0.0",
       description: "Build and deploy modern TypeScript apps",
       examples: [
@@ -128,7 +128,7 @@ describe("built-in v2 editorial help", () => {
 
   it("decouples command and option columns when an option is very wide", async () => {
     const terminal = createMemoryTerminal({ columns: 100 });
-    const cli = clerc({ scriptName: "acme", version: "1.0.0" }).flags({
+    const cli = clerc({ name: "acme", version: "1.0.0" }).flags({
       experimentalModuleResolution: {
         type: String,
         description: "Resolution strategy",
@@ -148,10 +148,11 @@ describe("built-in v2 editorial help", () => {
   it("falls back to ASCII top rule and stacked examples on narrow terminals", async () => {
     const terminal = createMemoryTerminal({ columns: 68, unicode: false });
     const cli = clerc({
-      scriptName: "acme",
+      name: "acme",
       version: "2.0.0",
       examples: [
         ["$ acme deploy prod --port 8080 -n", "Preview a production deploy"],
+        "$ acme deploy staging",
       ],
       notes: ["Keep it tidy."],
     });
@@ -168,6 +169,7 @@ describe("built-in v2 editorial help", () => {
     expect(out).toContain(
       "  # Preview a production deploy\n  $ acme deploy prod --port 8080 -n",
     );
+    expect(out).toContain("  $ acme deploy staging");
     expect(out).toContain("  Keep it tidy.");
   });
 
@@ -196,7 +198,7 @@ describe("built-in v2 editorial help", () => {
     expect(terminal.stdoutText()).toContain("USAGE   test exec [options] [--]");
   });
 
-  it("renders dynamic scriptName in help command examples", async () => {
+  it("renders dynamic CLI name in help command examples", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();
 
@@ -208,7 +210,7 @@ describe("built-in v2 editorial help", () => {
   it("keeps metadata tags intact across line wraps, renders arg types cleanly, and supports section overrides", async () => {
     const terminal = createMemoryTerminal({ columns: 80 });
     const cli = clerc({
-      scriptName: "acme",
+      name: "acme",
       version: "2.0.0",
       notes: [
         "This is a deliberately long note line that should wrap cleanly inside narrow terminal widths without overflowing.",
@@ -258,12 +260,12 @@ describe("built-in v2 editorial help", () => {
 
     const customTerm = createMemoryTerminal({ columns: 80 });
     const customCli = clerc({
-      scriptName: "acme",
+      name: "acme",
       version: "2.0.0",
       notes: ["Hidden note"],
       help: {
         sections: {
-          header: (doc) => `=== ${doc.header.scriptName} ===`,
+          header: (doc) => `=== ${doc.header.name} ===`,
           notes: () => undefined,
         },
       },

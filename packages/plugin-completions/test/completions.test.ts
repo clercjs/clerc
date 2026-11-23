@@ -12,7 +12,9 @@ describe("plugin-completions v2", () => {
     const terminal = createMemoryTerminal();
 
     try {
-      const cli = createTestCli().use(completionsPlugin());
+      const cli = createTestCli({ defaultCommand: "build" }).use(
+        completionsPlugin(),
+      );
       cli.command("build", {
         aliases: ["b"],
         description: "Build project",

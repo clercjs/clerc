@@ -28,7 +28,7 @@ describe("Theme and Diagnostic Formatter", () => {
 
     const output = formatDiagnostic(err, {
       theme: createTheme(false),
-      scriptName: "test",
+      name: "test",
     });
 
     expect(output).toBe(

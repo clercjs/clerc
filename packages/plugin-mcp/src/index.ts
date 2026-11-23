@@ -42,6 +42,12 @@ export {
   serveMcpStdio,
 };
 
+declare module "clerc" {
+  interface CommandCustomMeta {
+    readonly mcp?: McpCommandMeta;
+  }
+}
+
 export interface McpPluginOptions {
   /**
    * Subcommand name that starts the MCP stdio server.
@@ -51,7 +57,7 @@ export interface McpPluginOptions {
   readonly command?: string;
   /**
    * Custom MCP server name reported in `initialize`. Defaults to
-   * `ctx.meta.scriptName`.
+   * `ctx.meta.name`.
    */
   readonly serverName?: string;
   /**

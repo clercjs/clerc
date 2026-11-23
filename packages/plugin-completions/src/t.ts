@@ -1,5 +1,5 @@
 import type { Command as TabCommand, RootCommand } from "@bomb.sh/tab";
-import type { CommandNode, FlagDescriptor, ReadonlyCliModel } from "clerc";
+import type { CliModel, CommandNode, FlagDescriptor } from "clerc";
 
 export interface CompletionMeta {
   readonly show?: boolean;
@@ -45,9 +45,28 @@ function registerFlagList(
   }
 }
 
-export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
-  registerFlagList(model.globalFlags, t);
+export function buildTabModel(t: RootCommand, model: CliModel): void {
+  const defaultNode =
+    !model.tree.root.command && model.defaultCommand
+      ? model.tree.findNode(model.defaultCommand)
+      : undefined;
+  const rootTarget = defaultNode ?? model.tree.root;
+  const rootLocalNames = new Set(rootTarget.localFlags.map((f) => f.name));
+
+  registerFlagList(model.globalFlags, t, rootLocalNames);
   registerFlagList(model.tree.root.builtinFlags, t);
+
+  if (defaultNode && !defaultNode.command?.hidden) {
+    const defaultComp = getCompletionMeta(defaultNode.command?.meta);
+    if (defaultComp?.show !== false) {
+      defaultComp?.handler?.(t);
+      for (const arg of defaultNode.args) {
+        const argComp = getCompletionMeta(arg.meta);
+        t.argument(arg.name, argComp?.handler, arg.isVariadic);
+      }
+      registerFlagList(defaultNode.localFlags, t);
+    }
+  }
 
   const commands: readonly CommandNode[] = model.tree.walkCommands();
   for (const node of commands) {

@@ -5,8 +5,8 @@ import type {
   AnyCommandDefinition,
   ArgDescriptor,
   CommandNode,
+  CommandTree,
   FlagDescriptor,
-  ReadonlyCommandTree,
 } from "./types";
 import { toArray } from "./utils";
 
@@ -73,7 +73,7 @@ const createNode = (
 const isVisibleNode = (node: CommandNode): boolean =>
   !node.command?.hidden && (Boolean(node.command) || node.children.size > 0);
 
-export class CommandTree implements ReadonlyCommandTree {
+export class CommandTreeBuilder implements CommandTree {
   readonly #root: MutableCommandNode = createNode("", []);
 
   public get root(): CommandNode {

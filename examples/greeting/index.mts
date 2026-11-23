@@ -1,7 +1,7 @@
 import { clerc } from "clerc";
 
 const cli = clerc({
-  scriptName: "foo-cli",
+  name: "foo-cli",
   version: "0.0.0",
   description: "A foo CLI",
 });

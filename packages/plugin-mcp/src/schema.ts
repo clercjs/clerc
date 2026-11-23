@@ -1,10 +1,10 @@
 import type {
   AnyCommandDefinition,
+  CliModel,
   CommandNode,
   FlagKind,
-  ReadonlyCliModel,
 } from "clerc";
-import { DOUBLE_DASH, formatFlagName, kebabCase } from "clerc";
+import { DOUBLE_DASH } from "clerc";
 
 export interface McpCommandMeta {
   readonly enabled?: boolean;
@@ -39,6 +39,7 @@ interface ArgSlot {
 }
 
 interface FlagSlot {
+  readonly target: string;
   readonly kind: FlagKind;
   readonly negatable: boolean;
 }
@@ -94,7 +95,7 @@ function buildAnnotations(
 }
 
 export function listExposedCommands(
-  model: ReadonlyCliModel,
+  model: CliModel,
   options: McpFilterOptions = {},
 ): readonly {
   readonly node: CommandNode;
@@ -139,7 +140,7 @@ export function listExposedCommands(
 function buildToolEntry(
   node: CommandNode,
   cmd: AnyCommandDefinition,
-  model: ReadonlyCliModel,
+  model: CliModel,
 ): McpToolEntry {
   const mcpMeta = getMcpMeta(cmd.meta);
   const properties: Record<string, Record<string, unknown>> = {};
@@ -194,6 +195,7 @@ function buildToolEntry(
       required.push(flag.name);
     }
     flags.set(flag.name, {
+      target: flag.target,
       kind: flag.kind,
       negatable: flag.negatable,
     });
@@ -201,13 +203,11 @@ function buildToolEntry(
 
   const baseName =
     mcpMeta?.name ??
-    (node.fullPath.length > 0
-      ? node.fullPath.join("_")
-      : model.meta.scriptName);
+    (node.fullPath.length > 0 ? node.fullPath.join("_") : model.meta.name);
   const description =
     mcpMeta?.description ??
     cmd.description ??
-    `Run '${[model.meta.scriptName, ...node.fullPath].filter(Boolean).join(" ")}'`;
+    `Run '${[model.meta.name, ...node.fullPath].filter(Boolean).join(" ")}'`;
   const annotations = buildAnnotations(mcpMeta);
 
   return {
@@ -230,7 +230,7 @@ function buildToolEntry(
 }
 
 export function buildToolEntries(
-  model: ReadonlyCliModel,
+  model: CliModel,
   options?: McpFilterOptions,
 ): readonly McpToolEntry[] {
   const entries = listExposedCommands(model, options)
@@ -280,13 +280,12 @@ export function serializeToolArgsToArgv(
       continue;
     }
 
-    const flagName = formatFlagName(name);
     switch (info.kind) {
       case "boolean": {
         if (value === true) {
-          argv.push(flagName);
+          argv.push(info.target);
         } else if (value === false && info.negatable) {
-          argv.push(`--no-${kebabCase(name)}`);
+          argv.push(`--no-${info.target.slice(2)}`);
         }
 
         break;
@@ -294,7 +293,7 @@ export function serializeToolArgsToArgv(
       case "counter": {
         const count = Math.max(0, Math.floor(Number(value) || 0));
         for (let i = 0; i < count; i++) {
-          argv.push(flagName);
+          argv.push(info.target);
         }
 
         break;
@@ -302,14 +301,14 @@ export function serializeToolArgsToArgv(
       case "array": {
         if (Array.isArray(value)) {
           for (const item of value) {
-            argv.push(flagName, String(item));
+            argv.push(info.target, String(item));
           }
         }
 
         break;
       }
       case "single": {
-        argv.push(flagName, String(value));
+        argv.push(info.target, String(value));
 
         break;
       }

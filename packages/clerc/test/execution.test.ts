@@ -112,6 +112,8 @@ describe("Clerc execution pipeline", () => {
         token: { type: String, required: true, env: "DEPLOY_TOKEN" },
         port: { type: Number },
         json: { type: Boolean, conflicts: "yaml" },
+        dryRun: Boolean,
+        forcePush: { type: Boolean, conflicts: "dry-run" },
         yaml: { type: Boolean },
         tlsKey: { type: String, implies: "tlsCert" },
         tlsCert: { type: String },
@@ -138,11 +140,26 @@ describe("Clerc execution pipeline", () => {
     ).rejects.toThrow(FlagConflictError);
 
     await expect(
+      cli.run(["deploy", "--token", "ok", "--dry-run", "--force-push"], {
+        terminal,
+        throwOnError: true,
+      }),
+    ).rejects.toThrow(FlagConflictError);
+
+    await expect(
       cli.run(["deploy", "--token", "ok", "--tls-key", "k.pem"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(FlagImpliesError);
+
+    const invalidRelationCli = createTestBaseCli();
+    invalidRelationCli.command("deploy", {
+      flags: { json: { type: Boolean, conflicts: "non-existent" } },
+      run() {},
+    });
+
+    expect(() => invalidRelationCli.buildModel()).toThrow(InvalidSchemaError);
   });
 
   it("supports async handlers including dynamic lazy loading", async () => {
