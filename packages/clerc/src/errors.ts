@@ -1,7 +1,7 @@
 import { LOG_GUTTER, formatLogLabel } from "@clerc/logger";
+import type { Theme } from "@clerc/theme";
 
 import { findClosest } from "./suggest";
-import type { Theme } from "./theme";
 import type { ReadonlyCommandTree } from "./types";
 import { formatFlagName, joinWithAnd } from "./utils";
 

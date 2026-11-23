@@ -354,11 +354,18 @@ importers:
       '@clerc/logger':
         specifier: workspace:*
         version: link:../logger
+      '@clerc/theme':
+        specifier: workspace:*
+        version: link:../theme
       fast-string-width:
         specifier: catalog:cli
         version: 3.0.2
 
-  packages/logger: {}
+  packages/logger:
+    dependencies:
+      '@clerc/theme':
+        specifier: workspace:*
+        version: link:../theme
 
   packages/plugin-completions:
     devDependencies:
@@ -380,6 +387,8 @@ importers:
       clerc:
         specifier: workspace:*
         version: link:../clerc
+
+  packages/theme: {}
 
 packages:
 

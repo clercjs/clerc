@@ -1,4 +1,5 @@
-import { styleText } from "node:util";
+import type { Theme } from "@clerc/theme";
+import { createTheme, detectColor, detectUnicode } from "@clerc/theme";
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
 export type LogStyle = "compact" | "rail";
@@ -18,15 +19,10 @@ export interface LoggerTerminal {
   readonly unicode?: boolean;
 }
 
-export interface LoggerTheme {
-  readonly brand: (text: string) => string;
-  readonly info: (text: string) => string;
-  readonly success: (text: string) => string;
-  readonly warn: (text: string) => string;
-  readonly error: (text: string) => string;
-  readonly muted: (text: string) => string;
-  readonly bold: (text: string) => string;
-}
+export type LoggerTheme = Pick<
+  Theme,
+  "brand" | "info" | "success" | "warn" | "error" | "muted" | "bold"
+>;
 
 export interface LoggerOptions {
   level?: LogLevel;
@@ -106,63 +102,6 @@ interface SharedLoggerState {
 }
 
 const identity = (text: string): string => text;
-
-const PLAIN_THEME: LoggerTheme = Object.freeze({
-  brand: identity,
-  info: identity,
-  success: identity,
-  warn: identity,
-  error: identity,
-  muted: identity,
-  bold: identity,
-});
-
-const COLOR_THEME: LoggerTheme = Object.freeze({
-  brand: (text: string) =>
-    styleText(["bold", "magenta"], text, { validateStream: false }),
-  info: (text: string) => styleText("blue", text, { validateStream: false }),
-  success: (text: string) =>
-    styleText("green", text, { validateStream: false }),
-  warn: (text: string) => styleText("magenta", text, { validateStream: false }),
-  error: (text: string) =>
-    styleText(["bold", "red"], text, { validateStream: false }),
-  muted: (text: string) => styleText("gray", text, { validateStream: false }),
-  bold: (text: string) => styleText("bold", text, { validateStream: false }),
-});
-
-export function detectColor(
-  env: Readonly<Record<string, string | undefined>> = process.env,
-  isTTY = Boolean(process.stdout.isTTY),
-): boolean {
-  if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") {
-    return false;
-  }
-  if (env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== "") {
-    return env.FORCE_COLOR !== "0";
-  }
-  if (env.TERM === "dumb") {
-    return false;
-  }
-
-  return isTTY;
-}
-
-export function detectUnicode(
-  env: Readonly<Record<string, string | undefined>> = process.env,
-): boolean {
-  if (process.platform !== "win32") {
-    return env.TERM !== "linux";
-  }
-
-  return (
-    Boolean(env.WT_SESSION) ||
-    Boolean(env.TERMINUS_SUBLIME) ||
-    env.ConEmuTask === "{cmd::Cmder}" ||
-    env.TERM_PROGRAM === "vscode" ||
-    env.TERM === "xterm-256color" ||
-    env.TERM === "alacritty"
-  );
-}
 
 const DEFAULT_TERMINAL: LoggerTerminal = {
   stdout: (text) => process.stdout.write(`${text}\n`),
@@ -304,7 +243,7 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
   const terminal = options.terminal ?? DEFAULT_TERMINAL;
   const color = options.color ?? terminal.color ?? detectColor();
   const unicode = options.unicode ?? terminal.unicode ?? detectUnicode();
-  const theme = options.theme ?? (color ? COLOR_THEME : PLAIN_THEME);
+  const theme = options.theme ?? createTheme(color);
   const state: SharedLoggerState = {
     level: options.level ?? "info",
     style: options.style ?? "compact",

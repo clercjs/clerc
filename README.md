@@ -75,7 +75,8 @@ await cli.runMain();
 # 📦 Packages
 
 - `clerc` — Core CLI framework: POSIX argv parser, `clerc`, `plugin`, `CommandTree`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
-- `@clerc/logger` — Zero-dependency CLI logger with aligned word labels and JSON mode.
+- `@clerc/theme` — Zero-dependency semantic CLI theme and terminal capability detection.
+- `@clerc/logger` — Minimal CLI logger with aligned word labels and JSON mode.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 - `@clerc/plugin-mcp` — Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.
 

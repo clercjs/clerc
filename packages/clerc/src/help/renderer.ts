@@ -1,4 +1,4 @@
-import type { Theme } from "../theme";
+import type { Theme } from "@clerc/theme";
 import type { CommandNode, MetaAsyncGetter, ReadonlyCliModel } from "../types";
 import { resolveAsyncValue } from "../utils";
 import type {

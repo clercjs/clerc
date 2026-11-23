@@ -59,12 +59,12 @@ export const monoThemeStyles: ThemeStyleMap = {
   dim: "dim",
 };
 
-const TOKENS = Object.keys(defaultThemeStyles) as readonly ThemeToken[];
+const THEME_TOKENS = Object.keys(defaultThemeStyles) as readonly ThemeToken[];
 const identity = (text: string): string => text;
 
 function buildTheme(enabled: boolean, styles?: ThemeStyleMap): Theme {
   const theme: Record<string, unknown> = { enabled };
-  for (const token of TOKENS) {
+  for (const token of THEME_TOKENS) {
     const format = styles?.[token];
     const hasFormat =
       format !== undefined && (!Array.isArray(format) || format.length > 0);
@@ -92,4 +92,38 @@ export function createTheme(
   }
 
   return buildTheme(true, { ...defaultThemeStyles, ...overrides });
+}
+
+export function detectColor(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  isTTY = Boolean(process.stdout.isTTY),
+): boolean {
+  if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") {
+    return false;
+  }
+  if (env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== "") {
+    return env.FORCE_COLOR !== "0";
+  }
+  if (env.TERM === "dumb") {
+    return false;
+  }
+
+  return isTTY;
+}
+
+export function detectUnicode(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  if (process.platform !== "win32") {
+    return env.TERM !== "linux";
+  }
+
+  return (
+    Boolean(env.WT_SESSION) ||
+    Boolean(env.TERMINUS_SUBLIME) ||
+    env.ConEmuTask === "{cmd::Cmder}" ||
+    env.TERM_PROGRAM === "vscode" ||
+    env.TERM === "xterm-256color" ||
+    env.TERM === "alacritty"
+  );
 }

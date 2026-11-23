@@ -1,5 +1,7 @@
 import type { LoggerOptions } from "@clerc/logger";
 import { createLogger } from "@clerc/logger";
+import type { ThemeStyleMap } from "@clerc/theme";
+import { createTheme } from "@clerc/theme";
 
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
@@ -30,8 +32,6 @@ import { renderHelp } from "./help/renderer";
 import type { ArgvFlagSpec, ArgvParser } from "./parser";
 import { DOUBLE_DASH, createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
-import type { ThemeStyleMap } from "./theme";
-import { createTheme } from "./theme";
 import type {
   AnyCommandDefinition,
   ClercFlagsDefinition,

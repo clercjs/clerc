@@ -25,7 +25,6 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
-    "./plugins": "./dist/plugins/index.mjs",
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.mts",
@@ -40,6 +39,7 @@
   },
   "dependencies": {
     "@clerc/logger": "workspace:*",
+    "@clerc/theme": "workspace:*",
     "fast-string-width": "catalog:cli"
   }
 }

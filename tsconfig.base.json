@@ -15,8 +15,7 @@
     "skipLibCheck": true,
     "paths": {
       "@clerc/*": ["./packages/*/src/index.ts"],
-      "clerc": ["./packages/clerc/src/index.ts"],
-      "clerc/plugins": ["./packages/clerc/src/plugins/index.ts"]
+      "clerc": ["./packages/clerc/src/index.ts"]
     }
   }
 }

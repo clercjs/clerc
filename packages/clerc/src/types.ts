@@ -1,11 +1,11 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
+import type { Theme, ThemeStyleMap } from "@clerc/theme";
 
 import type { ClercError } from "./errors";
 import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType } from "./parser";
 import type { FlagKind, StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
-import type { Theme, ThemeStyleMap } from "./theme";
 import type {
   CamelCase,
   IsAny,

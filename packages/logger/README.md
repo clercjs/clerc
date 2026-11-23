@@ -1,6 +1,6 @@
 # @clerc/logger
 
-Minimal, zero-dependency CLI logger with aligned word labels, optional rail style, callouts, and structured JSON output.
+Minimal CLI logger with aligned word labels, optional rail style, callouts, and structured JSON output.
 
 ## Usage
 

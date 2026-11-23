@@ -3,7 +3,7 @@
   "version": "1.3.1",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
-  "description": "Minimal, zero-dependency CLI logger with aligned word labels.",
+  "description": "Minimal CLI logger with aligned word labels.",
   "keywords": [
     "clerc",
     "cli",
@@ -35,5 +35,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@clerc/theme": "workspace:*"
   }
 }

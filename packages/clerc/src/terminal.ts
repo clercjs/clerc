@@ -1,4 +1,4 @@
-import { detectColor, detectUnicode } from "@clerc/logger";
+import { detectColor, detectUnicode } from "@clerc/theme";
 
 export interface Terminal {
   readonly stdout: (text: string) => void;

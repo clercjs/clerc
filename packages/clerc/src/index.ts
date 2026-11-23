@@ -11,6 +11,19 @@ export type {
   LoggerTheme,
 } from "@clerc/logger";
 export { createLogger } from "@clerc/logger";
+export type {
+  StyleFormat,
+  Theme,
+  ThemeStyleMap,
+  ThemeToken,
+} from "@clerc/theme";
+export {
+  createTheme,
+  defaultThemeStyles,
+  detectColor,
+  detectUnicode,
+  monoThemeStyles,
+} from "@clerc/theme";
 export { Clerc, Plugin, clerc, plugin } from "./cli";
 export type { CommandMatch } from "./command-tree";
 export { CommandTree } from "./command-tree";
@@ -65,7 +78,15 @@ export {
 } from "./help/renderer";
 export type { RawInputType } from "./parser";
 export { DOUBLE_DASH } from "./parser";
-export * from "./plugins";
+export type {
+  UpdateInfo,
+  UpdateNotifierPluginOptions,
+} from "./plugins/update-notifier";
+export {
+  isNewerVersion,
+  updateNotifierPlugin,
+} from "./plugins/update-notifier";
+export { verbosityPlugin } from "./plugins/verbosity";
 export type {
   ClercSchema,
   FlagKind,
@@ -83,8 +104,6 @@ export type {
   Terminal,
 } from "./terminal";
 export { createMemoryTerminal, createTerminal } from "./terminal";
-export type { StyleFormat, Theme, ThemeStyleMap, ThemeToken } from "./theme";
-export { createTheme, defaultThemeStyles, monoThemeStyles } from "./theme";
 export type {
   AnyCommandDefinition,
   ArgDefinitionValue,
