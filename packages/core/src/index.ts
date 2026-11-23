@@ -42,8 +42,30 @@ export {
   formatJsonError,
 } from "./errors";
 export { normalizeFlagValue } from "./flags";
-export type { RenderHelpOptions } from "./help/renderer";
-export { renderHelp } from "./help/renderer";
+export type {
+  HelpArgumentItem,
+  HelpCommandGroup,
+  HelpCommandItem,
+  HelpDocument,
+  HelpExampleItem,
+  HelpHeader,
+  HelpOptionGroup,
+  HelpOptionItem,
+  HelpUsage,
+  HelpUsageArg,
+} from "./help/document";
+export { buildHelpDocument } from "./help/document";
+export type {
+  HelpRenderContext,
+  HelpSectionRenderers,
+  RenderHelpDocumentOptions,
+  RenderHelpOptions,
+} from "./help/renderer";
+export {
+  defaultHelpSections,
+  renderHelp,
+  renderHelpDocument,
+} from "./help/renderer";
 export type {
   InvalidFlagValue,
   LexFlagSpec,

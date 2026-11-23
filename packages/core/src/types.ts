@@ -1,6 +1,7 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
 
 import type { ClercError } from "./errors";
+import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType } from "./parser";
 import type { StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
@@ -284,6 +285,7 @@ export interface HelpOptions {
   readonly command?: boolean;
   readonly header?: MetaAsyncGetter<string | undefined | void>;
   readonly footer?: MetaAsyncGetter<string | undefined | void>;
+  readonly sections?: Partial<HelpSectionRenderers>;
   readonly render?: (
     model: ReadonlyCliModel,
     commandPath?: readonly string[],

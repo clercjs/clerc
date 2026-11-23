@@ -205,4 +205,76 @@ describe("built-in v2 editorial help", () => {
 
     expect(terminal.stdoutText()).toContain("$ test help");
   });
+
+  it("keeps metadata tags intact across line wraps, renders arg types cleanly, and supports section overrides", async () => {
+    const terminal = createMemoryTerminal({ columns: 80 });
+    const cli = Cli({
+      scriptName: "acme",
+      version: "2.0.0",
+      notes: [
+        "This is a deliberately long note line that should wrap cleanly inside narrow terminal widths without overflowing.",
+      ],
+    }).flags({
+      config: {
+        type: String,
+        short: "c",
+        default: "acme.config.ts",
+        env: "ACME_CONFIG",
+        description: "Path to config file",
+      },
+    });
+    cli.command("deploy <env> [region]", {
+      description: "Deploy application",
+      args: {
+        env: {
+          type: Types.Enum("staging", "prod"),
+          description: "Target environment",
+        },
+        region: { description: "Cloud region", default: "us-east-1" },
+      },
+      run() {},
+    });
+    cli.command("legacy", {
+      deprecated: "use deploy instead",
+      description: "Old helper",
+      run() {},
+    });
+
+    await cli.run(["--help"], { terminal });
+    const rootOut = terminal.stdoutText();
+
+    expect(rootOut).toContain("[default: acme.config.ts]");
+    expect(rootOut).toContain("[env: ACME_CONFIG]");
+    expect(rootOut).not.toContain("[env:\n");
+    expect(rootOut).toContain("[deprecated: use deploy instead]");
+
+    terminal.clear();
+    await cli.run(["deploy", "--help"], { terminal });
+    const deployOut = terminal.stdoutText();
+
+    expect(deployOut).not.toContain("<env> <staging|prod>");
+    expect(deployOut).toContain("<env>");
+    expect(deployOut).toContain("Target environment  [staging|prod]");
+    expect(deployOut).toContain("Cloud region  [default: us-east-1]");
+
+    const customTerm = createMemoryTerminal({ columns: 80 });
+    const customCli = Cli({
+      scriptName: "acme",
+      version: "2.0.0",
+      notes: ["Hidden note"],
+      help: {
+        sections: {
+          header: (doc) => `=== ${doc.header.scriptName} ===`,
+          notes: () => undefined,
+        },
+      },
+    });
+    customCli.command("ping", { description: "Ping server", run() {} });
+
+    await customCli.run(["--help"], { terminal: customTerm });
+
+    expect(customTerm.stdoutText()).toContain("=== acme ===");
+    expect(customTerm.stdoutText()).not.toContain("NOTES");
+    expect(customTerm.stdoutText()).not.toContain("Hidden note");
+  });
 });

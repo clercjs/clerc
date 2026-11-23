@@ -1,6 +1,14 @@
 import stringWidth from "fast-string-width";
 
-export type TwoColumnRow = readonly [left: string, right: string];
+export interface StructuredCell {
+  readonly text?: string;
+  readonly tags?: readonly string[];
+}
+
+export type TwoColumnRow = readonly [
+  left: string,
+  right: string | StructuredCell,
+];
 
 export interface TwoColumnOptions {
   readonly indent?: number;
@@ -10,7 +18,7 @@ export interface TwoColumnOptions {
   readonly colWidth?: number;
 }
 
-const MAX_READABLE_WIDTH = 120;
+export const MAX_READABLE_WIDTH = 120;
 
 export function wrapLine(text: string, maxWidth: number): string[] {
   if (maxWidth <= 0 || stringWidth(text) <= maxWidth) {
@@ -46,6 +54,61 @@ export function wrapLine(text: string, maxWidth: number): string[] {
   }
 
   return lines;
+}
+
+function wrapStructuredCell(cell: StructuredCell, maxWidth: number): string[] {
+  const lines = cell.text
+    ? cell.text
+        .split("\n")
+        .flatMap((paragraph) => wrapLine(paragraph, maxWidth))
+    : [];
+  const tags = cell.tags?.filter((t) => t.length > 0) ?? [];
+
+  if (tags.length === 0) {
+    return lines;
+  }
+
+  let hasTextOnLastLine = lines.length > 0;
+  for (const [i, tag] of tags.entries()) {
+    const tagWidth = stringWidth(tag);
+
+    if (lines.length === 0) {
+      lines.push(tag);
+      hasTextOnLastLine = false;
+
+      continue;
+    }
+
+    const sep = i === 0 && hasTextOnLastLine ? "  " : " ";
+    const lastIdx = lines.length - 1;
+    const lastWidth = stringWidth(lines[lastIdx]);
+
+    if (lastWidth + sep.length + tagWidth <= maxWidth) {
+      lines[lastIdx] = `${lines[lastIdx]}${sep}${tag}`;
+    } else {
+      lines.push(tag);
+    }
+    hasTextOnLastLine = false;
+  }
+
+  return lines;
+}
+
+function wrapRightCell(
+  right: string | StructuredCell,
+  maxWidth: number,
+): string[] {
+  if (typeof right === "string") {
+    if (!right) {
+      return [];
+    }
+
+    return right
+      .split("\n")
+      .flatMap((paragraph) => wrapLine(paragraph, maxWidth));
+  }
+
+  return wrapStructuredCell(right, maxWidth);
 }
 
 export function measureColumnWidth(
@@ -89,16 +152,13 @@ export function formatTwoColumn(
 
   for (const [left, right] of rows) {
     const leftW = stringWidth(left);
+    const wrappedRight = wrapRightCell(right, rightBudget);
 
-    if (!right) {
+    if (wrappedRight.length === 0) {
       output.push(`${indent}${left}`);
 
       continue;
     }
-
-    const wrappedRight = right
-      .split("\n")
-      .flatMap((paragraph) => wrapLine(paragraph, rightBudget));
 
     const overflows = leftW > colWidth;
     if (overflows) {

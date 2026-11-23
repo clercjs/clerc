@@ -512,6 +512,7 @@ export class CliApp<
         unicode: terminal.unicode,
         header: helpOpts?.header,
         footer: helpOpts?.footer,
+        sections: helpOpts?.sections,
       });
     };
 
