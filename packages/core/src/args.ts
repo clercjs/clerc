@@ -1,9 +1,9 @@
-import { DOUBLE_DASH, camelCase } from "@clerc/parser";
-
 import {
   InvalidParametersError,
   MissingRequiredParameterError,
+  UnexpectedArgumentError,
 } from "./errors";
+import { DOUBLE_DASH } from "./parser";
 import type { TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import type {
@@ -12,6 +12,7 @@ import type {
   ArgOptions,
   CoreSingleType,
 } from "./types";
+import { camelCase } from "./utils";
 
 const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
 
@@ -43,6 +44,7 @@ interface CompiledArgItem extends ArgInfo {
 export interface CompiledArgs {
   readonly main: readonly CompiledArgItem[];
   readonly doubleDash: readonly CompiledArgItem[];
+  readonly hasDoubleDashSpec: boolean;
 }
 
 export function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
@@ -191,6 +193,7 @@ export function compileArgs(
   return {
     main: compileArgSlice(main, argDefs),
     doubleDash: compileArgSlice(doubleDash, argDefs),
+    hasDoubleDashSpec: argTokens.includes(DOUBLE_DASH),
   };
 }
 
@@ -199,6 +202,11 @@ async function applyArgSlice(
   values: readonly string[],
   result: Record<string, unknown>,
 ): Promise<void> {
+  const hasVariadic = items.some((item) => item.isVariadic);
+  if (!hasVariadic && values.length > items.length) {
+    throw new UnexpectedArgumentError(values.slice(items.length));
+  }
+
   for (const [i, item] of items.entries()) {
     const raw = item.isVariadic ? values.slice(i) : values[i];
 
@@ -235,6 +243,8 @@ export async function executeCompiledArgs(
   if (compiled.doubleDash.length > 0) {
     await applyArgSlice(compiled.main, values, result);
     await applyArgSlice(compiled.doubleDash, doubleDashValues, result);
+  } else if (compiled.hasDoubleDashSpec) {
+    await applyArgSlice(compiled.main, values, result);
   } else {
     const combined =
       doubleDashValues.length > 0 ? [...values, ...doubleDashValues] : values;

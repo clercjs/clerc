@@ -11,14 +11,6 @@ export type {
   LoggerTheme,
 } from "@clerc/logger";
 export { createLogger } from "@clerc/logger";
-export type * as Parser from "@clerc/parser";
-export {
-  DOUBLE_DASH,
-  InvalidSchemaError,
-  KNOWN_FLAG,
-  PARAMETER,
-  UNKNOWN_FLAG,
-} from "@clerc/parser";
 export type { ArgInfo, ParsedCommandSpec, ResolvedArg } from "./args";
 export { resolveCommandArgs } from "./args";
 export { Cli, CliApp, Plugin, plugin } from "./cli";
@@ -36,10 +28,13 @@ export {
   FlagImpliesError,
   InvalidCommandError,
   InvalidParametersError,
+  InvalidSchemaError,
+  MissingFlagValueError,
   MissingRequiredFlagError,
   MissingRequiredMetadataError,
   MissingRequiredParameterError,
   NoCommandError,
+  UnexpectedArgumentError,
   UnknownCommandError,
   UnknownFlagError,
   ValidationError,
@@ -49,7 +44,17 @@ export {
 export { normalizeFlagValue } from "./flags";
 export type { RenderHelpOptions } from "./help/renderer";
 export { renderHelp } from "./help/renderer";
-export { createStopAtFirstParameter } from "./helpers";
+export type {
+  InvalidFlagValue,
+  LexFlagSpec,
+  LexParseResult,
+  LexParser,
+  LexParserOptions,
+  RawInputType,
+  ScanCallback,
+  ScanResult,
+} from "./parser";
+export { DOUBLE_DASH } from "./parser";
 export type {
   ClercSchema,
   FlagKind,

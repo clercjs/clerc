@@ -1,13 +1,7 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
-import type {
-  FlagDefaultValue,
-  IgnoreFunction,
-  ObjectInputType,
-  RawInputType,
-  TypeFunction,
-} from "@clerc/parser";
 
 import type { ClercError } from "./errors";
+import type { RawInputType } from "./parser";
 import type { StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
 import type { Theme, ThemeStyleMap } from "./theme";
@@ -18,6 +12,18 @@ import type {
   MaybeAsyncGetter,
   Prettify,
 } from "./utils";
+
+export interface FlagDefaultValueFunction<T> {
+  (): T;
+  display?: string;
+}
+
+export type FlagDefaultValue<T = unknown> = T | FlagDefaultValueFunction<T>;
+
+export interface TypeFunction<T = unknown> {
+  (value: string): T;
+  display?: string;
+}
 
 export type CoreSingleType<T = any> =
   TypeFunction<T> | StandardSchemaV1<any, T>;
@@ -96,25 +102,23 @@ type InferSingleFlag<T extends ClercFlagDefinitionValue> =
           | readonly [BooleanConstructor]
           | { readonly type: readonly [BooleanConstructor] }
       ? number | InferFlagDefault<T, never>
-      : T extends ObjectConstructor | { readonly type: ObjectConstructor }
-        ? ObjectInputType | InferFlagDefault<T, never>
-        : T extends
-              readonly [infer Item] | { readonly type: readonly [infer Item] }
-          ? InferSingleType<Item>[] | InferFlagDefault<T, never>
-          : T extends { readonly type: infer Item }
-            ? | InferSingleType<Item>
-              | InferFlagDefault<
-                  T,
-                  [InferSingleType<Item>] extends [boolean]
+      : T extends
+            readonly [infer Item] | { readonly type: readonly [infer Item] }
+        ? InferSingleType<Item>[] | InferFlagDefault<T, never>
+        : T extends { readonly type: infer Item }
+          ? | InferSingleType<Item>
+            | InferFlagDefault<
+                T,
+                [InferSingleType<Item>] extends [boolean]
+                  ? never
+                  : T extends { readonly required: true }
                     ? never
-                    : T extends { readonly required: true }
-                      ? never
-                      : undefined
-                >
-            : T extends CoreSingleType
-              ? | InferSingleType<T>
-                | ([InferSingleType<T>] extends [boolean] ? never : undefined)
-              : never;
+                    : undefined
+              >
+          : T extends CoreSingleType
+            ? | InferSingleType<T>
+              | ([InferSingleType<T>] extends [boolean] ? never : undefined)
+            : never;
 
 export type InferClercFlags<T extends ClercFlagsDefinition> = Prettify<{
   [K in keyof T]: InferSingleFlag<T[K]>;
@@ -273,7 +277,6 @@ export interface ErrorContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
   readonly args: Record<string, any>;
   readonly flags: InferClercFlags<TGlobalFlags> & Record<string, any>;
   readonly unknown: Record<string, RawInputType>;
-  readonly ignored: readonly string[];
   readonly doubleDash: readonly string[];
 }
 
@@ -316,7 +319,7 @@ export interface CommandOptions<
   readonly description?: string;
   readonly args?: Args;
   readonly flags?: Flags;
-  readonly ignore?: IgnoreFunction;
+  readonly stopAtFirstPositional?: boolean;
   readonly group?: string;
   readonly hidden?: boolean;
   readonly deprecated?: boolean | string;

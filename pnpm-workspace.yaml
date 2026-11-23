@@ -16,16 +16,7 @@ packageExtensions:
 catalogs:
   cli:
     "@bomb.sh/tab": "^0.0.23"
-    "@types/minimist": "^1.2.5"
-    "@types/nopt": "^3.0.32"
-    "@types/yargs-parser": "^21.0.3"
-    args-tokens: "^1.4.0"
     fast-string-width: "^3.0.2"
-    minimist: "^1.2.8"
-    mri: "^1.2.0"
-    nopt: "^10.0.1"
-    type-flag: "^4.5.2"
-    yargs-parser: "^22.0.0"
   dev:
     "@antfu/ni": "^30.6.0"
     "@types/node": "^26.6.6"

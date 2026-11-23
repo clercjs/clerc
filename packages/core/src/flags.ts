@@ -1,16 +1,14 @@
-import type {
-  FlagDefinitionValue as ParserFlagDefinitionValue,
-  FlagsDefinition as ParserFlagsDefinition,
-  TypeValue as ParserTypeValue,
-} from "@clerc/parser";
-import { inferDefault } from "@clerc/parser";
-
 import {
   FlagConflictError,
   FlagImpliesError,
+  InvalidSchemaError,
+  MissingFlagValueError,
   MissingRequiredFlagError,
   UnknownFlagError,
+  ValidationError,
 } from "./errors";
+import type { InvalidFlagValue, LexFlagSpec } from "./parser";
+import { parseBooleanLiteral } from "./parser";
 import type { FlagKind, TypeConverter } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
@@ -27,13 +25,12 @@ export interface CompiledFlagEntry {
   readonly norm: ClercFlagOptions;
   readonly target: string;
   readonly kind: FlagKind;
-  readonly parserType: ParserTypeValue;
   readonly convert?: TypeConverter;
 }
 
 export interface CompiledFlags {
   readonly byName: ReadonlyMap<string, CompiledFlagEntry>;
-  readonly parserFlags: ParserFlagsDefinition;
+  readonly lexSpecs: readonly LexFlagSpec[];
 }
 
 export function normalizeFlagValue(
@@ -50,34 +47,57 @@ export function normalizeFlagValue(
   return flag as ClercFlagOptions;
 }
 
+function implicitDefault(kind: FlagKind): unknown {
+  switch (kind) {
+    case "boolean": {
+      return false;
+    }
+    case "counter": {
+      return 0;
+    }
+    case "array": {
+      return [];
+    }
+    case "single": {
+      return undefined;
+    }
+  }
+}
+
 export function compileFlags(flags: ClercFlagsDefinition): CompiledFlags {
   const byName = new Map<string, CompiledFlagEntry>();
-  const parserFlags: ParserFlagsDefinition = {};
+  const lexSpecs: LexFlagSpec[] = [];
 
   for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
-    const { kind, parserType, convert } = describeType(norm.type);
+    if (Array.isArray(norm.type) && norm.type.length !== 1) {
+      throw new InvalidSchemaError(
+        `Flag "${name}" has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
+      );
+    }
+    if (norm.required && norm.default !== undefined) {
+      throw new InvalidSchemaError(
+        `Flag "${name}" cannot be both required and have a default value.`,
+      );
+    }
 
+    const { kind, convert } = describeType(norm.type);
     byName.set(name, {
       name,
       norm,
       target: formatFlagName(name),
       kind,
-      parserType,
       convert,
     });
-
-    const opts: Record<string, unknown> = { type: parserType };
-    if (norm.short !== undefined) {
-      opts.short = norm.short;
-    }
-    if (norm.negatable !== undefined && kind === "boolean") {
-      opts.negatable = norm.negatable;
-    }
-    parserFlags[name] = opts as ParserFlagDefinitionValue;
+    lexSpecs.push({
+      key: name,
+      kind,
+      short: norm.short,
+      negatable: kind === "boolean" ? norm.negatable : undefined,
+    });
   }
 
-  return { byName, parserFlags };
+  return { byName, lexSpecs };
 }
 
 async function convertValues(
@@ -98,11 +118,17 @@ async function convertValues(
 async function resolveEnvValue(
   entry: CompiledFlagEntry,
   envValue: string,
-  rawValue: unknown,
 ): Promise<unknown> {
   switch (entry.kind) {
     case "boolean": {
-      return envValue !== "0" && envValue.toLowerCase() !== "false";
+      const parsed = parseBooleanLiteral(envValue);
+      if (parsed === undefined) {
+        throw new ValidationError(entry.target, envValue, [
+          { message: "expected a boolean ('true' or 'false')" },
+        ]);
+      }
+
+      return parsed;
     }
     case "counter": {
       const count = Number(envValue);
@@ -114,9 +140,6 @@ async function resolveEnvValue(
         entry,
         envValue.split(",").map((s) => s.trim()),
       );
-    }
-    case "object": {
-      return rawValue ?? {};
     }
     case "single": {
       return entry.convert ? entry.convert(envValue, entry.target) : envValue;
@@ -155,7 +178,7 @@ export async function resolveCompiledFlags(
     const envValue = norm.env ? env[norm.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       provided.add(name);
-      flags[name] = await resolveEnvValue(entry, envValue, rawValue);
+      flags[name] = await resolveEnvValue(entry, envValue);
 
       continue;
     }
@@ -175,7 +198,7 @@ export async function resolveCompiledFlags(
       continue;
     }
 
-    flags[name] = inferDefault(entry.parserType);
+    flags[name] = implicitDefault(kind);
   }
 
   return { flags, missingRequired, provided };
@@ -199,15 +222,17 @@ export function warnFlagDeprecations(
   }
 }
 
-export function validateCompiledFlags(
+export function validateParsedFlags(
   compiled: CompiledFlags,
-  missingRequired: readonly string[],
-  provided: ReadonlySet<string>,
-  unknownFlags?: Readonly<Record<string, unknown>>,
+  parsed: {
+    readonly unknown: Readonly<Record<string, unknown>>;
+    readonly missingValueFlags: readonly string[];
+    readonly invalidValues: readonly InvalidFlagValue[];
+  },
   strictFlags = true,
 ): void {
-  if (strictFlags && unknownFlags) {
-    const unknownKeys = Object.keys(unknownFlags);
+  if (strictFlags) {
+    const unknownKeys = Object.keys(parsed.unknown);
     if (unknownKeys.length > 0) {
       const knownFlags = [...compiled.byName.keys()];
       const hints: string[] = [];
@@ -227,6 +252,27 @@ export function validateCompiledFlags(
     }
   }
 
+  if (parsed.missingValueFlags.length > 0) {
+    throw new MissingFlagValueError(parsed.missingValueFlags);
+  }
+
+  const firstInvalid = parsed.invalidValues[0];
+  if (firstInvalid) {
+    const target =
+      compiled.byName.get(firstInvalid.flag)?.target ??
+      formatFlagName(firstInvalid.flag);
+
+    throw new ValidationError(target, firstInvalid.value, [
+      { message: firstInvalid.message },
+    ]);
+  }
+}
+
+export function validateResolvedFlags(
+  compiled: CompiledFlags,
+  missingRequired: readonly string[],
+  provided: ReadonlySet<string>,
+): void {
   if (missingRequired.length > 0) {
     const hints: string[] = [];
     for (const name of missingRequired) {

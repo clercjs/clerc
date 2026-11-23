@@ -4,10 +4,13 @@ import { describe, expect, it } from "vitest";
 import {
   FlagConflictError,
   FlagImpliesError,
+  MissingFlagValueError,
   MissingRequiredFlagError,
   MissingRequiredParameterError,
   NoCommandError,
+  UnexpectedArgumentError,
   UnknownCommandError,
+  UnknownFlagError,
   ValidationError,
 } from "../src";
 
@@ -230,5 +233,81 @@ describe("Clerc execution pipeline", () => {
     await expect(
       cli.run(["greet"], { terminal, throwOnError: true }),
     ).rejects.toThrow(MissingRequiredParameterError);
+  });
+
+  it("rejects missing flag values, invalid boolean literals, root unknown flags, and unexpected arguments", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestBaseCli().flags({
+      config: { type: String, short: "c" },
+      verbose: { type: [Boolean], short: "v" },
+    });
+    cli.command("deploy <env>", {
+      flags: {
+        dryRun: { type: Boolean, short: "n" },
+        port: { type: Number, short: "p" },
+      },
+      run() {},
+    });
+
+    // Missing value before next flag or --
+    await expect(
+      cli.run(["deploy", "prod", "-c", "-n"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(MissingFlagValueError);
+    await expect(
+      cli.run(["deploy", "prod", "-c", "--", "rest"], {
+        terminal,
+        throwOnError: true,
+      }),
+    ).rejects.toThrow(MissingFlagValueError);
+
+    // Invalid boolean literal
+    await expect(
+      cli.run(["deploy", "prod", "--dry-run=banana"], {
+        terminal,
+        throwOnError: true,
+      }),
+    ).rejects.toThrow(ValidationError);
+
+    // Extra positional argument rejected
+    await expect(
+      cli.run(["deploy", "prod", "extra"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(UnexpectedArgumentError);
+
+    // Counter flag does not eat positional argument & -p=8080 works
+    const okRes = await cli.run(["deploy", "--verbose", "prod", "-p=8080"], {
+      terminal,
+    });
+
+    expect(okRes.ok).toBeTruthy();
+
+    // Unknown root flag does not silently print help
+    const rootCli = createTestBaseCli({ help: true }).flags({
+      config: { type: String, short: "c" },
+    });
+    rootCli.command("deploy", { run() {} });
+
+    await expect(
+      rootCli.run(["--conifg", "x"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(UnknownFlagError);
+  });
+
+  it("supports stopAtFirstPositional for command wrappers without --", async () => {
+    let captured: any;
+    const terminal = createMemoryTerminal();
+    const cli = createTestBaseCli();
+    cli.command("exec <cmd> [args...]", {
+      stopAtFirstPositional: true,
+      flags: { quiet: { type: Boolean, short: "q" } },
+      run(ctx) {
+        captured = { quiet: ctx.flags.quiet, args: ctx.args };
+      },
+    });
+
+    await cli.run(["exec", "-q", "git", "--status", "-s"], { terminal });
+
+    expect(captured).toEqual({
+      quiet: true,
+      args: { cmd: "git", args: ["--status", "-s"] },
+    });
   });
 });

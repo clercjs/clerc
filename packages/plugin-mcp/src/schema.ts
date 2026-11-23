@@ -260,28 +260,6 @@ export function buildToolEntries(
   return entries;
 }
 
-function appendObjectFlags(
-  argv: string[],
-  flagPrefix: string,
-  obj: Record<string, unknown>,
-): void {
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) {
-      continue;
-    }
-    const key = `${flagPrefix}.${k}`;
-    if (typeof v === "object" && v !== null && !Array.isArray(v)) {
-      appendObjectFlags(argv, key, v as Record<string, unknown>);
-    } else if (Array.isArray(v)) {
-      for (const item of v) {
-        argv.push(`${key}=${String(item)}`);
-      }
-    } else {
-      argv.push(`${key}=${String(v)}`);
-    }
-  }
-}
-
 function appendPositionals(
   target: string[],
   slots: readonly ArgSlot[],
@@ -338,13 +316,6 @@ export function serializeToolArgsToArgv(
           for (const item of value) {
             argv.push(flagName, String(item));
           }
-        }
-
-        break;
-      }
-      case "object": {
-        if (typeof value === "object" && value !== null) {
-          appendObjectFlags(argv, flagName, value as Record<string, unknown>);
         }
 
         break;

@@ -1,7 +1,5 @@
-import type { TypeFunction, TypeValue as ParserTypeValue } from "@clerc/parser";
-
 import { ValidationError } from "./errors";
-import type { CoreSingleType, CoreTypeValue } from "./types";
+import type { CoreSingleType, CoreTypeValue, TypeFunction } from "./types";
 
 export interface StandardSchemaV1Issue {
   readonly message: string;
@@ -53,7 +51,7 @@ export interface ClercSchema<Output = unknown> extends StandardSchemaV1<
   readonly display: string;
 }
 
-export type FlagKind = "boolean" | "counter" | "object" | "array" | "single";
+export type FlagKind = "boolean" | "counter" | "array" | "single";
 
 export type TypeConverter = (
   raw: string,
@@ -63,7 +61,6 @@ export type TypeConverter = (
 export interface TypeDescriptor {
   readonly kind: FlagKind;
   readonly display: string;
-  readonly parserType: ParserTypeValue;
   readonly convert?: TypeConverter;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
@@ -129,7 +126,6 @@ const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
     {
       kind: "boolean",
       display: "boolean",
-      parserType: Boolean,
       toJsonSchema: () => ({ type: "boolean" }),
     },
   ],
@@ -138,18 +134,8 @@ const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
     {
       kind: "single",
       display: "number",
-      parserType: String,
       convert: convertNumber,
       toJsonSchema: () => ({ type: "number" }),
-    },
-  ],
-  [
-    Object,
-    {
-      kind: "object",
-      display: "key=value",
-      parserType: Object,
-      toJsonSchema: () => ({ type: "object", additionalProperties: true }),
     },
   ],
   [
@@ -157,7 +143,6 @@ const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
     {
       kind: "single",
       display: "string",
-      parserType: String,
       toJsonSchema: stringJsonSchema,
     },
   ],
@@ -166,7 +151,6 @@ const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
 const COUNTER_DESCRIPTOR: TypeDescriptor = {
   kind: "counter",
   display: "boolean",
-  parserType: [Boolean],
   toJsonSchema: () => ({ type: "integer", minimum: 0 }),
 };
 
@@ -207,7 +191,6 @@ function describeSingle(type: CoreSingleType): TypeDescriptor {
     return {
       kind: "single",
       display,
-      parserType: String,
       convert: createSchemaConverter(type),
       toJsonSchema: () => readStandardJsonSchema(type),
     };
@@ -216,7 +199,6 @@ function describeSingle(type: CoreSingleType): TypeDescriptor {
   return {
     kind: "single",
     display,
-    parserType: String,
     convert: createFunctionConverter(type),
     toJsonSchema: stringJsonSchema,
   };
@@ -241,7 +223,6 @@ export function describeType(type: CoreTypeValue): TypeDescriptor {
   return {
     kind: "array",
     display: `${innerDesc.display}...`,
-    parserType: [String],
     convert: innerDesc.convert,
     toJsonSchema: () => ({ type: "array", items: innerDesc.toJsonSchema() }),
   };

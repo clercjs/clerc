@@ -1,6 +1,5 @@
 import type { LoggerOptions } from "@clerc/logger";
 import { createLogger } from "@clerc/logger";
-import { createParser } from "@clerc/parser";
 
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
@@ -10,6 +9,7 @@ import {
   ClercError,
   MissingRequiredMetadataError,
   NoCommandError,
+  UnexpectedArgumentError,
   UnknownCommandError,
   enrichCommandError,
   formatDiagnostic,
@@ -19,10 +19,13 @@ import type { CompiledFlags } from "./flags";
 import {
   compileFlags,
   resolveCompiledFlags,
-  validateCompiledFlags,
+  validateParsedFlags,
+  validateResolvedFlags,
   warnFlagDeprecations,
 } from "./flags";
 import { renderHelp } from "./help/renderer";
+import type { LexParser } from "./parser";
+import { createLexParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
@@ -60,7 +63,7 @@ type ContextExtender = (
 
 interface CompiledCommand {
   readonly flags: CompiledFlags;
-  readonly parser: ReturnType<typeof createParser>;
+  readonly parser: LexParser;
   readonly args?: CompiledArgs;
 }
 
@@ -428,7 +431,7 @@ export class CliApp<
       errorHandlers: acc.errorHandlers,
       global: {
         flags: globalFlags,
-        parser: createParser({ flags: globalFlags.parserFlags }),
+        parser: createLexParser(globalFlags.lexSpecs),
       },
       commands: new WeakMap(),
     };
@@ -458,9 +461,11 @@ export class CliApp<
       ? compileFlags({ ...cli.model.globalFlags, ...cmd.flags })
       : cli.global.flags;
     const parser =
-      !hasLocalFlags && !cmd.ignore
+      !hasLocalFlags && !cmd.stopAtFirstPositional
         ? cli.global.parser
-        : createParser({ flags: flags.parserFlags, ignore: cmd.ignore });
+        : createLexParser(flags.lexSpecs, {
+            stopAtFirstPositional: cmd.stopAtFirstPositional,
+          });
     const compiled: CompiledCommand = {
       flags,
       parser,
@@ -528,7 +533,6 @@ export class CliApp<
       args: {},
       flags: {} as any,
       unknown: {},
-      ignored: [],
       doubleDash: [],
     };
 
@@ -555,7 +559,6 @@ export class CliApp<
     const parsed = compiledCmd.parser.parse(match.remainingArgv);
     ctx.flags = parsed.flags as any;
     ctx.unknown = parsed.unknown;
-    ctx.ignored = parsed.ignored;
     ctx.doubleDash = parsed.doubleDash;
 
     // 3. Built-in --version and --help handling (unless shadowed by local flags)
@@ -571,12 +574,19 @@ export class CliApp<
       return { ok: true, exitCode: 0 };
     }
 
+    const hasParseErrors =
+      (this.#strictFlags && Object.keys(parsed.unknown).length > 0) ||
+      parsed.missingValueFlags.length > 0 ||
+      parsed.invalidValues.length > 0;
+
     if (this.#helpOptions !== false) {
       const wantsHelp =
         !ctx.command?.flags?.help &&
         parsed.flags.help === true &&
         match.kind !== "unknown";
-      const implicitHelp = match.kind === "empty" || match.kind === "namespace";
+      const implicitHelp =
+        !hasParseErrors &&
+        (match.kind === "empty" || match.kind === "namespace");
 
       if (wantsHelp || implicitHelp) {
         await ctx.help.print(match.node.fullPath);
@@ -585,12 +595,19 @@ export class CliApp<
       }
     }
 
-    // 4. Require a matched command
+    // 4. Validate flag syntax before requiring a matched command so invalid
+    //    root/namespace flags report actionable errors instead of generic help
     if (match.kind !== "matched") {
+      if (hasParseErrors) {
+        validateParsedFlags(compiledCmd.flags, parsed, this.#strictFlags);
+      }
+
       throw createUnmatchedError(match);
     }
 
-    // 5. Resolve flags, warn deprecations, validate flags & args
+    // 5. Validate flag syntax, resolve values/env/defaults, warn deprecations, validate constraints & args
+    validateParsedFlags(compiledCmd.flags, parsed, this.#strictFlags);
+
     const { flags, missingRequired, provided } = await resolveCompiledFlags(
       compiledCmd.flags,
       parsed.flags,
@@ -615,21 +632,21 @@ export class CliApp<
     }
     warnFlagDeprecations(compiledCmd.flags, provided, ctx.log.warn);
 
-    validateCompiledFlags(
-      compiledCmd.flags,
-      missingRequired,
-      provided,
-      parsed.unknown,
-      this.#strictFlags,
-    );
+    validateResolvedFlags(compiledCmd.flags, missingRequired, provided);
 
-    ctx.args = compiledCmd.args
-      ? await executeCompiledArgs(
-          compiledCmd.args,
-          parsed.parameters,
-          parsed.doubleDash,
-        )
-      : {};
+    if (compiledCmd.args) {
+      ctx.args = await executeCompiledArgs(
+        compiledCmd.args,
+        parsed.parameters,
+        parsed.doubleDash,
+      );
+    } else {
+      const extraArgs = [...parsed.parameters, ...parsed.doubleDash];
+      if (extraArgs.length > 0) {
+        throw new UnexpectedArgumentError(extraArgs);
+      }
+      ctx.args = {};
+    }
 
     const runCtx = ctx as RunContext<TGlobalFlags> & TExt;
 

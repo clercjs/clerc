@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@clerc/logger": "workspace:*",
-    "@clerc/parser": "workspace:*",
     "fast-string-width": "catalog:cli"
   }
 }

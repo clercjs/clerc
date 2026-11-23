@@ -1,7 +1,6 @@
-import { DOUBLE_DASH } from "@clerc/parser";
-
 import { resolveCommandArgs, splitArgTokens } from "../args";
 import { normalizeFlagValue } from "../flags";
+import { DOUBLE_DASH } from "../parser";
 import type { TypeDescriptor } from "../schema";
 import { describeType } from "../schema";
 import type { Theme } from "../theme";

@@ -9,11 +9,14 @@ export type ClercErrorCode =
   | "ERR_UNKNOWN_COMMAND"
   | "ERR_NO_COMMAND"
   | "ERR_MISSING_FLAG"
+  | "ERR_MISSING_FLAG_VALUE"
   | "ERR_MISSING_PARAMETER"
+  | "ERR_UNEXPECTED_ARGUMENT"
   | "ERR_UNKNOWN_FLAG"
   | "ERR_VALIDATION"
   | "ERR_FLAG_CONFLICT"
   | "ERR_FLAG_IMPLIES"
+  | "ERR_INVALID_SCHEMA"
   | "ERR_INVALID_COMMAND"
   | "ERR_INVALID_PARAMETERS"
   | "ERR_MISSING_METADATA";
@@ -97,6 +100,39 @@ export class MissingRequiredFlagError extends ClercError {
       },
     );
     this.flags = flags;
+  }
+}
+
+export class MissingFlagValueError extends ClercError {
+  public readonly flags: readonly string[];
+
+  constructor(flags: readonly string[]) {
+    const formatted = flags.map((f) => `'${formatFlagName(f)}'`);
+    const plural = flags.length > 1;
+    super(
+      plural
+        ? `options ${joinWithAnd(formatted)} require a value`
+        : `option ${formatted[0]} requires a value`,
+      {
+        code: "ERR_MISSING_FLAG_VALUE",
+        exitCode: 2,
+      },
+    );
+    this.flags = flags;
+  }
+}
+
+export class UnexpectedArgumentError extends ClercError {
+  public readonly args: readonly string[];
+
+  constructor(args: readonly string[]) {
+    const formatted = args.map((a) => `'${a}'`);
+    const plural = args.length > 1 ? "s" : "";
+    super(`unexpected argument${plural}: ${joinWithAnd(formatted)}`, {
+      code: "ERR_UNEXPECTED_ARGUMENT",
+      exitCode: 2,
+    });
+    this.args = args;
   }
 }
 
@@ -189,6 +225,15 @@ export class FlagImpliesError extends ClercError {
     );
     this.flag = flag;
     this.requiresFlag = requiresFlag;
+  }
+}
+
+export class InvalidSchemaError extends ClercError {
+  constructor(message: string) {
+    super(`Invalid schema: ${message}`, {
+      code: "ERR_INVALID_SCHEMA",
+      exitCode: 1,
+    });
   }
 }
 

@@ -18,6 +18,11 @@ export type IsAny<T> = 0 extends 1 & T ? true : false;
 export const toArray = <T>(value: MaybeArray<T>): T[] =>
   Array.isArray(value) ? [...value] : [value as T];
 
+export const camelCase = (str: string): string =>
+  str.includes("-") || str.includes(" ")
+    ? str.replace(/[- ](.?)/g, (_, c: string) => c.toUpperCase())
+    : str;
+
 export const kebabCase = (str: string): string =>
   str.replace(/([A-Z])/g, (_, c: string) => `-${c.toLowerCase()}`);
 

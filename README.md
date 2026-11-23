@@ -75,8 +75,8 @@ await cli.runMain();
 # 📦 Packages
 
 - `clerc` — Main CLI package re-exporting `@clerc/core` as `Cli` plus optional first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
-- `@clerc/core` — Core runtime: `Cli`, `plugin`, `CommandTree`, native help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
-- `@clerc/parser` — Zero-dependency, high-performance argument parser.
+- `@clerc/core` — Core runtime: POSIX lexical parser, `Cli`, `plugin`, `CommandTree`, native help & diagnostics, Standard Schema v1, `Terminal`, and `Theme`.
+- `@clerc/logger` — Zero-dependency CLI logger with aligned word labels and JSON mode.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
 - `@clerc/plugin-mcp` — Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.
 

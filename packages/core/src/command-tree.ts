@@ -1,7 +1,6 @@
-import type { ScanCallback, ScanResult } from "@clerc/parser";
-import { DOUBLE_DASH } from "@clerc/parser";
-
 import { InvalidCommandError } from "./errors";
+import type { ScanCallback, ScanResult } from "./parser";
+import { DOUBLE_DASH } from "./parser";
 import type {
   AnyCommandDefinition,
   CommandNode,
@@ -165,7 +164,7 @@ export class CommandTree implements ReadonlyCommandTree {
 
   /**
    * Resolves the longest matching command in the tree using a flag-aware
-   * positional scanner (from `@clerc/parser`).
+   * positional scanner (from `./parser`).
    */
   public resolveArgv(argv: readonly string[], scan: ArgvScanFn): CommandMatch {
     let current: CommandNode = this.root;
