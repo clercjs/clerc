@@ -23,8 +23,23 @@ export const camelCase = (str: string): string =>
     ? str.replace(/[- ](.?)/g, (_, c: string) => c.toUpperCase())
     : str;
 
-export const kebabCase = (str: string): string =>
-  str.replace(/([A-Z])/g, (_, c: string) => `-${c.toLowerCase()}`);
+export function kebabCase(str: string): string {
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code >= 65 && code <= 90) {
+      let out = str.slice(0, i);
+      for (let j = i; j < str.length; j++) {
+        const ch = str.charCodeAt(j);
+        out +=
+          ch >= 65 && ch <= 90 ? `-${String.fromCharCode(ch + 32)}` : str[j];
+      }
+
+      return out;
+    }
+  }
+
+  return str;
+}
 
 export const formatFlagName = (name: string): string =>
   name.length <= 1 ? `-${name}` : `--${kebabCase(name)}`;

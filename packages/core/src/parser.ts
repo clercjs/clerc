@@ -23,14 +23,16 @@ export interface LexParserOptions {
   readonly stopAtFirstPositional?: boolean;
 }
 
+export type FlagValues = Record<string, string | string[] | boolean | number>;
+
 export interface LexParseResult {
-  readonly parameters: string[];
-  readonly doubleDash: string[];
-  readonly flags: Record<string, string | string[] | boolean | number>;
-  readonly unknown: Record<string, RawInputType>;
-  readonly provided: string[];
-  readonly missingValueFlags: string[];
-  readonly invalidValues: InvalidFlagValue[];
+  readonly parameters: readonly string[];
+  readonly doubleDash: readonly string[];
+  readonly flags: FlagValues;
+  readonly unknown: Readonly<Record<string, RawInputType>>;
+  readonly provided: readonly string[];
+  readonly missingValueFlags: readonly string[];
+  readonly invalidValues: readonly InvalidFlagValue[];
 }
 
 export type ScanCallback = (arg: string, index: number) => boolean;
@@ -50,30 +52,52 @@ export interface LexParser {
 interface CompiledLexFlag {
   readonly key: string;
   readonly kind: FlagKind;
-  readonly short?: string;
   readonly negatable: boolean;
 }
 
+interface LookupTables {
+  readonly byName: Record<string, CompiledLexFlag>;
+  readonly byShortCode: (CompiledLexFlag | undefined)[] | undefined;
+  readonly byShortExtra: Record<string, CompiledLexFlag> | undefined;
+  readonly hasDigitShort: boolean;
+}
+
+const CHAR_DASH = 45; // '-'
+const CHAR_EQ = 61; // '='
+const CHAR_N = 110; // 'n'
+const CHAR_O = 111; // 'o'
 const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
+const EMPTY_STRINGS: readonly string[] = Object.freeze([]);
+const EMPTY_INVALID: readonly InvalidFlagValue[] = Object.freeze([]);
+const EMPTY_UNKNOWN: Readonly<Record<string, RawInputType>> = Object.freeze({});
 
 const isLetter = (c: number): boolean =>
   (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 
 const isDigit = (c: number): boolean => c >= 48 && c <= 57;
 
+const isValueKind = (kind: FlagKind): boolean =>
+  kind === "single" || kind === "array";
+
 const hasReservedChar = (name: string): boolean =>
   name.includes(" ") || name.includes("=");
 
+const hasNoPrefix = (name: string): boolean =>
+  name.length > 3 &&
+  name.charCodeAt(0) === CHAR_N &&
+  name.charCodeAt(1) === CHAR_O &&
+  name.charCodeAt(2) === CHAR_DASH;
+
 export function parseBooleanLiteral(raw: string): boolean | undefined {
-  const lower = raw.toLowerCase();
-  if (lower === "true" || lower === "1") {
+  if (raw === "true" || raw === "1") {
     return true;
   }
-  if (lower === "false" || lower === "0") {
+  if (raw === "false" || raw === "0") {
     return false;
   }
+  const lower = raw.toLowerCase();
 
-  return undefined;
+  return lower === "true" ? true : lower === "false" ? false : undefined;
 }
 
 function recordUnique(list: string[], key: string): void {
@@ -82,105 +106,87 @@ function recordUnique(list: string[], key: string): void {
   }
 }
 
-function pushSlice(
-  target: string[],
-  source: readonly string[],
-  from: number,
-): void {
-  for (let k = from; k < source.length; k++) {
-    target.push(source[k]);
-  }
-}
-
-function splitLongOption(raw: string): {
-  readonly name: string;
-  readonly value: string | undefined;
-} {
-  const eq = raw.indexOf("=");
-
-  return eq === -1
-    ? { name: raw, value: undefined }
-    : { name: raw.slice(0, eq), value: raw.slice(eq + 1) };
-}
-
 function registerAlias(
-  map: Map<string, CompiledLexFlag>,
+  table: Record<string, CompiledLexFlag>,
   alias: string,
-  flag: CompiledLexFlag,
+  entry: CompiledLexFlag,
   label: string,
 ): void {
-  const existing = map.get(alias);
-  if (existing && existing.key !== flag.key) {
+  const existing = table[alias];
+  if (existing && existing.key !== entry.key) {
     throw new InvalidSchemaError(
-      `Flag "${flag.key}" ${label} "${alias}" conflicts with flag "${existing.key}".`,
+      `Flag "${entry.key}" ${label} "${alias}" conflicts with flag "${existing.key}".`,
     );
   }
-  map.set(alias, flag);
+  table[alias] = entry;
 }
 
-function buildFlagLookup(specs: Iterable<LexFlagSpec>): {
-  readonly byName: ReadonlyMap<string, CompiledLexFlag>;
-  readonly byShort: ReadonlyMap<string, CompiledLexFlag>;
-} {
-  const byName = new Map<string, CompiledLexFlag>();
-  const byShort = new Map<string, CompiledLexFlag>();
+function buildLookupTables(specs: Iterable<LexFlagSpec>): LookupTables {
+  const byName: Record<string, CompiledLexFlag> = Object.create(null);
+  let byShortCode: (CompiledLexFlag | undefined)[] | undefined;
+  let byShortExtra: Record<string, CompiledLexFlag> | undefined;
+  let hasDigitShort = false;
 
   for (const spec of specs) {
-    if (spec.key.length < 2) {
+    const { key, kind, short } = spec;
+    if (key.length < 2) {
       throw new InvalidSchemaError(
-        `Flag "${spec.key}" name must be at least 2 characters long.`,
+        `Flag "${key}" name must be at least 2 characters long.`,
       );
     }
-    if (spec.short !== undefined && spec.short.length !== 1) {
+    if (short !== undefined && short.length !== 1) {
       throw new InvalidSchemaError(
-        `Flag "${spec.key}" short flag must be exactly 1 character long.`,
+        `Flag "${key}" short flag must be exactly 1 character long.`,
       );
     }
     if (
-      hasReservedChar(spec.key) ||
-      (spec.short !== undefined && hasReservedChar(spec.short))
+      hasReservedChar(key) ||
+      (short !== undefined && hasReservedChar(short))
     ) {
       throw new InvalidSchemaError(
-        `Flag "${spec.key}" contains reserved characters.`,
+        `Flag "${key}" contains reserved characters.`,
       );
     }
 
-    const compiled: CompiledLexFlag = {
-      key: spec.key,
-      kind: spec.kind,
-      short: spec.short,
-      negatable: spec.kind === "boolean" && spec.negatable !== false,
+    const entry: CompiledLexFlag = {
+      key,
+      kind,
+      negatable: kind === "boolean" && spec.negatable !== false,
     };
 
-    registerAlias(byName, spec.key, compiled, "name");
-    const camel = camelCase(spec.key);
-    if (camel !== spec.key) {
-      registerAlias(byName, camel, compiled, "alias");
+    registerAlias(byName, key, entry, "name");
+    const camel = camelCase(key);
+    if (camel !== key) {
+      registerAlias(byName, camel, entry, "alias");
     }
-    const kebab = kebabCase(spec.key);
-    if (kebab !== spec.key) {
-      registerAlias(byName, kebab, compiled, "alias");
+    const kebab = kebabCase(key);
+    if (kebab !== key) {
+      registerAlias(byName, kebab, entry, "alias");
     }
-    if (compiled.short) {
-      registerAlias(byShort, compiled.short, compiled, "short alias");
+
+    if (short !== undefined) {
+      const code = short.charCodeAt(0);
+      if (isDigit(code)) {
+        hasDigitShort = true;
+      }
+      if (code < 128) {
+        // eslint-disable-next-line unicorn/no-new-array -- Fixed-size ASCII lookup table avoids Array.from iterator overhead
+        byShortCode ??= new Array<CompiledLexFlag | undefined>(128);
+        const existing = byShortCode[code];
+        if (existing && existing.key !== key) {
+          throw new InvalidSchemaError(
+            `Flag "${key}" short alias "${short}" conflicts with flag "${existing.key}".`,
+          );
+        }
+        byShortCode[code] = entry;
+      } else {
+        byShortExtra ??= Object.create(null);
+        registerAlias(byShortExtra!, short, entry, "short alias");
+      }
     }
   }
 
-  return { byName, byShort };
-}
-
-function appendRawValue(
-  flags: Record<string, string | string[] | boolean | number>,
-  flag: CompiledLexFlag,
-  raw: string,
-): void {
-  if (flag.kind === "array") {
-    const list = (flags[flag.key] as string[] | undefined) ?? [];
-    list.push(raw);
-    flags[flag.key] = list;
-  } else {
-    flags[flag.key] = raw;
-  }
+  return { byName, byShortCode, byShortExtra, hasDigitShort };
 }
 
 export function createLexParser(
@@ -188,235 +194,230 @@ export function createLexParser(
   options: LexParserOptions = {},
 ): LexParser {
   const stopAtFirstPositional = Boolean(options.stopAtFirstPositional);
-  const { byName, byShort } = buildFlagLookup(specs);
+  const { byName, byShortCode, byShortExtra, hasDigitShort } =
+    buildLookupTables(specs);
 
-  function resolveLong(
-    name: string,
-  ): { readonly flag: CompiledLexFlag; readonly negated: boolean } | undefined {
-    const direct = byName.get(name);
-    if (direct) {
-      return { flag: direct, negated: false };
-    }
-    if (name.startsWith("no-")) {
-      const target = byName.get(name.slice(3));
-      if (target?.negatable) {
-        return { flag: target, negated: true };
-      }
-    }
+  const isShortStart = (code: number): boolean =>
+    isLetter(code) ||
+    (hasDigitShort && isDigit(code) && byShortCode![code] !== undefined);
 
-    return undefined;
-  }
-
-  function isFlagToken(arg: string): boolean {
-    if (arg.length < 2 || arg[0] !== "-") {
+  function canConsumeNext(args: readonly string[], nextIndex: number): boolean {
+    if (nextIndex >= args.length) {
       return false;
     }
-    const second = arg.charCodeAt(1);
-    if (isLetter(second)) {
+    const next = args[nextIndex];
+    const len = next.length;
+    if (len < 2 || next.charCodeAt(0) !== CHAR_DASH) {
       return true;
     }
-    if (isDigit(second)) {
-      return byShort.has(arg[1]);
+    const c1 = next.charCodeAt(1);
+    if (c1 === CHAR_DASH) {
+      return len > 2 && !isLetter(next.charCodeAt(2));
     }
 
-    return arg[1] === "-" && arg.length > 2 && isLetter(arg.charCodeAt(2));
-  }
-
-  function inspectFlag(arg: string): boolean | undefined {
-    if (arg[1] === "-") {
-      const { name, value } = splitLongOption(arg.slice(2));
-      const resolved = resolveLong(name);
-      if (!resolved) {
-        return undefined;
-      }
-
-      return (
-        value === undefined &&
-        resolved.flag.kind !== "boolean" &&
-        resolved.flag.kind !== "counter"
-      );
-    }
-
-    for (let j = 1; j < arg.length; j++) {
-      const flag = byShort.get(arg[j]);
-      if (!flag) {
-        return undefined;
-      }
-      if (flag.kind !== "boolean" && flag.kind !== "counter") {
-        return j === arg.length - 1;
-      }
-    }
-
-    return false;
+    return !isShortStart(c1);
   }
 
   function parse(args: readonly string[]): LexParseResult {
-    const flags: Record<string, string | string[] | boolean | number> = {};
-    const parameters: string[] = [];
-    const doubleDash: string[] = [];
-    const unknown: Record<string, RawInputType> = {};
+    const flags: FlagValues = {};
     const provided: string[] = [];
-    const missingValueFlags: string[] = [];
-    const invalidValues: InvalidFlagValue[] = [];
+    let parameters: string[] | undefined;
+    let doubleDash: readonly string[] = EMPTY_STRINGS;
+    let unknown: Record<string, RawInputType> | undefined;
+    let missingValueFlags: string[] | undefined;
+    let invalidValues: InvalidFlagValue[] | undefined;
 
-    const len = args.length;
-    let i = 0;
+    for (let i = 0; i < args.length; i++) {
+      const current = args[i];
+      const curLen = current.length;
+      const c1 =
+        curLen >= 2 && current.charCodeAt(0) === CHAR_DASH
+          ? current.charCodeAt(1)
+          : 0;
 
-    function takeNextValue(): string | undefined {
-      if (i + 1 >= len) {
-        return undefined;
-      }
-      const next = args[i + 1];
-      if (next === DOUBLE_DASH || isFlagToken(next)) {
-        return undefined;
-      }
+      if (c1 !== 0) {
+        // 1. POSIX `--` terminator
+        if (c1 === CHAR_DASH && curLen === 2) {
+          doubleDash = args.slice(i + 1);
 
-      return args[++i];
-    }
-
-    function parseLongFlag(current: string): void {
-      const { name, value } = splitLongOption(current.slice(2));
-      const resolved = resolveLong(name);
-      if (!resolved) {
-        unknown[camelCase(name)] = value ?? true;
-
-        return;
-      }
-
-      const { flag, negated } = resolved;
-
-      switch (flag.kind) {
-        case "boolean": {
-          if (value === undefined) {
-            recordUnique(provided, flag.key);
-            flags[flag.key] = !negated;
-
-            return;
-          }
-          const parsedBool = parseBooleanLiteral(value);
-          if (parsedBool === undefined) {
-            invalidValues.push({
-              flag: flag.key,
-              value,
-              message: INVALID_BOOL_MSG,
-            });
-
-            return;
-          }
-          recordUnique(provided, flag.key);
-          flags[flag.key] = negated ? !parsedBool : parsedBool;
-
-          return;
+          break;
         }
-        case "counter": {
-          if (value === undefined) {
-            recordUnique(provided, flag.key);
-            flags[flag.key] =
-              ((flags[flag.key] as number | undefined) ?? 0) + 1;
 
-            return;
-          }
-          const parsedBool = parseBooleanLiteral(value);
-          if (parsedBool === undefined) {
-            invalidValues.push({
-              flag: flag.key,
-              value,
-              message: INVALID_BOOL_MSG,
-            });
+        // 2. Long flag: `--name`, `--name=value`, `--no-name`
+        if (c1 === CHAR_DASH && isLetter(current.charCodeAt(2))) {
+          const eq = current.indexOf("=", 2);
+          const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
+          let flag = byName[name];
+          let negated = false;
 
-            return;
-          }
-          recordUnique(provided, flag.key);
-          if (parsedBool) {
-            flags[flag.key] =
-              ((flags[flag.key] as number | undefined) ?? 0) + 1;
+          if (flag === undefined && hasNoPrefix(name)) {
+            const candidate = byName[name.slice(3)];
+            if (candidate?.negatable) {
+              flag = candidate;
+              negated = true;
+            }
           }
 
-          return;
-        }
-        case "single":
-        case "array": {
-          const val = value ?? takeNextValue();
-          if (val === undefined) {
-            recordUnique(missingValueFlags, flag.key);
+          if (flag === undefined) {
+            (unknown ??= {})[camelCase(name)] =
+              eq === -1 ? true : current.slice(eq + 1);
 
-            return;
+            continue;
           }
-          recordUnique(provided, flag.key);
-          appendRawValue(flags, flag, val);
-        }
-      }
-    }
 
-    function parseShortFlags(current: string): void {
-      const chars = current.slice(1);
-      for (let j = 0; j < chars.length; j++) {
-        const char = chars[j];
-        const flag = byShort.get(char);
-        if (!flag) {
-          unknown[char] = true;
+          const { key, kind } = flag;
+
+          switch (kind) {
+            case "boolean": {
+              const parsed =
+                eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
+              if (parsed === undefined) {
+                (invalidValues ??= []).push({
+                  flag: key,
+                  value: current.slice(eq + 1),
+                  message: INVALID_BOOL_MSG,
+                });
+              } else {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = negated ? !parsed : parsed;
+              }
+
+              break;
+            }
+            case "counter": {
+              const parsed =
+                eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
+              if (parsed === undefined) {
+                (invalidValues ??= []).push({
+                  flag: key,
+                  value: current.slice(eq + 1),
+                  message: INVALID_BOOL_MSG,
+                });
+              } else {
+                const prev = flags[key] as number | undefined;
+                if (prev === undefined) {
+                  provided.push(key);
+                  flags[key] = parsed ? 1 : 0;
+                } else if (parsed) {
+                  flags[key] = prev + 1;
+                }
+              }
+
+              break;
+            }
+            case "single":
+            case "array": {
+              const val =
+                eq === -1
+                  ? canConsumeNext(args, i + 1)
+                    ? args[++i]
+                    : undefined
+                  : current.slice(eq + 1);
+              if (val === undefined) {
+                recordUnique((missingValueFlags ??= []), key);
+              } else if (kind === "array") {
+                const prev = flags[key] as string[] | undefined;
+                if (prev === undefined) {
+                  provided.push(key);
+                  flags[key] = [val];
+                } else {
+                  prev.push(val);
+                }
+              } else {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = val;
+              }
+
+              break;
+            }
+          }
 
           continue;
         }
 
-        if (flag.kind === "boolean") {
-          recordUnique(provided, flag.key);
-          flags[flag.key] = true;
-        } else if (flag.kind === "counter") {
-          recordUnique(provided, flag.key);
-          flags[flag.key] = ((flags[flag.key] as number | undefined) ?? 0) + 1;
-        } else if (j + 1 < chars.length) {
-          recordUnique(provided, flag.key);
-          const rest = chars.slice(j + 1);
-          appendRawValue(
-            flags,
-            flag,
-            rest.startsWith("=") ? rest.slice(1) : rest,
-          );
+        // 3. Short flag(s): `-a`, `-abc`, `-p8080`, `-p=8080`, `-p 8080`
+        if (isShortStart(c1)) {
+          for (let j = 1; j < curLen; j++) {
+            const code = current.charCodeAt(j);
+            const flag =
+              code < 128 ? byShortCode?.[code] : byShortExtra?.[current[j]];
+            if (flag === undefined) {
+              (unknown ??= {})[current[j]] = true;
 
-          break;
-        } else {
-          const val = takeNextValue();
-          if (val === undefined) {
-            recordUnique(missingValueFlags, flag.key);
-          } else {
-            recordUnique(provided, flag.key);
-            appendRawValue(flags, flag, val);
+              continue;
+            }
+
+            const { key, kind } = flag;
+            if (kind === "boolean") {
+              if (flags[key] === undefined) {
+                provided.push(key);
+              }
+              flags[key] = true;
+            } else if (kind === "counter") {
+              const prev = flags[key] as number | undefined;
+              if (prev === undefined) {
+                provided.push(key);
+                flags[key] = 1;
+              } else {
+                flags[key] = prev + 1;
+              }
+            } else {
+              const val =
+                j + 1 < curLen
+                  ? current.slice(
+                      current.charCodeAt(j + 1) === CHAR_EQ ? j + 2 : j + 1,
+                    )
+                  : canConsumeNext(args, i + 1)
+                    ? args[++i]
+                    : undefined;
+              if (val === undefined) {
+                recordUnique((missingValueFlags ??= []), key);
+              } else if (kind === "array") {
+                const prev = flags[key] as string[] | undefined;
+                if (prev === undefined) {
+                  provided.push(key);
+                  flags[key] = [val];
+                } else {
+                  prev.push(val);
+                }
+              } else {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = val;
+              }
+
+              break;
+            }
           }
+
+          continue;
         }
       }
-    }
 
-    for (; i < len; i++) {
-      const current = args[i];
-      if (current === DOUBLE_DASH) {
-        pushSlice(doubleDash, args, i + 1);
+      // 4. Positional argument
+      if (stopAtFirstPositional) {
+        parameters = parameters
+          ? [...parameters, ...args.slice(i)]
+          : args.slice(i);
 
         break;
       }
-
-      if (!isFlagToken(current)) {
-        if (stopAtFirstPositional) {
-          pushSlice(parameters, args, i);
-
-          break;
-        }
-        parameters.push(current);
-      } else if (current[1] === "-") {
-        parseLongFlag(current);
-      } else {
-        parseShortFlags(current);
-      }
+      (parameters ??= []).push(current);
     }
 
     return {
-      parameters,
+      parameters: parameters ?? EMPTY_STRINGS,
       doubleDash,
       flags,
-      unknown,
+      unknown: unknown ?? EMPTY_UNKNOWN,
       provided,
-      missingValueFlags,
-      invalidValues,
+      missingValueFlags: missingValueFlags ?? EMPTY_STRINGS,
+      invalidValues: invalidValues ?? EMPTY_INVALID,
     };
   }
 
@@ -425,35 +426,75 @@ export function createLexParser(
     onPositional: ScanCallback,
   ): ScanResult {
     let i = 0;
+
     while (i < args.length) {
       const current = args[i];
-      if (current === DOUBLE_DASH) {
-        return { stoppedAt: i };
-      }
+      const curLen = current.length;
+      const c1 =
+        curLen >= 2 && current.charCodeAt(0) === CHAR_DASH
+          ? current.charCodeAt(1)
+          : 0;
 
-      if (!isFlagToken(current)) {
-        if (!onPositional(current, i)) {
+      if (c1 !== 0) {
+        // 1. POSIX `--` terminator
+        if (c1 === CHAR_DASH && curLen === 2) {
           return { stoppedAt: i };
         }
-        i++;
 
-        continue;
+        // 2. Long flag
+        if (c1 === CHAR_DASH && isLetter(current.charCodeAt(2))) {
+          const eq = current.indexOf("=", 2);
+          const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
+          let flag = byName[name];
+          if (flag === undefined && hasNoPrefix(name)) {
+            const candidate = byName[name.slice(3)];
+            if (candidate?.negatable) {
+              flag = candidate;
+            }
+          }
+          if (flag === undefined) {
+            return { stoppedAt: i };
+          }
+
+          i++;
+          if (eq === -1 && isValueKind(flag.kind) && canConsumeNext(args, i)) {
+            i++;
+          }
+
+          continue;
+        }
+
+        // 3. Short flag(s)
+        if (isShortStart(c1)) {
+          let takesNext = false;
+          for (let j = 1; j < curLen; j++) {
+            const code = current.charCodeAt(j);
+            const flag =
+              code < 128 ? byShortCode?.[code] : byShortExtra?.[current[j]];
+            if (flag === undefined) {
+              return { stoppedAt: i };
+            }
+            if (isValueKind(flag.kind)) {
+              takesNext = j === curLen - 1;
+
+              break;
+            }
+          }
+
+          i++;
+          if (takesNext && canConsumeNext(args, i)) {
+            i++;
+          }
+
+          continue;
+        }
       }
 
-      const takesNext = inspectFlag(current);
-      if (takesNext === undefined) {
+      // 4. Positional argument
+      if (!onPositional(current, i)) {
         return { stoppedAt: i };
       }
-
       i++;
-      if (
-        takesNext &&
-        i < args.length &&
-        args[i] !== DOUBLE_DASH &&
-        !isFlagToken(args[i])
-      ) {
-        i++;
-      }
     }
 
     return { stoppedAt: i };
