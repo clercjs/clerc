@@ -1,4 +1,4 @@
-import { ValidationError } from "./errors";
+import { InvalidSchemaError, ValidationError } from "./errors";
 import type { SingleType, TypeFunction, TypeValue } from "./types";
 
 export interface StandardSchemaV1Issue {
@@ -251,10 +251,14 @@ const createSchema = <T>(
   },
 });
 
-export const Enum = <const T extends string>(
+export function Enum<const T extends string>(
   ...values: readonly T[]
-): ClercSchema<T> =>
-  createSchema<T>(
+): ClercSchema<T> {
+  if (values.length === 0) {
+    throw new InvalidSchemaError("Types.Enum requires at least one value.");
+  }
+
+  return createSchema<T>(
     values.join("|"),
     { type: "string", enum: [...values] },
     (raw) =>
@@ -262,9 +266,16 @@ export const Enum = <const T extends string>(
         ? { value: raw as T }
         : fail(`expected one of: ${values.map((v) => `'${v}'`).join(", ")}`),
   );
+}
 
-export const Range = (min: number, max: number): ClercSchema<number> =>
-  createSchema<number>(
+export function Range(min: number, max: number): ClercSchema<number> {
+  if (Number.isNaN(min) || Number.isNaN(max) || min > max) {
+    throw new InvalidSchemaError(
+      `Types.Range invalid bounds: min (${min}) must be <= max (${max}).`,
+    );
+  }
+
+  return createSchema<number>(
     `${min}..${max}`,
     { type: "number", minimum: min, maximum: max },
     (raw) => {
@@ -275,15 +286,19 @@ export const Range = (min: number, max: number): ClercSchema<number> =>
         : { value: num };
     },
   );
+}
 
 export const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
   createSchema<string>(
     display ?? pattern.toString(),
     { type: "string", pattern: pattern.source },
-    (raw) =>
-      pattern.test(raw)
+    (raw) => {
+      pattern.lastIndex = 0;
+
+      return pattern.test(raw)
         ? { value: raw }
-        : fail(`expected value matching ${pattern}`),
+        : fail(`expected value matching ${pattern}`);
+    },
   );
 
 export const Integer: ClercSchema<number> = createSchema<number>(

@@ -14,12 +14,15 @@ export const verbosityPlugin = () =>
         description: "Enable verbose debug logging",
       },
     })
-    .middleware(async (ctx, next) => {
-      if (ctx.flags.quiet) {
-        ctx.log.level = "error";
-      } else if (ctx.flags.verbose > 0) {
-        ctx.log.level = "debug";
-      }
+    .middleware(
+      (ctx, next) => {
+        if (ctx.flags.quiet) {
+          ctx.log.level = "error";
+        } else if (ctx.flags.verbose > 0) {
+          ctx.log.level = "debug";
+        }
 
-      await next();
-    });
+        return next();
+      },
+      { enforce: "pre" },
+    );

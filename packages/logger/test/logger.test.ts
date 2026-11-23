@@ -87,7 +87,10 @@ describe("@clerc/logger", () => {
 
     const jsonTerm = createMemoryTerminal({ color: false });
     const jsonLog = createLogger({ terminal: jsonTerm, format: "json" });
-    jsonLog.child("api").error("Boom", new Error("ECONNREFUSED"));
+    const circular: Record<string, unknown> = { count: 42n };
+    circular.self = circular;
+    circular.err = new Error("ECONNREFUSED");
+    jsonLog.child("api").error("Boom", circular);
 
     const parsed = JSON.parse(jsonTerm.stderrText());
 
@@ -96,8 +99,12 @@ describe("@clerc/logger", () => {
       scope: "api",
       message: "Boom",
       detail: {
-        name: "Error",
-        message: "ECONNREFUSED",
+        count: "42",
+        self: "[Circular]",
+        err: {
+          name: "Error",
+          message: "ECONNREFUSED",
+        },
       },
     });
   });

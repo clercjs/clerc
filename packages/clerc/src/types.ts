@@ -33,10 +33,15 @@ export type TypeValue<T = any> = SingleType<T> | readonly [SingleType<T>];
 export interface CommandCustomMeta {}
 export interface FlagCustomMeta {}
 export interface ArgCustomMeta {}
+export interface CustomState {}
 
 export type CommandMeta = CommandCustomMeta & Record<string, unknown>;
 export type FlagMeta = FlagCustomMeta & Record<string, unknown>;
 export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
+
+export type State<TState extends Record<string, any> = {}> = Prettify<
+  CustomState & TState
+>;
 
 export interface FlagOptions<T extends TypeValue = TypeValue> {
   readonly type: T;
@@ -137,16 +142,34 @@ type InferSingleType<T> =
       ? U
       : never;
 
+type WidenReadonlyArray<V> = V extends readonly (infer U)[] ? U[] : V;
+
+type UnwrapDefault<D> = D extends () => infer R
+  ? WidenReadonlyArray<R>
+  : WidenReadonlyArray<D>;
+
+type MergeArrayDefault<Elem, Default> = [Default] extends [never]
+  ? Elem[]
+  : Default extends (infer U)[]
+    ? [U] extends [Elem]
+      ? Elem[]
+      : Elem[] | Default
+    : Elem[] | Default;
+
 type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
-  readonly default: DefaultValue<infer DefaultType>;
+  readonly default: infer D;
 }
-  ? DefaultType
+  ? [D] extends [undefined]
+    ? Fallback
+    : UnwrapDefault<D>
   : Fallback;
 
 type InferFlagImplicitValue<T extends FlagDefinitionValue> = T extends {
-  readonly implicitValue: DefaultValue<infer ImplicitType>;
+  readonly implicitValue: infer D;
 }
-  ? ImplicitType
+  ? [D] extends [undefined]
+    ? never
+    : UnwrapDefault<D>
   : never;
 
 type IsTypeAny<T extends FlagDefinitionValue> =
@@ -167,7 +190,7 @@ type InferSingleFlag<T extends FlagDefinitionValue> =
       ? number | InferFlagDefault<T, never>
       : T extends
             readonly [infer Item] | { readonly type: readonly [infer Item] }
-        ? InferSingleType<Item>[] | InferFlagDefault<T, never>
+        ? MergeArrayDefault<InferSingleType<Item>, InferFlagDefault<T, never>>
         : T extends { readonly type: infer Item }
           ? | InferSingleType<Item>
             | InferFlagImplicitValue<T>
@@ -262,10 +285,10 @@ type InferArgDefault<
   Args extends Partial<Record<string, any>>,
   Fallback,
 > = Name extends keyof Args
-  ? NonNullable<Args[Name]> extends {
-      readonly default: DefaultValue<infer DefaultType>;
-    }
-    ? DefaultType
+  ? NonNullable<Args[Name]> extends { readonly default: infer D }
+    ? [D] extends [undefined]
+      ? Fallback
+      : UnwrapDefault<D>
     : Fallback
   : Fallback;
 
@@ -277,8 +300,10 @@ type InferTokenArg<
   : Token extends `[${infer Name}...]`
     ? Record<
         CamelCase<Name>,
-        | ResolveArgType<CamelCase<Name>, Args>[]
-        | InferArgDefault<CamelCase<Name>, Args, never>
+        MergeArrayDefault<
+          ResolveArgType<CamelCase<Name>, Args>,
+          InferArgDefault<CamelCase<Name>, Args, never>
+        >
       >
     : Token extends `<${infer Name}>`
       ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
@@ -386,7 +411,10 @@ export interface HelpOptions {
   ) => string | Promise<string>;
 }
 
-export interface ErrorContext<TGlobalFlags extends Record<string, any> = {}> {
+export interface ErrorContext<
+  TGlobalFlags extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
+> {
   readonly meta: CliMeta;
   readonly model: CliModel;
   readonly terminal: Terminal;
@@ -403,15 +431,18 @@ export interface ErrorContext<TGlobalFlags extends Record<string, any> = {}> {
   readonly calledAs?: string;
   readonly args: Record<string, any>;
   readonly flags: InferFlags<TGlobalFlags> & Record<string, any>;
+  readonly state: Partial<State<TState>>;
   readonly unknown: Record<string, RawInputType>;
   readonly doubleDash: readonly string[];
 }
 
 export interface RunContext<
   TGlobalFlags extends Record<string, any> = {},
-> extends ErrorContext<TGlobalFlags> {
+  TState extends Record<string, any> = {},
+> extends Omit<ErrorContext<TGlobalFlags, TState>, "state"> {
   readonly command: AnyCommandDefinition;
   readonly calledAs: string;
+  readonly state: State<TState>;
 }
 
 export type CommandContext<
@@ -419,20 +450,20 @@ export type CommandContext<
   Args extends Partial<Record<string, any>> = {},
   Flags extends Record<string, any> = {},
   GlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
-> = Omit<RunContext<GlobalFlags>, "args" | "flags"> & {
+  TState extends Record<string, any> = {},
+> = Omit<RunContext<GlobalFlags, TState>, "args" | "flags"> & {
   readonly args: InferCommandArgs<Spec, Args>;
   readonly flags: MergedFlags<Flags, GlobalFlags>;
-} & TExt;
+};
 
 export type CommandHandler<
   Spec extends string = string,
   Args extends Partial<Record<string, any>> = {},
   Flags extends Record<string, any> = {},
   GlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
 > = (
-  ctx: CommandContext<Spec, Args, Flags, GlobalFlags, TExt>,
+  ctx: CommandContext<Spec, Args, Flags, GlobalFlags, TState>,
 ) => void | Promise<void>;
 
 export interface CommandOptions<
@@ -440,7 +471,7 @@ export interface CommandOptions<
   Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
   Flags extends Record<string, any> = {},
   GlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
 > {
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
@@ -457,7 +488,7 @@ export interface CommandOptions<
     NoInfer<Args>,
     NoInfer<Flags>,
     NoInfer<GlobalFlags>,
-    NoInfer<TExt>
+    NoInfer<TState>
   >;
   readonly meta?: CommandMeta;
 }
@@ -465,16 +496,19 @@ export interface CommandOptions<
 export type RootCommandOptions<
   Flags extends Record<string, any> = {},
   GlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
-> = Omit<CommandOptions<"", {}, Flags, GlobalFlags, TExt>, "args" | "aliases">;
+  TState extends Record<string, any> = {},
+> = Omit<
+  CommandOptions<"", {}, Flags, GlobalFlags, TState>,
+  "args" | "aliases" | "group"
+>;
 
 export interface CommandDefinition<
   Spec extends string = string,
   Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
   Flags extends Record<string, any> = {},
   GlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
-> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TExt> {
+  TState extends Record<string, any> = {},
+> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TState> {
   readonly spec: Spec;
   readonly name: string;
   readonly argTokens: readonly string[];
@@ -486,20 +520,43 @@ export interface CommandDefinition<
 
 export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
 
+export interface MiddlewareResult<TAdded extends Record<string, any> = {}> {
+  readonly "~state": TAdded;
+}
+
+export interface MiddlewareNext {
+  (): Promise<MiddlewareResult>;
+  <Added extends Record<string, any>>(
+    state: Added,
+  ): Promise<MiddlewareResult<Added>>;
+}
+
+export interface MiddlewareOptions {
+  readonly enforce?: "pre" | "post";
+}
+
+export type ExtractMiddlewareState<R> =
+  Awaited<R> extends MiddlewareResult<infer Added> ? Added : {};
+
 export type Middleware<
   TGlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
+  TAdded extends Record<string, any> = {},
 > = (
-  ctx: RunContext<TGlobalFlags> & TExt,
-  next: () => Promise<void>,
-) => void | Promise<void>;
+  ctx: RunContext<TGlobalFlags, TState>,
+  next: MiddlewareNext,
+) =>
+  | MiddlewareResult<TAdded>
+  | Promise<MiddlewareResult<TAdded>>
+  | void
+  | Promise<void>;
 
 export type ErrorHandler<
   TGlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
 > = (
   error: unknown,
-  ctx: ErrorContext<TGlobalFlags> & Partial<TExt>,
+  ctx: ErrorContext<TGlobalFlags, TState>,
 ) => boolean | void | Promise<boolean | void>;
 
 export interface ClercOptions {

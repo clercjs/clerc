@@ -13,12 +13,14 @@ const configPlugin = plugin("acme:config")
       description: "Path to config file",
     },
   })
-  .extend(async (ctx) => ({
-    config: await Promise.resolve({
-      path: ctx.flags.config,
-      loadedAt: new Date().toISOString(),
+  .middleware(async (ctx, next) =>
+    next({
+      config: await Promise.resolve({
+        path: ctx.flags.config,
+        loadedAt: new Date().toISOString(),
+      }),
     }),
-  }));
+  );
 
 // 2. Custom onion middleware plugin (logs timing under -v)
 const timingPlugin = plugin("acme:timing").middleware(async (ctx, next) => {
@@ -166,7 +168,7 @@ cli.command("deploy <env> [region]", {
       cache: ctx.flags.cache,
       dryRun: ctx.flags.dryRun,
       tags: ctx.flags.tags,
-      config: ctx.config.path,
+      config: ctx.state.config.path,
     };
 
     if (ctx.flags.json) {
@@ -185,7 +187,7 @@ cli.command("deploy <env> [region]", {
     }
 
     ctx.log.debug(
-      `Loaded config from ${ctx.config.path} (${ctx.config.loadedAt})`,
+      `Loaded config from ${ctx.state.config.path} (${ctx.state.config.loadedAt})`,
     );
     ctx.log.step(
       `Deploying to ${summary.env} (${summary.region})`,

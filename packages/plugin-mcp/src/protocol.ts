@@ -348,13 +348,16 @@ export async function serveMcpStdio(
     if (
       !parsed ||
       typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
       (parsed as { jsonrpc?: unknown }).jsonrpc !== "2.0" ||
       typeof (parsed as { method?: unknown }).method !== "string"
     ) {
+      const rawId =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as { id?: unknown }).id
+          : undefined;
       const id =
-        parsed && typeof parsed === "object" && "id" in parsed
-          ? ((parsed as { id?: string | number | null }).id ?? null)
-          : null;
+        typeof rawId === "string" || typeof rawId === "number" ? rawId : null;
       output.write(
         `${JSON.stringify(errorResponse(id, -32_600, "Invalid Request"))}\n`,
       );

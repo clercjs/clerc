@@ -56,6 +56,7 @@ export interface LoggerTerminal {
   readonly isTTY?: boolean;
   readonly color?: boolean;
   readonly unicode?: boolean;
+  readonly columns?: number;
 }
 
 export interface LoggerOptions {
@@ -149,27 +150,51 @@ const formatLabel = (
     bold ? theme.bold(theme[token](text)) : theme[token](text),
   );
 
-function serializeJsonValue(value: unknown): unknown {
-  if (Error.isError(value)) {
-    return {
-      name: value.name,
-      message: value.message,
-      stack: value.stack,
-      ...(value.cause === undefined
-        ? {}
-        : { cause: serializeJsonValue(value.cause) }),
-    };
-  }
+function stringifyJson(payload: Record<string, unknown>): string {
+  const seen = new WeakSet<object>();
 
-  return value;
+  return JSON.stringify(payload, (_key, value: unknown) => {
+    if (typeof value === "bigint") {
+      return String(value);
+    }
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+      seen.add(value);
+      if (Error.isError(value)) {
+        return {
+          name: value.name,
+          message: value.message,
+          stack: value.stack,
+          ...(value.cause === undefined ? {} : { cause: value.cause }),
+        };
+      }
+    }
+
+    return value;
+  });
 }
+
+const errorHeader = (err: Error): string =>
+  err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
+
+const bindLogMethods = <T>(
+  fn: (kind: LogKind, msg: unknown, ...details: unknown[]) => T,
+): LogMethods<T> => ({
+  step: (msg, ...details) => fn("step", msg, ...details),
+  info: (msg, ...details) => fn("info", msg, ...details),
+  success: (msg, ...details) => fn("success", msg, ...details),
+  warn: (msg, ...details) => fn("warn", msg, ...details),
+  error: (msg, ...details) => fn("error", msg, ...details),
+  debug: (msg, ...details) => fn("debug", msg, ...details),
+});
 
 function extractStackFrames(err: Error): string[] {
   if (!err.stack) {
     return [];
   }
-  const header =
-    err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
+  const header = errorHeader(err);
   const rawBody = err.stack.startsWith(header)
     ? err.stack.slice(header.length)
     : err.stack;
@@ -192,20 +217,14 @@ function formatErrorLines(
   seen.add(err);
   const lines: string[] = [];
   if (includeHeader) {
-    const summary =
-      err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
-    lines.push(styleSummary(summary));
+    lines.push(styleSummary(errorHeader(err)));
   }
   for (const frame of extractStackFrames(err)) {
     lines.push(styleFrame(`  ${frame}`));
   }
   if (err.cause !== undefined && !seen.has(err.cause)) {
     if (Error.isError(err.cause)) {
-      const causeSummary =
-        err.cause.message.length > 0
-          ? `${err.cause.name}: ${err.cause.message}`
-          : err.cause.name;
-      lines.push(styleSummary(`Caused by: ${causeSummary}`));
+      lines.push(styleSummary(`Caused by: ${errorHeader(err.cause)}`));
       lines.push(
         ...formatErrorLines(err.cause, styleSummary, styleFrame, false, seen),
       );
@@ -270,15 +289,10 @@ function createLoggerWithState(
     if (Error.isError(value)) {
       return formatErrorLines(value, styleSummary, faint, true);
     }
-    if (isDebug) {
-      return inspect(value, { colors: false, depth: 4 })
-        .split("\n")
-        .map((part) => faint(part));
-    }
 
-    return inspect(value, { colors: color, depth: 4 })
+    return inspect(value, { colors: !isDebug && color, depth: 4 })
       .split("\n")
-      .map((part) => theme.muted(part));
+      .map((part) => styleSummary(part));
   }
 
   function resolvePayload(
@@ -312,7 +326,7 @@ function createLoggerWithState(
           faint,
           rawMessage.name !== "Error",
         ),
-        jsonMessage: serializeJsonValue(rawMessage),
+        jsonMessage: rawMessage,
       };
     }
 
@@ -329,7 +343,7 @@ function createLoggerWithState(
           .map((part) => (isDebug ? faint(part) : theme.muted(part))),
         ...detailLines,
       ],
-      jsonMessage: serializeJsonValue(rawMessage),
+      jsonMessage: rawMessage,
     };
   }
 
@@ -347,10 +361,10 @@ function createLoggerWithState(
         if (state.format === "json") {
           for (const value of values) {
             write(
-              JSON.stringify({
+              stringifyJson({
                 ...jsonBase,
                 ...(scope ? { scope } : {}),
-                line: serializeJsonValue(value),
+                line: value,
               }),
             );
           }
@@ -384,11 +398,11 @@ function createLoggerWithState(
       payload.scope = scope;
     }
     if (rawDetails.length === 1) {
-      payload.detail = serializeJsonValue(rawDetails[0]);
+      payload.detail = rawDetails[0];
     } else if (rawDetails.length > 1) {
-      payload.details = rawDetails.map(serializeJsonValue);
+      payload.details = rawDetails;
     }
-    write(JSON.stringify(payload));
+    write(stringifyJson(payload));
   }
 
   function emit(
@@ -482,7 +496,9 @@ function createLoggerWithState(
 
     const rawLines: string[] = [];
     const streamColumns =
-      (meta.stderr ? process.stderr.columns : process.stdout.columns) ?? 80;
+      terminal.columns ??
+      (meta.stderr ? process.stderr.columns : process.stdout.columns) ??
+      80;
     const output = Object.assign(
       createLineWritable((line) => {
         rawLines.push(line);
@@ -499,20 +515,8 @@ function createLoggerWithState(
       contentPadding: 2,
       contentAlign: "left",
       titleAlign: "left",
-      formatBorder: (ch) => {
-        if (!unicode) {
-          if (ch === "─") {
-            return faint("-");
-          }
-          if (ch === "│") {
-            return faint("|");
-          }
-
-          return faint("+");
-        }
-
-        return faint(ch);
-      },
+      formatBorder: (ch) =>
+        faint(unicode ? ch : ch === "─" ? "-" : ch === "│" ? "|" : "+"),
     });
 
     const label = formatLabel(meta.label, theme, meta.token, !isDebug);
@@ -521,14 +525,7 @@ function createLoggerWithState(
     }
   }
 
-  const box: LogMethods<void> = {
-    step: (msg, ...details) => emitBox("step", msg, ...details),
-    info: (msg, ...details) => emitBox("info", msg, ...details),
-    success: (msg, ...details) => emitBox("success", msg, ...details),
-    warn: (msg, ...details) => emitBox("warn", msg, ...details),
-    error: (msg, ...details) => emitBox("error", msg, ...details),
-    debug: (msg, ...details) => emitBox("debug", msg, ...details),
-  };
+  const box = bindLogMethods(emitBox);
 
   function createSpinner(
     options?: SpinnerOptions,
@@ -545,11 +542,17 @@ function createLoggerWithState(
 
     let rawSpinner: ReturnType<typeof prompts.spinner> | undefined;
 
+    function finish(): void {
+      if (rawSpinner && active) {
+        rawSpinner.clear();
+      }
+      active = false;
+      activeEntry = NOOP_ENTRY;
+    }
+
     return {
       start(msg = "") {
-        if (active) {
-          rawSpinner?.clear();
-        }
+        finish();
         cancelled = false;
         if (!shouldLog("info")) {
           active = false;
@@ -589,39 +592,21 @@ function createLoggerWithState(
         }
       },
       stop(msg) {
-        if (rawSpinner && active) {
-          rawSpinner.clear();
-        }
-        active = false;
-        activeEntry = NOOP_ENTRY;
+        finish();
         if (msg) {
           emit("success", msg);
         }
       },
       error(msg) {
-        if (rawSpinner && active) {
-          rawSpinner.clear();
-        }
-        active = false;
-        activeEntry = NOOP_ENTRY;
+        finish();
         emit("error", msg ?? options?.errorMessage ?? "Failed");
       },
       cancel(msg) {
-        if (rawSpinner && active) {
-          rawSpinner.clear();
-        }
-        active = false;
+        finish();
         cancelled = true;
-        activeEntry = NOOP_ENTRY;
         emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
       },
-      clear() {
-        if (rawSpinner && active) {
-          rawSpinner.clear();
-        }
-        active = false;
-        activeEntry = NOOP_ENTRY;
-      },
+      clear: finish,
       get isCancelled() {
         return cancelled || Boolean(rawSpinner?.isCancelled);
       },
@@ -646,12 +631,7 @@ function createLoggerWithState(
     },
     scope,
     theme,
-    step: (msg, ...details) => emit("step", msg, ...details),
-    info: (msg, ...details) => emit("info", msg, ...details),
-    success: (msg, ...details) => emit("success", msg, ...details),
-    warn: (msg, ...details) => emit("warn", msg, ...details),
-    error: (msg, ...details) => emit("error", msg, ...details),
-    debug: (msg, ...details) => emit("debug", msg, ...details),
+    ...bindLogMethods(emit),
     box,
     raw: (text = "") => {
       if (state.level !== "silent") {

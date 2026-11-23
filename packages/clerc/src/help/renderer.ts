@@ -294,7 +294,7 @@ export const defaultHelpSections: HelpSectionRenderers = {
           : "",
       hasOptions ? theme.muted("[options]") : "",
       ...args.map((arg) =>
-        arg.kind === "double-dash"
+        arg.kind === "double-dash" || arg.optional
           ? theme.muted(arg.text)
           : theme.placeholder(arg.text),
       ),

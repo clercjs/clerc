@@ -11,7 +11,6 @@ import {
   InvalidCommandError,
   MissingRequiredMetadataError,
   NoCommandError,
-  UnexpectedArgumentError,
   UnknownCommandError,
   enrichCommandError,
   formatDiagnostic,
@@ -43,12 +42,14 @@ import type {
   ErrorContext,
   ErrorHandler,
   ExtractArgNames,
+  ExtractMiddlewareState,
   FlagDescriptor,
   FlagsDefinition,
   GroupDefinition,
   GroupsInput,
   HelpOptions,
-  Middleware,
+  MiddlewareNext,
+  MiddlewareOptions,
   NonEmptySpec,
   RootCommandOptions,
   RunContext,
@@ -62,18 +63,25 @@ type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
-  TExt extends Record<string, any>,
-> = Mutable<ErrorContext<TGlobalFlags>> & Partial<TExt>;
-type ContextExtender = (
-  ctx: RunContext<any>,
-) => Record<string, any> | Promise<Record<string, any>>;
+  TState extends Record<string, any>,
+> = Mutable<Omit<ErrorContext<TGlobalFlags, TState>, "state">> & {
+  state: Record<string, any>;
+};
+type AnyMiddlewareFn = (
+  ctx: RunContext<any, any>,
+  next: MiddlewareNext,
+) => unknown;
+
+interface RegisteredMiddleware {
+  readonly fn: AnyMiddlewareFn;
+  readonly enforce?: "pre" | "post";
+}
 
 interface PluginState {
   readonly flags: FlagsDefinition;
   readonly commands: AnyCommandDefinition[];
   readonly groups: GroupBuckets;
-  readonly extenders: ContextExtender[];
-  readonly middlewares: Middleware<any, any>[];
+  readonly middlewares: RegisteredMiddleware[];
   readonly errorHandlers: ErrorHandler<any, any>[];
   readonly plugins: Map<string, Plugin<any, any>>;
 }
@@ -92,8 +100,7 @@ interface CompiledCli {
   readonly tree: CommandTreeBuilder;
   readonly defaultNode?: CommandNode;
   readonly defaultAcceptsArgs: boolean;
-  readonly extenders: readonly ContextExtender[];
-  readonly middlewares: readonly Middleware<any, any>[];
+  readonly middlewares: readonly AnyMiddlewareFn[];
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
   readonly rootRuntime: CompiledNodeRuntime;
   readonly runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>;
@@ -120,8 +127,7 @@ interface ScopeCollector {
   readonly globalFlags: FlagsDefinition;
   readonly commands: AnyCommandDefinition[];
   readonly groups: GroupBuckets;
-  readonly extenders: ContextExtender[];
-  readonly middlewares: Middleware<any, any>[];
+  readonly middlewares: RegisteredMiddleware[];
   readonly errorHandlers: ErrorHandler<any, any>[];
 }
 
@@ -149,116 +155,121 @@ function resolveNodeBuiltins(options: {
   const descriptors: FlagDescriptor[] = [];
   const specs: ArgvFlagSpec[] = [];
   const names: string[] = [];
-  let hasVersion = false;
-  let hasHelp = false;
 
-  if (isRoot && enableVersion && !usedNames.has("version")) {
-    const short = usedShorts.has("V") ? undefined : "V";
+  function tryAdd(key: string, shortChar: string, desc: string): boolean {
+    if (usedNames.has(key)) {
+      return false;
+    }
+    const short = usedShorts.has(shortChar) ? undefined : shortChar;
     if (short) {
       usedShorts.add(short);
     }
-    descriptors.push(
-      createBuiltinFlagDescriptor("version", short, "Show version"),
-    );
-    specs.push({ key: "version", kind: "boolean", short, negatable: false });
-    names.push("version");
-    hasVersion = true;
+    descriptors.push(createBuiltinFlagDescriptor(key, short, desc));
+    specs.push({ key, kind: "boolean", short, negatable: false });
+    names.push(key);
+
+    return true;
   }
 
-  if (enableHelp && !usedNames.has("help")) {
-    const short = usedShorts.has("h") ? undefined : "h";
-    descriptors.push(createBuiltinFlagDescriptor("help", short, "Show help"));
-    specs.push({ key: "help", kind: "boolean", short, negatable: false });
-    names.push("help");
-    hasHelp = true;
-  }
-
-  return { descriptors, specs, names, hasHelp, hasVersion };
+  return {
+    descriptors,
+    specs,
+    names,
+    hasVersion:
+      isRoot && enableVersion && tryAdd("version", "V", "Show version"),
+    hasHelp: enableHelp && tryAdd("help", "h", "Show help"),
+  };
 }
+
+let setInvalidateHook: (target: Plugin<any, any>, fn: () => void) => void;
+let collectPluginScope: (root: Plugin<any, any>) => ScopeCollector;
 
 export class Plugin<
   TGlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
+  TState extends Record<string, any> = {},
 > {
   public readonly pluginName: string;
   readonly #state: PluginState = {
     flags: {},
     commands: [],
     groups: createGroupBuckets(),
-    extenders: [],
     middlewares: [],
     errorHandlers: [],
     plugins: new Map(),
   };
 
+  #onInvalidate?: () => void;
+
+  static {
+    setInvalidateHook = (target, fn) => {
+      target.#onInvalidate = fn;
+    };
+
+    function resolveWinningPlugins(
+      scope: Plugin<any, any>,
+      winners = new Map<string, Plugin<any, any>>(),
+      visiting = new Set<Plugin<any, any>>(),
+    ): ReadonlyMap<string, Plugin<any, any>> {
+      if (visiting.has(scope)) {
+        return winners;
+      }
+      visiting.add(scope);
+      for (const child of scope.#state.plugins.values()) {
+        resolveWinningPlugins(child, winners, visiting);
+      }
+      winners.set(scope.pluginName, scope);
+
+      return winners;
+    }
+
+    collectPluginScope = (root) => {
+      const acc: ScopeCollector = {
+        globalFlags: {},
+        commands: [],
+        groups: createGroupBuckets(),
+        middlewares: [],
+        errorHandlers: [],
+      };
+      const winners = resolveWinningPlugins(root);
+      const visited = new Set<string>();
+
+      function visit(scope: Plugin<any, any>): void {
+        const resolved = winners.get(scope.pluginName) ?? scope;
+        if (visited.has(resolved.pluginName)) {
+          return;
+        }
+        visited.add(resolved.pluginName);
+
+        const state = resolved.#state;
+        for (const child of state.plugins.values()) {
+          visit(child);
+        }
+
+        Object.assign(acc.globalFlags, state.flags);
+        acc.commands.push(...state.commands);
+        acc.middlewares.push(...state.middlewares);
+        acc.errorHandlers.push(...state.errorHandlers);
+
+        for (const groupScope of GROUP_SCOPES) {
+          acc.groups[groupScope].push(...state.groups[groupScope]);
+        }
+      }
+
+      visit(root);
+
+      return acc;
+    };
+  }
+
   constructor(name: string) {
     this.pluginName = name;
   }
 
-  protected onInvalidate(): void {}
-
-  static #resolveWinningPlugins(
-    scope: Plugin<any, any>,
-    winners = new Map<string, Plugin<any, any>>(),
-    visiting = new Set<Plugin<any, any>>(),
-  ): ReadonlyMap<string, Plugin<any, any>> {
-    if (visiting.has(scope)) {
-      return winners;
-    }
-    visiting.add(scope);
-    for (const child of scope.#state.plugins.values()) {
-      Plugin.#resolveWinningPlugins(child, winners, visiting);
-    }
-    winners.set(scope.pluginName, scope);
-
-    return winners;
-  }
-
-  protected static collectScope(root: Plugin<any, any>): ScopeCollector {
-    const acc: ScopeCollector = {
-      globalFlags: {},
-      commands: [],
-      groups: createGroupBuckets(),
-      extenders: [],
-      middlewares: [],
-      errorHandlers: [],
-    };
-    const winners = Plugin.#resolveWinningPlugins(root);
-    const visited = new Set<string>();
-
-    function visit(scope: Plugin<any, any>): void {
-      const resolved = winners.get(scope.pluginName) ?? scope;
-      if (visited.has(resolved.pluginName)) {
-        return;
-      }
-      visited.add(resolved.pluginName);
-
-      const state = resolved.#state;
-      for (const child of state.plugins.values()) {
-        visit(child);
-      }
-
-      Object.assign(acc.globalFlags, state.flags);
-      acc.commands.push(...state.commands);
-      acc.extenders.push(...state.extenders);
-      acc.middlewares.push(...state.middlewares);
-      acc.errorHandlers.push(...state.errorHandlers);
-
-      for (const groupScope of GROUP_SCOPES) {
-        acc.groups[groupScope].push(...state.groups[groupScope]);
-      }
-    }
-
-    visit(root);
-
-    return acc;
-  }
-
   public flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
-  ): Plugin<TGlobalFlags & Flags, TExt> {
+  ): Plugin<TGlobalFlags & Flags, TState> {
     Object.assign(this.#state.flags, definitions);
-    this.onInvalidate();
+    this.#onInvalidate?.();
 
     return this as any;
   }
@@ -273,13 +284,13 @@ export class Plugin<
         this.#state.groups[scope].push({ key, title });
       }
     }
-    this.onInvalidate();
+    this.#onInvalidate?.();
 
     return this;
   }
 
   public command<const Flags extends Record<string, any> = {}>(
-    options: RootCommandOptions<Flags, TGlobalFlags, TExt>,
+    options: RootCommandOptions<Flags, TGlobalFlags, TState>,
   ): this;
   public command<
     const Spec extends string,
@@ -287,17 +298,18 @@ export class Plugin<
     const Flags extends Record<string, any> = {},
   >(
     spec: NonEmptySpec<Spec>,
-    options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TExt>,
+    options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TState>,
   ): this;
   public command(
     specOrOptions: string | RootCommandOptions<any, any, any>,
     maybeOptions?: CommandOptions<any, any, any, any, any>,
   ): this {
     if (typeof specOrOptions === "string") {
-      const { name, argTokens } = parseCommandSpec(specOrOptions);
+      const trimmedSpec = specOrOptions.trim();
+      const { name, argTokens } = parseCommandSpec(trimmedSpec);
       this.#state.commands.push({
         ...maybeOptions,
-        spec: specOrOptions,
+        spec: trimmedSpec,
         name,
         argTokens,
       });
@@ -309,40 +321,39 @@ export class Plugin<
         argTokens: [],
       });
     }
-    this.onInvalidate();
+    this.#onInvalidate?.();
 
     return this;
   }
 
-  public extend<Added extends Record<string, any>>(
-    fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
-  ): Plugin<TGlobalFlags, TExt & Added> {
-    this.#state.extenders.push(fn as ContextExtender);
-    this.onInvalidate();
+  public middleware<R = void>(
+    fn: (ctx: RunContext<TGlobalFlags, TState>, next: MiddlewareNext) => R,
+    options?: MiddlewareOptions,
+  ): Plugin<TGlobalFlags, TState & ExtractMiddlewareState<R>> {
+    this.#state.middlewares.push({
+      fn: fn as AnyMiddlewareFn,
+      enforce: options?.enforce,
+    });
+    this.#onInvalidate?.();
 
     return this as any;
   }
 
-  public middleware(fn: Middleware<TGlobalFlags, TExt>): this {
-    this.#state.middlewares.push(fn as Middleware<any, any>);
-    this.onInvalidate();
-
-    return this;
-  }
-
-  public onError(fn: ErrorHandler<TGlobalFlags, TExt>): this {
+  public onError(fn: ErrorHandler<TGlobalFlags, TState>): this {
     this.#state.errorHandlers.push(fn as ErrorHandler<any, any>);
-    this.onInvalidate();
+    this.#onInvalidate?.();
 
     return this;
   }
 
   public use<
     PFlags extends Record<string, any> = {},
-    PExt extends Record<string, any> = {},
-  >(other: Plugin<PFlags, PExt>): Plugin<TGlobalFlags & PFlags, TExt & PExt> {
+    PState extends Record<string, any> = {},
+  >(
+    other: Plugin<PFlags, PState>,
+  ): Plugin<TGlobalFlags & PFlags, TState & PState> {
     this.#state.plugins.set(other.pluginName, other);
-    this.onInvalidate();
+    this.#onInvalidate?.();
 
     return this as any;
   }
@@ -350,8 +361,8 @@ export class Plugin<
 
 export class Clerc<
   TGlobalFlags extends Record<string, any> = {},
-  TExt extends Record<string, any> = {},
-> extends Plugin<TGlobalFlags, TExt> {
+  TState extends Record<string, any> = {},
+> extends Plugin<TGlobalFlags, TState> {
   readonly #meta: CliMeta;
   readonly #defaultCommand?: string;
   readonly #helpOptions: false | HelpOptions;
@@ -383,32 +394,34 @@ export class Clerc<
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
-  }
-
-  protected override onInvalidate(): void {
-    this.#compiled = undefined;
+    setInvalidateHook(this, () => {
+      this.#compiled = undefined;
+    });
   }
 
   public override flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
-  ): Clerc<TGlobalFlags & Flags, TExt> {
+  ): Clerc<TGlobalFlags & Flags, TState> {
     super.flags(definitions);
 
     return this as any;
   }
 
-  public override extend<Added extends Record<string, any>>(
-    fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
-  ): Clerc<TGlobalFlags, TExt & Added> {
-    super.extend(fn);
+  public override middleware<R = void>(
+    fn: (ctx: RunContext<TGlobalFlags, TState>, next: MiddlewareNext) => R,
+    options?: MiddlewareOptions,
+  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>> {
+    super.middleware(fn, options);
 
     return this as any;
   }
 
   public override use<
     PFlags extends Record<string, any> = {},
-    PExt extends Record<string, any> = {},
-  >(other: Plugin<PFlags, PExt>): Clerc<TGlobalFlags & PFlags, TExt & PExt> {
+    PState extends Record<string, any> = {},
+  >(
+    other: Plugin<PFlags, PState>,
+  ): Clerc<TGlobalFlags & PFlags, TState & PState> {
     super.use(other);
 
     return this as any;
@@ -419,7 +432,7 @@ export class Clerc<
       return this.#compiled;
     }
 
-    const acc = Plugin.collectScope(this);
+    const acc = collectPluginScope(this);
 
     const tree = new CommandTreeBuilder();
     for (const cmd of acc.commands) {
@@ -457,7 +470,16 @@ export class Clerc<
         async run(ctx) {
           const path = ctx.args.command as string[];
           if (path.length > 0 && !ctx.model.tree.findNode(path)) {
-            throw new UnknownCommandError(path.join(" "), []);
+            let parentPath: readonly string[] = [];
+            for (let i = 1; i < path.length; i++) {
+              const matched = ctx.model.tree.findNode(path.slice(0, i));
+              if (!matched) {
+                break;
+              }
+              parentPath = matched.fullPath;
+            }
+
+            throw new UnknownCommandError(path.join(" "), parentPath);
           }
           await ctx.help.print(path.length > 0 ? path : undefined);
         },
@@ -490,10 +512,9 @@ export class Clerc<
       const parser = createArgvParser([...userFlags.specs, ...builtins.specs], {
         stopAtFirstPositional: cmd?.stopAtFirstPositional,
       });
-      const compiledArgs =
-        cmd && cmd.argTokens.length > 0
-          ? compileArgs(cmd.argTokens, cmd.args)
-          : undefined;
+      const compiledArgs = cmd
+        ? compileArgs(cmd.argTokens, cmd.args)
+        : undefined;
 
       tree.attachCompiled(node, {
         args: compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS,
@@ -548,13 +569,18 @@ export class Clerc<
       groups: acc.groups,
     };
 
+    const orderedMiddlewares = [
+      ...acc.middlewares.filter((m) => m.enforce === "pre"),
+      ...acc.middlewares.filter((m) => m.enforce === undefined),
+      ...acc.middlewares.filter((m) => m.enforce === "post"),
+    ].map((m) => m.fn);
+
     this.#compiled = {
       model,
       tree,
       defaultNode,
       defaultAcceptsArgs,
-      extenders: acc.extenders,
-      middlewares: acc.middlewares,
+      middlewares: orderedMiddlewares,
       errorHandlers: acc.errorHandlers,
       rootRuntime: runtimes.get(tree.root)!,
       runtimes,
@@ -571,7 +597,7 @@ export class Clerc<
     compiledCli: CompiledCli,
     argv: readonly string[] | undefined,
     options: RunOptions,
-  ): InternalContext<TGlobalFlags, TExt> {
+  ): InternalContext<TGlobalFlags, TState> {
     const terminal = options.terminal ?? createTerminal();
     const themeOverrides =
       this.#themeOverrides || options.theme
@@ -604,7 +630,7 @@ export class Clerc<
       });
     };
 
-    const baseCtx: Mutable<ErrorContext<TGlobalFlags>> = {
+    return {
       meta: compiledCli.model.meta,
       model: compiledCli.model,
       terminal,
@@ -616,21 +642,30 @@ export class Clerc<
           terminal.stdout(await render(commandPath));
         },
       },
-      run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
+      run: (nextArgv, nextOptions) =>
+        this.run(nextArgv, {
+          terminal,
+          theme: themeOverrides,
+          ...nextOptions,
+          logger: {
+            level: log.level,
+            format: log.format,
+            ...nextOptions?.logger,
+          },
+        }),
       argv: argv ?? terminal.argv,
       commandPath: [],
       args: {},
       flags: {} as any,
+      state: {},
       unknown: {},
       doubleDash: [],
     };
-
-    return baseCtx as InternalContext<TGlobalFlags, TExt>;
   }
 
   async #execute(
     compiledCli: CompiledCli,
-    ctx: InternalContext<TGlobalFlags, TExt>,
+    ctx: InternalContext<TGlobalFlags, TState>,
   ): Promise<RunResult> {
     // 1. Resolve command match (matched | namespace | empty | unknown)
     let match = compiledCli.tree.resolveArgv(
@@ -735,53 +770,52 @@ export class Clerc<
     );
     ctx.flags = flags as any;
 
-    const matchedCommand = match.command;
-    if (matchedCommand.deprecated) {
-      const reason =
-        typeof matchedCommand.deprecated === "string"
-          ? `: ${matchedCommand.deprecated}`
-          : "";
-      const pathLabel = ctx.commandPath.join(" ");
-      ctx.log.warn(`Command '${pathLabel || "(root)"}' is deprecated${reason}`);
-    }
-    warnFlagDeprecations(runtime.userFlags, provided, ctx.log.warn);
-
     validateResolvedFlags(runtime.userFlags, missingRequired, provided);
 
-    if (runtime.args) {
-      ctx.args = await executeCompiledArgs(
-        runtime.args,
-        parsed.positionals,
-        parsed.doubleDash,
-        ctx.terminal.env,
-      );
-    } else {
-      const extraArgs = [...parsed.positionals, ...parsed.doubleDash];
-      if (extraArgs.length > 0) {
-        throw new UnexpectedArgumentError(extraArgs);
+    ctx.args = await executeCompiledArgs(
+      runtime.args!,
+      parsed.positionals,
+      parsed.doubleDash,
+      ctx.terminal.env,
+    );
+
+    const matchedCommand = match.command;
+    const runCtx = ctx as unknown as RunContext<TGlobalFlags, TState>;
+
+    async function runCore(): Promise<void> {
+      if (matchedCommand.deprecated) {
+        const reason =
+          typeof matchedCommand.deprecated === "string"
+            ? `: ${matchedCommand.deprecated}`
+            : "";
+        const pathLabel = ctx.commandPath.join(" ");
+        ctx.log.warn(
+          `Command '${pathLabel || "(root)"}' is deprecated${reason}`,
+        );
       }
-      ctx.args = {};
-    }
-
-    const runCtx = ctx as RunContext<TGlobalFlags> & TExt;
-
-    // 6. Derive async context extensions with resolved flags & args
-    for (const extend of compiledCli.extenders) {
-      Object.assign(runCtx, await extend(runCtx));
-    }
-
-    // 7. Run onion middleware chain wrapping command.run
-    if (compiledCli.middlewares.length === 0) {
+      warnFlagDeprecations(runtime.userFlags, provided, ctx.log.warn);
       if (matchedCommand.run) {
         await matchedCommand.run(runCtx as any);
       }
+    }
+
+    // 6. Run ordered onion middleware chain (pre -> normal -> post -> core)
+    if (compiledCli.middlewares.length === 0) {
+      await runCore();
     } else {
-      async function dispatch(index: number): Promise<void> {
+      async function dispatch(
+        index: number,
+        added?: Record<string, any>,
+      ): Promise<any> {
+        if (added) {
+          Object.assign(ctx.state, added);
+        }
         const mw = compiledCli.middlewares[index];
         if (mw) {
-          await mw(runCtx, () => dispatch(index + 1));
-        } else if (matchedCommand.run) {
-          await matchedCommand.run(runCtx as any);
+          await mw(runCtx, ((nextState?: Record<string, any>) =>
+            dispatch(index + 1, nextState)) as MiddlewareNext);
+        } else {
+          await runCore();
         }
       }
       await dispatch(0);
@@ -793,15 +827,16 @@ export class Clerc<
   async #handleError(
     error: unknown,
     compiledCli: CompiledCli,
-    ctx: InternalContext<TGlobalFlags, TExt>,
+    ctx: InternalContext<TGlobalFlags, TState>,
     throwOnError: boolean,
   ): Promise<RunResult> {
     enrichCommandError(error, compiledCli.tree);
 
     const exitCode = error instanceof ClercError ? error.exitCode : 1;
+    const errCtx = ctx as unknown as ErrorContext<TGlobalFlags, TState>;
 
     for (let i = compiledCli.errorHandlers.length - 1; i >= 0; i--) {
-      if (await compiledCli.errorHandlers[i](error, ctx)) {
+      if (await compiledCli.errorHandlers[i](error, errCtx)) {
         return { ok: false, exitCode, error };
       }
     }

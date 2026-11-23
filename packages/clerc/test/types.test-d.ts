@@ -104,20 +104,28 @@ describe("core v2 route-signature & plugin types", () => {
     });
   });
 
-  it("accumulates plugin flags and extend() types cleanly across .use()", () => {
+  it("accumulates plugin flags and middleware next({ ... }) state into ctx.state cleanly", () => {
     const authPlugin = plugin("auth")
       .flags({ token: String })
-      .extend(() => ({
-        auth: {
-          getUser: (): string => "ray",
-        },
-      }));
+      .middleware((_ctx, next) =>
+        next({
+          auth: {
+            getUser: (): string => "ray",
+          },
+        }),
+      );
 
-    const cli = clerc({ name: "app", version: "1.0.0" }).use(authPlugin);
+    const cli = clerc({ name: "app", version: "1.0.0" })
+      .use(authPlugin)
+      .middleware(async (ctx, next) => {
+        expectTypeOf(ctx.state.auth.getUser()).toEqualTypeOf<string>();
+        await next();
+      });
+
     cli.command("me", {
       run(ctx) {
         expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
-        expectTypeOf(ctx.auth.getUser()).toEqualTypeOf<string>();
+        expectTypeOf(ctx.state.auth.getUser()).toEqualTypeOf<string>();
       },
     });
   });
@@ -167,7 +175,7 @@ describe("core v2 route-signature & plugin types", () => {
       {
         args: {
           region: { type: String, default: "us-east-1" },
-          files: { type: String, default: () => ["index.ts"] },
+          files: { type: String, default: ["index.ts"] },
         },
         flags: {
           inspect: { type: Number, implicitValue: 9229 },
@@ -176,7 +184,18 @@ describe("core v2 route-signature & plugin types", () => {
             default: "auto",
             implicitValue: "always",
           },
-          tags: { type: [String], delimiter: ",", aliases: ["tag"] },
+          tags: {
+            type: [String],
+            delimiter: ",",
+            aliases: ["tag"],
+            default: ["latest"],
+          },
+          port: { type: Number, default: () => 3000 },
+          cache: { type: Boolean, default: () => true },
+          modes: {
+            type: [Types.Enum("fast", "safe")],
+            default: ["fast"],
+          },
         },
         run(ctx) {
           expectTypeOf(ctx.args.region).toEqualTypeOf<string>();
@@ -186,6 +205,9 @@ describe("core v2 route-signature & plugin types", () => {
             "auto" | "always" | "never"
           >();
           expectTypeOf(ctx.flags.tags).toEqualTypeOf<string[]>();
+          expectTypeOf(ctx.flags.port).toEqualTypeOf<number>();
+          expectTypeOf(ctx.flags.cache).toEqualTypeOf<boolean>();
+          expectTypeOf(ctx.flags.modes).toEqualTypeOf<("fast" | "safe")[]>();
         },
       },
     );

@@ -2,7 +2,7 @@ import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import type { StandardSchemaV1 } from "../src";
-import { Types, ValidationError } from "../src";
+import { InvalidSchemaError, Types, ValidationError } from "../src";
 
 const createSyncSchema = <T>(
   validate: (
@@ -38,7 +38,7 @@ describe("Types and Standard Schema v1", () => {
       args: { env: Types.Enum("dev", "prod") },
       flags: {
         port: { type: Types.Range(1, 65_535) },
-        tag: { type: Types.Regex(/^v\d+$/, "v<n>") },
+        tag: { type: [Types.Regex(/^v\d+$/g, "v<n>")] },
         workers: { type: Types.Integer },
       },
       run(ctx) {
@@ -47,13 +47,24 @@ describe("Types and Standard Schema v1", () => {
     });
 
     await cli.run(
-      ["run", "prod", "--port", "8080", "--tag", "v2", "--workers", "4"],
+      [
+        "run",
+        "prod",
+        "--port",
+        "8080",
+        "--tag",
+        "v2",
+        "--tag",
+        "v3",
+        "--workers",
+        "4",
+      ],
       { terminal },
     );
 
     expect(captured).toEqual({
       args: { env: "prod" },
-      flags: { port: 8080, tag: "v2", workers: 4 },
+      flags: { port: 8080, tag: ["v2", "v3"], workers: 4 },
     });
 
     await expect(
@@ -80,6 +91,9 @@ describe("Types and Standard Schema v1", () => {
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
+
+    expect(() => Types.Enum()).toThrow(InvalidSchemaError);
+    expect(() => Types.Range(10, 5)).toThrow(InvalidSchemaError);
   });
 
   it("supports sync and async Standard Schema v1 on flags and args", async () => {

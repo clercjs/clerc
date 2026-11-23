@@ -45,31 +45,25 @@ interface UpdateCache {
 const DEFAULT_INTERVAL_MS = 1000 * 60 * 60 * 24;
 const DEFAULT_TIMEOUT_MS = 1500;
 const DEFAULT_POST_RUN_GRACE_MS = 250;
-const SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)/;
-
-function parseSemver(
-  version: string,
-): readonly [number, number, number] | null {
-  const match = SEMVER_RE.exec(version.trim());
-  if (!match) {
-    return null;
-  }
-
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
-}
+const SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?/;
 
 function isNewerVersion(current: string, latest: string): boolean {
-  const c = parseSemver(current);
-  const l = parseSemver(latest);
+  const c = SEMVER_RE.exec(current.trim());
+  const l = SEMVER_RE.exec(latest.trim());
   if (!c || !l) {
     return false;
   }
+  for (const i of [1, 2, 3] as const) {
+    const diff = Number(l[i]) - Number(c[i]);
+    if (diff !== 0) {
+      return diff > 0;
+    }
+  }
 
-  return l[0] === c[0]
-    ? l[1] === c[1]
-      ? l[2] > c[2]
-      : l[1] > c[1]
-    : l[0] > c[0];
+  return Boolean(
+    c[4] &&
+    (!l[4] || l[4].localeCompare(c[4], undefined, { numeric: true }) > 0),
+  );
 }
 
 let fsDepsPromise:
@@ -94,7 +88,8 @@ async function resolveCacheFile(
 ): Promise<string> {
   const { os, path } = await loadFsDeps();
   const baseDir =
-    overrideDir ?? env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache");
+    [overrideDir, env.XDG_CACHE_HOME].find(Boolean) ??
+    path.join(os.homedir(), ".cache");
   const safeName = pkgName.replace(/[^\w.-]/g, "_");
 
   return path.join(baseDir, "clerc-update-notifier", `${safeName}.json`);
@@ -226,28 +221,31 @@ export function updateNotifierPlugin(
     return undefined;
   }
 
-  return plugin("clerc:update-notifier").middleware(async (ctx, next) => {
-    const pkgName = packageName ?? ctx.meta.name;
-    const currentVersion = version ?? ctx.meta.version;
-    const checkPromise = checkForUpdate(
-      pkgName,
-      currentVersion,
-      ctx.terminal.env,
-      ctx.terminal.isTTY,
-    );
+  return plugin("clerc:update-notifier").middleware(
+    async (ctx, next) => {
+      const pkgName = packageName ?? ctx.meta.name;
+      const currentVersion = version ?? ctx.meta.version;
+      const checkPromise = checkForUpdate(
+        pkgName,
+        currentVersion,
+        ctx.terminal.env,
+        ctx.terminal.isTTY,
+      );
 
-    try {
-      await next();
-    } finally {
-      const info = await awaitWithin(checkPromise, postRunGraceMs);
+      try {
+        await next();
+      } finally {
+        const info = await awaitWithin(checkPromise, postRunGraceMs);
 
-      if (info) {
-        const updateCmd = installCommand ?? `npm i -g ${info.name}`;
-        ctx.log.box.warn(
-          `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-          `Run ${ctx.theme.accent(updateCmd)} to update`,
-        );
+        if (info) {
+          const updateCmd = installCommand ?? `npm i -g ${info.name}`;
+          ctx.log.box.warn(
+            `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
+            `Run ${ctx.theme.accent(updateCmd)} to update`,
+          );
+        }
       }
-    }
-  });
+    },
+    { enforce: "pre" },
+  );
 }

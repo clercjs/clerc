@@ -58,9 +58,7 @@ function registerFlagDescriptor(tc: TabCommand, flag: FlagDescriptor): void {
     }
   } else {
     const handler: OptionHandler =
-      compMeta?.handler ??
-      createEnumCompleter(flag.toJsonSchema) ??
-      (async () => {});
+      compMeta?.handler ?? createEnumCompleter(flag.toJsonSchema) ?? (() => {});
     tc.option(longName, desc, handler, flag.short);
     for (const alias of flag.aliases) {
       tc.option(alias, desc, handler);

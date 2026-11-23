@@ -50,6 +50,7 @@ export interface McpToolEntry {
   readonly commandPath: readonly string[];
   readonly mainArgs: readonly ArgSlot[];
   readonly doubleDashArgs: readonly ArgSlot[];
+  readonly hasBareDoubleDash: boolean;
   readonly flags: ReadonlyMap<string, FlagSlot>;
   readonly rootSubcommands?: ReadonlySet<string>;
 }
@@ -151,7 +152,7 @@ function buildToolEntry(
     const slot: ArgSlot = { name: arg.name, isVariadic: arg.isVariadic };
     (arg.afterDoubleDash ? doubleDashArgs : mainArgs).push(slot);
 
-    const itemSchema = arg.toJsonSchema();
+    const itemSchema = { ...arg.toJsonSchema() };
     const prop: Record<string, unknown> = arg.isVariadic
       ? { type: "array", items: itemSchema }
       : itemSchema;
@@ -181,7 +182,7 @@ function buildToolEntry(
       continue;
     }
 
-    const schema = flag.toJsonSchema();
+    const schema = { ...flag.toJsonSchema() };
     if (flag.description) {
       schema.description = flag.description;
     }
@@ -224,6 +225,8 @@ function buildToolEntry(
     commandPath: node.fullPath,
     mainArgs,
     doubleDashArgs,
+    hasBareDoubleDash:
+      doubleDashArgs.length === 0 && cmd.argTokens.includes(DOUBLE_DASH),
     flags,
     rootSubcommands:
       node.fullPath.length === 0
@@ -290,8 +293,12 @@ export function serializeToolArgsToArgv(
       case "boolean": {
         if (value === true) {
           argv.push(info.target);
-        } else if (value === false && info.negatable) {
-          argv.push(`--no-${info.target.slice(2)}`);
+        } else if (value === false) {
+          argv.push(
+            info.negatable
+              ? `--no-${info.target.slice(2)}`
+              : `${info.target}=false`,
+          );
         }
 
         break;
@@ -329,6 +336,7 @@ export function serializeToolArgsToArgv(
 
   if (
     entry.doubleDashArgs.length === 0 &&
+    !entry.hasBareDoubleDash &&
     (mainValues.some((v) => v.startsWith("-")) ||
       (mainValues.length > 0 && entry.rootSubcommands?.has(mainValues[0])))
   ) {

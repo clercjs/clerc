@@ -105,14 +105,16 @@ describe("@clerc/plugin-mcp", () => {
     expect(deployTool.inputSchema.properties).not.toHaveProperty("version");
   });
 
-  it("executes commands via tools/call through full extend + middleware + validation pipeline", async () => {
+  it("executes commands via tools/call through full state middleware + validation pipeline", async () => {
     const authPlugin = plugin("auth")
       .flags({ token: { type: String, default: "guest" } })
-      .extend(async (ctx) => ({
-        actor: await Promise.resolve(`user:${ctx.flags.token}`),
-      }))
+      .middleware(async (ctx, next) =>
+        next({
+          actor: await Promise.resolve(`user:${ctx.flags.token}`),
+        }),
+      )
       .middleware(async (ctx, next) => {
-        ctx.terminal.stdout(`actor=${ctx.actor}`);
+        ctx.terminal.stdout(`actor=${ctx.state.actor}`);
         await next();
       });
 
@@ -123,10 +125,11 @@ describe("@clerc/plugin-mcp", () => {
       flags: {
         tags: { type: [String] },
         dryRun: Boolean,
+        strict: { type: Boolean, default: true, negatable: false },
       },
       run(ctx) {
         ctx.terminal.stdout(
-          `released ${ctx.args.channel} dry=${ctx.flags.dryRun} tags=${ctx.flags.tags.join(",")} extra=${ctx.args.extra.join(",")}`,
+          `released ${ctx.args.channel} dry=${ctx.flags.dryRun} strict=${ctx.flags.strict} tags=${ctx.flags.tags.join(",")} extra=${ctx.args.extra.join(",")}`,
         );
       },
     });
@@ -166,6 +169,7 @@ describe("@clerc/plugin-mcp", () => {
           channel: "beta",
           token: "ray",
           dryRun: true,
+          strict: false,
           tags: ["v2", "latest"],
           extra: ["--force"],
         },
@@ -177,7 +181,7 @@ describe("@clerc/plugin-mcp", () => {
         {
           type: "text",
           text: expect.stringContaining(
-            "released beta dry=true tags=v2,latest extra=--force",
+            "released beta dry=true strict=false tags=v2,latest extra=--force",
           ),
         },
       ],

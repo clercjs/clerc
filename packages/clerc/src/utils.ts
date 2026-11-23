@@ -8,9 +8,9 @@ export type Prettify<T> = {
 
 export type CamelCase<S extends string> =
   S extends `${infer Head} ${infer Tail}`
-    ? `${Head}${Capitalize<CamelCase<Tail>>}`
+    ? `${CamelCase<Head>}${Capitalize<CamelCase<Tail>>}`
     : S extends `${infer Head}-${infer Tail}`
-      ? `${Head}${Capitalize<CamelCase<Tail>>}`
+      ? `${CamelCase<Head>}${Capitalize<CamelCase<Tail>>}`
       : S;
 
 export type IsAny<T> = 0 extends 1 & T ? true : false;
@@ -55,8 +55,13 @@ const conjunctionFormat = new Intl.ListFormat("en", {
 export const joinWithAnd = (values: readonly string[]): string =>
   conjunctionFormat.format(values);
 
-export const evaluateDefault = (value: unknown): unknown =>
-  typeof value === "function" ? (value as () => unknown)() : value;
+export function evaluateDefault(value: unknown): unknown {
+  if (typeof value === "function") {
+    return (value as () => unknown)();
+  }
+
+  return Array.isArray(value) ? [...value] : value;
+}
 
 export const resolveAsyncValue = async <T, Arg = void>(
   value: MaybeAsyncGetter<T, Arg>,

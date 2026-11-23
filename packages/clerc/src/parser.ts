@@ -4,6 +4,7 @@ import { camelCase, kebabCase } from "./utils";
 
 export const DOUBLE_DASH = "--";
 export const IMPLICIT_FLAG_VALUE = Symbol("clerc.implicitFlagValue");
+export const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
 
 export type RawInputType = string | boolean;
 
@@ -74,7 +75,6 @@ const CHAR_DASH = 45; // '-'
 const CHAR_EQ = 61; // '='
 const CHAR_N = 110; // 'n'
 const CHAR_O = 111; // 'o'
-export const INVALID_BOOL_MSG = "expected a boolean ('true' or 'false')";
 
 const EMPTY_STRINGS: readonly string[] = Object.freeze([]);
 const EMPTY_INVALID: readonly InvalidFlagValue[] = Object.freeze([]);
@@ -108,12 +108,6 @@ export function parseBooleanLiteral(raw: string): boolean | undefined {
   const lower = raw.toLowerCase();
 
   return lower === "true" ? true : lower === "false" ? false : undefined;
-}
-
-function recordUnique(list: string[], key: string): void {
-  if (!list.includes(key)) {
-    list.push(key);
-  }
 }
 
 function registerAlias(
@@ -237,21 +231,34 @@ export function createArgvParser(
     isLetter(code) ||
     (hasDigitShort && isDigit(code) && byShortCode![code] !== undefined);
 
+  function resolveLongFlag(
+    name: string,
+  ): { readonly flag: CompiledFlag; readonly negated: boolean } | undefined {
+    const direct = byName[name];
+    if (direct) {
+      return { flag: direct, negated: false };
+    }
+    if (hasNoPrefix(name)) {
+      const candidate = byName[name.slice(3)];
+      if (candidate?.negatable) {
+        return { flag: candidate, negated: true };
+      }
+    }
+
+    return undefined;
+  }
+
   function canConsumeNext(args: readonly string[], nextIndex: number): boolean {
     if (nextIndex >= args.length) {
       return false;
     }
     const next = args[nextIndex];
-    const len = next.length;
-    if (len < 2 || next.charCodeAt(0) !== CHAR_DASH) {
+    if (next.length < 2 || next.charCodeAt(0) !== CHAR_DASH) {
       return true;
     }
     const c1 = next.charCodeAt(1);
-    if (c1 === CHAR_DASH) {
-      return false;
-    }
 
-    return !isShortStart(c1);
+    return c1 !== CHAR_DASH && !isShortStart(c1);
   }
 
   function parse(args: readonly string[]): ArgvParseResult {
@@ -264,6 +271,13 @@ export function createArgvParser(
     let missingValueCandidates: Record<string, string> | undefined;
     let invalidValues: InvalidFlagValue[] | undefined;
 
+    function setFlag(key: string, val: FlagValues[string]): void {
+      if (flags[key] === undefined) {
+        provided.push(key);
+      }
+      flags[key] = val;
+    }
+
     function assignValue(
       key: string,
       kind: "single" | "array",
@@ -271,23 +285,22 @@ export function createArgvParser(
       nextIndex: number,
     ): void {
       if (val === undefined) {
-        recordUnique((missingValueFlags ??= []), key);
+        missingValueFlags ??= [];
+        if (!missingValueFlags.includes(key)) {
+          missingValueFlags.push(key);
+        }
         if (nextIndex < args.length && args[nextIndex] !== DOUBLE_DASH) {
           (missingValueCandidates ??= {})[key] ??= args[nextIndex];
         }
       } else if (kind === "array") {
         const prev = flags[key] as string[] | undefined;
         if (prev === undefined) {
-          provided.push(key);
-          flags[key] = [val];
+          setFlag(key, [val]);
         } else {
           prev.push(val);
         }
       } else {
-        if (flags[key] === undefined) {
-          provided.push(key);
-        }
-        flags[key] = val;
+        setFlag(key, val);
       }
     }
 
@@ -300,92 +313,64 @@ export function createArgvParser(
           : 0;
 
       if (c1 !== 0) {
-        // 1. POSIX `--` terminator
         if (c1 === CHAR_DASH && curLen === 2) {
           doubleDash = args.slice(i + 1);
 
           break;
         }
 
-        // 2. Long flag: `--name`, `--name=value`, `--no-name`
         if (c1 === CHAR_DASH) {
           const eq = current.indexOf("=", 2);
           const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
-          let flag = byName[name];
-          let negated = false;
+          const resolved = resolveLongFlag(name);
 
-          if (flag === undefined && hasNoPrefix(name)) {
-            const candidate = byName[name.slice(3)];
-            if (candidate?.negatable) {
-              flag = candidate;
-              negated = true;
-            }
-          }
-
-          if (flag === undefined) {
+          if (!resolved) {
             (unknown ??= {})[camelCase(name)] =
               eq === -1 ? true : current.slice(eq + 1);
 
             continue;
           }
 
-          const { key, kind } = flag;
+          const {
+            flag: { key, kind, optionalValue },
+            negated,
+          } = resolved;
 
-          switch (kind) {
-            case "boolean":
-            case "counter": {
-              const parsed =
-                eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
-              if (parsed === undefined) {
-                (invalidValues ??= []).push({
-                  flag: key,
-                  value: current.slice(eq + 1),
-                  message: INVALID_BOOL_MSG,
-                });
-              } else if (kind === "boolean") {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = negated ? !parsed : parsed;
-              } else {
-                const prev = flags[key] as number | undefined;
-                if (prev === undefined) {
-                  provided.push(key);
-                  flags[key] = parsed ? 1 : 0;
-                } else if (parsed) {
-                  flags[key] = prev + 1;
-                }
+          if (kind === "boolean" || kind === "counter") {
+            const parsed =
+              eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
+            if (parsed === undefined) {
+              (invalidValues ??= []).push({
+                flag: key,
+                value: current.slice(eq + 1),
+                message: INVALID_BOOL_MSG,
+              });
+            } else if (kind === "boolean") {
+              setFlag(key, negated ? !parsed : parsed);
+            } else {
+              const prev = flags[key] as number | undefined;
+              if (prev === undefined) {
+                setFlag(key, parsed ? 1 : 0);
+              } else if (parsed) {
+                flags[key] = prev + 1;
               }
-
-              break;
             }
-            case "single":
-            case "array": {
-              if (eq === -1 && flag.optionalValue) {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = IMPLICIT_FLAG_VALUE;
-
-                break;
-              }
-              const nextIndex = i + 1;
-              const val =
-                eq === -1
-                  ? canConsumeNext(args, nextIndex)
-                    ? args[++i]
-                    : undefined
-                  : current.slice(eq + 1);
-              assignValue(key, kind, val, nextIndex);
-
-              break;
-            }
+          } else if (eq === -1 && optionalValue) {
+            setFlag(key, IMPLICIT_FLAG_VALUE);
+          } else {
+            const nextIndex = i + 1;
+            const val =
+              eq === -1
+                ? canConsumeNext(args, nextIndex)
+                  ? args[++i]
+                  : undefined
+                : current.slice(eq + 1);
+            assignValue(key, kind, val, nextIndex);
           }
 
           continue;
         }
 
-        // 3. Short flag(s): `-a`, `-abc`, `-p8080`, `-p=8080`, `-p 8080`
         if (isShortStart(c1)) {
           for (let j = 1; j < curLen; j++) {
             const code = current.charCodeAt(j);
@@ -397,26 +382,14 @@ export function createArgvParser(
               continue;
             }
 
-            const { key, kind } = flag;
+            const { key, kind, optionalValue } = flag;
             if (kind === "boolean") {
-              if (flags[key] === undefined) {
-                provided.push(key);
-              }
-              flags[key] = true;
+              setFlag(key, true);
             } else if (kind === "counter") {
-              const prev = flags[key] as number | undefined;
-              if (prev === undefined) {
-                provided.push(key);
-                flags[key] = 1;
-              } else {
-                flags[key] = prev + 1;
-              }
+              setFlag(key, ((flags[key] as number | undefined) ?? 0) + 1);
             } else {
-              if (j + 1 >= curLen && flag.optionalValue) {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = IMPLICIT_FLAG_VALUE;
+              if (j + 1 >= curLen && optionalValue) {
+                setFlag(key, IMPLICIT_FLAG_VALUE);
 
                 break;
               }
@@ -439,7 +412,6 @@ export function createArgvParser(
         }
       }
 
-      // 4. Positional argument
       if (stopAtFirstPositional) {
         positionals = positionals
           ? [...positionals, ...args.slice(i)]
@@ -477,30 +449,23 @@ export function createArgvParser(
           : 0;
 
       if (c1 !== 0) {
-        // 1. POSIX `--` terminator
         if (c1 === CHAR_DASH && curLen === 2) {
           return { stoppedAt: i };
         }
 
-        // 2. Long flag
         if (c1 === CHAR_DASH) {
           const eq = current.indexOf("=", 2);
           const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
-          const negated =
-            byName[name] === undefined && hasNoPrefix(name)
-              ? byName[name.slice(3)]
-              : undefined;
-          const flag =
-            byName[name] ?? (negated?.negatable ? negated : undefined);
-          if (flag === undefined) {
+          const resolved = resolveLongFlag(name);
+          if (!resolved) {
             return { stoppedAt: i };
           }
 
           i++;
           if (
             eq === -1 &&
-            isValueKind(flag.kind) &&
-            !flag.optionalValue &&
+            isValueKind(resolved.flag.kind) &&
+            !resolved.flag.optionalValue &&
             canConsumeNext(args, i)
           ) {
             i++;
@@ -509,7 +474,6 @@ export function createArgvParser(
           continue;
         }
 
-        // 3. Short flag(s)
         if (isShortStart(c1)) {
           let takesNext = false;
           for (let j = 1; j < curLen; j++) {
@@ -535,7 +499,6 @@ export function createArgvParser(
         }
       }
 
-      // 4. Positional argument
       if (!onPositional(current, i)) {
         return { stoppedAt: i };
       }

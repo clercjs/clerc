@@ -464,6 +464,55 @@ describe("Clerc execution pipeline", () => {
     await expect(
       badArgDefaultCli.run(["bad"], { terminal, throwOnError: true }),
     ).rejects.toThrow(InvalidArgumentError);
+
+    const unknownArgKeyCli = createTestBaseCli();
+    unknownArgKeyCli.command("bad <entry>", {
+      args: { typo: String } as any,
+      run() {},
+    });
+
+    expect(() => unknownArgKeyCli.buildModel()).toThrow(InvalidArgumentError);
+
+    const zeroArgUnknownKeyCli = createTestBaseCli();
+    zeroArgUnknownKeyCli.command("bad", {
+      args: { typo: String } as any,
+      run() {},
+    });
+
+    expect(() => zeroArgUnknownKeyCli.buildModel()).toThrow(
+      InvalidArgumentError,
+    );
+
+    const dupDdArgCli = createTestBaseCli();
+    dupDdArgCli.command("bad <x> -- <x>", { run() {} });
+
+    expect(() => dupDdArgCli.buildModel()).toThrow(InvalidArgumentError);
+
+    // Array literal defaults are cloned per invocation
+    let seenDefaultTags: string[] = [];
+    const arrayDefaultCli = createTestBaseCli();
+    arrayDefaultCli.command("tag", {
+      flags: { tags: { type: [String], default: ["latest"] } },
+      run(ctx) {
+        ctx.flags.tags.push("mutated");
+        seenDefaultTags = ctx.flags.tags;
+      },
+    });
+    await arrayDefaultCli.run(["tag"], { terminal });
+    await arrayDefaultCli.run(["tag"], { terminal });
+
+    expect(seenDefaultTags).toEqual(["latest", "mutated"]);
+
+    // Kebab-case alias suggestion works accurately
+    const aliasTypoRes = await cli.run(
+      ["deploy", "tok", "--out-flie", "a.js"],
+      { terminal },
+    );
+
+    expect(aliasTypoRes.ok).toBeFalsy();
+    expect((aliasTypoRes.error as UnknownFlagError).hints).toContain(
+      "a similar option exists: '--out-file'",
+    );
   });
 
   it("validates counter env, keeps ctx.flags clean on parse error, compiles subcommands upfront, and avoids -h collision", async () => {

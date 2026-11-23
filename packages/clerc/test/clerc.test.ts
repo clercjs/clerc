@@ -63,6 +63,7 @@ describe("clerc() integration", () => {
       run() {},
     });
     cli.command("dev", { description: "Start dev server", run() {} });
+    cli.command("db migrate", { description: "Run migrations", run() {} });
 
     const res = await cli.run(["buid"], { terminal });
 
@@ -139,5 +140,20 @@ describe("clerc() integration", () => {
     const doc = await buildHelpDocument(cli.buildModel());
 
     expect(doc.commandGroups[0]?.items[0]?.name).toBe("build");
+
+    const typoTerm = createMemoryTerminal();
+    const nestedCli = createTestCli();
+    nestedCli.command("db migrate", {
+      description: "Run migrations",
+      run() {},
+    });
+    const nestedHelpTypo = await nestedCli.run(["help", "db", "migrat"], {
+      terminal: typoTerm,
+    });
+
+    expect(nestedHelpTypo.ok).toBeFalsy();
+    expect(typoTerm.stderrText()).toContain(
+      "a similar command exists: 'db migrate'",
+    );
   });
 });

@@ -97,30 +97,39 @@ describe("Unified Plugin & Clerc composition", () => {
     expect(terminal.stdoutText()).toBe("v2");
   });
 
-  it("derives async context in extend() using resolved flags", async () => {
+  it("injects typed ctx.state via middleware next({ ... }) with full teardown support", async () => {
     const terminal = createMemoryTerminal();
-    let observed = "";
+    const events: string[] = [];
 
     const configPlugin = plugin("test:config")
       .flags({ config: { type: String, default: "default.json" } })
-      .extend(async (ctx) => ({
-        loadedConfig: await Promise.resolve(`loaded:${ctx.flags.config}`),
-      }));
+      .middleware(async (ctx, next) => {
+        const loadedConfig = await Promise.resolve(
+          `loaded:${ctx.flags.config}`,
+        );
+        try {
+          return await next({ loadedConfig });
+        } finally {
+          events.push(`cleanup:${loadedConfig}`);
+        }
+      });
 
     const cli = createTestBaseCli().use(configPlugin);
     cli.command("deploy", {
       run(ctx) {
-        observed = ctx.loadedConfig;
+        events.push(`run:${ctx.state.loadedConfig}`);
       },
     });
 
     await cli.run(["deploy"], { terminal });
-
-    expect(observed).toBe("loaded:default.json");
-
     await cli.run(["deploy", "--config", "prod.json"], { terminal });
 
-    expect(observed).toBe("loaded:prod.json");
+    expect(events).toEqual([
+      "run:loaded:default.json",
+      "cleanup:loaded:default.json",
+      "run:loaded:prod.json",
+      "cleanup:loaded:prod.json",
+    ]);
     expect(Object.keys(configPlugin)).toEqual(["pluginName"]);
   });
 });

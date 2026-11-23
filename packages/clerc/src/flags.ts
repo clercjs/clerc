@@ -91,11 +91,31 @@ export const createBuiltinFlagDescriptor = (
   toJsonSchema: () => ({ type: "boolean" }),
 });
 
-export function compileFlags(flags: FlagsDefinition): CompiledFlags {
-  const entries: CompiledFlagEntry[] = [];
+function indexCompiledEntries(
+  entries: readonly CompiledFlagEntry[],
+): CompiledFlags {
   const byName = new Map<string, CompiledFlagEntry>();
   const specs: ArgvFlagSpec[] = [];
   const knownNames: string[] = [];
+
+  for (const entry of entries) {
+    byName.set(entry.name, entry);
+    specs.push({
+      key: entry.name,
+      kind: entry.kind,
+      short: entry.short,
+      aliases: entry.aliases.length > 0 ? entry.aliases : undefined,
+      negatable: entry.kind === "boolean" ? entry.negatable : undefined,
+      optionalValue: entry.implicitValue !== undefined,
+    });
+    knownNames.push(kebabCase(entry.name), ...entry.aliases);
+  }
+
+  return { entries, byName, specs, knownNames };
+}
+
+export function compileFlags(flags: FlagsDefinition): CompiledFlags {
+  const entries: CompiledFlagEntry[] = [];
 
   for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
@@ -157,53 +177,21 @@ export function compileFlags(flags: FlagsDefinition): CompiledFlags {
     };
 
     entries.push(entry);
-    byName.set(name, entry);
-    specs.push({
-      key: name,
-      kind,
-      short: norm.short,
-      aliases: aliases.length > 0 ? aliases : undefined,
-      negatable: kind === "boolean" ? negatable : undefined,
-      optionalValue: norm.implicitValue !== undefined,
-    });
-    knownNames.push(name, ...aliases);
   }
 
-  return { entries, byName, specs, knownNames };
+  return indexCompiledEntries(entries);
 }
 
-export function mergeCompiledFlags(
+export const mergeCompiledFlags = (
   globalFlags: CompiledFlags,
   localFlags: CompiledFlags,
-): CompiledFlags {
-  if (localFlags.entries.length === 0) {
-    return globalFlags;
-  }
-
-  const entries: CompiledFlagEntry[] = [];
-  const byName = new Map<string, CompiledFlagEntry>();
-  const specs: ArgvFlagSpec[] = [];
-  const knownNames: string[] = [];
-
-  for (const [i, entry] of globalFlags.entries.entries()) {
-    if (localFlags.byName.has(entry.name)) {
-      continue;
-    }
-    entries.push(entry);
-    byName.set(entry.name, entry);
-    specs.push(globalFlags.specs[i]);
-    knownNames.push(entry.name, ...entry.aliases);
-  }
-
-  for (const [i, entry] of localFlags.entries.entries()) {
-    entries.push(entry);
-    byName.set(entry.name, entry);
-    specs.push(localFlags.specs[i]);
-    knownNames.push(entry.name, ...entry.aliases);
-  }
-
-  return { entries, byName, specs, knownNames };
-}
+): CompiledFlags =>
+  localFlags.entries.length === 0
+    ? globalFlags
+    : indexCompiledEntries([
+        ...globalFlags.entries.filter((e) => !localFlags.byName.has(e.name)),
+        ...localFlags.entries,
+      ]);
 
 export function finalizeCompiledFlags(compiled: CompiledFlags): CompiledFlags {
   const canonicalByRef = new Map<string, string>();
@@ -259,17 +247,7 @@ export function finalizeCompiledFlags(compiled: CompiledFlags): CompiledFlags {
     return { ...entry, conflicts, implies };
   });
 
-  if (!changed) {
-    return compiled;
-  }
-
-  const byName = new Map(entries.map((e) => [e.name, e]));
-
-  return {
-    ...compiled,
-    entries,
-    byName,
-  };
+  return changed ? indexCompiledEntries(entries) : compiled;
 }
 
 export async function convertItemList(
@@ -448,7 +426,7 @@ export function validateParsedFlags(
         if (unknown.length <= 1) {
           continue;
         }
-        const suggestion = findClosest(unknown, knownFlagNames, 3);
+        const suggestion = findClosest(kebabCase(unknown), knownFlagNames, 3);
         if (suggestion) {
           hints.push(
             `a similar option exists: '${formatFlagName(suggestion)}'`,

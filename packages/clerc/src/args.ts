@@ -123,9 +123,9 @@ function compileArgSlice(
   tokens: readonly string[],
   argDefs: Readonly<Record<string, ArgDefinitionValue>> | undefined,
   afterDoubleDash: boolean,
+  seen: Set<string>,
 ): CompiledArgItem[] {
   const items: CompiledArgItem[] = [];
-  const seen = new Set<string>();
   let hasOptional = false;
 
   for (let i = 0; i < tokens.length; i++) {
@@ -182,8 +182,19 @@ export function compileArgs(
   argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
 ): CompiledArgs {
   const { main, doubleDash } = splitArgTokens(argTokens);
-  const compiledMain = compileArgSlice(main, argDefs, false);
-  const compiledDd = compileArgSlice(doubleDash, argDefs, true);
+  const seen = new Set<string>();
+  const compiledMain = compileArgSlice(main, argDefs, false, seen);
+  const compiledDd = compileArgSlice(doubleDash, argDefs, true, seen);
+
+  if (argDefs) {
+    for (const key of Object.keys(argDefs)) {
+      if (!seen.has(key)) {
+        throw new InvalidArgumentError(
+          `argument "${key}" is not defined in command signature`,
+        );
+      }
+    }
+  }
 
   return {
     descriptors: [...compiledMain, ...compiledDd],

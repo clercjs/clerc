@@ -37,30 +37,48 @@ describe("built-in strict flags & optional v2 plugins", () => {
     );
   });
 
-  it("verbosityPlugin wires -q and -v to ctx.log", async () => {
+  it("verbosityPlugin runs pre-middleware regardless of .use() order, silences deprecations on -q, and propagates via ctx.run()", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().use(verbosityPlugin());
-    cli.command("check", {
+    const earlyPlugin = createTestCli()
+      .middleware(async (ctx, next) => {
+        ctx.log.debug("early-mw-debug");
+        await next();
+      })
+      // Registered AFTER earlyPlugin's middleware, yet enforce: "pre" ensures it runs first
+      .use(verbosityPlugin());
+
+    earlyPlugin.command("sub", {
       run(ctx) {
+        ctx.log.debug("sub-debug");
+      },
+    });
+    earlyPlugin.command("check", {
+      deprecated: "old command",
+      async run(ctx) {
         ctx.log.info("info-msg");
         ctx.log.debug("debug-msg");
+        await ctx.run(["sub"]);
       },
     });
 
-    await cli.run(["check"], { terminal });
+    await earlyPlugin.run(["check"], { terminal });
 
     expect(terminal.stdoutText()).toContain("info-msg");
     expect(terminal.stdoutText()).not.toContain("debug-msg");
+    expect(terminal.stderrText()).toContain("deprecated");
 
     terminal.clear();
-    await cli.run(["check", "-v"], { terminal });
+    await earlyPlugin.run(["check", "-v"], { terminal });
 
+    expect(terminal.stdoutText()).toContain("early-mw-debug");
     expect(terminal.stdoutText()).toContain("debug-msg");
+    expect(terminal.stdoutText()).toContain("sub-debug");
 
     terminal.clear();
-    await cli.run(["check", "-q"], { terminal });
+    await earlyPlugin.run(["check", "-q"], { terminal });
 
     expect(terminal.stdoutText()).toBe("");
+    expect(terminal.stderrText()).toBe("");
   });
 
   it("updateNotifierPlugin checks registry concurrently and prints update notice after command completes", async () => {
@@ -112,5 +130,26 @@ describe("built-in strict flags & optional v2 plugins", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(ciTerminal.stderrText()).toBe("");
+
+    // Prerelease current version (2.1.0-beta.1) detects stable 2.1.0 as newer
+    const preCacheDir = await mkdtemp(path.join(os.tmpdir(), "clerc-pre-"));
+    tempDirs.push(preCacheDir);
+    const preTerm = createMemoryTerminal({ isTTY: true, color: false });
+    const preCli = createTestCli({
+      name: "acme-cli",
+      version: "2.1.0-beta.1",
+    }).use(
+      updateNotifierPlugin({
+        cacheDir: preCacheDir,
+        fetch: mockFetch,
+        now: () => currentTime,
+      }),
+    );
+    preCli.command("run", { run() {} });
+    await preCli.run(["run"], { terminal: preTerm });
+
+    expect(preTerm.stderrText()).toContain(
+      "Update available: 2.1.0-beta.1 → 2.1.0",
+    );
   });
 });

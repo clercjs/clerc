@@ -22,7 +22,7 @@
 
 - **Route-Style Typed Command Signatures** - Write `"deploy <target> [region] -- [extra...]"` and get full template-literal inference + `args` key autocompletion with zero `as const`.
 - **Batteries-Included Core** - Native `--help`, `--version`, strict unknown-flag checks with typo suggestions, and Cargo/Clap-inspired diagnostics (plus JSON mode) right out of the box.
-- **Unified `Clerc` & `plugin()` Primitives** - Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.extend()`, `.middleware()`, `.onError()`, `.use()`), with async context derivation after flag resolution and atomic named overrides.
+- **Unified `Clerc` & `plugin()` Primitives** - Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.middleware()`, `.onError()`, `.use()`), with typed `ctx.state` injection via `next({ ... })` and atomic named overrides.
 - **Standard Schema v1** - Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
 - **Testable by Design** - Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
 
@@ -86,8 +86,10 @@ Please see https://clerc.so1ve.dev.
 
 # 🦄 Examples
 
+- [Acme](./examples/acme)
 - [Greeting](./examples/greeting)
 - [Bumpp](./examples/bumpp)
+- [Logger](./examples/logger)
 
 # 📝 License
 
