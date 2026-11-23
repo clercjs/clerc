@@ -35,7 +35,7 @@ describe("Theme and Diagnostic Formatter", () => {
       [
         "error  unknown command 'buid'",
         "",
-        "  tip  a similar command exists: 'build'",
+        "tip    a similar command exists: 'build'",
         "",
         "usage  test <command> [options]",
         "",

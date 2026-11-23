@@ -61,7 +61,7 @@ describe("clerc() integration", () => {
       [
         "error  unknown command 'buid'",
         "",
-        "  tip  a similar command exists: 'build'",
+        "tip    a similar command exists: 'build'",
         "",
         "       For more information, try 'test --help'.",
       ].join("\n"),

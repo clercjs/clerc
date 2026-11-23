@@ -2,7 +2,7 @@ import type { Theme } from "@clerc/theme";
 import { createTheme, detectColor, detectUnicode } from "@clerc/theme";
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
-export type LogStyle = "compact" | "rail";
+export type LogStyle = "rail" | "compact";
 export type LogFormat = "pretty" | "json";
 export type CalloutTone = "info" | "warn" | "error" | "success";
 
@@ -21,7 +21,7 @@ export interface LoggerTerminal {
 
 export type LoggerTheme = Pick<
   Theme,
-  "brand" | "info" | "success" | "warn" | "error" | "muted" | "bold"
+  "brand" | "info" | "success" | "warn" | "error" | "muted" | "bold" | "dim"
 >;
 
 export interface LoggerOptions {
@@ -111,7 +111,8 @@ const DEFAULT_TERMINAL: LoggerTerminal = {
 export const formatLogLabel = (
   label: string,
   style: (text: string) => string = identity,
-): string => style(label.padStart(LOG_LABEL_WIDTH));
+): string =>
+  `${style(label)}${" ".repeat(Math.max(0, LOG_LABEL_WIDTH - label.length))}`;
 
 const formatLabel = (
   label: string,
@@ -127,14 +128,24 @@ function createLoggerWithState(
   scope?: string,
 ): Logger {
   const bar = unicode ? "│" : "|";
+  const sep = unicode ? "›" : ">";
+  const faint = (text: string): string => theme.dim(theme.muted(text));
 
   const shouldLog = (targetLevel: Exclude<LogLevel, "silent">): boolean =>
     LEVEL_PRIORITY[state.level] >= LEVEL_PRIORITY[targetLevel];
 
   const detailPrefix = (): string =>
-    state.style === "rail"
-      ? `${" ".repeat(LOG_LABEL_WIDTH - 1)}${theme.muted(bar)}  `
-      : LOG_GUTTER;
+    state.style === "rail" ? `${LOG_GUTTER}${faint(bar)} ` : LOG_GUTTER;
+
+  function formatScope(isDebug: boolean): string {
+    if (!scope) {
+      return "";
+    }
+
+    return isDebug
+      ? `${faint(`${scope} ${sep}`)} `
+      : `${theme.muted(scope)} ${faint(sep)} `;
+  }
 
   function emit(kind: LogKind, message: string, detail?: string): void {
     const meta = KIND_META[kind];
@@ -157,20 +168,21 @@ function createLoggerWithState(
       return;
     }
 
+    const isDebug = kind === "debug";
     const label = formatLabel(meta.label, theme, meta.token);
-    const scopeTag = scope ? `${theme.muted(`[${scope}]`)} ` : "";
-    const body =
-      kind === "debug"
-        ? theme.muted(message)
-        : kind === "step"
-          ? theme.bold(message)
-          : message;
+    const scopePrefix = formatScope(isDebug);
+    const body = isDebug
+      ? faint(message)
+      : kind === "step"
+        ? theme.bold(message)
+        : message;
 
-    write(`${label}  ${scopeTag}${body}`);
+    write(`${label}  ${scopePrefix}${body}`);
     if (detail !== undefined) {
       const prefix = detailPrefix();
+      const formatDetail = isDebug ? faint : theme.muted;
       for (const line of detail.split("\n")) {
-        write(`${prefix}${theme.muted(line)}`);
+        write(`${prefix}${formatDetail(line)}`);
       }
     }
   }
@@ -224,7 +236,7 @@ function createLoggerWithState(
       const prefix = detailPrefix();
       const output = [
         `${label}  ${theme.bold(title)}`,
-        ...lines.map((line) => `${prefix}${line}`),
+        ...lines.map((line) => `${prefix}${theme.muted(line)}`),
       ];
       write(output.join("\n"));
     },
@@ -246,7 +258,7 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
   const theme = options.theme ?? createTheme(color);
   const state: SharedLoggerState = {
     level: options.level ?? "info",
-    style: options.style ?? "compact",
+    style: options.style ?? "rail",
     format: options.format ?? "pretty",
   };
 

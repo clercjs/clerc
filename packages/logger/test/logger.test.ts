@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createLogger } from "../src";
 
 describe("@clerc/logger", () => {
-  it("renders aligned word-label compact and rail styles without external dependencies", () => {
+  it("renders flush-left word labels with body-aligned rail and compact styles", () => {
     const unicodeTerm = createMemoryTerminal({ color: false, unicode: true });
     const log = createLogger({ terminal: unicodeTerm, level: "debug" });
 
@@ -13,28 +13,28 @@ describe("@clerc/logger", () => {
     log.success("Built", "12ms");
     log.warn("Deprecated option");
     log.error("Build failed", "syntax error");
-    log.debug("internal detail");
+    log.withScope("db").withScope("migrate").debug("Query took 1.2ms");
 
     expect(unicodeTerm.stdoutText()).toBe(
       [
-        " step  Building",
-        " info  Found 3 files",
-        " done  Built",
-        "       12ms",
-        "debug  internal detail",
+        "step   Building",
+        "info   Found 3 files",
+        "done   Built",
+        "       │ 12ms",
+        "debug  db:migrate › Query took 1.2ms",
       ].join("\n"),
     );
     expect(unicodeTerm.stderrText()).toBe(
       [
-        " warn  Deprecated option",
+        "warn   Deprecated option",
         "error  Build failed",
-        "       syntax error",
+        "       │ syntax error",
       ].join("\n"),
     );
 
     const asciiTerm = createMemoryTerminal({ color: false, unicode: false });
-    const asciiLog = createLogger({ terminal: asciiTerm, style: "rail" });
-    asciiLog.step("Init", "loading config");
+    const asciiLog = createLogger({ terminal: asciiTerm });
+    asciiLog.withScope("db").step("Init", "loading config");
     asciiLog.callout({
       tone: "warn",
       title: "Update available",
@@ -42,10 +42,21 @@ describe("@clerc/logger", () => {
     });
 
     expect(asciiTerm.stdoutText()).toBe(
-      [" step  Init", "    |  loading config"].join("\n"),
+      ["step   db > Init", "       | loading config"].join("\n"),
     );
     expect(asciiTerm.stderrText()).toBe(
-      [" warn  Update available", "    |  Run npm i -g test"].join("\n"),
+      ["warn   Update available", "       | Run npm i -g test"].join("\n"),
+    );
+
+    const compactTerm = createMemoryTerminal({ color: false });
+    const compactLog = createLogger({
+      terminal: compactTerm,
+      style: "compact",
+    });
+    compactLog.step("Compact", "plain detail");
+
+    expect(compactTerm.stdoutText()).toBe(
+      ["step   Compact", "       plain detail"].join("\n"),
     );
   });
 
