@@ -230,11 +230,13 @@ export function createMcpHandler(
 
   const filterOpts = { mcpCommandName, filter };
   const toolEntries = buildToolEntries(model, filterOpts);
+  const tools = toolEntries.map((e) => e.tool);
   const toolsByName = new Map(toolEntries.map((e) => [e.tool.name, e]));
 
   const resourceEntries = enableResources
     ? buildResourceEntries(model, filterOpts)
     : [];
+  const resources = resourceEntries.map((e) => e.resource);
   const resourcesByUri = new Map(
     resourceEntries.map((e) => [e.resource.uri, e]),
   );
@@ -275,7 +277,7 @@ export function createMcpHandler(
         }
 
         case "tools/list": {
-          return okResponse(id, { tools: toolEntries.map((e) => e.tool) });
+          return okResponse(id, { tools });
         }
 
         case "tools/call": {
@@ -292,7 +294,7 @@ export function createMcpHandler(
         case "resources/list": {
           return enableResources
             ? okResponse(id, {
-                resources: resourceEntries.map((e) => e.resource),
+                resources,
               })
             : errorResponse(id, -32_601, "Resources are disabled");
         }

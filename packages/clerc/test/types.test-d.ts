@@ -1,12 +1,8 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import type {
-  ExtractArgNames,
-  FlagsDefinition,
-  Logger,
-  StandardSchemaV1,
-} from "../src";
+import type { FlagsDefinition, Logger, StandardSchemaV1 } from "../src";
 import { Types, clerc, plugin, verbosityPlugin } from "../src";
+import type { ExtractArgNames } from "../src/types";
 
 import "@clerc/plugin-completions";
 import "@clerc/plugin-mcp";

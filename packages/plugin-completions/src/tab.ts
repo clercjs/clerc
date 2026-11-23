@@ -27,9 +27,6 @@ export interface ArgCompletionMeta {
   readonly handler?: ArgumentHandler;
 }
 
-export type CompletionMeta =
-  CommandCompletionMeta | FlagCompletionMeta | ArgCompletionMeta;
-
 function createEnumCompleter(
   toJsonSchema: () => Record<string, unknown>,
 ): ((complete: Complete) => void) | undefined {
@@ -89,11 +86,16 @@ function registerNodeArgs(
   tc: TabCommand,
 ): void {
   for (const arg of args) {
-    const argComp = arg.meta?.completions;
     const handler: ArgumentHandler | undefined =
-      argComp?.handler ?? createEnumCompleter(arg.toJsonSchema);
+      arg.meta?.completions?.handler ?? createEnumCompleter(arg.toJsonSchema);
     tc.argument(arg.name, handler, arg.isVariadic);
   }
+}
+
+function populateCommandSurface(tabCmd: TabCommand, node: CommandNode): void {
+  node.command?.meta?.completions?.handler?.(tabCmd);
+  registerNodeArgs(node.args, tabCmd);
+  registerFlagList(node.localFlags, tabCmd);
 }
 
 function populateSubcommand(
@@ -104,12 +106,10 @@ function populateSubcommand(
 ): void {
   registerFlagList(model.globalFlags, tabCmd, localNames);
   registerFlagList(node.builtinFlags, tabCmd);
-  node.command?.meta?.completions?.handler?.(tabCmd);
-  registerNodeArgs(node.args, tabCmd);
-  registerFlagList(node.localFlags, tabCmd);
+  populateCommandSurface(tabCmd, node);
 }
 
-export function buildTabModel(t: RootCommand, model: CliModel): void {
+export function buildTabModel(root: RootCommand, model: CliModel): void {
   const defaultNode =
     !model.tree.root.command && model.defaultCommand
       ? model.tree.findNode(model.defaultCommand)
@@ -117,56 +117,35 @@ export function buildTabModel(t: RootCommand, model: CliModel): void {
   const rootTarget = defaultNode ?? model.tree.root;
   const rootLocalNames = new Set(rootTarget.localFlags.map((f) => f.name));
 
-  registerFlagList(model.globalFlags, t, rootLocalNames);
-  registerFlagList(model.tree.root.builtinFlags, t);
+  registerFlagList(model.globalFlags, root, rootLocalNames);
+  registerFlagList(model.tree.root.builtinFlags, root);
 
-  if (defaultNode && !defaultNode.command?.hidden) {
-    const defaultComp = defaultNode.command?.meta?.completions;
-    if (defaultComp?.show !== false) {
-      defaultComp?.handler?.(t);
-      registerNodeArgs(defaultNode.args, t);
-      registerFlagList(defaultNode.localFlags, t);
-    }
+  if (
+    rootTarget.command &&
+    !rootTarget.command.hidden &&
+    rootTarget.command.meta?.completions?.show !== false
+  ) {
+    populateCommandSurface(root, rootTarget);
   }
 
-  const commands: readonly CommandNode[] = model.tree.walkCommands();
-  for (const node of commands) {
+  for (const node of model.tree.walkCommands()) {
     const cmd = node.command;
-    if (!cmd) {
-      continue;
-    }
-
     const compMeta = cmd.meta?.completions;
-    if (cmd.hidden || compMeta?.show === false) {
+    if (node.fullPath.length === 0 || cmd.hidden || compMeta?.show === false) {
       continue;
     }
 
     const fullName = node.fullPath.join(" ");
     const localNames = new Set(node.localFlags.map((f) => f.name));
-
-    if (fullName === "") {
-      compMeta?.handler?.(t);
-      registerNodeArgs(node.args, t);
-      registerFlagList(node.localFlags, t);
-
-      continue;
-    }
-
-    const tabCmd = t.command(fullName, cmd.description ?? "");
+    const tabCmd = root.command(fullName, cmd.description ?? "");
     populateSubcommand(tabCmd, node, model, localNames);
 
-    const rawAliases = cmd.aliases
-      ? Array.isArray(cmd.aliases)
-        ? cmd.aliases
-        : [cmd.aliases]
-      : [];
     const parentPrefix = node.fullPath.slice(0, -1);
-    for (const rawAlias of rawAliases) {
-      const trimmed = rawAlias.trim();
-      const aliasFullName = trimmed.includes(" ")
-        ? trimmed
-        : [...parentPrefix, trimmed].join(" ");
-      const aliasCmd = t.command(aliasFullName, cmd.description ?? "");
+    for (const alias of node.aliases) {
+      const aliasFullName = alias.includes(" ")
+        ? alias
+        : [...parentPrefix, alias].join(" ");
+      const aliasCmd = root.command(aliasFullName, cmd.description ?? "");
       populateSubcommand(aliasCmd, node, model, localNames);
     }
   }

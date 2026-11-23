@@ -36,7 +36,6 @@ export interface CompiledFlagEntry extends FlagDescriptor {
 }
 
 export interface CompiledFlags {
-  readonly descriptors: readonly FlagDescriptor[];
   readonly entries: readonly CompiledFlagEntry[];
   readonly byName: ReadonlyMap<string, CompiledFlagEntry>;
   readonly specs: readonly ArgvFlagSpec[];
@@ -170,7 +169,7 @@ export function compileFlags(flags: FlagsDefinition): CompiledFlags {
     knownNames.push(name, ...aliases);
   }
 
-  return { descriptors: entries, entries, byName, specs, knownNames };
+  return { entries, byName, specs, knownNames };
 }
 
 export function mergeCompiledFlags(
@@ -186,20 +185,13 @@ export function mergeCompiledFlags(
   const specs: ArgvFlagSpec[] = [];
   const knownNames: string[] = [];
 
-  for (const entry of globalFlags.entries) {
+  for (const [i, entry] of globalFlags.entries.entries()) {
     if (localFlags.byName.has(entry.name)) {
       continue;
     }
     entries.push(entry);
     byName.set(entry.name, entry);
-    specs.push({
-      key: entry.name,
-      kind: entry.kind,
-      short: entry.short,
-      aliases: entry.aliases.length > 0 ? entry.aliases : undefined,
-      negatable: entry.kind === "boolean" ? entry.negatable : undefined,
-      optionalValue: entry.implicitValue !== undefined,
-    });
+    specs.push(globalFlags.specs[i]);
     knownNames.push(entry.name, ...entry.aliases);
   }
 
@@ -210,7 +202,7 @@ export function mergeCompiledFlags(
     knownNames.push(entry.name, ...entry.aliases);
   }
 
-  return { descriptors: entries, entries, byName, specs, knownNames };
+  return { entries, byName, specs, knownNames };
 }
 
 export function finalizeCompiledFlags(compiled: CompiledFlags): CompiledFlags {
@@ -275,7 +267,6 @@ export function finalizeCompiledFlags(compiled: CompiledFlags): CompiledFlags {
 
   return {
     ...compiled,
-    descriptors: entries,
     entries,
     byName,
   };

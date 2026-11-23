@@ -35,7 +35,6 @@ export interface UpdateNotifierPluginOptions {
   readonly cacheDir?: string;
   readonly fetch?: typeof globalThis.fetch;
   readonly now?: () => number;
-  readonly forceCheckInCI?: boolean;
 }
 
 interface UpdateCache {
@@ -59,7 +58,7 @@ function parseSemver(
   return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-export function isNewerVersion(current: string, latest: string): boolean {
+function isNewerVersion(current: string, latest: string): boolean {
   const c = parseSemver(current);
   const l = parseSemver(latest);
   if (!c || !l) {
@@ -183,7 +182,6 @@ export function updateNotifierPlugin(
     cacheDir,
     fetch: fetchFn = globalThis.fetch,
     now = () => Date.now(),
-    forceCheckInCI = false,
   } = options;
 
   async function checkForUpdate(
@@ -195,8 +193,9 @@ export function updateNotifierPlugin(
     if (
       !pkgName ||
       !currentVersion ||
-      (!forceCheckInCI &&
-        (Boolean(env.CI) || Boolean(env.NO_UPDATE_NOTIFIER) || !isTTY))
+      Boolean(env.CI) ||
+      Boolean(env.NO_UPDATE_NOTIFIER) ||
+      !isTTY
     ) {
       return undefined;
     }
@@ -244,10 +243,9 @@ export function updateNotifierPlugin(
 
       if (info) {
         const updateCmd = installCommand ?? `npm i -g ${info.name}`;
-        ctx.log.note(
-          `Run ${ctx.theme.accent(updateCmd)} to update`,
+        ctx.log.box.warn(
           `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-          { tone: "warn" },
+          `Run ${ctx.theme.accent(updateCmd)} to update`,
         );
       }
     }

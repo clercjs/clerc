@@ -30,7 +30,7 @@ export interface MemoryTerminalOptions {
   columns?: number;
 }
 
-export const defaultPlatformArgv = (): readonly string[] =>
+const defaultPlatformArgv = (): readonly string[] =>
   process.argv.slice(
     process.versions.electron &&
       !(process as { readonly defaultApp?: boolean }).defaultApp

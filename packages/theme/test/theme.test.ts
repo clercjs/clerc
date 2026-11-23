@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { createTheme, detectColor, monoThemeStyles } from "../src";
+import { createTheme, detectColor } from "../src";
 
 describe("@clerc/theme", () => {
-  it("supports default, override, mono, and plain themes", () => {
+  it("supports default, override, and plain themes", () => {
     const colored = createTheme(true);
-    const mono = createTheme(true, monoThemeStyles);
+    const overridden = createTheme(true, { flag: [] });
     const plain = createTheme(false);
 
     expect(colored.brand("acme")).toContain("\u001B[");
-    expect(mono.flag("--port")).toBe("--port");
-    expect(mono.brand("acme")).toContain("\u001B[");
+    expect(colored.flag("--port")).toContain("\u001B[");
+    expect(overridden.flag("--port")).toBe("--port");
     expect(plain.brand("acme")).toBe("acme");
   });
 

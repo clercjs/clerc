@@ -4,20 +4,22 @@ import { describe, expect, it } from "vitest";
 import { createLogger } from "../src";
 
 describe("@clerc/logger", () => {
-  it("renders flush-left word labels, rail/compact details, and grid-aligned Clack notes", () => {
+  it("renders flush-left word labels, variadic details, child scopes, and isomorphic log.box.* panels", () => {
     const unicodeTerm = createMemoryTerminal({ color: false, unicode: true });
     const log = createLogger({ terminal: unicodeTerm, level: "debug" });
 
-    log.step("Building");
+    log.step("Building", "entry: src/index.ts", "minify: true");
     log.info("Found 3 files");
     log.success("Built", "12ms");
     log.warn("Deprecated option");
     log.error("Build failed", "syntax error");
-    log.withScope("db").withScope("migrate").debug("Query took 1.2ms");
+    log.child("db").child("migrate").debug("Query took 1.2ms");
 
     expect(unicodeTerm.stdoutText()).toBe(
       [
         "step   Building",
+        "       │ entry: src/index.ts",
+        "       │ minify: true",
         "info   Found 3 files",
         "done   Built",
         "       │ 12ms",
@@ -32,35 +34,34 @@ describe("@clerc/logger", () => {
       ].join("\n"),
     );
 
-    const noteTerm = createMemoryTerminal({ color: false, unicode: true });
-    const noteLog = createLogger({ terminal: noteTerm });
-    noteLog.note("No remote resources mutated.", "Dry run");
-    noteLog.note("Run npm i -g test", "Update available", { tone: "warn" });
+    const boxTerm = createMemoryTerminal({ color: false, unicode: true });
+    const boxLog = createLogger({ terminal: boxTerm });
+    boxLog.box.info(
+      "Dry run",
+      "No remote resources mutated.",
+      "Pass --confirm to publish.",
+    );
+    boxLog.box.warn("Update available", "Run npm i -g test");
+    boxLog.box.error(new TypeError("Invalid port"));
 
-    expect(noteTerm.stdoutText()).toMatch(/^note {3}╭─ Dry run /);
-    expect(noteTerm.stdoutText()).toContain(
+    expect(boxTerm.stdoutText()).toMatch(/^info {3}╭─ Dry run /);
+    expect(boxTerm.stdoutText()).toContain(
       "\n       │  No remote resources mutated.",
     );
-    expect(noteTerm.stderrText()).toMatch(/^warn {3}╭─ Update available /);
-    expect(noteTerm.stderrText()).toContain("\n       │  Run npm i -g test");
+    expect(boxTerm.stdoutText()).toContain(
+      "\n       │  Pass --confirm to publish.",
+    );
+    expect(boxTerm.stderrText()).toMatch(/^warn {3}╭─ Update available /);
+    expect(boxTerm.stderrText()).toContain("\n       │  Run npm i -g test");
+    expect(boxTerm.stderrText()).toContain("error  ╭─ Invalid port ");
+    expect(boxTerm.stderrText()).toContain("│  TypeError: Invalid port");
 
     const asciiTerm = createMemoryTerminal({ color: false, unicode: false });
     const asciiLog = createLogger({ terminal: asciiTerm });
-    asciiLog.note("ASCII body", "ASCII title");
+    asciiLog.box.step("ASCII title", "ASCII body");
 
-    expect(asciiTerm.stdoutText()).toMatch(/^note {3}\+- ASCII title /);
+    expect(asciiTerm.stdoutText()).toMatch(/^step {3}\+- ASCII title /);
     expect(asciiTerm.stdoutText()).toContain("\n       |  ASCII body");
-
-    const compactTerm = createMemoryTerminal({ color: false });
-    const compactLog = createLogger({
-      terminal: compactTerm,
-      style: "compact",
-    });
-    compactLog.step("Compact", "plain detail");
-
-    expect(compactTerm.stdoutText()).toBe(
-      ["step   Compact", "       plain detail"].join("\n"),
-    );
   });
 
   it("formats Error chains cleanly, inspects objects via node:util, and serializes JSON", () => {
@@ -86,7 +87,7 @@ describe("@clerc/logger", () => {
 
     const jsonTerm = createMemoryTerminal({ color: false });
     const jsonLog = createLogger({ terminal: jsonTerm, format: "json" });
-    jsonLog.withScope("api").error("Boom", new Error("ECONNREFUSED"));
+    jsonLog.child("api").error("Boom", new Error("ECONNREFUSED"));
 
     const parsed = JSON.parse(jsonTerm.stderrText());
 
@@ -101,7 +102,7 @@ describe("@clerc/logger", () => {
     });
   });
 
-  it("supports streaming .line() appends and graceful non-TTY spinner fallback", () => {
+  it("supports mutable properties, streaming .line(), reusable explicit spinner(), and auto task()", async () => {
     const term = createMemoryTerminal({ color: false });
     const log = createLogger({ terminal: term, level: "warn" });
 
@@ -111,7 +112,7 @@ describe("@clerc/logger", () => {
     expect(term.stdoutText()).toBe("");
 
     const warnEntry = log.warn("Preflight warnings", "Initial check");
-    warnEntry.line("Slow upstream response").line("Line A\nLine B");
+    warnEntry.line("Slow upstream response", "Line A\nLine B");
 
     expect(term.stderrText()).toBe(
       [
@@ -123,16 +124,48 @@ describe("@clerc/logger", () => {
       ].join("\n"),
     );
 
-    log.setLevel("info");
-    const s = log.spinner();
-    s.start("Bundling");
-    s.message("2 chunks");
-    s.stop("Bundled in 40ms");
+    log.level = "info";
+    const spin = log.spinner();
+    spin.start("Phase 1");
+    spin.message("checking");
+    spin.stop("Phase 1 done");
+    spin.start("Phase 2");
+    spin.stop("Phase 2 done");
 
     expect(term.stdoutText()).toBe(
-      ["step   Bundling", "       │ 2 chunks", "done   Bundled in 40ms"].join(
-        "\n",
-      ),
+      [
+        "step   Phase 1",
+        "       │ checking",
+        "done   Phase 1 done",
+        "step   Phase 2",
+        "done   Phase 2 done",
+      ].join("\n"),
     );
+
+    term.clear();
+    const out = await log.task("Bundling...", async (s) => {
+      s.message("2 chunks");
+
+      return "Bundled in 40ms";
+    });
+
+    expect(out).toBe("Bundled in 40ms");
+    expect(term.stdoutText()).toBe(
+      [
+        "step   Bundling...",
+        "       │ 2 chunks",
+        "done   Bundled in 40ms",
+      ].join("\n"),
+    );
+
+    term.clear();
+
+    await expect(
+      log.task("Deploying...", async () => {
+        throw new Error("Connection reset");
+      }),
+    ).rejects.toThrow("Connection reset");
+
+    expect(term.stderrText()).toBe("error  Connection reset");
   });
 });

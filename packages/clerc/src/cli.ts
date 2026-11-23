@@ -5,7 +5,6 @@ import { createTheme } from "@clerc/theme";
 
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
-import type { CommandMatch } from "./command-tree";
 import { CommandTreeBuilder } from "./command-tree";
 import {
   ClercError,
@@ -77,7 +76,6 @@ interface PluginState {
   readonly middlewares: Middleware<any, any>[];
   readonly errorHandlers: ErrorHandler<any, any>[];
   readonly plugins: Map<string, Plugin<any, any>>;
-  onInvalidate?: () => void;
 }
 
 interface CompiledNodeRuntime {
@@ -109,17 +107,6 @@ const GROUP_SCOPES: readonly GroupScope[] = [
 
 const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
 
-const pluginStates = new WeakMap<Plugin<any, any>, PluginState>();
-
-function getPluginState(instance: Plugin<any, any>): PluginState {
-  const state = pluginStates.get(instance);
-  if (!state) {
-    throw new Error("Invalid Plugin instance");
-  }
-
-  return state;
-}
-
 const createGroupBuckets = (): GroupBuckets => ({
   commands: [],
   flags: [],
@@ -136,70 +123,6 @@ interface ScopeCollector {
   readonly extenders: ContextExtender[];
   readonly middlewares: Middleware<any, any>[];
   readonly errorHandlers: ErrorHandler<any, any>[];
-}
-
-function resolveWinningPlugins(
-  scope: Plugin<any, any>,
-  winners = new Map<string, Plugin<any, any>>(),
-  visiting = new Set<Plugin<any, any>>(),
-): ReadonlyMap<string, Plugin<any, any>> {
-  if (visiting.has(scope)) {
-    return winners;
-  }
-  visiting.add(scope);
-  for (const child of getPluginState(scope).plugins.values()) {
-    resolveWinningPlugins(child, winners, visiting);
-  }
-  winners.set(scope.pluginName, scope);
-
-  return winners;
-}
-
-function collectScope(
-  scope: Plugin<any, any>,
-  acc: ScopeCollector,
-  winners: ReadonlyMap<string, Plugin<any, any>> = resolveWinningPlugins(scope),
-  visited = new Set<string>(),
-): void {
-  const resolved = winners.get(scope.pluginName) ?? scope;
-  if (visited.has(resolved.pluginName)) {
-    return;
-  }
-  visited.add(resolved.pluginName);
-
-  const state = getPluginState(resolved);
-  for (const child of state.plugins.values()) {
-    collectScope(child, acc, winners, visited);
-  }
-
-  Object.assign(acc.globalFlags, state.flags);
-  acc.commands.push(...state.commands);
-  acc.extenders.push(...state.extenders);
-  acc.middlewares.push(...state.middlewares);
-  acc.errorHandlers.push(...state.errorHandlers);
-
-  for (const groupScope of GROUP_SCOPES) {
-    acc.groups[groupScope].push(...state.groups[groupScope]);
-  }
-}
-
-function createUnmatchedError(
-  match: Exclude<CommandMatch, { readonly kind: "matched" }>,
-): ClercError {
-  switch (match.kind) {
-    case "unknown": {
-      return new UnknownCommandError(match.commandName, match.parentPath);
-    }
-    case "namespace": {
-      return new UnknownCommandError(
-        match.node.fullPath.join(" "),
-        match.node.fullPath,
-      );
-    }
-    case "empty": {
-      return new NoCommandError();
-    }
-  }
 }
 
 function resolveNodeBuiltins(options: {
@@ -258,42 +181,99 @@ export class Plugin<
   TExt extends Record<string, any> = {},
 > {
   public readonly pluginName: string;
+  readonly #state: PluginState = {
+    flags: {},
+    commands: [],
+    groups: createGroupBuckets(),
+    extenders: [],
+    middlewares: [],
+    errorHandlers: [],
+    plugins: new Map(),
+  };
 
   constructor(name: string) {
     this.pluginName = name;
-    pluginStates.set(this, {
-      flags: {},
+  }
+
+  protected onInvalidate(): void {}
+
+  static #resolveWinningPlugins(
+    scope: Plugin<any, any>,
+    winners = new Map<string, Plugin<any, any>>(),
+    visiting = new Set<Plugin<any, any>>(),
+  ): ReadonlyMap<string, Plugin<any, any>> {
+    if (visiting.has(scope)) {
+      return winners;
+    }
+    visiting.add(scope);
+    for (const child of scope.#state.plugins.values()) {
+      Plugin.#resolveWinningPlugins(child, winners, visiting);
+    }
+    winners.set(scope.pluginName, scope);
+
+    return winners;
+  }
+
+  protected static collectScope(root: Plugin<any, any>): ScopeCollector {
+    const acc: ScopeCollector = {
+      globalFlags: {},
       commands: [],
       groups: createGroupBuckets(),
       extenders: [],
       middlewares: [],
       errorHandlers: [],
-      plugins: new Map(),
-    });
+    };
+    const winners = Plugin.#resolveWinningPlugins(root);
+    const visited = new Set<string>();
+
+    function visit(scope: Plugin<any, any>): void {
+      const resolved = winners.get(scope.pluginName) ?? scope;
+      if (visited.has(resolved.pluginName)) {
+        return;
+      }
+      visited.add(resolved.pluginName);
+
+      const state = resolved.#state;
+      for (const child of state.plugins.values()) {
+        visit(child);
+      }
+
+      Object.assign(acc.globalFlags, state.flags);
+      acc.commands.push(...state.commands);
+      acc.extenders.push(...state.extenders);
+      acc.middlewares.push(...state.middlewares);
+      acc.errorHandlers.push(...state.errorHandlers);
+
+      for (const groupScope of GROUP_SCOPES) {
+        acc.groups[groupScope].push(...state.groups[groupScope]);
+      }
+    }
+
+    visit(root);
+
+    return acc;
   }
 
   public flags<const Flags extends Record<string, any>>(
     definitions: ContextualFlags<Flags>,
   ): Plugin<TGlobalFlags & Flags, TExt> {
-    const state = getPluginState(this);
-    Object.assign(state.flags, definitions);
-    state.onInvalidate?.();
+    Object.assign(this.#state.flags, definitions);
+    this.onInvalidate();
 
     return this as any;
   }
 
   public groups(definitions: GroupsInput): this {
-    const state = getPluginState(this);
     for (const scope of GROUP_SCOPES) {
       const entries = definitions[scope];
       if (!entries) {
         continue;
       }
       for (const [key, title] of Object.entries(entries)) {
-        state.groups[scope].push({ key, title });
+        this.#state.groups[scope].push({ key, title });
       }
     }
-    state.onInvalidate?.();
+    this.onInvalidate();
 
     return this;
   }
@@ -313,24 +293,23 @@ export class Plugin<
     specOrOptions: string | RootCommandOptions<any, any, any>,
     maybeOptions?: CommandOptions<any, any, any, any, any>,
   ): this {
-    const state = getPluginState(this);
     if (typeof specOrOptions === "string") {
       const { name, argTokens } = parseCommandSpec(specOrOptions);
-      state.commands.push({
+      this.#state.commands.push({
         ...maybeOptions,
         spec: specOrOptions,
         name,
         argTokens,
       });
     } else {
-      state.commands.push({
+      this.#state.commands.push({
         ...specOrOptions,
         spec: "",
         name: "",
         argTokens: [],
       });
     }
-    state.onInvalidate?.();
+    this.onInvalidate();
 
     return this;
   }
@@ -338,25 +317,22 @@ export class Plugin<
   public extend<Added extends Record<string, any>>(
     fn: (ctx: RunContext<TGlobalFlags> & TExt) => Added | Promise<Added>,
   ): Plugin<TGlobalFlags, TExt & Added> {
-    const state = getPluginState(this);
-    state.extenders.push(fn as ContextExtender);
-    state.onInvalidate?.();
+    this.#state.extenders.push(fn as ContextExtender);
+    this.onInvalidate();
 
     return this as any;
   }
 
   public middleware(fn: Middleware<TGlobalFlags, TExt>): this {
-    const state = getPluginState(this);
-    state.middlewares.push(fn as Middleware<any, any>);
-    state.onInvalidate?.();
+    this.#state.middlewares.push(fn as Middleware<any, any>);
+    this.onInvalidate();
 
     return this;
   }
 
   public onError(fn: ErrorHandler<TGlobalFlags, TExt>): this {
-    const state = getPluginState(this);
-    state.errorHandlers.push(fn as ErrorHandler<any, any>);
-    state.onInvalidate?.();
+    this.#state.errorHandlers.push(fn as ErrorHandler<any, any>);
+    this.onInvalidate();
 
     return this;
   }
@@ -365,9 +341,8 @@ export class Plugin<
     PFlags extends Record<string, any> = {},
     PExt extends Record<string, any> = {},
   >(other: Plugin<PFlags, PExt>): Plugin<TGlobalFlags & PFlags, TExt & PExt> {
-    const state = getPluginState(this);
-    state.plugins.set(other.pluginName, other);
-    state.onInvalidate?.();
+    this.#state.plugins.set(other.pluginName, other);
+    this.onInvalidate();
 
     return this as any;
   }
@@ -408,10 +383,10 @@ export class Clerc<
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
+  }
 
-    getPluginState(this).onInvalidate = () => {
-      this.#compiled = undefined;
-    };
+  protected override onInvalidate(): void {
+    this.#compiled = undefined;
   }
 
   public override flags<const Flags extends Record<string, any>>(
@@ -444,15 +419,7 @@ export class Clerc<
       return this.#compiled;
     }
 
-    const acc: ScopeCollector = {
-      globalFlags: {},
-      commands: [],
-      groups: createGroupBuckets(),
-      extenders: [],
-      middlewares: [],
-      errorHandlers: [],
-    };
-    collectScope(this, acc);
+    const acc = Plugin.collectScope(this);
 
     const tree = new CommandTreeBuilder();
     for (const cmd of acc.commands) {
@@ -577,7 +544,7 @@ export class Clerc<
       meta: this.#meta,
       tree,
       defaultCommand: defaultNode?.fullPath,
-      globalFlags: globalFlags.descriptors,
+      globalFlags: globalFlags.entries,
       groups: acc.groups,
     };
 
@@ -672,7 +639,7 @@ export class Clerc<
     );
 
     let rootParsed: ArgvParseResult | undefined;
-    const isRootBuiltinRequest = (): boolean => {
+    function isRootBuiltinRequest(): boolean {
       if (match.kind !== "empty") {
         return false;
       }
@@ -681,11 +648,10 @@ export class Clerc<
       return (
         (compiledCli.rootRuntime.hasBuiltinVersion &&
           rootParsed.flags.version === true) ||
-        (this.#helpOptions !== false &&
-          compiledCli.rootRuntime.hasBuiltinHelp &&
+        (compiledCli.rootRuntime.hasBuiltinHelp &&
           rootParsed.flags.help === true)
       );
-    };
+    }
 
     if (
       compiledCli.defaultNode?.command &&
@@ -719,60 +685,47 @@ export class Clerc<
     ctx.unknown = parsed.unknown;
     ctx.doubleDash = parsed.doubleDash;
 
-    // 3. Built-in --version and --help handling (only when active on target node)
-    if (
-      runtime.hasBuiltinVersion &&
-      parsed.flags.version === true &&
-      match.kind !== "unknown"
-    ) {
+    // 3. Built-in --version, explicit --help, and unknown command handling
+    if (match.kind === "unknown") {
+      throw new UnknownCommandError(match.commandName, match.parentPath);
+    }
+
+    if (runtime.hasBuiltinVersion && parsed.flags.version === true) {
       ctx.terminal.stdout(formatCliVersion(ctx.meta));
 
       return { ok: true, exitCode: 0 };
     }
 
-    const hasParseErrors =
-      (this.#strictFlags && Object.keys(parsed.unknown).length > 0) ||
-      parsed.missingValueFlags.length > 0 ||
-      parsed.invalidValues.length > 0;
+    if (runtime.hasBuiltinHelp && parsed.flags.help === true) {
+      await ctx.help.print(match.node.fullPath);
 
-    if (this.#helpOptions !== false) {
-      const wantsHelp =
-        runtime.hasBuiltinHelp &&
-        parsed.flags.help === true &&
-        match.kind !== "unknown";
-      const implicitHelp =
-        !hasParseErrors &&
-        (match.kind === "empty" || match.kind === "namespace");
-
-      if (wantsHelp || implicitHelp) {
-        await ctx.help.print(match.node.fullPath);
-
-        return { ok: true, exitCode: 0 };
-      }
+      return { ok: true, exitCode: 0 };
     }
 
-    // 4. Validate flag syntax before requiring a matched command so invalid
-    //    root/namespace flags report actionable errors instead of generic help
-    if (match.kind !== "matched") {
-      if (hasParseErrors) {
-        validateParsedFlags(
-          runtime.userFlags,
-          runtime.knownFlagNames,
-          parsed,
-          this.#strictFlags,
-        );
-      }
-
-      throw createUnmatchedError(match);
-    }
-
-    // 5. Validate syntax, resolve typed flags & args, warn deprecations, enforce constraints
+    // 4. Validate flag syntax before implicit root/namespace help or command execution
     validateParsedFlags(
       runtime.userFlags,
       runtime.knownFlagNames,
       parsed,
       this.#strictFlags,
     );
+
+    if (match.kind !== "matched") {
+      if (this.#helpOptions !== false) {
+        await ctx.help.print(match.node.fullPath);
+
+        return { ok: true, exitCode: 0 };
+      }
+
+      throw match.kind === "empty"
+        ? new NoCommandError()
+        : new UnknownCommandError(
+            match.node.fullPath.join(" "),
+            match.node.fullPath,
+          );
+    }
+
+    // 5. Resolve typed flags & args, warn deprecations, and enforce constraints
 
     const { flags, missingRequired, provided } = await resolveCompiledFlags(
       runtime.userFlags,
@@ -823,14 +776,14 @@ export class Clerc<
         await matchedCommand.run(runCtx as any);
       }
     } else {
-      const dispatch = async (index: number): Promise<void> => {
+      async function dispatch(index: number): Promise<void> {
         const mw = compiledCli.middlewares[index];
         if (mw) {
           await mw(runCtx, () => dispatch(index + 1));
         } else if (matchedCommand.run) {
           await matchedCommand.run(runCtx as any);
         }
-      };
+      }
       await dispatch(0);
     }
 

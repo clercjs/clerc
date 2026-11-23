@@ -1,6 +1,13 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
+import {
+  ClercError,
+  buildHelpDocument,
+  createTheme,
+  formatDiagnostic,
+} from "../src";
+
 describe("clerc() integration", () => {
   it("handles --version, version, --help, help, and subcommand help natively", async () => {
     const terminal = createMemoryTerminal();
@@ -50,7 +57,11 @@ describe("clerc() integration", () => {
   it("renders Cargo/Clap diagnostics with did-you-mean hints natively", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli();
-    cli.command("build", { description: "Build project", run() {} });
+    cli.command("build", {
+      description: "Build project",
+      flags: { port: { type: Number, short: "p" } },
+      run() {},
+    });
     cli.command("dev", { description: "Start dev server", run() {} });
 
     const res = await cli.run(["buid"], { terminal });
@@ -73,6 +84,16 @@ describe("clerc() integration", () => {
 
     expect(typoHelpRes.ok).toBeFalsy();
     expect(terminal.stderrText()).toContain("unknown command 'buid'");
+
+    // Unknown command with subcommand-local flags still reports the command typo instead of blaming the flag
+    terminal.clear();
+    const typoFlagRes = await cli.run(["buid", "--port", "8080"], { terminal });
+
+    expect(typoFlagRes.ok).toBeFalsy();
+    expect(terminal.stderrText()).toContain("unknown command 'buid'");
+    expect(terminal.stderrText()).toContain(
+      "a similar command exists: 'build'",
+    );
   });
 
   it("renders structured JSON errors when logger format is json", async () => {
@@ -95,5 +116,28 @@ describe("clerc() integration", () => {
         exitCode: 2,
       },
     });
+
+    const customErr = new ClercError("missing target", {
+      code: "ERR_MISSING_ARGUMENT",
+      usage: "test deploy <env>",
+    }).addHint("pass 'staging' or 'prod'");
+
+    expect(
+      formatDiagnostic(customErr, { theme: createTheme(false), name: "test" }),
+    ).toBe(
+      [
+        "error  missing target",
+        "",
+        "tip    pass 'staging' or 'prod'",
+        "",
+        "usage  test deploy <env>",
+        "",
+        "       For more information, try 'test --help'.",
+      ].join("\n"),
+    );
+
+    const doc = await buildHelpDocument(cli.buildModel());
+
+    expect(doc.commandGroups[0]?.items[0]?.name).toBe("build");
   });
 });

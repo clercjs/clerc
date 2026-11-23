@@ -16,9 +16,9 @@ export const verbosityPlugin = () =>
     })
     .middleware(async (ctx, next) => {
       if (ctx.flags.quiet) {
-        ctx.log.setLevel("error");
+        ctx.log.level = "error";
       } else if (ctx.flags.verbose > 0) {
-        ctx.log.setLevel("debug");
+        ctx.log.level = "debug";
       }
 
       await next();

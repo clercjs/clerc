@@ -341,6 +341,7 @@ export interface CommandNode {
   readonly parent?: CommandNode;
   readonly children: ReadonlyMap<string, CommandNode>;
   readonly aliasIndex: ReadonlyMap<string, CommandNode>;
+  readonly aliases: readonly string[];
   readonly command?: AnyCommandDefinition;
   readonly args: readonly ArgDescriptor[];
   readonly localFlags: readonly FlagDescriptor[];
@@ -352,7 +353,9 @@ export interface CommandTree {
   findNode: (path: readonly string[]) => CommandNode | undefined;
   listChildren: (node?: CommandNode) => readonly CommandNode[];
   listVisibleChildren: (node?: CommandNode) => readonly CommandNode[];
-  walkCommands: () => readonly CommandNode[];
+  walkCommands: () => readonly (CommandNode & {
+    readonly command: AnyCommandDefinition;
+  })[];
 }
 
 export interface CliModel {

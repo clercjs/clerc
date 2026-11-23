@@ -10,9 +10,8 @@ cli.command("[files...]", {
   description: "Bump your version numbers",
   flags: {
     preid: { type: String, description: "ID for prerelease" },
-    all: { type: Boolean, description: "Include all files", default: false },
+    all: { type: Boolean, description: "Include all files" },
     commit: { type: String, short: "c", description: "Commit message" },
-    noCommit: { type: Boolean, description: "Skip commit", default: true },
     tag: { type: String, short: "t", description: "Tag name" },
     push: {
       type: Boolean,
@@ -30,19 +29,17 @@ cli.command("[files...]", {
       type: Boolean,
       short: "r",
       description: "Bump package.json files recursively",
-      default: false,
     },
-    noVerify: {
+    verify: {
       type: Boolean,
-      description: "Skip git verification",
+      description: "Git verification",
       default: true,
     },
     ignoreScripts: {
       type: Boolean,
       description: "Ignore scripts",
-      default: false,
     },
-    quiet: { type: Boolean, description: "Quiet mode", default: false },
+    quiet: { type: Boolean, description: "Quiet mode" },
     version: { type: String, short: "v", description: "Target version" },
     execute: {
       type: String,

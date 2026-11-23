@@ -5,10 +5,7 @@ export interface StructuredCell {
   readonly tags?: readonly string[];
 }
 
-export type TwoColumnRow = readonly [
-  left: string,
-  right: string | StructuredCell,
-];
+export type TwoColumnRow = readonly [left: string, right: StructuredCell];
 
 export interface TwoColumnOptions {
   readonly indent?: number;
@@ -94,23 +91,6 @@ function wrapStructuredCell(cell: StructuredCell, maxWidth: number): string[] {
   return lines;
 }
 
-function wrapRightCell(
-  right: string | StructuredCell,
-  maxWidth: number,
-): string[] {
-  if (typeof right === "string") {
-    if (!right) {
-      return [];
-    }
-
-    return right
-      .split("\n")
-      .flatMap((paragraph) => wrapLine(paragraph, maxWidth));
-  }
-
-  return wrapStructuredCell(right, maxWidth);
-}
-
 export function measureColumnWidth(
   rows: readonly TwoColumnRow[],
   options: Pick<TwoColumnOptions, "maxWidth" | "maxLeftWidth"> = {},
@@ -152,7 +132,7 @@ export function formatTwoColumn(
 
   for (const [left, right] of rows) {
     const leftW = stringWidth(left);
-    const wrappedRight = wrapRightCell(right, rightBudget);
+    const wrappedRight = wrapStructuredCell(right, rightBudget);
 
     if (wrappedRight.length === 0) {
       output.push(`${indent}${left}`);

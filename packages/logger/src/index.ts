@@ -1,28 +1,32 @@
 import { Writable } from "node:stream";
 import { inspect } from "node:util";
 
-import type {
-  BoxAlignment,
-  SpinnerOptions as ClackSpinnerOptions,
-} from "@clack/prompts";
+import type { SpinnerOptions as ClackSpinnerOptions } from "@clack/prompts";
 import * as prompts from "@clack/prompts";
-import type { Theme } from "@clerc/theme";
+import type { Theme, ThemeToken } from "@clerc/theme";
 import { createTheme, detectColor, detectUnicode } from "@clerc/theme";
 
 export { prompts };
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
-export type LogStyle = "rail" | "compact";
 export type LogFormat = "pretty" | "json";
-export type NoteTone = "info" | "warn" | "error" | "success";
 
-export interface NoteOptions {
-  readonly tone?: NoteTone;
-  readonly contentAlign?: BoxAlignment;
-  readonly titleAlign?: BoxAlignment;
-  readonly width?: number | "auto";
-  readonly rounded?: boolean;
-  readonly stream?: "stdout" | "stderr";
+export interface LogEntry {
+  readonly line: (...values: unknown[]) => LogEntry;
+}
+
+export type LogMethod<TReturn = void> = (
+  message: unknown,
+  ...details: unknown[]
+) => TReturn;
+
+export interface LogMethods<TReturn = LogEntry> {
+  step: LogMethod<TReturn>;
+  info: LogMethod<TReturn>;
+  success: LogMethod<TReturn>;
+  warn: LogMethod<TReturn>;
+  error: LogMethod<TReturn>;
+  debug: LogMethod<TReturn>;
 }
 
 export interface SpinnerOptions {
@@ -36,7 +40,7 @@ export interface SpinnerOptions {
 
 export interface SpinnerHandle {
   start: (message?: string) => void;
-  message: (message?: string) => void;
+  message: (message: string) => void;
   stop: (message?: string) => void;
   error: (message?: string) => void;
   cancel: (message?: string) => void;
@@ -44,9 +48,7 @@ export interface SpinnerHandle {
   readonly isCancelled: boolean;
 }
 
-export interface LogEntry {
-  readonly line: (value: unknown) => LogEntry;
-}
+export type TaskSpinner = Omit<SpinnerHandle, "start">;
 
 export interface LoggerTerminal {
   readonly stdout: (text: string) => void;
@@ -56,47 +58,36 @@ export interface LoggerTerminal {
   readonly unicode?: boolean;
 }
 
-export type LoggerTheme = Pick<
-  Theme,
-  "brand" | "info" | "success" | "warn" | "error" | "muted" | "bold" | "dim"
->;
-
 export interface LoggerOptions {
   level?: LogLevel;
-  style?: LogStyle;
   format?: LogFormat;
   scope?: string;
 }
 
 export interface CreateLoggerOptions extends LoggerOptions {
   readonly terminal?: LoggerTerminal;
-  readonly theme?: LoggerTheme;
+  readonly theme?: Theme;
   readonly color?: boolean;
   readonly unicode?: boolean;
 }
 
-export interface Logger {
-  readonly level: LogLevel;
-  readonly style: LogStyle;
-  readonly format: LogFormat;
+export interface Logger extends LogMethods {
+  level: LogLevel;
+  format: LogFormat;
   readonly scope?: string;
-  setLevel: (level: LogLevel) => void;
-  setStyle: (style: LogStyle) => void;
-  setFormat: (format: LogFormat) => void;
-  step: (message: unknown, detail?: unknown) => LogEntry;
-  info: (message: unknown, detail?: unknown) => LogEntry;
-  success: (message: unknown, detail?: unknown) => LogEntry;
-  warn: (message: unknown, detail?: unknown) => LogEntry;
-  error: (message: unknown, detail?: unknown) => LogEntry;
-  debug: (message: unknown, detail?: unknown) => LogEntry;
-  raw: (text: string) => void;
-  note: (message: string, title?: string, options?: NoteOptions) => void;
+  readonly theme: Theme;
+  readonly box: LogMethods<void>;
+  raw: (text?: string) => void;
   spinner: (options?: SpinnerOptions) => SpinnerHandle;
-  withScope: (scope: string) => Logger;
+  task: <T>(
+    title: string,
+    fn: (spinner: TaskSpinner) => T | Promise<T>,
+    options?: SpinnerOptions,
+  ) => Promise<T>;
+  child: (scope: string) => Logger;
 }
 
-type LogKind = "step" | "info" | "success" | "warn" | "error" | "debug";
-type LoggerThemeToken = keyof LoggerTheme;
+type LogKind = keyof LogMethods;
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   silent: 0,
@@ -114,80 +105,20 @@ const KIND_META: Record<
   {
     readonly level: Exclude<LogLevel, "silent">;
     readonly stderr: boolean;
-    readonly token: LoggerThemeToken;
-    readonly label: string;
-    readonly boldLabel: boolean;
-    readonly boldBody: boolean;
-  }
-> = {
-  step: {
-    level: "info",
-    stderr: false,
-    token: "brand",
-    label: "step",
-    boldLabel: true,
-    boldBody: true,
-  },
-  info: {
-    level: "info",
-    stderr: false,
-    token: "info",
-    label: "info",
-    boldLabel: true,
-    boldBody: false,
-  },
-  success: {
-    level: "info",
-    stderr: false,
-    token: "success",
-    label: "done",
-    boldLabel: true,
-    boldBody: false,
-  },
-  warn: {
-    level: "warn",
-    stderr: true,
-    token: "warn",
-    label: "warn",
-    boldLabel: true,
-    boldBody: false,
-  },
-  error: {
-    level: "error",
-    stderr: true,
-    token: "error",
-    label: "error",
-    boldLabel: true,
-    boldBody: true,
-  },
-  debug: {
-    level: "debug",
-    stderr: false,
-    token: "muted",
-    label: "debug",
-    boldLabel: false,
-    boldBody: false,
-  },
-};
-
-const NOTE_TONE_META: Record<
-  NoteTone,
-  {
-    readonly level: Exclude<LogLevel, "silent">;
-    readonly stderr: boolean;
-    readonly token: LoggerThemeToken;
+    readonly token: ThemeToken;
     readonly label: string;
   }
 > = {
-  info: { level: "info", stderr: false, token: "info", label: "note" },
+  step: { level: "info", stderr: false, token: "brand", label: "step" },
+  info: { level: "info", stderr: false, token: "info", label: "info" },
+  success: { level: "info", stderr: false, token: "success", label: "done" },
   warn: { level: "warn", stderr: true, token: "warn", label: "warn" },
   error: { level: "error", stderr: true, token: "error", label: "error" },
-  success: { level: "info", stderr: false, token: "success", label: "done" },
+  debug: { level: "debug", stderr: false, token: "muted", label: "debug" },
 };
 
 interface SharedLoggerState {
   level: LogLevel;
-  style: LogStyle;
   format: LogFormat;
 }
 
@@ -195,16 +126,6 @@ const identity = (text: string): string => text;
 
 const NOOP_ENTRY: LogEntry = Object.freeze({
   line: () => NOOP_ENTRY,
-});
-
-const NOOP_SPINNER: SpinnerHandle = Object.freeze({
-  start: () => {},
-  message: () => {},
-  stop: () => {},
-  error: () => {},
-  cancel: () => {},
-  clear: () => {},
-  isCancelled: false,
 });
 
 const DEFAULT_TERMINAL: LoggerTerminal = {
@@ -220,8 +141,8 @@ export const formatLogLabel = (
 
 const formatLabel = (
   label: string,
-  theme: LoggerTheme,
-  token: LoggerThemeToken,
+  theme: Theme,
+  token: ThemeToken,
   bold: boolean,
 ): string =>
   formatLogLabel(label, (text) =>
@@ -317,7 +238,7 @@ function createLoggerWithState(
   terminal: LoggerTerminal,
   isDefaultTerminal: boolean,
   color: boolean,
-  theme: LoggerTheme,
+  theme: Theme,
   unicode: boolean,
   state: SharedLoggerState,
   scope?: string,
@@ -329,8 +250,7 @@ function createLoggerWithState(
   const shouldLog = (targetLevel: Exclude<LogLevel, "silent">): boolean =>
     LEVEL_PRIORITY[state.level] >= LEVEL_PRIORITY[targetLevel];
 
-  const detailPrefix = (): string =>
-    state.style === "rail" ? `${LOG_GUTTER}${faint(bar)} ` : LOG_GUTTER;
+  const detailPrefix = `${LOG_GUTTER}${faint(bar)} `;
 
   function formatScope(isDebug: boolean): string {
     if (!scope) {
@@ -361,6 +281,58 @@ function createLoggerWithState(
       .map((part) => theme.muted(part));
   }
 
+  function resolvePayload(
+    isDebug: boolean,
+    rawMessage: unknown,
+    rawDetails: readonly unknown[],
+  ): {
+    readonly headline: string;
+    readonly extraLines: readonly string[];
+    readonly jsonMessage: unknown;
+  } {
+    const detailLines = rawDetails.flatMap((value) =>
+      formatDetailLines(value, isDebug),
+    );
+
+    if (typeof rawMessage === "string") {
+      return {
+        headline: rawMessage,
+        extraLines: detailLines,
+        jsonMessage: rawMessage,
+      };
+    }
+
+    if (Error.isError(rawMessage) && rawDetails.length === 0) {
+      return {
+        headline:
+          rawMessage.message.length > 0 ? rawMessage.message : rawMessage.name,
+        extraLines: formatErrorLines(
+          rawMessage,
+          isDebug ? faint : theme.muted,
+          faint,
+          rawMessage.name !== "Error",
+        ),
+        jsonMessage: serializeJsonValue(rawMessage),
+      };
+    }
+
+    const inspected = inspect(rawMessage, {
+      colors: isDebug ? false : color,
+      depth: 4,
+    }).split("\n");
+
+    return {
+      headline: inspected[0] ?? "",
+      extraLines: [
+        ...inspected
+          .slice(1)
+          .map((part) => (isDebug ? faint(part) : theme.muted(part))),
+        ...detailLines,
+      ],
+      jsonMessage: serializeJsonValue(rawMessage),
+    };
+  }
+
   function createEntry(
     targetLevel: Exclude<LogLevel, "silent">,
     write: (text: string) => void,
@@ -368,24 +340,27 @@ function createLoggerWithState(
     jsonBase: Readonly<Record<string, unknown>>,
   ): LogEntry {
     const entry: LogEntry = {
-      line(value) {
-        if (!shouldLog(targetLevel)) {
+      line(...values) {
+        if (!shouldLog(targetLevel) || values.length === 0) {
           return entry;
         }
         if (state.format === "json") {
-          write(
-            JSON.stringify({
-              ...jsonBase,
-              ...(scope ? { scope } : {}),
-              line: serializeJsonValue(value),
-            }),
-          );
+          for (const value of values) {
+            write(
+              JSON.stringify({
+                ...jsonBase,
+                ...(scope ? { scope } : {}),
+                line: serializeJsonValue(value),
+              }),
+            );
+          }
 
           return entry;
         }
-        const prefix = detailPrefix();
-        for (const part of formatDetailLines(value, isDebug)) {
-          write(`${prefix}${part}`);
+        for (const value of values) {
+          for (const part of formatDetailLines(value, isDebug)) {
+            write(`${detailPrefix}${part}`);
+          }
         }
 
         return entry;
@@ -395,10 +370,31 @@ function createLoggerWithState(
     return entry;
   }
 
+  function writeJsonRecord(
+    write: (text: string) => void,
+    kind: LogKind,
+    jsonMessage: unknown,
+    rawDetails: readonly unknown[],
+  ): void {
+    const payload: Record<string, unknown> = {
+      level: kind,
+      message: jsonMessage,
+    };
+    if (scope) {
+      payload.scope = scope;
+    }
+    if (rawDetails.length === 1) {
+      payload.detail = serializeJsonValue(rawDetails[0]);
+    } else if (rawDetails.length > 1) {
+      payload.details = rawDetails.map(serializeJsonValue);
+    }
+    write(JSON.stringify(payload));
+  }
+
   function emit(
     kind: LogKind,
     rawMessage: unknown,
-    rawDetail?: unknown,
+    ...rawDetails: unknown[]
   ): LogEntry {
     const meta = KIND_META[kind];
     if (!shouldLog(meta.level)) {
@@ -406,284 +402,289 @@ function createLoggerWithState(
     }
 
     const isDebug = kind === "debug";
-    let messageText: string;
-    let extraHeadlineLines: string[] | undefined;
-
-    if (typeof rawMessage === "string") {
-      messageText = rawMessage;
-    } else if (Error.isError(rawMessage) && rawDetail === undefined) {
-      messageText =
-        rawMessage.message.length > 0 ? rawMessage.message : rawMessage.name;
-      extraHeadlineLines = formatErrorLines(
-        rawMessage,
-        isDebug ? faint : theme.muted,
-        faint,
-        rawMessage.name !== "Error",
-      );
-    } else {
-      const inspected = inspect(rawMessage, {
-        colors: isDebug ? false : color,
-        depth: 4,
-      }).split("\n");
-      messageText = inspected[0] ?? "";
-      if (inspected.length > 1) {
-        extraHeadlineLines = inspected
-          .slice(1)
-          .map((part) => (isDebug ? faint(part) : theme.muted(part)));
-      }
-    }
-
+    const { headline, extraLines, jsonMessage } = resolvePayload(
+      isDebug,
+      rawMessage,
+      rawDetails,
+    );
     const write = meta.stderr ? terminal.stderr : terminal.stdout;
-    const jsonMessage =
-      typeof rawMessage === "string"
-        ? rawMessage
-        : serializeJsonValue(rawMessage);
     const entry = createEntry(meta.level, write, isDebug, {
       level: kind,
       message: jsonMessage,
     });
 
     if (state.format === "json") {
-      const payload: Record<string, unknown> = {
-        level: kind,
-        message: jsonMessage,
-      };
-      if (scope) {
-        payload.scope = scope;
-      }
-      if (rawDetail !== undefined) {
-        payload.detail = serializeJsonValue(rawDetail);
-      }
-      write(JSON.stringify(payload));
+      writeJsonRecord(write, kind, jsonMessage, rawDetails);
 
       return entry;
     }
 
-    const label = formatLabel(meta.label, theme, meta.token, meta.boldLabel);
+    const label = formatLabel(meta.label, theme, meta.token, !isDebug);
     const scopePrefix = formatScope(isDebug);
     const body = isDebug
-      ? faint(messageText)
-      : meta.boldBody
-        ? theme.bold(messageText)
-        : messageText;
+      ? faint(headline)
+      : kind === "step" || kind === "error"
+        ? theme.bold(headline)
+        : headline;
 
     write(`${label}  ${scopePrefix}${body}`);
-    if (extraHeadlineLines !== undefined && extraHeadlineLines.length > 0) {
-      const prefix = detailPrefix();
-      for (const line of extraHeadlineLines) {
-        write(`${prefix}${line}`);
+    if (extraLines.length > 0) {
+      for (const line of extraLines) {
+        write(`${detailPrefix}${line}`);
       }
-    }
-    if (rawDetail !== undefined) {
-      entry.line(rawDetail);
     }
 
     return entry;
+  }
+
+  function emitBox(
+    kind: LogKind,
+    rawMessage: unknown,
+    ...rawDetails: unknown[]
+  ): void {
+    const meta = KIND_META[kind];
+    if (!shouldLog(meta.level)) {
+      return;
+    }
+
+    const isDebug = kind === "debug";
+    const { headline, extraLines, jsonMessage } = resolvePayload(
+      isDebug,
+      rawMessage,
+      rawDetails,
+    );
+    const write = meta.stderr ? terminal.stderr : terminal.stdout;
+
+    if (state.format === "json") {
+      writeJsonRecord(write, kind, jsonMessage, rawDetails);
+
+      return;
+    }
+
+    const hasDetailLines = extraLines.length > 0;
+    const styledBody = hasDetailLines
+      ? extraLines.join("\n")
+      : (isDebug ? faint : theme.muted)(headline);
+
+    const headerParts: string[] = [];
+    if (scope) {
+      headerParts.push(
+        isDebug
+          ? faint(`${scope} ${sep}`)
+          : `${theme.muted(scope)} ${faint(sep)}`,
+      );
+    }
+    if (hasDetailLines && headline.length > 0) {
+      headerParts.push(isDebug ? faint(headline) : theme.bold(headline));
+    }
+    const styledTitle =
+      headerParts.length > 0 ? ` ${headerParts.join(" ")} ` : undefined;
+
+    const rawLines: string[] = [];
+    const streamColumns =
+      (meta.stderr ? process.stderr.columns : process.stdout.columns) ?? 80;
+    const output = Object.assign(
+      createLineWritable((line) => {
+        rawLines.push(line);
+      }),
+      { columns: Math.max(40, streamColumns - LOG_GUTTER.length) },
+    );
+
+    prompts.box(styledBody, styledTitle, {
+      output,
+      withGuide: false,
+      rounded: unicode,
+      width: "auto",
+      titlePadding: 1,
+      contentPadding: 2,
+      contentAlign: "left",
+      titleAlign: "left",
+      formatBorder: (ch) => {
+        if (!unicode) {
+          if (ch === "─") {
+            return faint("-");
+          }
+          if (ch === "│") {
+            return faint("|");
+          }
+
+          return faint("+");
+        }
+
+        return faint(ch);
+      },
+    });
+
+    const label = formatLabel(meta.label, theme, meta.token, !isDebug);
+    for (const [index, line] of rawLines.entries()) {
+      write(`${index === 0 ? `${label}  ` : LOG_GUTTER}${line}`);
+    }
+  }
+
+  const box: LogMethods<void> = {
+    step: (msg, ...details) => emitBox("step", msg, ...details),
+    info: (msg, ...details) => emitBox("info", msg, ...details),
+    success: (msg, ...details) => emitBox("success", msg, ...details),
+    warn: (msg, ...details) => emitBox("warn", msg, ...details),
+    error: (msg, ...details) => emitBox("error", msg, ...details),
+    debug: (msg, ...details) => emitBox("debug", msg, ...details),
+  };
+
+  function createSpinner(
+    options?: SpinnerOptions,
+  ): SpinnerHandle & { readonly active: boolean } {
+    let active = false;
+    let cancelled = false;
+    let activeEntry: LogEntry = NOOP_ENTRY;
+
+    const canAnimate = (): boolean =>
+      shouldLog("info") &&
+      isDefaultTerminal &&
+      Boolean(process.stdout.isTTY) &&
+      state.format === "pretty";
+
+    let rawSpinner: ReturnType<typeof prompts.spinner> | undefined;
+
+    return {
+      start(msg = "") {
+        if (active) {
+          rawSpinner?.clear();
+        }
+        cancelled = false;
+        if (!shouldLog("info")) {
+          active = false;
+          activeEntry = NOOP_ENTRY;
+
+          return;
+        }
+        active = true;
+        if (canAnimate()) {
+          const scopePrefix = formatScope(false);
+          rawSpinner ??= prompts.spinner({
+            ...options,
+            output: process.stdout,
+            withGuide: false,
+            frames:
+              options?.frames ??
+              (unicode ? ["◒", "◐", "◓", "◑"] : ["-", "\\", "|", "/"]),
+            styleFrame: (frame) =>
+              formatLogLabel(frame, (s) => theme.bold(theme.brand(s))),
+          });
+          rawSpinner.start(
+            msg.length > 0 ? `${scopePrefix}${msg}` : scopePrefix.trimEnd(),
+          );
+        } else {
+          rawSpinner = undefined;
+          activeEntry = msg.length > 0 ? emit("step", msg) : NOOP_ENTRY;
+        }
+      },
+      message(msg) {
+        if (!active) {
+          return;
+        }
+        if (rawSpinner) {
+          rawSpinner.message(`${formatScope(false)}${msg}`);
+        } else if (msg.length > 0) {
+          activeEntry.line(msg);
+        }
+      },
+      stop(msg) {
+        if (rawSpinner && active) {
+          rawSpinner.clear();
+        }
+        active = false;
+        activeEntry = NOOP_ENTRY;
+        if (msg) {
+          emit("success", msg);
+        }
+      },
+      error(msg) {
+        if (rawSpinner && active) {
+          rawSpinner.clear();
+        }
+        active = false;
+        activeEntry = NOOP_ENTRY;
+        emit("error", msg ?? options?.errorMessage ?? "Failed");
+      },
+      cancel(msg) {
+        if (rawSpinner && active) {
+          rawSpinner.clear();
+        }
+        active = false;
+        cancelled = true;
+        activeEntry = NOOP_ENTRY;
+        emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
+      },
+      clear() {
+        if (rawSpinner && active) {
+          rawSpinner.clear();
+        }
+        active = false;
+        activeEntry = NOOP_ENTRY;
+      },
+      get isCancelled() {
+        return cancelled || Boolean(rawSpinner?.isCancelled);
+      },
+      get active() {
+        return active;
+      },
+    };
   }
 
   return {
     get level() {
       return state.level;
     },
-    get style() {
-      return state.style;
+    set level(level) {
+      state.level = level;
     },
     get format() {
       return state.format;
     },
-    scope,
-    setLevel: (level) => {
-      state.level = level;
-    },
-    setStyle: (style) => {
-      state.style = style;
-    },
-    setFormat: (format) => {
+    set format(format) {
       state.format = format;
     },
-    step: (msg, detail) => emit("step", msg, detail),
-    info: (msg, detail) => emit("info", msg, detail),
-    success: (msg, detail) => emit("success", msg, detail),
-    warn: (msg, detail) => emit("warn", msg, detail),
-    error: (msg, detail) => emit("error", msg, detail),
-    debug: (msg, detail) => emit("debug", msg, detail),
-    raw: (text) => {
+    scope,
+    theme,
+    step: (msg, ...details) => emit("step", msg, ...details),
+    info: (msg, ...details) => emit("info", msg, ...details),
+    success: (msg, ...details) => emit("success", msg, ...details),
+    warn: (msg, ...details) => emit("warn", msg, ...details),
+    error: (msg, ...details) => emit("error", msg, ...details),
+    debug: (msg, ...details) => emit("debug", msg, ...details),
+    box,
+    raw: (text = "") => {
       if (state.level !== "silent") {
         terminal.stdout(text);
       }
     },
-    note: (message, title, options) => {
-      const tone = options?.tone ?? "info";
-      const meta = NOTE_TONE_META[tone];
-      if (!shouldLog(meta.level)) {
-        return;
-      }
-      const useStderr =
-        options?.stream === undefined
-          ? meta.stderr
-          : options.stream === "stderr";
-      const write = useStderr ? terminal.stderr : terminal.stdout;
+    spinner: (options) => createSpinner(options),
+    async task(title, fn, options) {
+      const handle = createSpinner(options);
+      handle.start(title);
+      try {
+        const result = await fn(handle);
+        if (handle.active) {
+          const doneMsg =
+            typeof result === "string" && result.length > 0
+              ? result
+              : title.replace(/\.+$/, "");
+          handle.stop(doneMsg);
+        }
 
-      if (state.format === "json") {
-        write(
-          JSON.stringify({
-            level: tone,
-            ...(scope ? { scope } : {}),
-            ...(title ? { title } : {}),
-            message,
-          }),
-        );
+        return result;
+      } catch (error) {
+        if (handle.active) {
+          handle.error(
+            options?.errorMessage ??
+              (Error.isError(error) ? error.message : String(error)),
+          );
+        }
 
-        return;
-      }
-
-      const rawLines: string[] = [];
-      const streamColumns =
-        (useStderr ? process.stderr.columns : process.stdout.columns) ?? 80;
-      const output = Object.assign(
-        createLineWritable((line) => {
-          rawLines.push(line);
-        }),
-        { columns: Math.max(40, streamColumns - LOG_GUTTER.length) },
-      );
-
-      const styledBody = message
-        .split("\n")
-        .map((line) => theme.muted(line))
-        .join("\n");
-
-      const headerParts: string[] = [];
-      if (scope) {
-        headerParts.push(`${theme.muted(scope)} ${faint(sep)}`);
-      }
-      if (title) {
-        headerParts.push(theme.bold(title));
-      }
-      const styledTitle =
-        headerParts.length > 0 ? ` ${headerParts.join(" ")} ` : undefined;
-
-      prompts.box(styledBody, styledTitle, {
-        output,
-        withGuide: false,
-        rounded: options?.rounded ?? unicode,
-        width: options?.width ?? "auto",
-        titlePadding: 1,
-        contentPadding: 2,
-        contentAlign: options?.contentAlign ?? "left",
-        titleAlign: options?.titleAlign ?? "left",
-        formatBorder: (ch) => {
-          if (!unicode) {
-            if (ch === "─") {
-              return faint("-");
-            }
-            if (ch === "│") {
-              return faint("|");
-            }
-
-            return faint("+");
-          }
-
-          return faint(ch);
-        },
-      });
-
-      const label = formatLabel(meta.label, theme, meta.token, true);
-      for (const [index, line] of rawLines.entries()) {
-        write(`${index === 0 ? `${label}  ` : LOG_GUTTER}${line}`);
+        throw error;
       }
     },
-    spinner: (options) => {
-      if (!shouldLog("info")) {
-        return NOOP_SPINNER;
-      }
-
-      const canAnimate =
-        isDefaultTerminal &&
-        Boolean(process.stdout.isTTY) &&
-        state.format === "pretty";
-
-      if (canAnimate) {
-        let cancelled = false;
-        const scopePrefix = formatScope(false);
-        const rawSpinner = prompts.spinner({
-          ...options,
-          output: process.stdout,
-          withGuide: false,
-          frames:
-            options?.frames ??
-            (unicode ? ["◒", "◐", "◓", "◑"] : ["-", "\\", "|", "/"]),
-          styleFrame: (frame) =>
-            formatLogLabel(frame, (s) => theme.bold(theme.brand(s))),
-        });
-
-        return {
-          start(msg) {
-            rawSpinner.start(
-              msg ? `${scopePrefix}${msg}` : scopePrefix.trimEnd(),
-            );
-          },
-          message(msg) {
-            if (msg !== undefined) {
-              rawSpinner.message(`${scopePrefix}${msg}`);
-            }
-          },
-          stop(msg) {
-            rawSpinner.clear();
-            if (msg) {
-              emit("success", msg);
-            }
-          },
-          error(msg) {
-            rawSpinner.clear();
-            emit("error", msg ?? options?.errorMessage ?? "Failed");
-          },
-          cancel(msg) {
-            cancelled = true;
-            rawSpinner.clear();
-            emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
-          },
-          clear() {
-            rawSpinner.clear();
-          },
-          get isCancelled() {
-            return cancelled || rawSpinner.isCancelled;
-          },
-        };
-      }
-
-      let cancelled = false;
-      let activeEntry: LogEntry = NOOP_ENTRY;
-
-      return {
-        start(msg) {
-          if (msg) {
-            activeEntry = emit("step", msg);
-          }
-        },
-        message(msg) {
-          if (msg) {
-            activeEntry.line(msg);
-          }
-        },
-        stop(msg) {
-          if (msg) {
-            emit("success", msg);
-          }
-        },
-        error(msg) {
-          emit("error", msg ?? options?.errorMessage ?? "Failed");
-        },
-        cancel(msg) {
-          cancelled = true;
-          emit("warn", msg ?? options?.cancelMessage ?? "Cancelled");
-        },
-        clear() {},
-        get isCancelled() {
-          return cancelled;
-        },
-      };
-    },
-    withScope: (childScope) =>
+    child: (childScope) =>
       createLoggerWithState(
         terminal,
         isDefaultTerminal,
@@ -704,7 +705,6 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
   const theme = options.theme ?? createTheme(color);
   const state: SharedLoggerState = {
     level: options.level ?? "info",
-    style: options.style ?? "rail",
     format: options.format ?? "pretty",
   };
 

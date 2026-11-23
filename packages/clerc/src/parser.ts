@@ -131,6 +131,23 @@ function registerAlias(
   table[alias] = entry;
 }
 
+function registerNameVariants(
+  table: Record<string, CompiledFlag>,
+  name: string,
+  entry: CompiledFlag,
+  primaryLabel: string,
+): void {
+  registerAlias(table, name, entry, primaryLabel);
+  const camel = camelCase(name);
+  if (camel !== name) {
+    registerAlias(table, camel, entry, "alias");
+  }
+  const kebab = kebabCase(name);
+  if (kebab !== name) {
+    registerAlias(table, kebab, entry, "alias");
+  }
+}
+
 function buildLookupTables(specs: Iterable<ArgvFlagSpec>): LookupTables {
   const byName: Record<string, CompiledFlag> = Object.create(null);
   let byShortCode: (CompiledFlag | undefined)[] | undefined;
@@ -165,15 +182,7 @@ function buildLookupTables(specs: Iterable<ArgvFlagSpec>): LookupTables {
       optionalValue: kind === "single" && Boolean(spec.optionalValue),
     };
 
-    registerAlias(byName, key, entry, "name");
-    const camel = camelCase(key);
-    if (camel !== key) {
-      registerAlias(byName, camel, entry, "alias");
-    }
-    const kebab = kebabCase(key);
-    if (kebab !== key) {
-      registerAlias(byName, kebab, entry, "alias");
-    }
+    registerNameVariants(byName, key, entry, "name");
 
     if (spec.aliases) {
       for (const alias of spec.aliases) {
@@ -187,15 +196,7 @@ function buildLookupTables(specs: Iterable<ArgvFlagSpec>): LookupTables {
             `Flag "${key}" alias "${alias}" contains reserved characters.`,
           );
         }
-        registerAlias(byName, alias, entry, "alias");
-        const aliasCamel = camelCase(alias);
-        if (aliasCamel !== alias) {
-          registerAlias(byName, aliasCamel, entry, "alias");
-        }
-        const aliasKebab = kebabCase(alias);
-        if (aliasKebab !== alias) {
-          registerAlias(byName, aliasKebab, entry, "alias");
-        }
+        registerNameVariants(byName, alias, entry, "alias");
       }
     }
 
@@ -331,24 +332,7 @@ export function createArgvParser(
           const { key, kind } = flag;
 
           switch (kind) {
-            case "boolean": {
-              const parsed =
-                eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
-              if (parsed === undefined) {
-                (invalidValues ??= []).push({
-                  flag: key,
-                  value: current.slice(eq + 1),
-                  message: INVALID_BOOL_MSG,
-                });
-              } else {
-                if (flags[key] === undefined) {
-                  provided.push(key);
-                }
-                flags[key] = negated ? !parsed : parsed;
-              }
-
-              break;
-            }
+            case "boolean":
             case "counter": {
               const parsed =
                 eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
@@ -358,6 +342,11 @@ export function createArgvParser(
                   value: current.slice(eq + 1),
                   message: INVALID_BOOL_MSG,
                 });
+              } else if (kind === "boolean") {
+                if (flags[key] === undefined) {
+                  provided.push(key);
+                }
+                flags[key] = negated ? !parsed : parsed;
               } else {
                 const prev = flags[key] as number | undefined;
                 if (prev === undefined) {
@@ -497,13 +486,12 @@ export function createArgvParser(
         if (c1 === CHAR_DASH) {
           const eq = current.indexOf("=", 2);
           const name = eq === -1 ? current.slice(2) : current.slice(2, eq);
-          let flag = byName[name];
-          if (flag === undefined && hasNoPrefix(name)) {
-            const candidate = byName[name.slice(3)];
-            if (candidate?.negatable) {
-              flag = candidate;
-            }
-          }
+          const negated =
+            byName[name] === undefined && hasNoPrefix(name)
+              ? byName[name.slice(3)]
+              : undefined;
+          const flag =
+            byName[name] ?? (negated?.negatable ? negated : undefined);
           if (flag === undefined) {
             return { stoppedAt: i };
           }

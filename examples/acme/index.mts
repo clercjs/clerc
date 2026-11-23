@@ -56,7 +56,7 @@ const dbPlugin = plugin("acme:db")
         `steps: ${ctx.flags.steps ?? "all"}`,
       );
       if (ctx.flags.dryRun) {
-        ctx.log.info("Dry run enabled — no schema changes applied.");
+        ctx.log.info("Dry run enabled - no schema changes applied.");
       } else {
         ctx.log.success("Database is up to date!");
       }
@@ -197,7 +197,10 @@ cli.command("deploy <env> [region]", {
     }
 
     if (summary.dryRun) {
-      ctx.log.note("No remote resources were modified.", "Dry run complete");
+      ctx.log.box.info(
+        "Dry run complete",
+        "No remote resources were modified.",
+      );
     } else {
       ctx.log.success(`Deployed ${summary.env} successfully!`);
     }

@@ -7,12 +7,7 @@ import type {
   FlagDescriptor,
   GroupDefinition,
 } from "../types";
-import {
-  formatFlagName,
-  formatVersion,
-  resolveAsyncValue,
-  toArray,
-} from "../utils";
+import { formatFlagName, formatVersion, resolveAsyncValue } from "../utils";
 
 export interface HelpHeader {
   readonly name: string;
@@ -95,7 +90,7 @@ export interface HelpDocument {
   readonly notes: readonly string[];
 }
 
-export function formatDefaultValue(value: unknown): string {
+function formatDefaultValue(value: unknown): string {
   if (
     typeof value === "function" &&
     "display" in value &&
@@ -177,9 +172,12 @@ function groupItems<T, R>(
     const key = getGroup(item);
     const mapped = mapItem(item);
     if (key) {
-      const list = buckets.get(key) ?? [];
+      let list = buckets.get(key);
+      if (!list) {
+        list = [];
+        buckets.set(key, list);
+      }
       list.push(mapped);
-      buckets.set(key, list);
     } else {
       ungrouped.push(mapped);
     }
@@ -268,8 +266,6 @@ export async function buildHelpDocument(
   const hasCommandFlags = visibleLocalFlags.length > 0;
   const hasGlobalFlags = visibleGlobalFlags.length > 0;
 
-  const aliases = command?.aliases ? toArray(command.aliases) : [];
-
   const examplesSource =
     command?.examples ?? (isRoot ? meta.examples : undefined);
   const rawExamples = examplesSource
@@ -287,7 +283,7 @@ export async function buildHelpDocument(
       description: isRoot
         ? (command?.description ?? (meta.description || undefined))
         : command?.description,
-      aliases,
+      aliases: node.aliases,
     },
     usage: buildUsage(
       node,
@@ -302,7 +298,7 @@ export async function buildHelpDocument(
       (child) => child.command?.group,
       (child) => ({
         name: child.name,
-        aliases: child.command?.aliases ? toArray(child.command.aliases) : [],
+        aliases: child.aliases,
         description: child.command?.description,
         isDefault:
           child.fullPath.length === model.defaultCommand?.length &&

@@ -47,6 +47,7 @@ interface MutableCommandNode {
   readonly parent?: MutableCommandNode;
   readonly children: Map<string, MutableCommandNode>;
   readonly aliasIndex: Map<string, MutableCommandNode>;
+  aliases: readonly string[];
   command?: AnyCommandDefinition;
   args: readonly ArgDescriptor[];
   localFlags: readonly FlagDescriptor[];
@@ -65,6 +66,7 @@ const createNode = (
   parent,
   children: new Map(),
   aliasIndex: new Map(),
+  aliases: EMPTY_DESCRIPTORS,
   args: EMPTY_DESCRIPTORS,
   localFlags: EMPTY_DESCRIPTORS,
   builtinFlags: EMPTY_DESCRIPTORS,
@@ -116,15 +118,17 @@ export class CommandTreeBuilder implements CommandTree {
 
     current.command = cmd;
 
-    const aliases = cmd.aliases ? toArray(cmd.aliases) : [];
+    const rawAliases = cmd.aliases ? toArray(cmd.aliases) : [];
+    const normalizedAliases: string[] = [];
     const defaultAliasHost = current.parent ?? this.#root;
-    for (const rawAlias of aliases) {
+    for (const rawAlias of rawAliases) {
       const alias = rawAlias.trim();
       if (alias === "") {
         throw new InvalidCommandError(
           `command "${cmd.name || "(root)"}" cannot have an empty alias`,
         );
       }
+      normalizedAliases.push(alias);
 
       const aliasSegments = alias.split(/\s+/);
       const leaf = aliasSegments.at(-1)!;
@@ -138,6 +142,7 @@ export class CommandTreeBuilder implements CommandTree {
       }
       host.aliasIndex.set(leaf, current);
     }
+    current.aliases = normalizedAliases;
 
     return current;
   }
@@ -195,8 +200,15 @@ export class CommandTreeBuilder implements CommandTree {
     return result;
   }
 
-  public walkCommands(): readonly CommandNode[] {
-    return this.walkNodes().filter((node) => Boolean(node.command));
+  public walkCommands(): readonly (CommandNode & {
+    readonly command: AnyCommandDefinition;
+  })[] {
+    return this.walkNodes().filter(
+      (
+        node,
+      ): node is CommandNode & { readonly command: AnyCommandDefinition } =>
+        node.command !== undefined,
+    );
   }
 
   public resolveArgv(argv: readonly string[], scan: ArgvScanFn): CommandMatch {

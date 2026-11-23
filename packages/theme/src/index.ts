@@ -43,23 +43,6 @@ export const defaultThemeStyles: ThemeStyleMap = {
   dim: "dim",
 };
 
-export const monoThemeStyles: ThemeStyleMap = {
-  brand: "bold",
-  heading: "bold",
-  command: "bold",
-  flag: [],
-  placeholder: "dim",
-  muted: "dim",
-  error: "bold",
-  warn: "bold",
-  success: "bold",
-  info: "bold",
-  accent: "bold",
-  code: "bold",
-  bold: "bold",
-  dim: "dim",
-};
-
 const THEME_TOKENS = Object.keys(defaultThemeStyles) as readonly ThemeToken[];
 const identity = (text: string): string => text;
 

@@ -69,7 +69,6 @@ export class UnknownCommandError extends ClercError {
   ) {
     super(message, {
       code: "ERR_UNKNOWN_COMMAND",
-      exitCode: 2,
     });
     this.commandName = commandName;
     this.parentPath = parentPath;
@@ -80,7 +79,6 @@ export class NoCommandError extends ClercError {
   constructor(message = "no command specified") {
     super(message, {
       code: "ERR_NO_COMMAND",
-      exitCode: 2,
     });
   }
 }
@@ -95,7 +93,6 @@ export class MissingRequiredFlagError extends ClercError {
       `missing required option${plural}: ${formatted.map((f) => `'${f}'`).join(", ")}`,
       {
         code: "ERR_MISSING_FLAG",
-        exitCode: 2,
         hints,
       },
     );
@@ -115,7 +112,6 @@ export class MissingFlagValueError extends ClercError {
         : `option ${formatted[0]} requires a value`,
       {
         code: "ERR_MISSING_FLAG_VALUE",
-        exitCode: 2,
         hints,
       },
     );
@@ -131,7 +127,6 @@ export class UnexpectedArgumentError extends ClercError {
     const plural = args.length > 1 ? "s" : "";
     super(`unexpected argument${plural}: ${joinWithAnd(formatted)}`, {
       code: "ERR_UNEXPECTED_ARGUMENT",
-      exitCode: 2,
     });
     this.args = args;
   }
@@ -146,7 +141,6 @@ export class MissingRequiredArgumentError extends ClercError {
       `missing required ${isVariadic ? "variadic " : ""}argument '<${argument}${isVariadic ? "..." : ""}>'`,
       {
         code: "ERR_MISSING_ARGUMENT",
-        exitCode: 2,
         hints,
       },
     );
@@ -163,7 +157,6 @@ export class UnknownFlagError extends ClercError {
     const plural = flags.length > 1 ? "s" : "";
     super(`unexpected option${plural}: ${joinWithAnd(formatted)}`, {
       code: "ERR_UNKNOWN_FLAG",
-      exitCode: 2,
       hints,
     });
     this.flags = flags;
@@ -186,7 +179,6 @@ export class ValidationError extends ClercError {
     const detail = issues.map((i) => i.message).join("\n");
     super(`invalid value ${formattedValue} for '${target}'`, {
       code: "ERR_VALIDATION",
-      exitCode: 2,
       detail,
       cause,
     });
@@ -205,7 +197,6 @@ export class FlagConflictError extends ClercError {
       `option '${formatFlagName(flag)}' cannot be used together with '${formatFlagName(conflictsWith)}'`,
       {
         code: "ERR_FLAG_CONFLICT",
-        exitCode: 2,
       },
     );
     this.flag = flag;
@@ -222,7 +213,6 @@ export class FlagImpliesError extends ClercError {
       `option '${formatFlagName(flag)}' requires '${formatFlagName(requiresFlag)}' to also be provided`,
       {
         code: "ERR_FLAG_IMPLIES",
-        exitCode: 2,
       },
     );
     this.flag = flag;
@@ -266,15 +256,9 @@ export class MissingRequiredMetadataError extends ClercError {
   }
 }
 
-export function enrichCommandError(
-  error: unknown,
-  tree: CommandTree,
-  distanceThreshold = 4,
-): void {
-  if (distanceThreshold <= 0) {
-    return;
-  }
+const COMMAND_DISTANCE_THRESHOLD = 4;
 
+export function enrichCommandError(error: unknown, tree: CommandTree): void {
   if (error instanceof NoCommandError) {
     const visible = tree
       .listVisibleChildren(tree.root)
@@ -295,7 +279,11 @@ export function enrichCommandError(
       return;
     }
 
-    const match = findClosest(error.commandName, candidates, distanceThreshold);
+    const match = findClosest(
+      error.commandName,
+      candidates,
+      COMMAND_DISTANCE_THRESHOLD,
+    );
     if (match) {
       error.addHint(`a similar command exists: '${match}'`);
     } else if (error.parentPath.length > 0) {
@@ -365,13 +353,15 @@ export function formatDiagnostic(
     if (error.hints.length > 0) {
       lines.push("");
       for (const hint of error.hints) {
-        lines.push(`${formatLogLabel("tip", theme.accent)}  ${hint}`);
+        lines.push(
+          `${formatLogLabel("tip", (s) => theme.bold(theme.accent(s)))}  ${hint}`,
+        );
       }
     }
 
     if (error.usage) {
       lines.push("");
-      lines.push(`${formatLogLabel("usage", theme.heading)}  ${error.usage}`);
+      lines.push(`${formatLogLabel("usage", theme.bold)}  ${error.usage}`);
     }
 
     if (showHelpHint && name && error.exitCode === 2) {

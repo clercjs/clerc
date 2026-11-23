@@ -4,7 +4,8 @@ import type {
   CommandNode,
   FlagKind,
 } from "clerc";
-import { DOUBLE_DASH } from "clerc";
+
+const DOUBLE_DASH = "--";
 
 export interface McpCommandMeta {
   readonly enabled?: boolean;
@@ -110,9 +111,6 @@ export function listExposedCommands(
 
   for (const node of model.tree.walkCommands()) {
     const cmd = node.command;
-    if (!cmd) {
-      continue;
-    }
 
     const mcpMeta = getMcpMeta(cmd.meta);
     if (mcpMeta?.enabled === false) {

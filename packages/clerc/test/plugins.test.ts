@@ -5,7 +5,7 @@ import path from "node:path";
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { isNewerVersion, updateNotifierPlugin, verbosityPlugin } from "../src";
+import { updateNotifierPlugin, verbosityPlugin } from "../src";
 
 describe("built-in strict flags & optional v2 plugins", () => {
   const tempDirs: string[] = [];
@@ -63,7 +63,7 @@ describe("built-in strict flags & optional v2 plugins", () => {
     expect(terminal.stdoutText()).toBe("");
   });
 
-  it("updateNotifierPlugin checks registry concurrently and prints callout after command completes", async () => {
+  it("updateNotifierPlugin checks registry concurrently and prints update notice after command completes", async () => {
     const cacheDir = await mkdtemp(path.join(os.tmpdir(), "clerc-update-"));
     tempDirs.push(cacheDir);
 
@@ -112,12 +112,5 @@ describe("built-in strict flags & optional v2 plugins", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(ciTerminal.stderrText()).toBe("");
-  });
-
-  it("compares semver versions accurately", () => {
-    expect(isNewerVersion("1.0.0", "1.0.1")).toBeTruthy();
-    expect(isNewerVersion("1.2.3", "2.0.0")).toBeTruthy();
-    expect(isNewerVersion("2.0.0", "2.0.0")).toBeFalsy();
-    expect(isNewerVersion("2.1.0", "2.0.9")).toBeFalsy();
   });
 });

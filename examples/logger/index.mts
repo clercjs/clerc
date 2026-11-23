@@ -1,19 +1,18 @@
 import { setTimeout as delay } from "node:timers/promises";
 
-import { createLogger, createTheme, monoThemeStyles } from "clerc";
+import { createLogger } from "clerc";
 
-const theme = createTheme(true);
-const faintDivider = (text: string) => theme.dim(theme.muted(text));
+const log = createLogger({ level: "debug" });
+const faintRule = (text: string) => log.theme.dim(log.theme.muted(text));
 
 function divider(title: string): void {
   console.log(
-    `\n${faintDivider("─".repeat(10))} ${theme.muted(title)} ${faintDivider("─".repeat(10))}\n`,
+    `\n${faintRule("─".repeat(10))} ${log.theme.muted(title)} ${faintRule("─".repeat(10))}\n`,
   );
 }
 
-// 1. 统一左脊词标 + node:util inspect + 分层 Error 堆栈
+// 1. 统一左脊词标 + 可变详情参数 + node:util inspect + 分层 Error 堆栈
 divider("1. Word Labels, Inspect & Layered Error Stack");
-const log = createLogger({ level: "debug" });
 
 log.info("Found 5 build targets", {
   entry: "src/index.ts",
@@ -24,7 +23,11 @@ log.debug("Resolved compiler options", {
   target: "node26",
   isolatedDeclarations: true,
 });
-log.warn("Deprecated option '--legacy' detected", "Use '--modern' instead");
+log.warn(
+  "Deprecated configuration detected",
+  "Option '--legacy' will be removed in v3.0",
+  "Use '--modern' instead",
+);
 log.error(
   "Failed to connect to remote cache",
   new Error("connect ECONNREFUSED 127.0.0.1:8787", {
@@ -32,9 +35,9 @@ log.error(
   }),
 );
 
-// 2. withScope 作用域嵌套 + 实时延迟流式 .line() 追加
-divider("2. Scoped Logger + Live Delayed .line() Streaming");
-const migrateLog = log.withScope("db").withScope("migrate");
+// 2. child() 作用域派生 + 实时延迟流式 .line() 追加
+divider("2. Child Scope + Live Delayed .line() Streaming");
+const migrateLog = log.child("db").child("migrate");
 
 const migrationStep = migrateLog.step("Running pending migrations");
 for (const [file, ms] of [
@@ -46,35 +49,38 @@ for (const [file, ms] of [
   migrationStep.line(`Applied ${file} (${ms}ms)`);
 }
 
-// 3. Clack Spinner（对齐第 7 列网格 + @clerc/theme 品牌色，完成后收敛为 done）
-divider("3. Clack Spinner (Unified Theme & 7-Col Grid)");
+// 3. 显式手动控制的 log.spinner() 与自动托管的 log.task()
+divider("3. Spinner (Explicit .start) & Task (Auto Lifecycle)");
 const spin = log.spinner();
-spin.start("Building production bundle...");
-await delay(500);
-spin.message("Compiling TypeScript declarations...");
-await delay(500);
-spin.stop("Production bundle ready in 1.0s");
+spin.start("Fetching remote build cache...");
+await delay(400);
+spin.stop("Remote cache hit (14 artifacts)");
 
-// 4. Clack Note 面板（对齐第 7 列网格 + 语义色左标 + 层次化框线/正文）
-divider("4. Clack Boxed Note Panel (Semantic Tones & Grid)");
-log.note(
-  `No remote resources were mutated.\nRun ${theme.accent("acme deploy prod --confirm")} to publish.`,
-  "Dry run summary",
-);
-log.note(
-  `Run ${theme.accent("pnpm up clerc")} to update`,
-  `Update available: ${theme.muted("v2.0.0")} → ${theme.success("v2.1.0")}`,
-  { tone: "warn" },
-);
+await log.task("Building production bundle...", async (s) => {
+  await delay(400);
+  s.message("Compiling TypeScript declarations...");
+  await delay(400);
 
-// 5. Compact 样式 & ASCII / Mono 降级 & JSON 模式
-divider("5. Compact Style, ASCII Mono & JSON Mode");
-const asciiMonoLog = createLogger({
-  unicode: false,
-  theme: createTheme(true, monoThemeStyles),
+  return "Production bundle ready in 0.8s";
 });
-asciiMonoLog.withScope("ci").step("ASCII fallback", "Uses '>' and '|'");
-asciiMonoLog.note("ASCII border fallback when unicode is off.", "CI notice");
 
-log.setFormat("json");
+// 4. 与常规日志完全同构的 log.box.{step,info,success,warn,error,debug}
+divider("4. Symmetric Boxed Panels (log.box.*)");
+log.box.info(
+  "Dry run summary",
+  "No remote resources were mutated.",
+  `Run ${log.theme.accent("acme deploy prod --confirm")} to publish.`,
+);
+log.box.warn(
+  `Update available: ${log.theme.muted("v2.0.0")} → ${log.theme.success("v2.1.0")}`,
+  `Run ${log.theme.accent("pnpm up clerc")} to update`,
+);
+
+// 5. 纯 ASCII 降级 & 直接属性切换 JSON 模式
+divider("5. ASCII Fallback & JSON Mode");
+const asciiLog = createLogger({ unicode: false });
+asciiLog.child("ci").step("ASCII fallback", "Uses '>' and '|'");
+asciiLog.box.info("CI notice", "ASCII border fallback when unicode is off.");
+
+log.format = "json";
 log.error("JSON error serialization", new RangeError("Port out of bounds"));

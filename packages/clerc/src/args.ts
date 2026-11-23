@@ -193,6 +193,17 @@ export function compileArgs(
   };
 }
 
+async function convertArgValue(
+  item: CompiledArgItem,
+  raw: string | readonly string[],
+): Promise<unknown> {
+  if (Array.isArray(raw)) {
+    return convertItemList(item.convert, item.token, raw);
+  }
+
+  return item.convert ? item.convert(raw as string, item.token) : raw;
+}
+
 async function applyArgSlice(
   items: readonly CompiledArgItem[],
   values: readonly string[],
@@ -211,26 +222,17 @@ async function applyArgSlice(
       : raw === undefined;
 
     if (!isMissing) {
-      result[item.name] = item.isVariadic
-        ? await convertItemList(item.convert, item.token, raw as string[])
-        : item.convert
-          ? await item.convert(raw as string, item.token)
-          : raw;
+      result[item.name] = await convertArgValue(item, raw);
 
       continue;
     }
 
     const envValue = item.env ? env[item.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
-      result[item.name] = item.isVariadic
-        ? await convertItemList(
-            item.convert,
-            item.token,
-            envValue.split(",").map((s) => s.trim()),
-          )
-        : item.convert
-          ? await item.convert(envValue, item.token)
-          : envValue;
+      result[item.name] = await convertArgValue(
+        item,
+        item.isVariadic ? envValue.split(",").map((s) => s.trim()) : envValue,
+      );
 
       continue;
     }

@@ -4,17 +4,11 @@ import { ClercError, Types, plugin } from "clerc";
 import type {
   ArgCompletionMeta,
   CommandCompletionMeta,
-  CompletionMeta,
   FlagCompletionMeta,
-} from "./t";
-import { buildTabModel } from "./t";
+} from "./tab";
+import { buildTabModel } from "./tab";
 
-export type {
-  ArgCompletionMeta,
-  CommandCompletionMeta,
-  CompletionMeta,
-  FlagCompletionMeta,
-};
+export type { ArgCompletionMeta, CommandCompletionMeta, FlagCompletionMeta };
 
 declare module "clerc" {
   interface CommandCustomMeta {
@@ -62,16 +56,16 @@ export const completionsPlugin = () =>
           );
         }
 
-        const t = new RootCommand();
-        buildTabModel(t, ctx.model);
-        t.setup(ctx.meta.name, ctx.meta.name, shell);
+        const root = new RootCommand();
+        buildTabModel(root, ctx.model);
+        root.setup(ctx.meta.name, ctx.meta.name, shell);
       },
     })
     .command("complete -- [input...]", {
       hidden: true,
       run(ctx) {
-        const t = new RootCommand();
-        buildTabModel(t, ctx.model);
-        t.parse(ctx.args.input);
+        const root = new RootCommand();
+        buildTabModel(root, ctx.model);
+        root.parse(ctx.args.input);
       },
     });

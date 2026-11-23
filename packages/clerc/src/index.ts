@@ -3,15 +3,14 @@ export type {
   LogEntry,
   LogFormat,
   LogLevel,
-  LogStyle,
+  LogMethod,
+  LogMethods,
   Logger,
   LoggerOptions,
   LoggerTerminal,
-  LoggerTheme,
-  NoteOptions,
-  NoteTone,
   SpinnerHandle,
   SpinnerOptions,
+  TaskSpinner,
 } from "@clerc/logger";
 export { createLogger, prompts } from "@clerc/logger";
 export type {
@@ -25,7 +24,6 @@ export {
   defaultThemeStyles,
   detectColor,
   detectUnicode,
-  monoThemeStyles,
 } from "@clerc/theme";
 export { Clerc, Plugin, clerc, plugin } from "./cli";
 export type {
@@ -77,28 +75,14 @@ export {
   renderHelp,
   renderHelpDocument,
 } from "./help/renderer";
-export type { RawInputType } from "./parser";
-export { DOUBLE_DASH } from "./parser";
 export type {
   UpdateInfo,
   UpdateNotifierPluginOptions,
 } from "./plugins/update-notifier";
-export {
-  isNewerVersion,
-  updateNotifierPlugin,
-} from "./plugins/update-notifier";
+export { updateNotifierPlugin } from "./plugins/update-notifier";
 export { verbosityPlugin } from "./plugins/verbosity";
-export type {
-  ClercSchema,
-  FlagKind,
-  StandardSchemaV1,
-  StandardSchemaV1Issue,
-  StandardSchemaV1Props,
-  StandardSchemaV1Result,
-  TypeConverter,
-  TypeDescriptor,
-} from "./schema";
-export { Types, describeType, isStandardSchema } from "./schema";
+export type { ClercSchema, FlagKind, StandardSchemaV1 } from "./schema";
+export { Types, isStandardSchema } from "./schema";
 export type {
   MemoryTerminal,
   MemoryTerminalOptions,
@@ -123,14 +107,11 @@ export type {
   CommandNode,
   CommandOptions,
   CommandTree,
-  ContextualArgs,
-  ContextualFlags,
   DefaultValue,
   DefaultValueFunction,
   ErrorContext,
   ErrorHandler,
   ExampleInput,
-  ExtractArgNames,
   FlagCustomMeta,
   FlagDefinitionValue,
   FlagDescriptor,
@@ -143,10 +124,7 @@ export type {
   HelpOptions,
   InferCommandArgs,
   InferFlags,
-  MergedFlags,
-  MetaAsyncGetter,
   Middleware,
-  NonEmptySpec,
   RootCommandOptions,
   RunContext,
   RunOptions,
@@ -155,4 +133,3 @@ export type {
   TypeFunction,
   TypeValue,
 } from "./types";
-export type { MaybeArray, MaybeAsyncGetter } from "./utils";
