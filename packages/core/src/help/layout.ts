@@ -1,11 +1,16 @@
 import stringWidth from "fast-string-width";
 
+export type TwoColumnRow = readonly [left: string, right: string];
+
 export interface TwoColumnOptions {
   readonly indent?: number;
   readonly gap?: number;
   readonly maxWidth?: number;
   readonly maxLeftWidth?: number;
+  readonly colWidth?: number;
 }
+
+const MAX_READABLE_WIDTH = 120;
 
 export function wrapLine(text: string, maxWidth: number): string[] {
   if (maxWidth <= 0 || stringWidth(text) <= maxWidth) {
@@ -43,8 +48,28 @@ export function wrapLine(text: string, maxWidth: number): string[] {
   return lines;
 }
 
+export function measureColumnWidth(
+  rows: readonly TwoColumnRow[],
+  options: Pick<TwoColumnOptions, "maxWidth" | "maxLeftWidth"> = {},
+): number {
+  const maxWidth = Math.min(options.maxWidth ?? 100, MAX_READABLE_WIDTH);
+  const maxLeftCap =
+    options.maxLeftWidth ??
+    Math.min(34, Math.max(24, Math.floor(maxWidth * 0.38)));
+
+  let maxLeft = 0;
+  for (const [left] of rows) {
+    const w = stringWidth(left);
+    if (w > maxLeft) {
+      maxLeft = w;
+    }
+  }
+
+  return Math.min(maxLeft, maxLeftCap);
+}
+
 export function formatTwoColumn(
-  rows: readonly (readonly [left: string, right: string])[],
+  rows: readonly TwoColumnRow[],
   options: TwoColumnOptions = {},
 ): string[] {
   if (rows.length === 0) {
@@ -53,30 +78,17 @@ export function formatTwoColumn(
 
   const indentSize = options.indent ?? 2;
   const indent = " ".repeat(indentSize);
-  const gap = options.gap ?? 2;
-  const maxWidth = Math.min(options.maxWidth ?? 100, 100);
-  const maxLeftCap =
-    options.maxLeftWidth ?? Math.max(24, Math.floor(maxWidth * 0.42));
-
-  let maxLeft = 0;
-  const leftWidths = rows.map(([left]) => {
-    const w = stringWidth(left);
-    if (w > maxLeft) {
-      maxLeft = w;
-    }
-
-    return w;
-  });
-
-  const colWidth = Math.min(maxLeft, maxLeftCap);
+  const gap = options.gap ?? 3;
+  const maxWidth = Math.min(options.maxWidth ?? 100, MAX_READABLE_WIDTH);
+  const colWidth = options.colWidth ?? measureColumnWidth(rows, options);
   const prefixWidth = indentSize + colWidth + gap;
   const rightBudget = Math.max(20, maxWidth - prefixWidth);
   const hangingIndent = " ".repeat(prefixWidth);
 
   const output: string[] = [];
 
-  for (const [i, [left, right]] of rows.entries()) {
-    const leftW = leftWidths[i];
+  for (const [left, right] of rows) {
+    const leftW = stringWidth(left);
 
     if (!right) {
       output.push(`${indent}${left}`);

@@ -291,6 +291,12 @@ importers:
       '@antfu/ni':
         specifier: catalog:dev
         version: 30.6.0
+      '@clerc/plugin-completions':
+        specifier: workspace:*
+        version: link:packages/plugin-completions
+      '@clerc/plugin-mcp':
+        specifier: workspace:*
+        version: link:packages/plugin-mcp
       '@clerc/test-utils':
         specifier: workspace:*
         version: link:packages/test-utils
@@ -378,12 +384,17 @@ importers:
 
   packages/core:
     dependencies:
+      '@clerc/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@clerc/parser':
         specifier: workspace:*
         version: link:../parser
       fast-string-width:
         specifier: catalog:cli
         version: 3.0.2
+
+  packages/logger: {}
 
   packages/parser:
     devDependencies:

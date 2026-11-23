@@ -1,3 +1,5 @@
+import type { LoggerOptions } from "@clerc/logger";
+import { createLogger } from "@clerc/logger";
 import { createParser } from "@clerc/parser";
 
 import type { CompiledArgs } from "./args";
@@ -21,8 +23,6 @@ import {
   warnFlagDeprecations,
 } from "./flags";
 import { renderHelp } from "./help/renderer";
-import type { LoggerOptions } from "./logger";
-import { createLogger } from "./logger";
 import { createTerminal } from "./terminal";
 import type { ThemeStyleMap } from "./theme";
 import { createTheme } from "./theme";
@@ -112,9 +112,18 @@ interface ScopeCollector {
   readonly errorHandlers: ErrorHandler<any, any>[];
 }
 
-function collectScope(scope: Plugin<any, any>, acc: ScopeCollector): void {
+function collectScope(
+  scope: Plugin<any, any>,
+  acc: ScopeCollector,
+  visited = new Set<string>(),
+): void {
+  if (visited.has(scope.pluginName)) {
+    return;
+  }
+  visited.add(scope.pluginName);
+
   for (const child of scope._plugins.values()) {
-    collectScope(child, acc);
+    collectScope(child, acc, visited);
   }
 
   Object.assign(acc.globalFlags, scope._flags);
@@ -495,6 +504,7 @@ export class CliApp<
           : compiledCli.model.tree.root,
         theme,
         columns: terminal.columns,
+        unicode: terminal.unicode,
         header: helpOpts?.header,
         footer: helpOpts?.footer,
       });

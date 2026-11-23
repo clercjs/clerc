@@ -1,3 +1,16 @@
+export type {
+  CalloutOptions,
+  CalloutTone,
+  CreateLoggerOptions,
+  LogFormat,
+  LogLevel,
+  LogStyle,
+  Logger,
+  LoggerOptions,
+  LoggerTerminal,
+  LoggerTheme,
+} from "@clerc/logger";
+export { createLogger } from "@clerc/logger";
 export type * as Parser from "@clerc/parser";
 export {
   DOUBLE_DASH,
@@ -31,22 +44,12 @@ export {
   UnknownFlagError,
   ValidationError,
   formatDiagnostic,
+  formatJsonError,
 } from "./errors";
 export { normalizeFlagValue } from "./flags";
 export type { RenderHelpOptions } from "./help/renderer";
 export { renderHelp } from "./help/renderer";
 export { createStopAtFirstParameter } from "./helpers";
-export type {
-  CalloutOptions,
-  CalloutTone,
-  CreateLoggerOptions,
-  LogFormat,
-  LogLevel,
-  LogStyle,
-  Logger,
-  LoggerOptions,
-} from "./logger";
-export { createLogger } from "./logger";
 export type {
   ClercSchema,
   FlagKind,

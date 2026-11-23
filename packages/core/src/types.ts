@@ -1,3 +1,4 @@
+import type { Logger, LoggerOptions } from "@clerc/logger";
 import type {
   FlagDefaultValue,
   IgnoreFunction,
@@ -7,7 +8,6 @@ import type {
 } from "@clerc/parser";
 
 import type { ClercError } from "./errors";
-import type { Logger, LoggerOptions } from "./logger";
 import type { StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
 import type { Theme, ThemeStyleMap } from "./theme";

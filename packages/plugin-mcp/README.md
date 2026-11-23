@@ -21,7 +21,7 @@ cli.command("deploy <env>", {
     dryRun: { type: Boolean, description: "Preview without deploying" },
   },
   run(ctx) {
-    ctx.log.success(`Deployed to ${ctx.args.env}`);
+    ctx.terminal.stdout(`Deployed to ${ctx.args.env}`);
   },
 });
 

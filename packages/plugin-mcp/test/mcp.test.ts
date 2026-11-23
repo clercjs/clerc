@@ -112,7 +112,7 @@ describe("@clerc/plugin-mcp", () => {
         actor: await Promise.resolve(`user:${ctx.flags.token}`),
       }))
       .middleware(async (ctx, next) => {
-        ctx.log.info(`actor=${ctx.actor}`);
+        ctx.terminal.stdout(`actor=${ctx.actor}`);
         await next();
       });
 
@@ -125,7 +125,7 @@ describe("@clerc/plugin-mcp", () => {
         dryRun: Boolean,
       },
       run(ctx) {
-        ctx.log.success(
+        ctx.terminal.stdout(
           `released ${ctx.args.channel} dry=${ctx.flags.dryRun} tags=${ctx.flags.tags.join(",")} extra=${ctx.args.extra.join(",")}`,
         );
       },
@@ -236,7 +236,7 @@ describe("@clerc/plugin-mcp", () => {
     expect((rootHelp?.result as any).contents[0]).toMatchObject({
       uri: "cli://test/help",
       mimeType: "text/plain",
-      text: expect.stringContaining("test v1.0.0 — Test CLI"),
+      text: expect.stringContaining("test v1.0.0\nTest CLI"),
     });
 
     const cmdHelp = await handler({
@@ -247,7 +247,7 @@ describe("@clerc/plugin-mcp", () => {
     });
 
     expect((cmdHelp?.result as any).contents[0].text).toContain(
-      "test db migrate v1.0.0 — Run database migrations",
+      "test db migrate v1.0.0\nRun database migrations",
     );
     expect((cmdHelp?.result as any).contents[0].text).toContain("--force");
   });
@@ -263,7 +263,7 @@ describe("@clerc/plugin-mcp", () => {
     cli.command("greet <name>", {
       description: "Greet someone",
       run(ctx) {
-        ctx.log.success(`Hello, ${ctx.args.name}!`);
+        ctx.terminal.stdout(`Hello, ${ctx.args.name}!`);
       },
     });
 

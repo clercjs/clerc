@@ -1,3 +1,5 @@
+import { LOG_GUTTER, formatLogLabel } from "@clerc/logger";
+
 import { findClosest } from "./suggest";
 import type { Theme } from "./theme";
 import type { ReadonlyCommandTree } from "./types";
@@ -302,25 +304,27 @@ export function formatDiagnostic(
     showHelpHint = true,
   } = options;
   const message = error instanceof Error ? error.message : String(error);
-  const lines: string[] = [`${theme.error("error:")} ${message}`];
+  const lines: string[] = [
+    `${formatLogLabel("error", theme.error)}  ${message}`,
+  ];
 
   if (error instanceof ClercError) {
     if (error.detail) {
       for (const line of error.detail.split("\n")) {
-        lines.push(`  ${theme.muted(line)}`);
+        lines.push(`${LOG_GUTTER}${theme.muted(line)}`);
       }
     }
 
     if (error.hints.length > 0) {
       lines.push("");
       for (const hint of error.hints) {
-        lines.push(`  ${theme.info("tip:")} ${hint}`);
+        lines.push(`${formatLogLabel("tip", theme.accent)}  ${hint}`);
       }
     }
 
     if (error.usage) {
       lines.push("");
-      lines.push(`${theme.heading("Usage:")} ${error.usage}`);
+      lines.push(`${formatLogLabel("usage", theme.heading)}  ${error.usage}`);
     }
 
     if (showHelpHint && scriptName && error.exitCode === 2) {
@@ -330,15 +334,15 @@ export function formatDiagnostic(
           : "";
       lines.push("");
       lines.push(
-        theme.muted(
+        `${LOG_GUTTER}${theme.muted(
           `For more information, try '${scriptName}${cmdPart} --help'.`,
-        ),
+        )}`,
       );
     }
   } else if (error instanceof Error && error.cause !== undefined) {
     const causeMsg =
       error.cause instanceof Error ? error.cause.message : String(error.cause);
-    lines.push(`  ${theme.muted(`caused by: ${causeMsg}`)}`);
+    lines.push(`${LOG_GUTTER}${theme.muted(`caused by: ${causeMsg}`)}`);
   }
 
   if (verbose && error instanceof Error && error.stack) {

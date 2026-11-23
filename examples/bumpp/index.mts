@@ -51,7 +51,7 @@ cli.command("[files...]", {
     },
   },
   run(ctx) {
-    ctx.log.info(
+    ctx.terminal.stdout(
       `Bumping version:\n${JSON.stringify({ args: ctx.args, flags: ctx.flags }, null, 2)}`,
     );
   },

@@ -29,6 +29,8 @@
   },
   "devDependencies": {
     "@antfu/ni": "catalog:dev",
+    "@clerc/plugin-completions": "workspace:*",
+    "@clerc/plugin-mcp": "workspace:*",
     "@clerc/test-utils": "workspace:*",
     "@so1ve/eslint-config": "catalog:lint",
     "@so1ve/prettier-config": "catalog:lint",

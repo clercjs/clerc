@@ -26,17 +26,17 @@ export type Theme = {
 } & Readonly<Record<ThemeToken, (text: string) => string>>;
 
 export const defaultThemeStyles: ThemeStyleMap = {
-  brand: ["bold", "cyan"],
-  heading: "bold",
+  brand: ["bold", "magenta"],
+  heading: ["bold", "underline"],
   command: "bold",
-  flag: ["bold", "cyan"],
-  placeholder: "dim",
-  muted: "dim",
+  flag: "blue",
+  placeholder: "gray",
+  muted: "gray",
   error: ["bold", "red"],
-  warn: ["bold", "yellow"],
-  success: ["bold", "green"],
-  info: ["bold", "blue"],
-  accent: "cyan",
+  warn: "magenta",
+  success: "green",
+  info: "blue",
+  accent: "magenta",
   code: "bold",
   bold: "bold",
   dim: "dim",
@@ -46,7 +46,7 @@ export const monoThemeStyles: ThemeStyleMap = {
   brand: "bold",
   heading: "bold",
   command: "bold",
-  flag: "bold",
+  flag: [],
   placeholder: "dim",
   muted: "dim",
   error: "bold",
@@ -66,8 +66,10 @@ function buildTheme(enabled: boolean, styles?: ThemeStyleMap): Theme {
   const theme: Record<string, unknown> = { enabled };
   for (const token of TOKENS) {
     const format = styles?.[token];
+    const hasFormat =
+      format !== undefined && (!Array.isArray(format) || format.length > 0);
     theme[token] =
-      enabled && format
+      enabled && hasFormat
         ? (text: string) => styleText(format, text, { validateStream: false })
         : identity;
   }

@@ -144,9 +144,9 @@ describe("Clerc execution pipeline", () => {
     let ran = false;
     const terminal = createMemoryTerminal();
     const loadHeavy = async () => ({
-      default: async (ctx: { log: { success: (msg: string) => void } }) => {
+      default: async (ctx: { terminal: { stdout: (msg: string) => void } }) => {
         ran = true;
-        ctx.log.success("loaded");
+        ctx.terminal.stdout("loaded");
       },
     });
 

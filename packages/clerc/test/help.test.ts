@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 
 import { Cli, Types } from "../src";
 
-describe("built-in v2 Modern Precision help", () => {
-  it("renders crisp aligned help without Boolean or default:false noise", async () => {
-    const terminal = createMemoryTerminal({ columns: 90 });
+describe("built-in v2 editorial help", () => {
+  it("renders single top hairline, eyebrow headings, and aligned sections", async () => {
+    const terminal = createMemoryTerminal({ columns: 96 });
 
     const cli = Cli({
       scriptName: "acme",
@@ -15,10 +15,14 @@ describe("built-in v2 Modern Precision help", () => {
         ["$ acme build src/index.ts -p 8080", "Build with custom port"],
       ],
       notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-    }).groups({ flags: { input: "Input Options" } });
+    }).groups({
+      commands: { core: "Core" },
+      flags: { input: "Input Options" },
+    });
 
     cli.command("build <entry>", {
       aliases: ["b"],
+      group: "core",
       description: "Compile source files",
       args: {
         entry: { description: "Entry file path" },
@@ -65,41 +69,107 @@ describe("built-in v2 Modern Precision help", () => {
 
     expect(terminal.stdoutText()).toBe(
       [
-        "acme build v2.0.0 — Compile source files",
-        "Alias: b",
+        "acme build v2.0.0  alias: b",
+        "Compile source files",
+        "────────────────────────────────────────────────────────────────────────",
+        "USAGE   acme build [options] <entry>",
         "",
-        "Usage:",
-        "  acme build [options] <entry>",
+        "ARGUMENTS",
+        "  <entry>                     Entry file path",
         "",
-        "Arguments:",
-        "  <entry>  Entry file path",
+        "OPTIONS",
+        "  -o, --output <string>       Output directory",
+        "  -p, --port <number>         Server port  [default: 3000] [env: PORT]",
+        "  -v, --verbose               Enable verbose output",
+        "      --format <json|yaml>    Output format  [default: json]",
         "",
-        "Options:",
-        "  -o, --output <string>     Output directory",
-        "  -p, --port <number>       Server port  (default: 3000, env: PORT)",
-        "  -v, --verbose             Enable verbose output",
-        '      --format <json|yaml>  Output format  (default: "json")',
+        "INPUT OPTIONS",
+        "      --src <string>          Source directory",
+        "      --cache, --no-cache     Use build cache  [default: true]",
         "",
-        "  Input Options:",
-        "    --src <string>       Source directory",
-        "    --cache, --no-cache  Use build cache  (default: true)",
-        "",
-        "Global Options:",
-        "  -V, --version  Show version",
-        "  -h, --help     Show help",
+        "GLOBAL OPTIONS",
+        "  -V, --version               Show version",
+        "  -h, --help                  Show help",
       ].join("\n"),
     );
 
     terminal.clear();
     await cli.run(["--help"], { terminal });
 
-    expect(terminal.stdoutText()).toContain(
-      "acme v2.0.0 — Build and deploy modern TypeScript apps",
+    const rootOut = terminal.stdoutText();
+
+    expect(rootOut).toContain(
+      "acme v2.0.0\nBuild and deploy modern TypeScript apps",
     );
-    expect(terminal.stdoutText()).toContain("Commands:");
-    expect(terminal.stdoutText()).toContain("build (b)");
-    expect(terminal.stdoutText()).toContain("Examples:");
-    expect(terminal.stdoutText()).toContain("Notes:");
+    expect(rootOut).toContain("\nCORE\n  build (b)");
+    expect(rootOut).toContain("\nCOMMANDS\n");
+    expect(rootOut.indexOf("\nCORE\n")).toBeLessThan(
+      rootOut.indexOf("\nCOMMANDS\n"),
+    );
+
+    // Commands and Options snap to the same column when within threshold
+    const buildDescCol = rootOut
+      .split("\n")
+      .find((l) => l.includes("build (b)"))!
+      .indexOf("Compile source files");
+    const helpFlagDescCol = rootOut
+      .split("\n")
+      .find((l) => l.includes("-h, --help"))!
+      .indexOf("Show help");
+
+    expect(buildDescCol).toBe(helpFlagDescCol);
+    expect(rootOut).toContain("\nEXAMPLES\n");
+    expect(rootOut).toContain(
+      "  $ acme build src/index.ts -p 8080    Build with custom port",
+    );
+    expect(rootOut).toContain(
+      "\nNOTES\n  Set NO_COLOR=1 to disable ANSI colors.",
+    );
+  });
+
+  it("decouples command and option columns when an option is very wide", async () => {
+    const terminal = createMemoryTerminal({ columns: 100 });
+    const cli = Cli({ scriptName: "acme", version: "1.0.0" }).flags({
+      experimentalModuleResolution: {
+        type: String,
+        description: "Resolution strategy",
+      },
+    });
+    cli.command("db", { description: "Database tools", run() {} });
+
+    await cli.run(["--help"], { terminal });
+
+    const lines = terminal.stdoutText().split("\n");
+    const dbLine = lines.find((l) => l.startsWith("  db "))!;
+
+    expect(dbLine.indexOf("Database tools")).toBeLessThan(20);
+    expect(terminal.stdoutText()).toContain("Resolution strategy");
+  });
+
+  it("falls back to ASCII top rule and stacked examples on narrow terminals", async () => {
+    const terminal = createMemoryTerminal({ columns: 68, unicode: false });
+    const cli = Cli({
+      scriptName: "acme",
+      version: "2.0.0",
+      examples: [
+        ["$ acme deploy prod --port 8080 -n", "Preview a production deploy"],
+      ],
+      notes: ["Keep it tidy."],
+    });
+    cli.command("deploy", { description: "Deploy app", run() {} });
+
+    await cli.run(["--help"], { terminal });
+
+    const out = terminal.stdoutText();
+
+    expect(out).toContain(
+      "--------------------------------------------------------------------",
+    );
+    expect(out).not.toContain("─");
+    expect(out).toContain(
+      "  # Preview a production deploy\n  $ acme deploy prod --port 8080 -n",
+    );
+    expect(out).toContain("  Keep it tidy.");
   });
 
   it("shows subcommands when a namespace-only parent command is invoked", async () => {
@@ -111,7 +181,7 @@ describe("built-in v2 Modern Precision help", () => {
     await cli.run(["db"], { terminal });
 
     expect(terminal.stdoutText()).toContain("test db v1.0.0");
-    expect(terminal.stdoutText()).toContain("Subcommands:");
+    expect(terminal.stdoutText()).toContain("\nSUBCOMMANDS\n");
     expect(terminal.stdoutText()).toContain("migrate");
     expect(terminal.stdoutText()).toContain("seed");
   });
@@ -123,8 +193,8 @@ describe("built-in v2 Modern Precision help", () => {
 
     await cli.run(["exec", "--help"], { terminal });
 
-    expect(terminal.stdoutText()).not.toContain("Arguments:");
-    expect(terminal.stdoutText()).toContain("test exec [options] [--]");
+    expect(terminal.stdoutText()).not.toContain("\nARGUMENTS\n");
+    expect(terminal.stdoutText()).toContain("USAGE   test exec [options] [--]");
   });
 
   it("renders dynamic scriptName in help command examples", async () => {

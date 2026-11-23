@@ -26,9 +26,7 @@ describe("clerc Cli() integration", () => {
     terminal.clear();
     await cli.run(["help", "build"], { terminal });
 
-    expect(terminal.stdoutText()).toContain(
-      "test build v1.0.0 — Build project",
-    );
+    expect(terminal.stdoutText()).toContain("test build v1.0.0\nBuild project");
     expect(terminal.stdoutText()).toContain("-p, --port <number>");
   });
 
@@ -61,11 +59,11 @@ describe("clerc Cli() integration", () => {
     expect(res.exitCode).toBe(2);
     expect(terminal.stderrText()).toBe(
       [
-        "error: unknown command 'buid'",
+        "error  unknown command 'buid'",
         "",
-        "  tip: a similar command exists: 'build'",
+        "  tip  a similar command exists: 'build'",
         "",
-        "For more information, try 'test --help'.",
+        "       For more information, try 'test --help'.",
       ].join("\n"),
     );
 
