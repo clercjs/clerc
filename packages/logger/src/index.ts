@@ -1,4 +1,4 @@
-import { Writable } from "node:stream";
+import type { Writable } from "node:stream";
 import { inspect } from "node:util";
 
 import type { SpinnerOptions as ClackSpinnerOptions } from "@clack/prompts";
@@ -123,6 +123,14 @@ interface SharedLoggerState {
   format: LogFormat;
 }
 
+interface LoggerConfig {
+  readonly terminal: LoggerTerminal;
+  readonly color: boolean;
+  readonly theme: Theme;
+  readonly unicode: boolean;
+  readonly state: SharedLoggerState;
+}
+
 const identity = (text: string): string => text;
 
 const NOOP_ENTRY: LogEntry = Object.freeze({
@@ -150,31 +158,17 @@ const formatLabel = (
     bold ? theme.bold(theme[token](text)) : theme[token](text),
   );
 
-function stringifyJson(payload: Record<string, unknown>): string {
-  const seen = new WeakSet<object>();
-
-  return JSON.stringify(payload, (_key, value: unknown) => {
-    if (typeof value === "bigint") {
-      return String(value);
-    }
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return "[Circular]";
-      }
-      seen.add(value);
-      if (Error.isError(value)) {
-        return {
+const stringifyJson = (payload: Record<string, unknown>): string =>
+  JSON.stringify(payload, (_key, value: unknown) =>
+    Error.isError(value)
+      ? {
           name: value.name,
           message: value.message,
           stack: value.stack,
           ...(value.cause === undefined ? {} : { cause: value.cause }),
-        };
-      }
-    }
-
-    return value;
-  });
-}
+        }
+      : value,
+  );
 
 const errorHeader = (err: Error): string =>
   err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
@@ -240,28 +234,8 @@ function formatErrorLines(
   return lines;
 }
 
-const createLineWritable = (writeLine: (text: string) => void): Writable =>
-  new Writable({
-    write(chunk, _encoding, callback) {
-      const text = String(chunk).replace(/\n$/, "");
-      if (text.length > 0) {
-        for (const line of text.split("\n")) {
-          writeLine(line);
-        }
-      }
-      callback();
-    },
-  });
-
-function createLoggerWithState(
-  terminal: LoggerTerminal,
-  isDefaultTerminal: boolean,
-  color: boolean,
-  theme: Theme,
-  unicode: boolean,
-  state: SharedLoggerState,
-  scope?: string,
-): Logger {
+function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
+  const { terminal, color, theme, unicode, state } = config;
   const bar = unicode ? "│" : "|";
   const sep = unicode ? "›" : ">";
   const faint = (text: string): string => theme.dim(theme.muted(text));
@@ -499,12 +473,17 @@ function createLoggerWithState(
       terminal.columns ??
       (meta.stderr ? process.stderr.columns : process.stdout.columns) ??
       80;
-    const output = Object.assign(
-      createLineWritable((line) => {
-        rawLines.push(line);
-      }),
-      { columns: Math.max(40, streamColumns - LOG_GUTTER.length) },
-    );
+    const output = {
+      columns: Math.max(40, streamColumns - LOG_GUTTER.length),
+      write(chunk: string) {
+        const text = chunk.replace(/\n$/, "");
+        if (text.length > 0) {
+          rawLines.push(...text.split("\n"));
+        }
+
+        return true;
+      },
+    } as unknown as Writable;
 
     prompts.box(styledBody, styledTitle, {
       output,
@@ -536,7 +515,7 @@ function createLoggerWithState(
 
     const canAnimate = (): boolean =>
       shouldLog("info") &&
-      isDefaultTerminal &&
+      terminal === DEFAULT_TERMINAL &&
       Boolean(process.stdout.isTTY) &&
       state.format === "pretty";
 
@@ -665,36 +644,28 @@ function createLoggerWithState(
       }
     },
     child: (childScope) =>
-      createLoggerWithState(
-        terminal,
-        isDefaultTerminal,
-        color,
-        theme,
-        unicode,
-        state,
+      createLoggerFromConfig(
+        config,
         scope ? `${scope}:${childScope}` : childScope,
       ),
   };
 }
 
 export function createLogger(options: CreateLoggerOptions = {}): Logger {
-  const isDefaultTerminal = options.terminal === undefined;
   const terminal = options.terminal ?? DEFAULT_TERMINAL;
   const color = options.color ?? terminal.color ?? detectColor();
-  const unicode = options.unicode ?? terminal.unicode ?? detectUnicode();
-  const theme = options.theme ?? createTheme(color);
-  const state: SharedLoggerState = {
-    level: options.level ?? "info",
-    format: options.format ?? "pretty",
-  };
 
-  return createLoggerWithState(
-    terminal,
-    isDefaultTerminal,
-    color,
-    theme,
-    unicode,
-    state,
+  return createLoggerFromConfig(
+    {
+      terminal,
+      color,
+      theme: options.theme ?? createTheme(color),
+      unicode: options.unicode ?? terminal.unicode ?? detectUnicode(),
+      state: {
+        level: options.level ?? "info",
+        format: options.format ?? "pretty",
+      },
+    },
     options.scope,
   );
 }

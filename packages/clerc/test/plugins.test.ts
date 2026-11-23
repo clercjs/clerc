@@ -37,45 +37,37 @@ describe("built-in strict flags & optional v2 plugins", () => {
     );
   });
 
-  it("verbosityPlugin runs pre-middleware regardless of .use() order, silences deprecations on -q, and propagates via ctx.run()", async () => {
+  it("verbosityPlugin runs pre-middleware regardless of .use() order and silences deprecations on -q", async () => {
     const terminal = createMemoryTerminal();
-    const earlyPlugin = createTestCli()
+    const cli = createTestCli()
       .middleware(async (ctx, next) => {
-        ctx.log.debug("early-mw-debug");
+        ctx.log.debug("mw-debug");
         await next();
       })
-      // Registered AFTER earlyPlugin's middleware, yet enforce: "pre" ensures it runs first
       .use(verbosityPlugin());
 
-    earlyPlugin.command("sub", {
-      run(ctx) {
-        ctx.log.debug("sub-debug");
-      },
-    });
-    earlyPlugin.command("check", {
+    cli.command("check", {
       deprecated: "old command",
-      async run(ctx) {
+      run(ctx) {
         ctx.log.info("info-msg");
         ctx.log.debug("debug-msg");
-        await ctx.run(["sub"]);
       },
     });
 
-    await earlyPlugin.run(["check"], { terminal });
+    await cli.run(["check"], { terminal });
 
     expect(terminal.stdoutText()).toContain("info-msg");
     expect(terminal.stdoutText()).not.toContain("debug-msg");
     expect(terminal.stderrText()).toContain("deprecated");
 
     terminal.clear();
-    await earlyPlugin.run(["check", "-v"], { terminal });
+    await cli.run(["check", "-v"], { terminal });
 
-    expect(terminal.stdoutText()).toContain("early-mw-debug");
+    expect(terminal.stdoutText()).toContain("mw-debug");
     expect(terminal.stdoutText()).toContain("debug-msg");
-    expect(terminal.stdoutText()).toContain("sub-debug");
 
     terminal.clear();
-    await earlyPlugin.run(["check", "-q"], { terminal });
+    await cli.run(["check", "-q"], { terminal });
 
     expect(terminal.stdoutText()).toBe("");
     expect(terminal.stderrText()).toBe("");

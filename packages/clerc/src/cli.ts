@@ -18,10 +18,9 @@ import {
 } from "./errors";
 import type { CompiledFlags } from "./flags";
 import {
-  compileFlags,
+  buildCompiledFlags,
+  compileFlagEntries,
   createBuiltinFlagDescriptor,
-  finalizeCompiledFlags,
-  mergeCompiledFlags,
   resolveCompiledFlags,
   validateParsedFlags,
   validateResolvedFlags,
@@ -84,6 +83,7 @@ interface PluginState {
   readonly middlewares: RegisteredMiddleware[];
   readonly errorHandlers: ErrorHandler<any, any>[];
   readonly plugins: Map<string, Plugin<any, any>>;
+  onInvalidate?: () => void;
 }
 
 interface CompiledNodeRuntime {
@@ -113,6 +113,7 @@ const GROUP_SCOPES: readonly GroupScope[] = [
 ];
 
 const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
+const ENFORCE_RANK = { pre: 0, normal: 1, post: 2 } as const;
 
 const createGroupBuckets = (): GroupBuckets => ({
   commands: [],
@@ -122,14 +123,6 @@ const createGroupBuckets = (): GroupBuckets => ({
 
 const formatCliVersion = (meta: CliMeta): string =>
   `${meta.name} ${formatVersion(meta.version)}`.trim();
-
-interface ScopeCollector {
-  readonly globalFlags: FlagsDefinition;
-  readonly commands: AnyCommandDefinition[];
-  readonly groups: GroupBuckets;
-  readonly middlewares: RegisteredMiddleware[];
-  readonly errorHandlers: ErrorHandler<any, any>[];
-}
 
 function resolveNodeBuiltins(options: {
   readonly isRoot: boolean;
@@ -181,8 +174,40 @@ function resolveNodeBuiltins(options: {
   };
 }
 
-let setInvalidateHook: (target: Plugin<any, any>, fn: () => void) => void;
-let collectPluginScope: (root: Plugin<any, any>) => ScopeCollector;
+let getPluginState: (plugin: Plugin<any, any>) => PluginState;
+
+function collectStates(root: Plugin<any, any>): readonly PluginState[] {
+  const winners = new Map<string, Plugin<any, any>>();
+  const seen = new Set<Plugin<any, any>>();
+  function scan(scope: Plugin<any, any>): void {
+    if (seen.has(scope)) {
+      return;
+    }
+    seen.add(scope);
+    for (const child of getPluginState(scope).plugins.values()) {
+      scan(child);
+    }
+    winners.set(scope.pluginName, scope);
+  }
+  scan(root);
+
+  const states: PluginState[] = [];
+  const visited = new Set<string>();
+  function visit(scope: Plugin<any, any>): void {
+    if (visited.has(scope.pluginName)) {
+      return;
+    }
+    visited.add(scope.pluginName);
+    const state = getPluginState(winners.get(scope.pluginName)!);
+    for (const child of state.plugins.values()) {
+      visit(child);
+    }
+    states.push(state);
+  }
+  visit(root);
+
+  return states;
+}
 
 export class Plugin<
   TGlobalFlags extends Record<string, any> = {},
@@ -198,67 +223,8 @@ export class Plugin<
     plugins: new Map(),
   };
 
-  #onInvalidate?: () => void;
-
   static {
-    setInvalidateHook = (target, fn) => {
-      target.#onInvalidate = fn;
-    };
-
-    function resolveWinningPlugins(
-      scope: Plugin<any, any>,
-      winners = new Map<string, Plugin<any, any>>(),
-      visiting = new Set<Plugin<any, any>>(),
-    ): ReadonlyMap<string, Plugin<any, any>> {
-      if (visiting.has(scope)) {
-        return winners;
-      }
-      visiting.add(scope);
-      for (const child of scope.#state.plugins.values()) {
-        resolveWinningPlugins(child, winners, visiting);
-      }
-      winners.set(scope.pluginName, scope);
-
-      return winners;
-    }
-
-    collectPluginScope = (root) => {
-      const acc: ScopeCollector = {
-        globalFlags: {},
-        commands: [],
-        groups: createGroupBuckets(),
-        middlewares: [],
-        errorHandlers: [],
-      };
-      const winners = resolveWinningPlugins(root);
-      const visited = new Set<string>();
-
-      function visit(scope: Plugin<any, any>): void {
-        const resolved = winners.get(scope.pluginName) ?? scope;
-        if (visited.has(resolved.pluginName)) {
-          return;
-        }
-        visited.add(resolved.pluginName);
-
-        const state = resolved.#state;
-        for (const child of state.plugins.values()) {
-          visit(child);
-        }
-
-        Object.assign(acc.globalFlags, state.flags);
-        acc.commands.push(...state.commands);
-        acc.middlewares.push(...state.middlewares);
-        acc.errorHandlers.push(...state.errorHandlers);
-
-        for (const groupScope of GROUP_SCOPES) {
-          acc.groups[groupScope].push(...state.groups[groupScope]);
-        }
-      }
-
-      visit(root);
-
-      return acc;
-    };
+    getPluginState = (plugin) => plugin.#state;
   }
 
   constructor(name: string) {
@@ -269,7 +235,7 @@ export class Plugin<
     definitions: ContextualFlags<Flags>,
   ): Plugin<TGlobalFlags & Flags, TState> {
     Object.assign(this.#state.flags, definitions);
-    this.#onInvalidate?.();
+    this.#state.onInvalidate?.();
 
     return this as any;
   }
@@ -284,7 +250,7 @@ export class Plugin<
         this.#state.groups[scope].push({ key, title });
       }
     }
-    this.#onInvalidate?.();
+    this.#state.onInvalidate?.();
 
     return this;
   }
@@ -321,27 +287,32 @@ export class Plugin<
         argTokens: [],
       });
     }
-    this.#onInvalidate?.();
+    this.#state.onInvalidate?.();
 
     return this;
   }
 
   public middleware<R = void>(
+    fn: (ctx: RunContext<TGlobalFlags>, next: MiddlewareNext) => R,
+    options: { readonly enforce: "pre" },
+  ): Plugin<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
+  public middleware<R = void>(
     fn: (ctx: RunContext<TGlobalFlags, TState>, next: MiddlewareNext) => R,
     options?: MiddlewareOptions,
-  ): Plugin<TGlobalFlags, TState & ExtractMiddlewareState<R>> {
-    this.#state.middlewares.push({
-      fn: fn as AnyMiddlewareFn,
-      enforce: options?.enforce,
-    });
-    this.#onInvalidate?.();
+  ): Plugin<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
+  public middleware(
+    fn: AnyMiddlewareFn,
+    options?: MiddlewareOptions,
+  ): Plugin<any, any> {
+    this.#state.middlewares.push({ fn, enforce: options?.enforce });
+    this.#state.onInvalidate?.();
 
-    return this as any;
+    return this;
   }
 
   public onError(fn: ErrorHandler<TGlobalFlags, TState>): this {
     this.#state.errorHandlers.push(fn as ErrorHandler<any, any>);
-    this.#onInvalidate?.();
+    this.#state.onInvalidate?.();
 
     return this;
   }
@@ -353,7 +324,7 @@ export class Plugin<
     other: Plugin<PFlags, PState>,
   ): Plugin<TGlobalFlags & PFlags, TState & PState> {
     this.#state.plugins.set(other.pluginName, other);
-    this.#onInvalidate?.();
+    this.#state.onInvalidate?.();
 
     return this as any;
   }
@@ -394,9 +365,9 @@ export class Clerc<
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
-    setInvalidateHook(this, () => {
+    getPluginState(this).onInvalidate = () => {
       this.#compiled = undefined;
-    });
+    };
   }
 
   public override flags<const Flags extends Record<string, any>>(
@@ -408,12 +379,20 @@ export class Clerc<
   }
 
   public override middleware<R = void>(
+    fn: (ctx: RunContext<TGlobalFlags>, next: MiddlewareNext) => R,
+    options: { readonly enforce: "pre" },
+  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
+  public override middleware<R = void>(
     fn: (ctx: RunContext<TGlobalFlags, TState>, next: MiddlewareNext) => R,
     options?: MiddlewareOptions,
-  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>> {
-    super.middleware(fn, options);
+  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
+  public override middleware(
+    fn: AnyMiddlewareFn,
+    options?: MiddlewareOptions,
+  ): Clerc<any, any> {
+    super.middleware(fn as any, options);
 
-    return this as any;
+    return this;
   }
 
   public override use<
@@ -432,11 +411,23 @@ export class Clerc<
       return this.#compiled;
     }
 
-    const acc = collectPluginScope(this);
-
+    const states = collectStates(this);
+    const globalFlagsInput: FlagsDefinition = {};
+    const groups = createGroupBuckets();
+    const registeredMiddlewares: RegisteredMiddleware[] = [];
+    const errorHandlers: ErrorHandler<any, any>[] = [];
     const tree = new CommandTreeBuilder();
-    for (const cmd of acc.commands) {
-      tree.register(cmd);
+
+    for (const state of states) {
+      Object.assign(globalFlagsInput, state.flags);
+      registeredMiddlewares.push(...state.middlewares);
+      errorHandlers.push(...state.errorHandlers);
+      for (const scope of GROUP_SCOPES) {
+        groups[scope].push(...state.groups[scope]);
+      }
+      for (const cmd of state.commands) {
+        tree.register(cmd);
+      }
     }
 
     if (this.#meta.version && !tree.findNode(["version"])) {
@@ -486,8 +477,8 @@ export class Clerc<
       });
     }
 
-    const rawGlobalFlags = compileFlags(acc.globalFlags);
-    const globalFlags = finalizeCompiledFlags(rawGlobalFlags);
+    const rawGlobalEntries = compileFlagEntries(globalFlagsInput);
+    const globalFlags = buildCompiledFlags(rawGlobalEntries);
     const enableVersion = Boolean(this.#meta.version);
     const enableHelp = this.#helpOptions !== false;
     const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
@@ -495,13 +486,21 @@ export class Clerc<
     for (const node of tree.walkNodes()) {
       const isRoot = node.fullPath.length === 0;
       const cmd = node.command;
-      const localFlags = cmd?.flags ? compileFlags(cmd.flags) : undefined;
-      const userFlags = localFlags
-        ? finalizeCompiledFlags(mergeCompiledFlags(rawGlobalFlags, localFlags))
-        : globalFlags;
-      const localDescriptors = localFlags
-        ? localFlags.entries.map((e) => userFlags.byName.get(e.name)!)
-        : EMPTY_DESCRIPTORS;
+      const localEntries = cmd?.flags
+        ? compileFlagEntries(cmd.flags)
+        : undefined;
+      let userFlags = globalFlags;
+      let localDescriptors: readonly FlagDescriptor[] = EMPTY_DESCRIPTORS;
+      if (localEntries && localEntries.length > 0) {
+        const localNames = new Set(localEntries.map((e) => e.name));
+        userFlags = buildCompiledFlags([
+          ...rawGlobalEntries.filter((e) => !localNames.has(e.name)),
+          ...localEntries,
+        ]);
+        localDescriptors = localEntries.map((e) =>
+          userFlags.byName.get(e.name)!,
+        );
+      }
       const builtins = resolveNodeBuiltins({
         isRoot,
         enableVersion,
@@ -558,7 +557,7 @@ export class Clerc<
       defaultNode = target;
       defaultAcceptsArgs =
         target.args.length > 0 ||
-        Boolean(target.command.argTokens.includes(DOUBLE_DASH));
+        target.command.argTokens.includes(DOUBLE_DASH);
     }
 
     const model: CliModel = {
@@ -566,22 +565,22 @@ export class Clerc<
       tree,
       defaultCommand: defaultNode?.fullPath,
       globalFlags: globalFlags.entries,
-      groups: acc.groups,
+      groups,
     };
 
-    const orderedMiddlewares = [
-      ...acc.middlewares.filter((m) => m.enforce === "pre"),
-      ...acc.middlewares.filter((m) => m.enforce === undefined),
-      ...acc.middlewares.filter((m) => m.enforce === "post"),
-    ].map((m) => m.fn);
+    registeredMiddlewares.sort(
+      (a, b) =>
+        ENFORCE_RANK[a.enforce ?? "normal"] -
+        ENFORCE_RANK[b.enforce ?? "normal"],
+    );
 
     this.#compiled = {
       model,
       tree,
       defaultNode,
       defaultAcceptsArgs,
-      middlewares: orderedMiddlewares,
-      errorHandlers: acc.errorHandlers,
+      middlewares: registeredMiddlewares.map((m) => m.fn),
+      errorHandlers,
       rootRuntime: runtimes.get(tree.root)!,
       runtimes,
     };
@@ -642,17 +641,7 @@ export class Clerc<
           terminal.stdout(await render(commandPath));
         },
       },
-      run: (nextArgv, nextOptions) =>
-        this.run(nextArgv, {
-          terminal,
-          theme: themeOverrides,
-          ...nextOptions,
-          logger: {
-            level: log.level,
-            format: log.format,
-            ...nextOptions?.logger,
-          },
-        }),
+      run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
       argv: argv ?? terminal.argv,
       commandPath: [],
       args: {},
@@ -799,7 +788,7 @@ export class Clerc<
       }
     }
 
-    // 6. Run ordered onion middleware chain (pre -> normal -> post -> core)
+    // 6. Run onion middleware chain wrapping command execution
     if (compiledCli.middlewares.length === 0) {
       await runCore();
     } else {
@@ -811,12 +800,10 @@ export class Clerc<
           Object.assign(ctx.state, added);
         }
         const mw = compiledCli.middlewares[index];
-        if (mw) {
-          await mw(runCtx, ((nextState?: Record<string, any>) =>
-            dispatch(index + 1, nextState)) as MiddlewareNext);
-        } else {
-          await runCore();
-        }
+        await (mw
+          ? mw(runCtx, ((next?: Record<string, any>) =>
+              dispatch(index + 1, next)) as MiddlewareNext)
+          : runCore());
       }
       await dispatch(0);
     }

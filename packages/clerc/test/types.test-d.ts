@@ -7,6 +7,12 @@ import type { ExtractArgNames } from "../src/types";
 import "@clerc/plugin-completions";
 import "@clerc/plugin-mcp";
 
+declare module "../src" {
+  interface CustomState {
+    readonly requestId?: string;
+  }
+}
+
 describe("core v2 route-signature & plugin types", () => {
   it("infers args from signature strings without as const and type-checks args keys", () => {
     const portSchema = {} as StandardSchemaV1<string, number>;
@@ -117,8 +123,18 @@ describe("core v2 route-signature & plugin types", () => {
 
     const cli = clerc({ name: "app", version: "1.0.0" })
       .use(authPlugin)
+      .middleware(
+        (ctx, next) => {
+          // @ts-expect-error enforce: "pre" runs before normal middlewares so auth is not yet available
+          void ctx.state.auth;
+
+          return next({ traceId: "req-1" });
+        },
+        { enforce: "pre" },
+      )
       .middleware(async (ctx, next) => {
         expectTypeOf(ctx.state.auth.getUser()).toEqualTypeOf<string>();
+        expectTypeOf(ctx.state.traceId).toEqualTypeOf<string>();
         await next();
       });
 
@@ -126,6 +142,11 @@ describe("core v2 route-signature & plugin types", () => {
       run(ctx) {
         expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
         expectTypeOf(ctx.state.auth.getUser()).toEqualTypeOf<string>();
+        expectTypeOf(ctx.state.traceId).toEqualTypeOf<string>();
+        expectTypeOf(ctx.state.requestId).toEqualTypeOf<string | undefined>();
+
+        // @ts-expect-error non-existent state key must be a compile error
+        void ctx.state.nonExistentStateKey;
       },
     });
   });

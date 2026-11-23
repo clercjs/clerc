@@ -49,17 +49,19 @@ function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
   return arg as ArgOptions;
 }
 
-export function splitArgTokens(argTokens: readonly string[]): {
+function splitArgTokens(argTokens: readonly string[]): {
   readonly main: readonly string[];
   readonly doubleDash: readonly string[];
+  readonly hasDoubleDash: boolean;
 } {
   const ddIdx = argTokens.indexOf(DOUBLE_DASH);
 
   return ddIdx === -1
-    ? { main: argTokens, doubleDash: [] }
+    ? { main: argTokens, doubleDash: [], hasDoubleDash: false }
     : {
         main: argTokens.slice(0, ddIdx),
         doubleDash: argTokens.slice(ddIdx + 1),
+        hasDoubleDash: true,
       };
 }
 
@@ -181,7 +183,7 @@ export function compileArgs(
   argTokens: readonly string[],
   argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
 ): CompiledArgs {
-  const { main, doubleDash } = splitArgTokens(argTokens);
+  const { main, doubleDash, hasDoubleDash } = splitArgTokens(argTokens);
   const seen = new Set<string>();
   const compiledMain = compileArgSlice(main, argDefs, false, seen);
   const compiledDd = compileArgSlice(doubleDash, argDefs, true, seen);
@@ -200,7 +202,7 @@ export function compileArgs(
     descriptors: [...compiledMain, ...compiledDd],
     main: compiledMain,
     doubleDash: compiledDd,
-    hasDoubleDashSpec: argTokens.includes(DOUBLE_DASH),
+    hasDoubleDashSpec: hasDoubleDash,
   };
 }
 

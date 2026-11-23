@@ -95,6 +95,17 @@ describe("clerc() integration", () => {
     expect(terminal.stderrText()).toContain(
       "a similar command exists: 'build'",
     );
+
+    // Nested help command typo resolves deepest parentPath for suggestions
+    terminal.clear();
+    const nestedHelpTypo = await cli.run(["help", "db", "migrat"], {
+      terminal,
+    });
+
+    expect(nestedHelpTypo.ok).toBeFalsy();
+    expect(terminal.stderrText()).toContain(
+      "a similar command exists: 'db migrate'",
+    );
   });
 
   it("renders structured JSON errors when logger format is json", async () => {
@@ -140,20 +151,5 @@ describe("clerc() integration", () => {
     const doc = await buildHelpDocument(cli.buildModel());
 
     expect(doc.commandGroups[0]?.items[0]?.name).toBe("build");
-
-    const typoTerm = createMemoryTerminal();
-    const nestedCli = createTestCli();
-    nestedCli.command("db migrate", {
-      description: "Run migrations",
-      run() {},
-    });
-    const nestedHelpTypo = await nestedCli.run(["help", "db", "migrat"], {
-      terminal: typoTerm,
-    });
-
-    expect(nestedHelpTypo.ok).toBeFalsy();
-    expect(typoTerm.stderrText()).toContain(
-      "a similar command exists: 'db migrate'",
-    );
   });
 });

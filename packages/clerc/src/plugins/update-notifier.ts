@@ -1,3 +1,7 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+
 import { plugin } from "../cli";
 
 export interface UpdateInfo {
@@ -66,41 +70,22 @@ function isNewerVersion(current: string, latest: string): boolean {
   );
 }
 
-let fsDepsPromise:
-  | Promise<{
-      readonly fs: typeof import("node:fs/promises");
-      readonly os: typeof import("node:os");
-      readonly path: typeof import("node:path");
-    }>
-  | undefined;
-
-const loadFsDeps = () =>
-  (fsDepsPromise ??= Promise.all([
-    import("node:fs/promises"),
-    import("node:os"),
-    import("node:path"),
-  ]).then(([fs, os, path]) => ({ fs, os, path })));
-
-async function resolveCacheFile(
+function resolveCacheFile(
   pkgName: string,
   env: Readonly<Record<string, string | undefined>>,
   overrideDir?: string,
-): Promise<string> {
-  const { os, path } = await loadFsDeps();
+): string {
   const baseDir =
     [overrideDir, env.XDG_CACHE_HOME].find(Boolean) ??
-    path.join(os.homedir(), ".cache");
+    join(homedir(), ".cache");
   const safeName = pkgName.replace(/[^\w.-]/g, "_");
 
-  return path.join(baseDir, "clerc-update-notifier", `${safeName}.json`);
+  return join(baseDir, "clerc-update-notifier", `${safeName}.json`);
 }
 
 async function readCache(filePath: string): Promise<UpdateCache | null> {
   try {
-    const { fs } = await loadFsDeps();
-    const parsed = JSON.parse(
-      await fs.readFile(filePath, "utf8"),
-    ) as UpdateCache;
+    const parsed = JSON.parse(await readFile(filePath, "utf8")) as UpdateCache;
 
     return typeof parsed.lastCheck === "number" ? parsed : null;
   } catch {
@@ -110,9 +95,8 @@ async function readCache(filePath: string): Promise<UpdateCache | null> {
 
 async function writeCache(filePath: string, cache: UpdateCache): Promise<void> {
   try {
-    const { fs, path } = await loadFsDeps();
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(cache), "utf8");
+    await mkdir(dirname(filePath), { recursive: true });
+    await writeFile(filePath, JSON.stringify(cache), "utf8");
   } catch {
     // Ignore cache write errors in read-only environments
   }
@@ -143,24 +127,18 @@ async function fetchLatestVersion(
   }
 }
 
-async function awaitWithin<T>(
+const awaitWithin = <T>(
   promise: Promise<T>,
   graceMs: number,
-): Promise<T | undefined> {
-  if (graceMs <= 0) {
-    return promise;
-  }
-
-  const { setTimeout: delay } = await import("node:timers/promises");
-  const ac = new AbortController();
-
-  return Promise.race([
-    promise.finally(() => ac.abort()),
-    delay(graceMs, undefined, { ref: false, signal: ac.signal }).catch(
-      () => undefined,
-    ),
-  ]);
-}
+): Promise<T | undefined> =>
+  graceMs <= 0
+    ? promise
+    : Promise.race([
+        promise,
+        new Promise<undefined>((resolve) => {
+          setTimeout(() => resolve(undefined), graceMs).unref();
+        }),
+      ]);
 
 export function updateNotifierPlugin(
   options: UpdateNotifierPluginOptions = {},
@@ -195,7 +173,7 @@ export function updateNotifierPlugin(
       return undefined;
     }
 
-    const cacheFile = await resolveCacheFile(pkgName, env, cacheDir);
+    const cacheFile = resolveCacheFile(pkgName, env, cacheDir);
     const cache = await readCache(cacheFile);
     const currentTime = now();
     let latest = cache?.latest;

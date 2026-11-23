@@ -50,7 +50,6 @@ export interface McpToolEntry {
   readonly commandPath: readonly string[];
   readonly mainArgs: readonly ArgSlot[];
   readonly doubleDashArgs: readonly ArgSlot[];
-  readonly hasBareDoubleDash: boolean;
   readonly flags: ReadonlyMap<string, FlagSlot>;
   readonly rootSubcommands?: ReadonlySet<string>;
 }
@@ -225,8 +224,6 @@ function buildToolEntry(
     commandPath: node.fullPath,
     mainArgs,
     doubleDashArgs,
-    hasBareDoubleDash:
-      doubleDashArgs.length === 0 && cmd.argTokens.includes(DOUBLE_DASH),
     flags,
     rootSubcommands:
       node.fullPath.length === 0
@@ -336,7 +333,6 @@ export function serializeToolArgsToArgv(
 
   if (
     entry.doubleDashArgs.length === 0 &&
-    !entry.hasBareDoubleDash &&
     (mainValues.some((v) => v.startsWith("-")) ||
       (mainValues.length > 0 && entry.rootSubcommands?.has(mainValues[0])))
   ) {

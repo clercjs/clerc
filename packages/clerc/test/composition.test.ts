@@ -32,7 +32,25 @@ describe("Unified Plugin & Clerc composition", () => {
         return err instanceof Error && err.message === "custom";
       });
 
-    const cli = createTestBaseCli().use(first).use(second);
+    const cli = createTestBaseCli()
+      .middleware(
+        async (_, next) => {
+          events.push("before:post");
+          await next();
+          events.push("after:post");
+        },
+        { enforce: "post" },
+      )
+      .use(first)
+      .use(second)
+      .middleware(
+        async (_, next) => {
+          events.push("before:pre");
+          await next();
+          events.push("after:pre");
+        },
+        { enforce: "pre" },
+      );
     cli.command("ok", {
       run() {
         events.push("run:ok");
@@ -52,26 +70,38 @@ describe("Unified Plugin & Clerc composition", () => {
     await cli.run(["ok"], { terminal });
 
     expect(events).toEqual([
+      "before:pre",
       "before:first",
       "before:second",
+      "before:post",
       "run:ok",
+      "after:post",
       "after:second",
       "after:first",
+      "after:pre",
     ]);
 
     events.length = 0;
     const customRes = await cli.run(["custom-fail"], { terminal });
 
     expect(customRes.ok).toBeFalsy();
-    expect(events).toEqual(["before:first", "before:second", "error:second"]);
+    expect(events).toEqual([
+      "before:pre",
+      "before:first",
+      "before:second",
+      "before:post",
+      "error:second",
+    ]);
 
     events.length = 0;
     const fallbackRes = await cli.run(["fallback-fail"], { terminal });
 
     expect(fallbackRes.ok).toBeFalsy();
     expect(events).toEqual([
+      "before:pre",
       "before:first",
       "before:second",
+      "before:post",
       "error:second",
       "error:first",
     ]);

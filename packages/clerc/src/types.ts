@@ -142,19 +142,7 @@ type InferSingleType<T> =
       ? U
       : never;
 
-type WidenReadonlyArray<V> = V extends readonly (infer U)[] ? U[] : V;
-
-type UnwrapDefault<D> = D extends () => infer R
-  ? WidenReadonlyArray<R>
-  : WidenReadonlyArray<D>;
-
-type MergeArrayDefault<Elem, Default> = [Default] extends [never]
-  ? Elem[]
-  : Default extends (infer U)[]
-    ? [U] extends [Elem]
-      ? Elem[]
-      : Elem[] | Default
-    : Elem[] | Default;
+type UnwrapDefault<D> = D extends () => infer R ? R : D;
 
 type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
   readonly default: infer D;
@@ -187,10 +175,10 @@ type InferSingleFlag<T extends FlagDefinitionValue> =
     : T extends
           | readonly [BooleanConstructor]
           | { readonly type: readonly [BooleanConstructor] }
-      ? number | InferFlagDefault<T, never>
+      ? number
       : T extends
             readonly [infer Item] | { readonly type: readonly [infer Item] }
-        ? MergeArrayDefault<InferSingleType<Item>, InferFlagDefault<T, never>>
+        ? InferSingleType<Item>[]
         : T extends { readonly type: infer Item }
           ? | InferSingleType<Item>
             | InferFlagImplicitValue<T>
@@ -298,13 +286,7 @@ type InferTokenArg<
 > = Token extends `<${infer Name}...>`
   ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
   : Token extends `[${infer Name}...]`
-    ? Record<
-        CamelCase<Name>,
-        MergeArrayDefault<
-          ResolveArgType<CamelCase<Name>, Args>,
-          InferArgDefault<CamelCase<Name>, Args, never>
-        >
-      >
+    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
     : Token extends `<${infer Name}>`
       ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
       : Token extends `[${infer Name}]`
@@ -524,12 +506,9 @@ export interface MiddlewareResult<TAdded extends Record<string, any> = {}> {
   readonly "~state": TAdded;
 }
 
-export interface MiddlewareNext {
-  (): Promise<MiddlewareResult>;
-  <Added extends Record<string, any>>(
-    state: Added,
-  ): Promise<MiddlewareResult<Added>>;
-}
+export type MiddlewareNext = <Added extends Record<string, any> = {}>(
+  state?: Added,
+) => Promise<MiddlewareResult<Added>>;
 
 export interface MiddlewareOptions {
   readonly enforce?: "pre" | "post";

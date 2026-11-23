@@ -1,4 +1,3 @@
-import { splitArgTokens } from "../args";
 import { DOUBLE_DASH } from "../parser";
 import type {
   ArgDescriptor,
@@ -214,8 +213,9 @@ function buildUsage(
 ): HelpUsage {
   const command = node.command;
   const argTokens = command?.argTokens ?? [];
-  const { doubleDash } = splitArgTokens(argTokens);
-  const hasRequiredAfterDd = doubleDash.some((t) => t.startsWith("<"));
+  const hasRequiredAfterDd = node.args.some(
+    (a) => a.afterDoubleDash && a.isRequired,
+  );
 
   const args: HelpUsageArg[] = argTokens.map((token) =>
     token === DOUBLE_DASH
