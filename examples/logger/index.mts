@@ -1,3 +1,5 @@
+import { setTimeout as delay } from "node:timers/promises";
+
 import { createLogger, createTheme, monoThemeStyles } from "clerc";
 
 function divider(title: string): void {
@@ -21,7 +23,7 @@ log.error(
 );
 log.success("Build finished", "total: 580ms");
 
-// 2. withScope 作用域嵌套（清晰三层亮度：标签 / scope › / 正文 & debug）
+// 2. withScope 作用域嵌套
 divider("2. Scoped Loggers (withScope)");
 const dbLog = log.withScope("db");
 const migrateLog = dbLog.withScope("migrate");
@@ -30,8 +32,8 @@ dbLog.info("Connected to SQLite");
 migrateLog.step("Applying 0004_init.sql", "3 tables created");
 migrateLog.debug("Query took 1.2ms");
 
-// 3. 全部 4 种 Callout 语气
-divider("3. Callout Tones");
+// 3. 全部 4 种一次性 Callout 语气
+divider("3. Static Callout Tones");
 log.callout({
   tone: "info",
   title: "Dry run preview",
@@ -53,8 +55,38 @@ log.callout({
   lines: ["https://npmjs.com/package/@clerc/logger"],
 });
 
-// 4. Compact 无竖线缩进样式 & ASCII / Mono 降级
-divider("4. Compact Style & ASCII Mono Fallback");
+// 4. 实时延迟追加模拟（Streaming step.line & callout.line）
+divider("4. Live Streaming Appends (Simulated Async Delay)");
+
+const migrationStep = migrateLog.step("Running pending migrations");
+for (const [file, ms] of [
+  ["0001_create_users.sql", 320],
+  ["0002_create_sessions.sql", 280],
+  ["0003_add_indexes.sql", 360],
+] as const) {
+  await delay(ms);
+  migrationStep.line(`Applied ${file} (${ms}ms)`);
+}
+
+await delay(250);
+const preflight = log.callout({
+  tone: "info",
+  title: "Preflight environment checks",
+});
+for (const [check, ms] of [
+  ["API gateway       200 OK (42ms)", 350],
+  ["Primary database  read/write ready", 350],
+  ["Edge CDN          18 regions healthy", 350],
+] as const) {
+  await delay(ms);
+  preflight.line(check);
+}
+
+await delay(200);
+log.success("All preflight checks passed");
+
+// 5. Compact 无竖线缩进样式 & ASCII / Mono 降级
+divider("5. Compact Style & ASCII Mono Fallback");
 log.setStyle("compact");
 log.step("Compact style (no rail bar)", "packages/theme\npackages/logger");
 
@@ -65,8 +97,12 @@ const asciiMonoLog = createLogger({
 });
 asciiMonoLog.withScope("ci").step("ASCII fallback", "Uses '>' and '|'");
 
-// 5. JSON 结构化输出模式
-divider("5. Structured JSON Format");
+// 6. JSON 结构化输出模式（含流式 .line 事件）
+divider("6. Structured JSON Format");
 log.setFormat("json");
-log.info("Server listening", "http://localhost:3000");
-migrateLog.success("Migrations complete");
+const jsonBox = log.callout({
+  tone: "info",
+  title: "Deploying",
+  lines: ["region=ap-northeast-1"],
+});
+jsonBox.line("replica 1 healthy");

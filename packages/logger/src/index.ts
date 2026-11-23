@@ -12,6 +12,10 @@ export interface CalloutOptions {
   readonly tone?: CalloutTone;
 }
 
+export interface LogEntry {
+  readonly line: (text: string) => LogEntry;
+}
+
 export interface LoggerTerminal {
   readonly stdout: (text: string) => void;
   readonly stderr: (text: string) => void;
@@ -46,14 +50,14 @@ export interface Logger {
   setLevel: (level: LogLevel) => void;
   setStyle: (style: LogStyle) => void;
   setFormat: (format: LogFormat) => void;
-  step: (message: string, detail?: string) => void;
-  info: (message: string, detail?: string) => void;
-  success: (message: string, detail?: string) => void;
-  warn: (message: string, detail?: string) => void;
-  error: (message: string, detail?: string) => void;
-  debug: (message: string, detail?: string) => void;
+  step: (message: string, detail?: string) => LogEntry;
+  info: (message: string, detail?: string) => LogEntry;
+  success: (message: string, detail?: string) => LogEntry;
+  warn: (message: string, detail?: string) => LogEntry;
+  error: (message: string, detail?: string) => LogEntry;
+  debug: (message: string, detail?: string) => LogEntry;
   raw: (text: string) => void;
-  callout: (options: CalloutOptions) => void;
+  callout: (options: CalloutOptions) => LogEntry;
   withScope: (scope: string) => Logger;
 }
 
@@ -103,6 +107,10 @@ interface SharedLoggerState {
 
 const identity = (text: string): string => text;
 
+const NOOP_ENTRY: LogEntry = Object.freeze({
+  line: () => NOOP_ENTRY,
+});
+
 const DEFAULT_TERMINAL: LoggerTerminal = {
   stdout: (text) => process.stdout.write(`${text}\n`),
   stderr: (text) => process.stderr.write(`${text}\n`),
@@ -147,13 +155,53 @@ function createLoggerWithState(
       : `${theme.muted(scope)} ${faint(sep)} `;
   }
 
-  function emit(kind: LogKind, message: string, detail?: string): void {
+  function createEntry(
+    targetLevel: Exclude<LogLevel, "silent">,
+    write: (text: string) => void,
+    formatLine: (text: string) => string,
+    jsonBase: Readonly<Record<string, unknown>>,
+  ): LogEntry {
+    const entry: LogEntry = {
+      line(text) {
+        if (!shouldLog(targetLevel)) {
+          return entry;
+        }
+        if (state.format === "json") {
+          write(
+            JSON.stringify({
+              ...jsonBase,
+              ...(scope ? { scope } : {}),
+              line: text,
+            }),
+          );
+
+          return entry;
+        }
+        const prefix = detailPrefix();
+        for (const part of text.split("\n")) {
+          write(`${prefix}${formatLine(part)}`);
+        }
+
+        return entry;
+      },
+    };
+
+    return entry;
+  }
+
+  function emit(kind: LogKind, message: string, detail?: string): LogEntry {
     const meta = KIND_META[kind];
     if (!shouldLog(meta.level)) {
-      return;
+      return NOOP_ENTRY;
     }
 
     const write = meta.stderr ? terminal.stderr : terminal.stdout;
+    const isDebug = kind === "debug";
+    const formatDetail = isDebug ? faint : theme.muted;
+    const entry = createEntry(meta.level, write, formatDetail, {
+      level: kind,
+      message,
+    });
 
     if (state.format === "json") {
       const payload: Record<string, unknown> = { level: kind, message };
@@ -165,10 +213,9 @@ function createLoggerWithState(
       }
       write(JSON.stringify(payload));
 
-      return;
+      return entry;
     }
 
-    const isDebug = kind === "debug";
     const label = formatLabel(meta.label, theme, meta.token);
     const scopePrefix = formatScope(isDebug);
     const body = isDebug
@@ -179,12 +226,10 @@ function createLoggerWithState(
 
     write(`${label}  ${scopePrefix}${body}`);
     if (detail !== undefined) {
-      const prefix = detailPrefix();
-      const formatDetail = isDebug ? faint : theme.muted;
-      for (const line of detail.split("\n")) {
-        write(`${prefix}${formatDetail(line)}`);
-      }
+      entry.line(detail);
     }
+
+    return entry;
   }
 
   return {
@@ -221,24 +266,39 @@ function createLoggerWithState(
     callout: ({ title, lines = [], tone = "info" }) => {
       const meta = KIND_META[tone];
       if (!shouldLog(meta.level)) {
-        return;
+        return NOOP_ENTRY;
       }
 
       const write = meta.stderr ? terminal.stderr : terminal.stdout;
+      const entry = createEntry(meta.level, write, theme.muted, {
+        level: tone,
+        title,
+      });
 
       if (state.format === "json") {
-        write(JSON.stringify({ level: tone, title, lines }));
+        write(
+          JSON.stringify({
+            level: tone,
+            ...(scope ? { scope } : {}),
+            title,
+            lines,
+          }),
+        );
 
-        return;
+        return entry;
       }
 
       const label = formatLabel(CALLOUT_LABELS[tone], theme, meta.token);
       const prefix = detailPrefix();
       const output = [
         `${label}  ${theme.bold(title)}`,
-        ...lines.map((line) => `${prefix}${theme.muted(line)}`),
+        ...lines.flatMap((line) =>
+          line.split("\n").map((part) => `${prefix}${theme.muted(part)}`),
+        ),
       ];
       write(output.join("\n"));
+
+      return entry;
     },
     withScope: (childScope) =>
       createLoggerWithState(

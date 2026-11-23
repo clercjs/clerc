@@ -2,6 +2,7 @@ export type {
   CalloutOptions,
   CalloutTone,
   CreateLoggerOptions,
+  LogEntry,
   LogFormat,
   LogLevel,
   LogStyle,

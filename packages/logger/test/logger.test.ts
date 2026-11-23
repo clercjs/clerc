@@ -79,4 +79,46 @@ describe("@clerc/logger", () => {
       detail: "3 flags",
     });
   });
+
+  it("supports streaming .line() appends on callout and log entries while respecting levels", () => {
+    const term = createMemoryTerminal({ color: false });
+    const log = createLogger({ terminal: term, level: "warn" });
+
+    // Filtered info callout returns a no-op handle — never prints orphaned rail lines
+    const mutedBox = log.callout({ tone: "info", title: "Hidden" });
+    mutedBox.line("Should not appear");
+
+    expect(term.stdoutText()).toBe("");
+
+    // Active warn callout streams appended lines to stderr
+    const warnBox = log.callout({
+      tone: "warn",
+      title: "Preflight warnings",
+      lines: ["Initial check"],
+    });
+    warnBox.line("Slow upstream response").line("Line A\nLine B");
+
+    expect(term.stderrText()).toBe(
+      [
+        "warn   Preflight warnings",
+        "       │ Initial check",
+        "       │ Slow upstream response",
+        "       │ Line A",
+        "       │ Line B",
+      ].join("\n"),
+    );
+
+    // Step streaming on info level
+    log.setLevel("info");
+    const step = log.step("Migrating");
+    step.line("0001_init.sql").line("0002_index.sql");
+
+    expect(term.stdoutText()).toBe(
+      [
+        "step   Migrating",
+        "       │ 0001_init.sql",
+        "       │ 0002_index.sql",
+      ].join("\n"),
+    );
+  });
 });
