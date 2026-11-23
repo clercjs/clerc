@@ -6,10 +6,9 @@ import type {
   ReadonlyCliModel,
 } from "@clerc/core";
 import {
-  DOUBLE_DASH,
-  extractArgInfo,
-  normalizeArgValue,
+  describeType,
   normalizeFlagValue,
+  resolveCommandArgs,
 } from "@clerc/core";
 
 export interface CompletionMeta {
@@ -34,7 +33,8 @@ function registerFlag(
   }
 
   const desc = normalized.description ?? "";
-  if (normalized.type === Boolean) {
+  const { kind } = describeType(normalized.type);
+  if (kind === "boolean" || kind === "counter") {
     tc.option(flagName, desc, normalized.short);
   } else {
     const handler = compMeta?.handler ?? (async () => {});
@@ -76,15 +76,9 @@ export function buildTabModel(t: RootCommand, model: ReadonlyCliModel): void {
 
     compMeta?.handler?.(tabCmd);
 
-    for (const token of cmd.argTokens) {
-      if (token === DOUBLE_DASH) {
-        continue;
-      }
-      const { name, isVariadic } = extractArgInfo(token);
-      const rawDef = cmd.args?.[name];
-      const norm = rawDef ? normalizeArgValue(rawDef) : undefined;
-      const argComp = getCompletionMeta(norm?.meta);
-      tabCmd.argument(name, argComp?.handler, isVariadic);
+    for (const arg of resolveCommandArgs(cmd)) {
+      const argComp = getCompletionMeta(arg.options.meta);
+      tabCmd.argument(arg.name, argComp?.handler, arg.isVariadic);
     }
 
     for (const [flagName, def] of Object.entries(cmd.flags ?? {})) {

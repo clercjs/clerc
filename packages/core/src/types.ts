@@ -40,6 +40,10 @@ export interface ClercFlagOptions<T extends CoreTypeValue = CoreTypeValue> {
   readonly conflicts?: MaybeArray<string>;
   readonly implies?: MaybeArray<string>;
   readonly meta?: Record<string, unknown>;
+  /**
+   * @internal
+   */
+  readonly builtin?: boolean;
 }
 
 export type ClercFlagDefinitionValue = ClercFlagOptions | CoreTypeValue;
@@ -258,6 +262,10 @@ export interface RunContext<TGlobalFlags extends ClercFlagsDefinition = {}> {
   readonly theme: Theme;
   readonly log: Logger;
   readonly help: HelpHelper;
+  readonly run: (
+    argv: readonly string[],
+    options?: RunOptions,
+  ) => Promise<RunResult>;
   readonly argv: readonly string[];
   command?: AnyCommandDefinition;
   commandPath: readonly string[];
@@ -282,6 +290,10 @@ export type CommandContext<
   readonly theme: Theme;
   readonly log: Logger;
   readonly help: HelpHelper;
+  readonly run: (
+    argv: readonly string[],
+    options?: RunOptions,
+  ) => Promise<RunResult>;
   readonly argv: readonly string[];
   readonly command: AnyCommandDefinition;
   readonly commandPath: readonly string[];
@@ -328,6 +340,10 @@ export interface CommandOptions<
     NoInfer<TExt>
   >;
   readonly meta?: Record<string, unknown>;
+  /**
+   * @internal
+   */
+  readonly builtin?: boolean;
 }
 
 export interface CommandDefinition<

@@ -2,6 +2,7 @@ import { createParser } from "@clerc/parser";
 
 import type { CompiledArgs } from "./args";
 import { compileArgs, executeCompiledArgs, parseCommandSpec } from "./args";
+import type { CommandMatch } from "./command-tree";
 import { CommandTree } from "./command-tree";
 import {
   ClercError,
@@ -63,7 +64,6 @@ interface CompiledCli {
   readonly extenders: readonly ContextExtender[];
   readonly middlewares: readonly Middleware<any, any>[];
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
-  readonly builtinFlags: readonly string[];
   readonly global: CompiledCommand;
   readonly commands: WeakMap<AnyCommandDefinition, CompiledCommand>;
 }
@@ -78,12 +78,14 @@ const HELP_FLAG = {
   type: Boolean,
   short: "h",
   description: "Show help",
+  builtin: true,
 } as const;
 
 const VERSION_FLAG = {
   type: Boolean,
   short: "V",
   description: "Show version",
+  builtin: true,
 } as const;
 
 const createGroupBuckets = (): GroupBuckets => ({
@@ -95,35 +97,47 @@ const createGroupBuckets = (): GroupBuckets => ({
 const formatCliVersion = (meta: ReadonlyCliMeta): string =>
   `${meta.scriptName} ${formatVersion(meta.version)}`.trim();
 
-function collectScope(
-  scope: Plugin<any, any>,
-  globalFlags: ClercFlagsDefinition,
-  commands: AnyCommandDefinition[],
-  groups: GroupBuckets,
-  extenders: ContextExtender[],
-  middlewares: Middleware<any, any>[],
-  errorHandlers: ErrorHandler<any, any>[],
-): void {
+interface ScopeCollector {
+  readonly globalFlags: ClercFlagsDefinition;
+  readonly commands: AnyCommandDefinition[];
+  readonly groups: GroupBuckets;
+  readonly extenders: ContextExtender[];
+  readonly middlewares: Middleware<any, any>[];
+  readonly errorHandlers: ErrorHandler<any, any>[];
+}
+
+function collectScope(scope: Plugin<any, any>, acc: ScopeCollector): void {
   for (const child of scope._plugins.values()) {
-    collectScope(
-      child,
-      globalFlags,
-      commands,
-      groups,
-      extenders,
-      middlewares,
-      errorHandlers,
-    );
+    collectScope(child, acc);
   }
 
-  Object.assign(globalFlags, scope._flags);
-  commands.push(...scope._commands);
-  extenders.push(...scope._extenders);
-  middlewares.push(...scope._middlewares);
-  errorHandlers.push(...scope._errorHandlers);
+  Object.assign(acc.globalFlags, scope._flags);
+  acc.commands.push(...scope._commands);
+  acc.extenders.push(...scope._extenders);
+  acc.middlewares.push(...scope._middlewares);
+  acc.errorHandlers.push(...scope._errorHandlers);
 
   for (const groupScope of GROUP_SCOPES) {
-    groups[groupScope].push(...scope._groups[groupScope]);
+    acc.groups[groupScope].push(...scope._groups[groupScope]);
+  }
+}
+
+function createUnmatchedError(
+  match: Exclude<CommandMatch, { readonly kind: "matched" }>,
+): ClercError {
+  switch (match.kind) {
+    case "unknown": {
+      return new UnknownCommandError(match.commandName, match.parentPath);
+    }
+    case "namespace": {
+      return new UnknownCommandError(
+        match.node.fullPath.join(" "),
+        match.node.fullPath,
+      );
+    }
+    case "empty": {
+      return new NoCommandError();
+    }
   }
 }
 
@@ -318,35 +332,25 @@ export class CliApp<
       return this.#compiled;
     }
 
-    const globalFlagsDef: ClercFlagsDefinition = {};
-    const commands: AnyCommandDefinition[] = [];
-    const groups = createGroupBuckets();
-    const extenders: ContextExtender[] = [];
-    const middlewares: Middleware<any, any>[] = [];
-    const errorHandlers: ErrorHandler<any, any>[] = [];
+    const acc: ScopeCollector = {
+      globalFlags: {},
+      commands: [],
+      groups: createGroupBuckets(),
+      extenders: [],
+      middlewares: [],
+      errorHandlers: [],
+    };
+    collectScope(this, acc);
 
-    collectScope(
-      this,
-      globalFlagsDef,
-      commands,
-      groups,
-      extenders,
-      middlewares,
-      errorHandlers,
-    );
-
-    const builtinFlags: string[] = [];
-    if (this.#meta.version && !("version" in globalFlagsDef)) {
-      globalFlagsDef.version = VERSION_FLAG;
-      builtinFlags.push("version");
+    if (this.#meta.version && !("version" in acc.globalFlags)) {
+      acc.globalFlags.version = VERSION_FLAG;
     }
-    if (this.#helpOptions !== false && !("help" in globalFlagsDef)) {
-      globalFlagsDef.help = HELP_FLAG;
-      builtinFlags.push("help");
+    if (this.#helpOptions !== false && !("help" in acc.globalFlags)) {
+      acc.globalFlags.help = HELP_FLAG;
     }
 
     const tree = new CommandTree();
-    for (const cmd of commands) {
+    for (const cmd of acc.commands) {
       tree.register(cmd);
     }
 
@@ -357,6 +361,7 @@ export class CliApp<
         name: "version",
         argTokens: [],
         description: "Show version",
+        builtin: true,
         run(ctx) {
           ctx.terminal.stdout(formatCliVersion(ctx.meta));
         },
@@ -373,6 +378,7 @@ export class CliApp<
         name,
         argTokens,
         description: "Show help for a command",
+        builtin: true,
         examples: (meta) => [
           [`$ ${meta.scriptName} help`, "Show general help"],
           [`$ ${meta.scriptName} help <command>`, "Show help for a command"],
@@ -390,18 +396,17 @@ export class CliApp<
     const model: ReadonlyCliModel = {
       meta: this.#meta,
       tree,
-      globalFlags: globalFlagsDef,
-      groups,
+      globalFlags: acc.globalFlags,
+      groups: acc.groups,
     };
 
-    const globalFlags = compileFlags(globalFlagsDef);
+    const globalFlags = compileFlags(acc.globalFlags);
     this.#compiled = {
       model,
       tree,
-      extenders,
-      middlewares,
-      errorHandlers,
-      builtinFlags,
+      extenders: acc.extenders,
+      middlewares: acc.middlewares,
+      errorHandlers: acc.errorHandlers,
       global: {
         flags: globalFlags,
         parser: createParser({ flags: globalFlags.parserFlags }),
@@ -497,6 +502,7 @@ export class CliApp<
           terminal.stdout(await render(commandPath));
         },
       },
+      run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
       argv: argv ?? terminal.argv,
       commandPath: [],
       args: {},
@@ -568,14 +574,7 @@ export class CliApp<
 
     // 4. Require a matched command
     if (match.kind !== "matched") {
-      throw match.kind === "unknown"
-        ? new UnknownCommandError(match.commandName, match.parentPath)
-        : match.kind === "namespace"
-          ? new UnknownCommandError(
-              match.node.fullPath.join(" "),
-              match.node.fullPath,
-            )
-          : new NoCommandError();
+      throw createUnmatchedError(match);
     }
 
     // 5. Resolve flags, warn deprecations, validate flags & args
@@ -585,10 +584,9 @@ export class CliApp<
       parsed.provided,
       ctx.terminal.env,
     );
-    const localFlags = match.command.flags;
-    for (const builtin of compiledCli.builtinFlags) {
-      if (!localFlags || !(builtin in localFlags)) {
-        delete flags[builtin];
+    for (const [name, entry] of compiledCmd.flags.byName) {
+      if (entry.norm.builtin) {
+        delete flags[name];
       }
     }
     ctx.flags = flags as any;
@@ -626,15 +624,21 @@ export class CliApp<
     }
 
     // 7. Run onion middleware chain wrapping command.run
-    const dispatch = async (index: number): Promise<void> => {
-      const mw = compiledCli.middlewares[index];
-      if (mw) {
-        await mw(ctx, () => dispatch(index + 1));
-      } else if (ctx.command?.run) {
-        await ctx.command.run(ctx as any);
+    if (compiledCli.middlewares.length === 0) {
+      if (matchedCommand.run) {
+        await matchedCommand.run(ctx as any);
       }
-    };
-    await dispatch(0);
+    } else {
+      const dispatch = async (index: number): Promise<void> => {
+        const mw = compiledCli.middlewares[index];
+        if (mw) {
+          await mw(ctx, () => dispatch(index + 1));
+        } else if (matchedCommand.run) {
+          await matchedCommand.run(ctx as any);
+        }
+      };
+      await dispatch(0);
+    }
 
     return { ok: true, exitCode: 0 };
   }

@@ -78,6 +78,7 @@ await cli.runMain();
 - `@clerc/core` — Core runtime: `createCli`, `plugin`, `CommandTree`, native help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and `Logger`.
 - `@clerc/parser` — Zero-dependency, high-performance argument parser.
 - `@clerc/plugin-completions` — Shell completion generator powered by `@bomb.sh/tab`.
+- `@clerc/plugin-mcp` — Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.
 
 # 📖 Documentation
 

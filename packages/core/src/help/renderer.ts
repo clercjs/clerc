@@ -1,8 +1,9 @@
 import { DOUBLE_DASH } from "@clerc/parser";
 
-import { extractArgInfo, normalizeArgValue } from "../args";
+import { resolveCommandArgs, splitArgTokens } from "../args";
 import { normalizeFlagValue } from "../flags";
-import { isStandardSchema } from "../schema";
+import type { TypeDescriptor } from "../schema";
+import { describeType } from "../schema";
 import type { Theme } from "../theme";
 import type {
   AnyCommandDefinition,
@@ -30,45 +31,17 @@ export interface RenderHelpOptions {
   readonly footer?: MetaAsyncGetter<string | undefined | void>;
 }
 
-const TYPE_LABELS = new Map<unknown, string>([
-  [Boolean, "boolean"],
-  [Number, "number"],
-  [Object, "key=value"],
-  [String, "string"],
-]);
-
-function formatTypeName(type: unknown): string {
-  if (
-    type !== null &&
-    (typeof type === "object" || typeof type === "function") &&
-    "display" in type &&
-    typeof type.display === "string"
-  ) {
-    return type.display;
-  }
-  if (isStandardSchema(type) || typeof type !== "function") {
-    return "value";
-  }
-
-  return (
-    TYPE_LABELS.get(type) ?? (type.name ? type.name.toLowerCase() : "value")
-  );
-}
-
-function formatPlaceholder(flag: ClercFlagOptions): string | undefined {
+function formatPlaceholder(
+  flag: ClercFlagOptions,
+  desc: TypeDescriptor,
+): string | undefined {
   if (flag.placeholder) {
     return flag.placeholder;
   }
-  if (flag.type === Boolean) {
-    return undefined;
-  }
-  if (Array.isArray(flag.type)) {
-    return flag.type[0] === Boolean
-      ? undefined
-      : `<${formatTypeName(flag.type[0])}...>`;
-  }
 
-  return `<${formatTypeName(flag.type)}>`;
+  return desc.kind === "boolean" || desc.kind === "counter"
+    ? undefined
+    : `<${desc.display}>`;
 }
 
 function formatDefault(value: unknown): string {
@@ -93,11 +66,12 @@ function formatFlagRow(
   const base = flag.short
     ? theme.flag(`-${flag.short}, ${longName}`)
     : `${hasAnyShort ? "    " : ""}${theme.flag(longName)}`;
+  const desc = describeType(flag.type);
   const negated =
-    flag.type === Boolean && flag.negatable !== false && flag.default === true
+    desc.kind === "boolean" && flag.negatable !== false && flag.default === true
       ? `, ${theme.flag(`--no-${longName.slice(2)}`)}`
       : "";
-  const placeholder = formatPlaceholder(flag);
+  const placeholder = formatPlaceholder(flag, desc);
   const left = `${base}${negated}${placeholder ? ` ${theme.placeholder(placeholder)}` : ""}`;
 
   const tags: string[] = [];
@@ -106,7 +80,7 @@ function formatFlagRow(
   }
   if (
     flag.default !== undefined &&
-    (flag.type !== Boolean || flag.default !== false)
+    (desc.kind !== "boolean" || flag.default !== false)
   ) {
     tags.push(`default: ${formatDefault(flag.default)}`);
   }
@@ -235,9 +209,8 @@ function renderUsage(
 ): string {
   const command = node.command;
   const argTokens = command?.argTokens ?? [];
-  const ddIdx = argTokens.indexOf(DOUBLE_DASH);
-  const hasRequiredAfterDd =
-    ddIdx !== -1 && argTokens.slice(ddIdx + 1).some((t) => t.startsWith("<"));
+  const { doubleDash } = splitArgTokens(argTokens);
+  const hasRequiredAfterDd = doubleDash.some((t) => t.startsWith("<"));
 
   const displayArgs = argTokens.map((t) =>
     t === DOUBLE_DASH
@@ -263,21 +236,19 @@ function renderArguments(
   theme: Theme,
   columns: number,
 ): string[] {
-  const rows: [string, string][] = [];
-  for (const token of command?.argTokens ?? []) {
-    if (token === DOUBLE_DASH) {
-      continue;
-    }
-    const { name } = extractArgInfo(token);
-    const rawDef = command?.args?.[name];
-    const norm = rawDef ? normalizeArgValue(rawDef) : undefined;
-    const typeLabel =
-      norm?.placeholder ?? (norm?.type ? formatTypeName(norm.type) : undefined);
-    const left = typeLabel
-      ? `${theme.command(token)} ${theme.placeholder(`<${typeLabel}>`)}`
-      : theme.command(token);
-    rows.push([left, norm?.description ?? ""]);
+  if (!command) {
+    return [];
   }
+  const rows: [string, string][] = resolveCommandArgs(command).map((arg) => {
+    const typeLabel =
+      arg.options.placeholder ??
+      (arg.options.type ? describeType(arg.options.type).display : undefined);
+    const left = typeLabel
+      ? `${theme.command(arg.token)} ${theme.placeholder(`<${typeLabel}>`)}`
+      : theme.command(arg.token);
+
+    return [left, arg.options.description ?? ""];
+  });
 
   return formatTwoColumn(rows, { indent: 2, maxWidth: columns });
 }

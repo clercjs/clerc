@@ -424,6 +424,12 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/plugin-mcp:
+    devDependencies:
+      '@clerc/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/test-utils:
     dependencies:
       '@clerc/core':

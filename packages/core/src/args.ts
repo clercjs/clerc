@@ -4,8 +4,14 @@ import {
   InvalidParametersError,
   MissingRequiredParameterError,
 } from "./errors";
-import { convertValue, isStandardSchema } from "./schema";
-import type { ArgDefinitionValue, ArgOptions, CoreSingleType } from "./types";
+import type { TypeConverter } from "./schema";
+import { describeType, isStandardSchema } from "./schema";
+import type {
+  AnyCommandDefinition,
+  ArgDefinitionValue,
+  ArgOptions,
+  CoreSingleType,
+} from "./types";
 
 const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
 
@@ -20,13 +26,18 @@ export interface ArgInfo {
   readonly isVariadic: boolean;
 }
 
+export interface ResolvedArg extends ArgInfo {
+  readonly options: ArgOptions;
+  readonly afterDoubleDash: boolean;
+}
+
 export interface ParsedCommandSpec {
   readonly name: string;
   readonly argTokens: readonly string[];
 }
 
 interface CompiledArgItem extends ArgInfo {
-  readonly type?: CoreSingleType;
+  readonly convert?: TypeConverter;
 }
 
 export interface CompiledArgs {
@@ -40,6 +51,20 @@ export function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
   }
 
   return arg as ArgOptions;
+}
+
+export function splitArgTokens(argTokens: readonly string[]): {
+  readonly main: readonly string[];
+  readonly doubleDash: readonly string[];
+} {
+  const ddIdx = argTokens.indexOf(DOUBLE_DASH);
+
+  return ddIdx === -1
+    ? { main: argTokens, doubleDash: [] }
+    : {
+        main: argTokens.slice(0, ddIdx),
+        doubleDash: argTokens.slice(ddIdx + 1),
+      };
 }
 
 export function extractArgInfo(token: string): ArgInfo {
@@ -56,9 +81,30 @@ export function extractArgInfo(token: string): ArgInfo {
     name: camelCase(match[2]),
     rawName: match[2],
     token,
-    isRequired: token.startsWith("<"),
+    isRequired: match[1] === "<",
     isVariadic: Boolean(match[3]),
   };
+}
+
+export function resolveCommandArgs(
+  cmd: Pick<AnyCommandDefinition, "argTokens" | "args">,
+): readonly ResolvedArg[] {
+  const { main, doubleDash } = splitArgTokens(cmd.argTokens);
+  function toResolved(token: string, afterDoubleDash: boolean): ResolvedArg {
+    const info = extractArgInfo(token);
+    const rawDef = cmd.args?.[info.name];
+
+    return {
+      ...info,
+      options: rawDef ? normalizeArgValue(rawDef) : {},
+      afterDoubleDash,
+    };
+  }
+
+  return [
+    ...main.map((token) => toResolved(token, false)),
+    ...doubleDash.map((token) => toResolved(token, true)),
+  ];
 }
 
 /**
@@ -129,7 +175,7 @@ function compileArgSlice(
     const norm = def ? normalizeArgValue(def) : undefined;
     items.push({
       ...info,
-      type: norm?.type,
+      convert: norm?.type ? describeType(norm.type).convert : undefined,
     });
   }
 
@@ -140,17 +186,11 @@ export function compileArgs(
   argTokens: readonly string[],
   argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
 ): CompiledArgs {
-  const ddIdx = argTokens.indexOf(DOUBLE_DASH);
-  if (ddIdx === -1) {
-    return {
-      main: compileArgSlice(argTokens, argDefs),
-      doubleDash: [],
-    };
-  }
+  const { main, doubleDash } = splitArgTokens(argTokens);
 
   return {
-    main: compileArgSlice(argTokens.slice(0, ddIdx), argDefs),
-    doubleDash: compileArgSlice(argTokens.slice(ddIdx + 1), argDefs),
+    main: compileArgSlice(main, argDefs),
+    doubleDash: compileArgSlice(doubleDash, argDefs),
   };
 }
 
@@ -169,19 +209,19 @@ async function applyArgSlice(
       throw new MissingRequiredParameterError(item.rawName, item.isVariadic);
     }
 
-    if (!item.type) {
+    if (!item.convert) {
       result[item.name] = raw;
     } else if (item.isVariadic) {
       const converted: unknown[] = [];
       for (const element of raw as string[]) {
-        converted.push(await convertValue(item.type, element, item.token));
+        converted.push(await item.convert(element, item.token));
       }
       result[item.name] = converted;
     } else {
       result[item.name] =
         raw === undefined
           ? undefined
-          : await convertValue(item.type, raw as string, item.token);
+          : await item.convert(raw as string, item.token);
     }
   }
 }

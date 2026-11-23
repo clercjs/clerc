@@ -8,8 +8,14 @@ export {
   camelCase,
   inferDefault,
 } from "@clerc/parser";
-export type { ArgInfo, ParsedCommandSpec } from "./args";
-export { extractArgInfo, normalizeArgValue, parseCommandSpec } from "./args";
+export type { ArgInfo, ParsedCommandSpec, ResolvedArg } from "./args";
+export {
+  extractArgInfo,
+  normalizeArgValue,
+  parseCommandSpec,
+  resolveCommandArgs,
+  splitArgTokens,
+} from "./args";
 export { CliApp, Plugin, createCli, plugin } from "./cli";
 export type { ArgvScanFn, CommandMatch } from "./command-tree";
 export { CommandTree } from "./command-tree";
@@ -31,21 +37,15 @@ export type {
 export { createLogger } from "./logger";
 export type {
   ClercSchema,
+  FlagKind,
   StandardSchemaV1,
-  StandardSchemaV1FailureResult,
   StandardSchemaV1Issue,
-  StandardSchemaV1PathSegment,
   StandardSchemaV1Props,
   StandardSchemaV1Result,
-  StandardSchemaV1SuccessResult,
-  StandardSchemaV1Types,
+  TypeConverter,
+  TypeDescriptor,
 } from "./schema";
-export {
-  Types,
-  convertValue,
-  isStandardSchema,
-  validateStandardSchema,
-} from "./schema";
+export { Types, describeType, isStandardSchema } from "./schema";
 export type {
   MemoryTerminal,
   MemoryTerminalOptions,

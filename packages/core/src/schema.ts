@@ -1,33 +1,17 @@
-import type { ValidationIssue } from "./errors";
-import { ValidationError } from "./errors";
-import type { CoreSingleType } from "./types";
+import type { TypeFunction, TypeValue as ParserTypeValue } from "@clerc/parser";
 
-export interface StandardSchemaV1PathSegment {
-  readonly key: PropertyKey;
-}
+import { ValidationError } from "./errors";
+import type { CoreSingleType, CoreTypeValue } from "./types";
 
 export interface StandardSchemaV1Issue {
   readonly message: string;
   readonly path?:
-    readonly (PropertyKey | StandardSchemaV1PathSegment)[] | undefined;
-}
-
-export interface StandardSchemaV1SuccessResult<Output> {
-  readonly value: Output;
-  readonly issues?: undefined;
-}
-
-export interface StandardSchemaV1FailureResult {
-  readonly issues: readonly StandardSchemaV1Issue[];
+    readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined;
 }
 
 export type StandardSchemaV1Result<Output> =
-  StandardSchemaV1SuccessResult<Output> | StandardSchemaV1FailureResult;
-
-export interface StandardSchemaV1Types<Input = unknown, Output = Input> {
-  readonly input: Input;
-  readonly output: Output;
-}
+  | { readonly value: Output; readonly issues?: undefined }
+  | { readonly issues: readonly StandardSchemaV1Issue[] };
 
 export interface StandardSchemaV1Props<Input = unknown, Output = Input> {
   readonly version: 1;
@@ -35,11 +19,22 @@ export interface StandardSchemaV1Props<Input = unknown, Output = Input> {
   readonly validate: (
     value: unknown,
   ) => StandardSchemaV1Result<Output> | Promise<StandardSchemaV1Result<Output>>;
-  readonly types?: StandardSchemaV1Types<Input, Output> | undefined;
+  readonly types?:
+    { readonly input: Input; readonly output: Output } | undefined;
+  readonly jsonSchema?:
+    | {
+        readonly input: (options: {
+          readonly target: string;
+        }) => Record<string, unknown>;
+        readonly output?: (options: {
+          readonly target: string;
+        }) => Record<string, unknown>;
+      }
+    | undefined;
 }
 
 /**
- * Standard Schema v1 specification interface (compatible with Zod, Valibot,
+ * Standard Schema v1 & Standard JSON Schema v1 interface (Zod, Valibot,
  * ArkType, etc.).
  *
  * @see https://standardschema.dev
@@ -58,86 +53,209 @@ export interface ClercSchema<Output = unknown> extends StandardSchemaV1<
   readonly display: string;
 }
 
+export type FlagKind = "boolean" | "counter" | "object" | "array" | "single";
+
+export type TypeConverter = (
+  raw: string,
+  target: string,
+) => unknown | Promise<unknown>;
+
+export interface TypeDescriptor {
+  readonly kind: FlagKind;
+  readonly display: string;
+  readonly parserType: ParserTypeValue;
+  readonly convert?: TypeConverter;
+  readonly toJsonSchema: () => Record<string, unknown>;
+}
+
 export function isStandardSchema(
   value: unknown,
 ): value is StandardSchemaV1<any, any> {
   if (typeof value !== "object" || value === null || !("~standard" in value)) {
     return false;
   }
-  const std = value["~standard"];
+  const std = value["~standard"] as Partial<StandardSchemaV1Props> | null;
 
   return (
     typeof std === "object" &&
     std !== null &&
-    (std as StandardSchemaV1Props).version === 1 &&
-    typeof (std as StandardSchemaV1Props).validate === "function"
+    std.version === 1 &&
+    typeof std.validate === "function"
   );
-}
-
-export async function validateStandardSchema<T>(
-  schema: StandardSchemaV1<unknown, T>,
-  value: unknown,
-): Promise<
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly issues: readonly ValidationIssue[] }
-> {
-  const result = await schema["~standard"].validate(value);
-  if (result.issues) {
-    return {
-      ok: false,
-      issues: result.issues.map((issue) => ({
-        message: issue.message,
-        path: issue.path,
-      })),
-    };
-  }
-
-  return { ok: true, value: result.value };
 }
 
 const parseNumber = (raw: string): number =>
   raw.trim() === "" ? Number.NaN : Number(raw);
 
-/**
- * Single source of truth for converting and validating a raw CLI string value
- * against a TypeFunction, Number constructor, or Standard Schema v1 validator.
- */
-export async function convertValue(
-  type: CoreSingleType,
-  raw: string,
-  target: string,
-): Promise<unknown> {
-  if (isStandardSchema(type)) {
-    const result = await validateStandardSchema(type, raw);
-    if (!result.ok) {
+const convertNumber: TypeConverter = (raw, target) => {
+  const num = parseNumber(raw);
+  if (Number.isNaN(num)) {
+    throw new ValidationError(target, raw, [
+      { message: "expected a valid number" },
+    ]);
+  }
+
+  return num;
+};
+
+const createSchemaConverter =
+  (schema: StandardSchemaV1<any, any>): TypeConverter =>
+  async (raw, target) => {
+    const result = await schema["~standard"].validate(raw);
+    if (result.issues) {
       throw new ValidationError(target, raw, result.issues);
     }
 
     return result.value;
-  }
+  };
 
-  if (type === Number) {
-    const num = parseNumber(raw);
-    if (Number.isNaN(num)) {
-      throw new ValidationError(target, raw, [
-        { message: "expected a valid number" },
-      ]);
+const createFunctionConverter =
+  (fn: TypeFunction<any>): TypeConverter =>
+  (raw, target) => {
+    try {
+      return fn(raw);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      throw new ValidationError(target, raw, [{ message }], error);
     }
+  };
 
-    return num;
+const stringJsonSchema = (): Record<string, unknown> => ({ type: "string" });
+
+const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
+  [
+    Boolean,
+    {
+      kind: "boolean",
+      display: "boolean",
+      parserType: Boolean,
+      toJsonSchema: () => ({ type: "boolean" }),
+    },
+  ],
+  [
+    Number,
+    {
+      kind: "single",
+      display: "number",
+      parserType: String,
+      convert: convertNumber,
+      toJsonSchema: () => ({ type: "number" }),
+    },
+  ],
+  [
+    Object,
+    {
+      kind: "object",
+      display: "key=value",
+      parserType: Object,
+      toJsonSchema: () => ({ type: "object", additionalProperties: true }),
+    },
+  ],
+  [
+    String,
+    {
+      kind: "single",
+      display: "string",
+      parserType: String,
+      toJsonSchema: stringJsonSchema,
+    },
+  ],
+]);
+
+const COUNTER_DESCRIPTOR: TypeDescriptor = {
+  kind: "counter",
+  display: "boolean",
+  parserType: [Boolean],
+  toJsonSchema: () => ({ type: "integer", minimum: 0 }),
+};
+
+function readStandardJsonSchema(
+  schema: StandardSchemaV1<any, any>,
+): Record<string, unknown> {
+  const input = schema["~standard"].jsonSchema?.input;
+  if (!input) {
+    return stringJsonSchema();
   }
-
   try {
-    return type(raw);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const { $schema: _, ...rest } = input({ target: "draft-2020-12" });
 
-    throw new ValidationError(target, raw, [{ message }], error);
+    return rest;
+  } catch {
+    return stringJsonSchema();
   }
 }
 
+function getDisplayLabel(type: CoreSingleType): string {
+  if ("display" in type && typeof type.display === "string") {
+    return type.display;
+  }
+
+  return typeof type === "function" && type.name
+    ? type.name.toLowerCase()
+    : "value";
+}
+
+function describeSingle(type: CoreSingleType): TypeDescriptor {
+  const builtin = BUILTIN_DESCRIPTORS.get(type);
+  if (builtin) {
+    return builtin;
+  }
+
+  const display = getDisplayLabel(type);
+  if (isStandardSchema(type)) {
+    return {
+      kind: "single",
+      display,
+      parserType: String,
+      convert: createSchemaConverter(type),
+      toJsonSchema: () => readStandardJsonSchema(type),
+    };
+  }
+
+  return {
+    kind: "single",
+    display,
+    parserType: String,
+    convert: createFunctionConverter(type),
+    toJsonSchema: stringJsonSchema,
+  };
+}
+
+/**
+ * Single source of truth for classifying any flag or argument type across flag
+ * compilation, help rendering, completions, and MCP JSON Schema export.
+ */
+export function describeType(type: CoreTypeValue): TypeDescriptor {
+  if (!Array.isArray(type)) {
+    return describeSingle(type as CoreSingleType);
+  }
+
+  const inner = type[0] as CoreSingleType;
+  if (inner === Boolean) {
+    return COUNTER_DESCRIPTOR;
+  }
+
+  const innerDesc = describeSingle(inner);
+
+  return {
+    kind: "array",
+    display: `${innerDesc.display}...`,
+    parserType: [String],
+    convert: innerDesc.convert,
+    toJsonSchema: () => ({ type: "array", items: innerDesc.toJsonSchema() }),
+  };
+}
+
+const fail = (
+  message: string,
+): { readonly issues: readonly [StandardSchemaV1Issue] } => ({
+  issues: [{ message }],
+});
+
 const createSchema = <T>(
   display: string,
+  jsonSchema: Readonly<Record<string, unknown>>,
   validate: (raw: string) => StandardSchemaV1Result<T>,
 ): ClercSchema<T> => ({
   display,
@@ -145,60 +263,55 @@ const createSchema = <T>(
     version: 1,
     vendor: "clerc",
     validate: (value) => validate(String(value)),
+    jsonSchema: {
+      input: () => ({ ...jsonSchema }),
+      output: () => ({ ...jsonSchema }),
+    },
   },
 });
 
 export const Enum = <const T extends string>(
   ...values: readonly T[]
 ): ClercSchema<T> =>
-  createSchema<T>(values.join("|"), (raw) => {
-    if (!values.includes(raw as T)) {
-      return {
-        issues: [
-          {
-            message: `expected one of: ${values.map((v) => `'${v}'`).join(", ")}`,
-          },
-        ],
-      };
-    }
-
-    return { value: raw as T };
-  });
+  createSchema<T>(
+    values.join("|"),
+    { type: "string", enum: [...values] },
+    (raw) =>
+      values.includes(raw as T)
+        ? { value: raw as T }
+        : fail(`expected one of: ${values.map((v) => `'${v}'`).join(", ")}`),
+  );
 
 export const Range = (min: number, max: number): ClercSchema<number> =>
-  createSchema<number>(`${min}..${max}`, (raw) => {
-    const num = parseNumber(raw);
-    if (Number.isNaN(num) || num < min || num > max) {
-      return {
-        issues: [{ message: `expected a number between ${min} and ${max}` }],
-      };
-    }
+  createSchema<number>(
+    `${min}..${max}`,
+    { type: "number", minimum: min, maximum: max },
+    (raw) => {
+      const num = parseNumber(raw);
 
-    return { value: num };
-  });
+      return Number.isNaN(num) || num < min || num > max
+        ? fail(`expected a number between ${min} and ${max}`)
+        : { value: num };
+    },
+  );
 
 export const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
-  createSchema<string>(display ?? pattern.toString(), (raw) => {
-    if (!pattern.test(raw)) {
-      return {
-        issues: [{ message: `expected value matching ${pattern}` }],
-      };
-    }
-
-    return { value: raw };
-  });
+  createSchema<string>(
+    display ?? pattern.toString(),
+    { type: "string", pattern: pattern.source },
+    (raw) =>
+      pattern.test(raw)
+        ? { value: raw }
+        : fail(`expected value matching ${pattern}`),
+  );
 
 export const Integer: ClercSchema<number> = createSchema<number>(
   "integer",
+  { type: "integer" },
   (raw) => {
     const num = parseNumber(raw);
-    if (!Number.isInteger(num)) {
-      return {
-        issues: [{ message: "expected an integer" }],
-      };
-    }
 
-    return { value: num };
+    return Number.isInteger(num) ? { value: num } : fail("expected an integer");
   },
 );
 
