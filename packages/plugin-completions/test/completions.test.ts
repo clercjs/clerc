@@ -343,4 +343,60 @@ describe("plugin-completions v2", () => {
 
     expect(terminal.stdoutText()).toBe(":4");
   });
+
+  it("stops flag completion once stopParsing triggers for presets and predicates", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli()
+      .use(completionsPlugin())
+      .command("exec <cmd> [args...]", {
+        stopParsing: "first-positional",
+        flags: { quiet: { type: Boolean, short: "q", description: "Quiet" } },
+        run() {},
+      })
+      .command("dev [args...]", {
+        stopParsing: "unknown-flag",
+        flags: { config: { type: String, description: "Config file" } },
+        run() {},
+      })
+      .command("run <env> <script> [args...]", {
+        stopParsing: (token) =>
+          token.kind === "positional" && token.positionalCount === 1,
+        flags: { verbose: { type: Boolean, description: "Verbose" } },
+        run() {},
+      });
+
+    // first-positional: still completes flags before first positional, stops after
+    await cli.run(["complete", "--", "exec", "--"], { terminal });
+
+    expect(terminal.stdoutText()).toContain("--quiet");
+
+    terminal.clear();
+    await cli.run(["complete", "--", "exec", "git", "--"], { terminal });
+
+    expect(terminal.stdoutText()).toBe(":4");
+
+    // unknown-flag: still completes flags before unknown flag, stops after
+    terminal.clear();
+    await cli.run(["complete", "--", "dev", "--"], { terminal });
+
+    expect(terminal.stdoutText()).toContain("--config");
+
+    terminal.clear();
+    await cli.run(["complete", "--", "dev", "--watch", "--"], { terminal });
+
+    expect(terminal.stdoutText()).toBe(":4");
+
+    // custom predicate: allows flags after 1st positional, stops after 2nd
+    terminal.clear();
+    await cli.run(["complete", "--", "run", "prod", "--"], { terminal });
+
+    expect(terminal.stdoutText()).toContain("--verbose");
+
+    terminal.clear();
+    await cli.run(["complete", "--", "run", "prod", "app.ts", "--"], {
+      terminal,
+    });
+
+    expect(terminal.stdoutText()).toBe(":4");
+  });
 });

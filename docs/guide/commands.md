@@ -6,7 +6,7 @@ title: Commands
 import {
   defaultCommand,
   deprecated,
-  stopAtFirstPositional,
+  stopParsing,
   subcommands,
 } from "./commands.playground.ts";
 </script>
@@ -148,26 +148,43 @@ How Clerc routes `defaultCommand`:
 
 <CliPlayground :scenario="defaultCommand" lang="en" />
 
-## Wrapper Commands (`stopAtFirstPositional`)
+## Wrapper Commands (`stopParsing`)
 
-When building a task runner like `npx` or `exec <cmd> [args...]` where flags after `<cmd>` belong to the child process rather than your CLI, enable `stopAtFirstPositional`:
+When building a task runner or wrapper command where trailing flags belong to a child process rather than your CLI, configure `stopParsing`. Once triggered, the matching token and all remaining tokens are kept as raw positionals and bound to `ctx.args`:
+
+- `"first-positional"`: stop parsing flags at the first positional argument (ideal for `npx`-style `exec <cmd> [args...]`).
+- `"unknown-flag"`: stop parsing flags at the first unrecognized flag and forward it without triggering `UnknownFlagError`.
+- `(token) => boolean`: a stateless predicate receiving `{ kind, raw, index, positionalCount }` for custom rules (such as stopping at the Nth positional or a custom sentinel token).
 
 ```ts
-cli.command("exec <cmd> [args...]", {
-  stopAtFirstPositional: true,
-  flags: {
-    quiet: { type: Boolean, short: "q" },
-  },
-  run(ctx) {
-    // $ acme exec -q git --status -s
-    // ctx.flags.quiet -> true
-    // ctx.args.cmd    -> "git"
-    // ctx.args.args   -> ["--status", "-s"]
-  },
-});
+cli
+  .command("exec <cmd> [args...]", {
+    stopParsing: "first-positional",
+    flags: {
+      quiet: { type: Boolean, short: "q" },
+    },
+    run(ctx) {
+      // $ acme exec -q git --status -s
+      // ctx.flags.quiet -> true
+      // ctx.args.cmd    -> "git"
+      // ctx.args.args   -> ["--status", "-s"]
+    },
+  })
+  .command("run <env> <script> [args...]", {
+    stopParsing: (token) =>
+      token.kind === "positional" && token.positionalCount === 1,
+    flags: { verbose: Boolean },
+    run(ctx) {
+      // $ acme run prod --verbose app.ts --port 3000
+      // ctx.flags.verbose -> true
+      // ctx.args.env      -> "prod"
+      // ctx.args.script   -> "app.ts"
+      // ctx.args.args     -> ["--port", "3000"]
+    },
+  });
 ```
 
-<CliPlayground :scenario="stopAtFirstPositional" lang="en" />
+<CliPlayground :scenario="stopParsing" lang="en" />
 
 ## Lazy-Loaded Handlers
 

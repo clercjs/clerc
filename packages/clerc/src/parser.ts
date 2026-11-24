@@ -23,8 +23,22 @@ export interface ArgvFlagSpec {
   readonly optionalValue?: boolean;
 }
 
+export type StopParsingTokenKind = "known-flag" | "unknown-flag" | "positional";
+
+export interface StopParsingToken {
+  readonly kind: StopParsingTokenKind;
+  readonly raw: string;
+  readonly index: number;
+  readonly positionalCount: number;
+}
+
+export type StopParsingPredicate = (token: StopParsingToken) => boolean;
+
+export type StopParsingOption =
+  "first-positional" | "unknown-flag" | StopParsingPredicate;
+
 export interface ArgvParserOptions {
-  readonly stopAtFirstPositional?: boolean;
+  readonly stopParsing?: StopParsingOption;
 }
 
 export type FlagValues = Record<
@@ -36,6 +50,7 @@ export interface ArgvParseResult {
   readonly positionals: readonly string[];
   readonly doubleDash: readonly string[];
   readonly hasDoubleDash: boolean;
+  readonly stoppedEarly: boolean;
   readonly flags: FlagValues;
   readonly unknown: Readonly<Record<string, RawInputType>>;
   readonly provided: readonly string[];
@@ -225,9 +240,28 @@ export function createArgvParser(
   specs: Iterable<ArgvFlagSpec>,
   options: ArgvParserOptions = {},
 ): ArgvParser {
-  const stopAtFirstPositional = Boolean(options.stopAtFirstPositional);
+  const { stopParsing } = options;
+  const stopAtFirstPositional = stopParsing === "first-positional";
+  const stopAtUnknownFlag = stopParsing === "unknown-flag";
+  const stopPredicate =
+    typeof stopParsing === "function" ? stopParsing : undefined;
   const { byName, byShortCode, byShortExtra, hasDigitShort } =
     buildLookupTables(specs);
+
+  function isKnownShortToken(token: string): boolean {
+    for (let j = 1; j < token.length; j++) {
+      const code = token.charCodeAt(j);
+      const flag = code < 128 ? byShortCode?.[code] : byShortExtra?.[token[j]];
+      if (flag === undefined) {
+        return false;
+      }
+      if (isValueKind(flag.kind)) {
+        return true;
+      }
+    }
+
+    return true;
+  }
 
   const isShortStart = (code: number): boolean =>
     isLetter(code) ||
@@ -269,6 +303,31 @@ export function createArgvParser(
     let positionals: string[] | undefined;
     let doubleDash: readonly string[] = EMPTY_STRINGS;
     let hasDoubleDash = false;
+    let stoppedEarly = false;
+
+    function shouldStop(
+      kind: StopParsingTokenKind,
+      raw: string,
+      index: number,
+    ): boolean {
+      if (!stopPredicate) {
+        return false;
+      }
+
+      return stopPredicate({
+        kind,
+        raw,
+        index,
+        positionalCount: positionals?.length ?? 0,
+      });
+    }
+
+    function stopAt(index: number): void {
+      stoppedEarly = true;
+      positionals = positionals
+        ? [...positionals, ...args.slice(index)]
+        : args.slice(index);
+    }
     let unknown: Record<string, RawInputType> | undefined;
     let missingValueFlags: string[] | undefined;
     let missingValueCandidates: Record<string, string> | undefined;
@@ -332,10 +391,21 @@ export function createArgvParser(
           const resolved = resolveLongFlag(name);
 
           if (!resolved) {
+            if (stopAtUnknownFlag || shouldStop("unknown-flag", current, i)) {
+              stopAt(i);
+
+              break;
+            }
             (unknown ??= {})[camelCase(name)] =
               eq === -1 ? true : current.slice(eq + 1);
 
             continue;
+          }
+
+          if (shouldStop("known-flag", current, i)) {
+            stopAt(i);
+
+            break;
           }
 
           const {
@@ -379,6 +449,18 @@ export function createArgvParser(
         }
 
         if (isShortStart(c1)) {
+          if (stopAtUnknownFlag || stopPredicate !== undefined) {
+            const known = isKnownShortToken(current);
+            if (
+              (!known && stopAtUnknownFlag) ||
+              shouldStop(known ? "known-flag" : "unknown-flag", current, i)
+            ) {
+              stopAt(i);
+
+              break;
+            }
+          }
+
           for (let j = 1; j < curLen; j++) {
             const code = current.charCodeAt(j);
             const flag =
@@ -419,10 +501,8 @@ export function createArgvParser(
         }
       }
 
-      if (stopAtFirstPositional) {
-        positionals = positionals
-          ? [...positionals, ...args.slice(i)]
-          : args.slice(i);
+      if (stopAtFirstPositional || shouldStop("positional", current, i)) {
+        stopAt(i);
 
         break;
       }
@@ -433,6 +513,7 @@ export function createArgvParser(
       positionals: positionals ?? EMPTY_STRINGS,
       doubleDash,
       hasDoubleDash,
+      stoppedEarly,
       flags,
       unknown: unknown ?? EMPTY_UNKNOWN,
       provided,

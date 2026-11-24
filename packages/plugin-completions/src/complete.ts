@@ -81,7 +81,7 @@ export async function resolveCompletions(
   const activeFlags = getScopeFlags(targetNode, model, true);
   const flagByName = new Map(activeFlags.map((flag) => [flag.name, flag]));
   const targetParser = createArgvParser(flagsToSpecs(activeFlags), {
-    stopAtFirstPositional: targetNode.command?.stopAtFirstPositional,
+    stopParsing: targetNode.command?.stopParsing,
   });
   const parsed = targetParser.parse(remainingPrior);
   const afterDoubleDash = parsed.hasDoubleDash;
@@ -147,10 +147,7 @@ export async function resolveCompletions(
   const usedArgs = new Set(Object.keys(resolvedArgs));
   const conflicted = collectConflictedTargets(activeRules, usedFlags, usedArgs);
 
-  const stoppedByFirstPositional =
-    Boolean(targetNode.command?.stopAtFirstPositional) && words.length > 0;
-
-  if (!afterDoubleDash && !stoppedByFirstPositional) {
+  if (!afterDoubleDash && !parsed.stoppedEarly) {
     const inlineHit = matchInlineFlagValue(
       targetParser,
       flagByName,

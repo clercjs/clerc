@@ -277,7 +277,7 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     });
 
     const parser = createArgvParser([...userFlags.specs, ...builtins.specs], {
-      stopAtFirstPositional: cmd?.stopAtFirstPositional,
+      stopParsing: cmd?.stopParsing,
     });
     const compiledArgs = cmd ? compileArgs(cmd.argTokens, cmd.args) : undefined;
     const argsByName = new Map(

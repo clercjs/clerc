@@ -400,24 +400,69 @@ describe("Clerc execution pipeline", () => {
     ).rejects.toThrow(UnknownFlagError);
   });
 
-  it("supports stopAtFirstPositional for command wrappers without --", async () => {
-    let captured: any;
+  it("supports stopParsing presets and stateless predicates for wrapper commands", async () => {
+    const runs: any[] = [];
     const terminal = createMemoryTerminal();
     const cli = createTestBaseCli();
-    cli.command("exec <cmd> [args...]", {
-      stopAtFirstPositional: true,
-      flags: { quiet: { type: Boolean, short: "q" } },
-      run(ctx) {
-        captured = { quiet: ctx.flags.quiet, args: ctx.args };
-      },
-    });
+    cli
+      .command("exec <cmd> [args...]", {
+        stopParsing: "first-positional",
+        flags: { quiet: { type: Boolean, short: "q" } },
+        run(ctx) {
+          runs.push({ cmd: "exec", quiet: ctx.flags.quiet, args: ctx.args });
+        },
+      })
+      .command("dev [args...]", {
+        stopParsing: "unknown-flag",
+        flags: { config: String },
+        run(ctx) {
+          runs.push({ cmd: "dev", config: ctx.flags.config, args: ctx.args });
+        },
+      })
+      .command("run <env> <script> [args...]", {
+        stopParsing: (token) =>
+          token.kind === "positional" && token.positionalCount === 1,
+        flags: { verbose: Boolean },
+        run(ctx) {
+          runs.push({
+            cmd: "run",
+            verbose: ctx.flags.verbose,
+            args: ctx.args,
+          });
+        },
+      });
 
     await cli.run(["exec", "-q", "git", "--status", "-s"], { terminal });
-
-    expect(captured).toEqual({
-      quiet: true,
-      args: { cmd: "git", args: ["--status", "-s"] },
+    await cli.run(["dev", "--config", "a.ts", "--port", "3000", "--open"], {
+      terminal,
     });
+    await cli.run(["run", "prod", "--verbose", "app.ts", "--port", "3000"], {
+      terminal,
+    });
+    await cli.run(["run", "dev", "index.ts", "--watch"], { terminal });
+
+    expect(runs).toEqual([
+      {
+        cmd: "exec",
+        quiet: true,
+        args: { cmd: "git", args: ["--status", "-s"] },
+      },
+      {
+        cmd: "dev",
+        config: "a.ts",
+        args: { args: ["--port", "3000", "--open"] },
+      },
+      {
+        cmd: "run",
+        verbose: true,
+        args: { env: "prod", script: "app.ts", args: ["--port", "3000"] },
+      },
+      {
+        cmd: "run",
+        verbose: false,
+        args: { env: "dev", script: "index.ts", args: ["--watch"] },
+      },
+    ]);
   });
 
   it("supports flag aliases, array delimiter, optional-value implicitValue, arg default/env, and dash-value hints", async () => {

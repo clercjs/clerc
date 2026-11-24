@@ -77,16 +77,114 @@ describe("core argv parser & scanner", () => {
     expect(res.doubleDash).toEqual(["after-dd"]);
   });
 
-  it("supports stopAtFirstPositional and scan() command-tree skipping", () => {
+  it("supports stopParsing presets, stateless predicates, and scan() command-tree skipping", () => {
     const wrapper = createArgvParser(
       [{ key: "quiet", kind: "boolean", short: "q" }],
-      { stopAtFirstPositional: true },
+      { stopParsing: "first-positional" },
     );
 
-    const wrapRes = wrapper.parse(["-q", "git", "--status", "-s"]);
+    const wrapRes = wrapper.parse([
+      "-q",
+      "git",
+      "--status",
+      "-s",
+      "--",
+      "file",
+    ]);
 
     expect(wrapRes.flags).toEqual({ quiet: true });
-    expect(wrapRes.positionals).toEqual(["git", "--status", "-s"]);
+    expect(wrapRes.positionals).toEqual([
+      "git",
+      "--status",
+      "-s",
+      "--",
+      "file",
+    ]);
+    expect(wrapRes.hasDoubleDash).toBeFalsy();
+    expect(wrapRes.stoppedEarly).toBeTruthy();
+
+    const noPosRes = wrapper.parse(["-q"]);
+
+    expect(noPosRes.flags).toEqual({ quiet: true });
+    expect(noPosRes.positionals).toEqual([]);
+    expect(noPosRes.stoppedEarly).toBeFalsy();
+
+    const unknownStopper = createArgvParser(
+      [
+        { key: "quiet", kind: "boolean", short: "q" },
+        { key: "port", kind: "single", short: "p" },
+        { key: "config", kind: "single" },
+      ],
+      { stopParsing: "unknown-flag" },
+    );
+
+    const unknownLongRes = unknownStopper.parse([
+      "--config",
+      "a.ts",
+      "--watch",
+      "--port",
+      "3000",
+    ]);
+
+    expect(unknownLongRes.flags).toEqual({ config: "a.ts" });
+    expect(unknownLongRes.positionals).toEqual(["--watch", "--port", "3000"]);
+    expect(unknownLongRes.unknown).toEqual({});
+    expect(unknownLongRes.stoppedEarly).toBeTruthy();
+
+    const unknownClusterRes = unknownStopper.parse([
+      "-p8080",
+      "-qx",
+      "archive.tar",
+    ]);
+
+    expect(unknownClusterRes.flags).toEqual({ port: "8080" });
+    expect(unknownClusterRes.positionals).toEqual(["-qx", "archive.tar"]);
+    expect(unknownClusterRes.unknown).toEqual({});
+    expect(unknownClusterRes.stoppedEarly).toBeTruthy();
+
+    const secondPosStopper = createArgvParser(
+      [{ key: "verbose", kind: "boolean", short: "v" }],
+      {
+        stopParsing: (token) =>
+          token.kind === "positional" && token.positionalCount === 1,
+      },
+    );
+
+    const run1 = secondPosStopper.parse([
+      "prod",
+      "--verbose",
+      "app.ts",
+      "--port",
+      "3000",
+    ]);
+    const run2 = secondPosStopper.parse(["dev", "index.ts", "--watch"]);
+
+    expect(run1.flags).toEqual({ verbose: true });
+    expect(run1.positionals).toEqual(["prod", "app.ts", "--port", "3000"]);
+    expect(run1.stoppedEarly).toBeTruthy();
+    expect(run2.flags).toEqual({});
+    expect(run2.positionals).toEqual(["dev", "index.ts", "--watch"]);
+    expect(run2.stoppedEarly).toBeTruthy();
+
+    const sentinelStopper = createArgvParser(
+      [{ key: "stop", kind: "boolean" }],
+      {
+        stopParsing: (token) =>
+          token.raw === ":::" ||
+          (token.kind === "known-flag" && token.raw === "--stop"),
+      },
+    );
+
+    expect(sentinelStopper.parse([":::", "--stop"]).positionals).toEqual([
+      ":::",
+      "--stop",
+    ]);
+
+    const knownStopRes = sentinelStopper.parse(["--stop", "--other"]);
+
+    expect(knownStopRes.flags).toEqual({});
+    expect(knownStopRes.positionals).toEqual(["--stop", "--other"]);
+    expect(knownStopRes.stoppedEarly).toBeTruthy();
 
     const scanner = createArgvParser([
       { key: "verbose", kind: "counter", short: "v" },

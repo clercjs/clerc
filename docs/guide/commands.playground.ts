@@ -62,27 +62,45 @@ export const defaultCommand: PlaygroundScenario = {
   ],
 };
 
-export const stopAtFirstPositional: PlaygroundScenario = {
+export const stopParsing: PlaygroundScenario = {
   createCli: () =>
-    clerc({ name: "vite", version: "2.0.0" }).command("exec <cmd> [args...]", {
-      description: "Run tool forwarding child flags",
-      stopAtFirstPositional: true,
-      flags: {
-        quiet: {
-          type: Boolean,
-          short: "q",
-          description: "Suppress wrapper output",
+    clerc({ name: "vite", version: "2.0.0" })
+      .command("exec <cmd> [args...]", {
+        description: "Run tool forwarding child flags",
+        stopParsing: "first-positional",
+        flags: {
+          quiet: {
+            type: Boolean,
+            short: "q",
+            description: "Suppress wrapper output",
+          },
         },
-      },
-      run({ args, flags, log }) {
-        log.info(`cmd=${args.cmd}, quiet=${String(flags.quiet)}`, {
-          forwardedArgs: args.args,
-        });
-      },
-    }),
+        run({ args, flags, log }) {
+          log.info(`cmd=${args.cmd}, quiet=${String(flags.quiet)}`, {
+            forwardedArgs: args.args,
+          });
+        },
+      })
+      .command("dev [args...]", {
+        description: "Forward unknown flags to the underlying dev server",
+        stopParsing: "unknown-flag",
+        flags: {
+          config: {
+            type: String,
+            short: "c",
+            description: "Config file path",
+          },
+        },
+        run({ args, flags, log }) {
+          log.info(`config=${flags.config ?? "default"}`, {
+            forwardedArgs: args.args,
+          });
+        },
+      }),
   presets: [
     { cmd: "exec -q git --status -s" },
     { cmd: "exec node -e 'console.log(1)'" },
+    { cmd: "dev -c vite.config.ts --port 3000 --open" },
   ],
 };
 

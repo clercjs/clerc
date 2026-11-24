@@ -10,7 +10,7 @@ import type {
   MergedFlags,
 } from "./flags";
 import type { HelpSectionRenderers } from "./help/renderer";
-import type { RawInputType } from "./parser";
+import type { RawInputType, StopParsingOption } from "./parser";
 import type { RuleDescriptor, RulesFactory } from "./rules";
 import type { Terminal } from "./terminal";
 import type { MaybeArray, MaybeAsyncGetter, Prettify } from "./utils";
@@ -205,7 +205,7 @@ export interface CommandOptions<
     InferCommandArgs<Spec, NoInfer<Args>>,
     MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
   >;
-  readonly stopAtFirstPositional?: boolean;
+  readonly stopParsing?: StopParsingOption;
   readonly standalone?: boolean;
   readonly group?: string;
   readonly hidden?: boolean;

@@ -6,7 +6,7 @@ title: 命令
 import {
   defaultCommand,
   deprecated,
-  stopAtFirstPositional,
+  stopParsing,
   subcommands,
 } from "../../guide/commands.playground.ts";
 </script>
@@ -148,26 +148,43 @@ cli.command("build [root]", {
 
 <CliPlayground :scenario="defaultCommand" lang="zh" />
 
-## 透传子命令参数（`stopAtFirstPositional`）
+## 透传子命令参数（`stopParsing`）
 
-编写类似 `npx` 或 `exec <cmd> [args...]` 的命令时，开启 `stopAtFirstPositional: true` 会在遇到第一个位置参数后停止解析选项，把后续 `--flag` 原样传给目标程序：
+编写类似 `npx` 或透传包装命令时，可以通过 `stopParsing` 指定何时停止解析选项。一旦触发，从该 token 起的所有剩余参数都会作为原始位置参数绑定到 `ctx.args`：
+
+- `"first-positional"`：遇到第一个位置参数时停止解析选项（适合 `exec <cmd> [args...]`）。
+- `"unknown-flag"`：遇到第一个未知选项时停止解析，原样透传后续参数，不触发 `UnknownFlagError`。
+- `(token) => boolean`：无状态判断函数，接收 `{ kind, raw, index, positionalCount }`，可用于在第 N 个位置参数或自定义分隔符处截停。
 
 ```ts
-cli.command("exec <cmd> [args...]", {
-  stopAtFirstPositional: true,
-  flags: {
-    quiet: { type: Boolean, short: "q" },
-  },
-  run(ctx) {
-    // $ acme exec -q git --status -s
-    // ctx.flags.quiet -> true
-    // ctx.args.cmd    -> "git"
-    // ctx.args.args   -> ["--status", "-s"]
-  },
-});
+cli
+  .command("exec <cmd> [args...]", {
+    stopParsing: "first-positional",
+    flags: {
+      quiet: { type: Boolean, short: "q" },
+    },
+    run(ctx) {
+      // $ acme exec -q git --status -s
+      // ctx.flags.quiet -> true
+      // ctx.args.cmd    -> "git"
+      // ctx.args.args   -> ["--status", "-s"]
+    },
+  })
+  .command("run <env> <script> [args...]", {
+    stopParsing: (token) =>
+      token.kind === "positional" && token.positionalCount === 1,
+    flags: { verbose: Boolean },
+    run(ctx) {
+      // $ acme run prod --verbose app.ts --port 3000
+      // ctx.flags.verbose -> true
+      // ctx.args.env      -> "prod"
+      // ctx.args.script   -> "app.ts"
+      // ctx.args.args     -> ["--port", "3000"]
+    },
+  });
 ```
 
-<CliPlayground :scenario="stopAtFirstPositional" lang="zh" />
+<CliPlayground :scenario="stopParsing" lang="zh" />
 
 ## 懒加载与弃用提示
 

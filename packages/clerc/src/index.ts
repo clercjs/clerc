@@ -99,6 +99,10 @@ export type {
   InvalidFlagValue,
   ScanCallback,
   ScanResult,
+  StopParsingOption,
+  StopParsingPredicate,
+  StopParsingToken,
+  StopParsingTokenKind,
 } from "./parser";
 export {
   IMPLICIT_FLAG_VALUE,
