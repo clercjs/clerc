@@ -27,10 +27,10 @@ export type Theme = {
 } & Readonly<Record<ThemeToken, (text: string) => string>>;
 
 export const defaultThemeStyles: ThemeStyleMap = {
-  brand: ["bold", "magenta"],
+  brand: "bold",
   heading: ["bold", "underline"],
   command: "bold",
-  flag: "cyan",
+  flag: "bold",
   placeholder: "gray",
   muted: "gray",
   error: ["bold", "red"],
