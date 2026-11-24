@@ -1,4 +1,4 @@
-import { ClercError, Types, plugin } from "clerc";
+import { Types, plugin } from "clerc";
 
 import type {
   ResolveCompletionsOptions,
@@ -33,7 +33,7 @@ const supportedShellEnum = Types.Enum(...SUPPORTED_SHELLS);
 
 export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
   plugin("clerc:completions")
-    .command("completions [shell]", {
+    .command("completions <shell>", {
       description: "Generate shell completion scripts",
       standalone: true,
       args: {
@@ -42,31 +42,10 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
           type: supportedShellEnum,
         },
       },
-      flags: {
-        shell: {
-          description: "Shell type",
-          type: supportedShellEnum,
-        },
-      },
       run(ctx) {
-        const shell = ctx.args.shell ?? ctx.flags.shell;
-
-        if (!shell) {
-          throw new ClercError(
-            "shell type is required (zsh, bash, fish, or powershell)",
-            {
-              code: "ERR_MISSING_ARGUMENT",
-              exitCode: 2,
-              hints: [
-                `run '${ctx.model.meta.name} completions zsh' or pass '--shell zsh'`,
-              ],
-            },
-          );
-        }
-
         ctx.terminal.stdout(
           renderCompletionScript(
-            shell,
+            ctx.args.shell,
             ctx.model.meta.name,
             options.executable ?? ctx.model.meta.name,
           ),

@@ -272,6 +272,75 @@ describe("plugin-completions v2", () => {
 
     expect(res.ok).toBeFalsy();
     expect(res.exitCode).toBe(2);
-    expect(terminal.stderrText()).toContain("shell type is required");
+    expect(terminal.stderrText()).toContain(
+      "missing required argument '<shell>'",
+    );
+  });
+
+  it("omits already-used non-repeatable flags and rule conflicts (flag + arg), keeps counters/arrays, and parses defaultCommand flags", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli({ defaultCommand: "deploy" })
+      .use(completionsPlugin())
+      .command("deploy [env]", {
+        args: { env: Types.Enum("staging", "prod") },
+        flags: {
+          port: { type: Number, short: "p", description: "Server port" },
+          all: { type: Boolean, description: "Deploy all environments" },
+          json: { type: Boolean, description: "JSON" },
+          yaml: { type: Boolean, description: "YAML" },
+          tags: {
+            type: String,
+            multiple: true,
+            short: "t",
+            description: "Tags",
+          },
+          verbose: { type: Types.Counter, short: "v", description: "Verbose" },
+        },
+        rules: ({ exclusive, oneOf, flag, arg }) => [
+          exclusive(flag("json"), flag("yaml")),
+          oneOf(arg("env"), flag("all")),
+        ],
+        run() {},
+      });
+
+    // Already-used single/boolean flags and their exclusive partners are omitted
+    await cli.run(["complete", "--", "deploy", "--json", "--quiet", "--"], {
+      terminal,
+    });
+    const out = terminal.stdoutText();
+
+    expect(out).not.toContain("--json");
+    expect(out).not.toContain("--yaml");
+    expect(out).not.toContain("--quiet");
+    expect(out).toContain("--tags");
+    expect(out).toContain("--verbose");
+    expect(out).toContain("--port");
+
+    // Positional arg provided -> conflicting --all flag is hidden
+    terminal.clear();
+    await cli.run(["complete", "--", "deploy", "prod", "--"], { terminal });
+
+    expect(terminal.stdoutText()).not.toContain("--all");
+
+    // --all flag provided -> conflicting [env] positional completions are skipped
+    terminal.clear();
+    await cli.run(["complete", "--", "deploy", "--all", ""], { terminal });
+
+    expect(terminal.stdoutText()).toBe(":4");
+
+    // Local flag before positional on defaultCommand is consumed instead of treated as positional <env>
+    terminal.clear();
+    await cli.run(["complete", "--", "-p", "8080", ""], { terminal });
+
+    expect(terminal.stdoutText()).toContain("staging");
+    expect(terminal.stdoutText()).toContain("prod");
+
+    // Trailing missing-value flag after an earlier flag triggers value completion cleanly
+    terminal.clear();
+    await cli.run(["complete", "--", "deploy", "--json", "-p", ""], {
+      terminal,
+    });
+
+    expect(terminal.stdoutText()).toBe(":4");
   });
 });
