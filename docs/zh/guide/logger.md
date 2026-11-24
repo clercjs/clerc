@@ -4,7 +4,9 @@ title: 日志与终端 UI
 
 # 日志与终端 UI
 
-每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 与 `@clerc/theme` 驱动），也可以在任意模块中通过 `createLogger()` 独立创建。
+每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 与 `@clerc/theme` 驱动），默认自动挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` / `-v` 会自动让位，也可通过 `verbosity: false` 关闭），还可以在任意模块中通过 `createLogger()` 独立创建。
+
+<CliPlayground preset="logger" lang="zh" />
 
 ## 对齐左脊排版与对象 / Error 渲染
 

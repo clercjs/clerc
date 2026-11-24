@@ -6,6 +6,8 @@ title: 测试与编程式调用
 
 Clerc 核心执行管线完全不依赖全局 `process.argv`、`process.env` 或 `process.exit()`，所有命令、中间件和错误诊断都可以在内存中直接做单元测试。
 
+<CliPlayground preset="testing" lang="zh" />
+
 ## 使用 `createMemoryTerminal()` 编写测试
 
 ```ts

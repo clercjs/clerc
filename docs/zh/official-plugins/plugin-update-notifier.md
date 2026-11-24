@@ -1,15 +1,30 @@
 ---
-title: "updateNotifierPlugin (内置)"
+title: "@clerc/plugin-update-notifier"
 ---
 
-# `updateNotifierPlugin`
+# `@clerc/plugin-update-notifier`
 
-直接内置于 `clerc` 核心包中，零第三方依赖。在命令运行期间后台并发检查 npm 最新版本，结果缓存至 `$XDG_CACHE_HOME/clerc-update-notifier`，并在命令结束后通过 `ctx.log.box.warn` 输出升级提示面板，绝不拖慢高频短命令。
+零第三方依赖的后台 npm 更新检查插件。在命令运行期间并发查询最新版本，结果缓存至 `$XDG_CACHE_HOME/clerc-update-notifier`，并在命令结束后通过 `ctx.log.box.warn` 输出升级提示面板，绝不拖慢高频短命令。
+
+## 安装
+
+::: code-group
+
+```sh [pnpm]
+pnpm add @clerc/plugin-update-notifier
+```
+
+```sh [npm]
+npm install @clerc/plugin-update-notifier
+```
+
+:::
 
 ## 用法
 
 ```ts
-import { clerc, updateNotifierPlugin } from "clerc";
+import { updateNotifierPlugin } from "@clerc/plugin-update-notifier";
+import { clerc } from "clerc";
 
 const cli = clerc({
   name: "acme-cli",
@@ -28,5 +43,6 @@ const cli = clerc({
 ## 默认行为
 
 - 在 CI 环境（存在 `CI` 环境变量）、设置了 `NO_UPDATE_NOTIFIER` 或非交互终端（`!ctx.terminal.isTTY`）下自动跳过。
+- 用户传入 `-q, --quiet` 时自动静默。
 - 使用 `{ enforce: "pre" }` 包裹最外层：进入时最早发起请求，退出时在所有其他中间件清理完毕后再打印面板。
 - `postRunGraceMs`（默认 `250ms`）使用 `unref()` 定时器，即使网络缓慢也绝不阻塞已执行完的命令退出。

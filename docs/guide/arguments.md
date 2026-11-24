@@ -6,6 +6,8 @@ title: Arguments
 
 Positional arguments are declared directly in the command signature string using angle brackets `<required>` and square brackets `[optional]`.
 
+<CliPlayground preset="arguments" lang="en" />
+
 ## Signature Syntax
 
 | Token           | Meaning                       | Inferred `ctx.args` type (default `String`) |

@@ -4,7 +4,7 @@ title: 快速开始
 
 # 快速开始
 
-Clerc 是面向 **Node.js 24+** 的纯 ESM 命令行框架。`--help`、`--version`、未知选项拦截、拼写相近提示与结构化终端日志均直接内置在 `clerc` 核心包中，无需堆叠基础插件。
+Clerc 是面向 **Node.js 24+** 的纯 ESM 命令行框架。`--help`、`--version`、`-v`/`-q` 日志级别控制、未知选项拦截、拼写相近提示与结构化终端日志均直接内置在 `clerc` 核心包中，无需堆叠基础插件。
 
 ## 安装
 
@@ -88,9 +88,7 @@ await cli.runMain();
 
 <TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
-## 在线交互沙盒
-
-直接在这里尝试运行 `--help`、组合不同选项或故意输错命令名：
+## 在线交互演示
 
 <CliPlayground lang="zh" />
 
@@ -105,10 +103,11 @@ await cli.runMain();
 
 按需安装你需要的包：
 
-| 包名                                                                   | 用途                                                                                                            |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `clerc`                                                                | 核心路由器、POSIX 参数解析器、帮助与诊断系统、Standard Schema v1、`verbosityPlugin` 与 `updateNotifierPlugin`。 |
-| `@clerc/logger`                                                        | 独立终端日志库（已由 `clerc` 重导出为 `ctx.log` 与 `createLogger`）。                                           |
-| `@clerc/theme`                                                         | 零依赖语义化 ANSI 主题与终端能力检测（已由 `clerc` 重导出）。                                                   |
-| [`@clerc/plugin-completions`](/zh/official-plugins/plugin-completions) | 生成并驱动 Bash、Zsh、Fish 与 PowerShell 自动补全。                                                             |
-| [`@clerc/plugin-mcp`](/zh/official-plugins/plugin-mcp)                 | 将任意 CLI 暴露为 Model Context Protocol stdio 服务器（`<cli> mcp`）。                                          |
+| 包名                                                                           | 用途                                                                                     |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `clerc`                                                                        | 核心路由器、POSIX 参数解析器、帮助与诊断系统、内置 `-v`/`-q` 控制与 Standard Schema v1。 |
+| `@clerc/logger`                                                                | 独立终端日志库（已由 `clerc` 重导出为 `ctx.log` 与 `createLogger`）。                    |
+| `@clerc/theme`                                                                 | 零依赖语义化 ANSI 主题与终端能力检测（已由 `clerc` 重导出）。                            |
+| [`@clerc/plugin-completions`](/zh/official-plugins/plugin-completions)         | 生成并驱动 Bash、Zsh、Fish 与 PowerShell 自动补全。                                      |
+| [`@clerc/plugin-mcp`](/zh/official-plugins/plugin-mcp)                         | 将任意 CLI 暴露为 Model Context Protocol stdio 服务器（`<cli> mcp`）。                   |
+| [`@clerc/plugin-update-notifier`](/zh/official-plugins/plugin-update-notifier) | 零依赖后台 npm 版本更新检查与升级提示面板。                                              |

@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { FlagsDefinition, Logger, StandardSchemaV1 } from "../src";
-import { Types, clerc, plugin, verbosityPlugin } from "../src";
+import { Types, clerc, plugin } from "../src";
 import type { ExtractArgNames } from "../src/types";
 
 import "@clerc/plugin-completions";
@@ -69,20 +69,16 @@ describe("core v2 route-signature & plugin types", () => {
     cli.command("augmented", {
       meta: {
         mcp: { idempotent: true, readOnly: true },
-        completions: { show: false },
         customKey: 123,
       },
+      complete: false,
       flags: {
         env: {
           type: String,
-          meta: {
-            completions: {
-              show: true,
-              handler(complete) {
-                expectTypeOf(complete).toBeFunction();
-                complete("prod", "Production");
-              },
-            },
+          complete({ current }) {
+            expectTypeOf(current).toEqualTypeOf<string>();
+
+            return [{ value: "prod", description: "Production" }];
           },
         },
       },
@@ -206,7 +202,8 @@ describe("core v2 route-signature & plugin types", () => {
             implicitValue: "always",
           },
           tags: {
-            type: [String],
+            type: String,
+            multiple: true,
             delimiter: ",",
             aliases: ["tag"],
             default: ["latest"],
@@ -214,9 +211,11 @@ describe("core v2 route-signature & plugin types", () => {
           port: { type: Number, default: () => 3000 },
           cache: { type: Boolean, default: () => true },
           modes: {
-            type: [Types.Enum("fast", "safe")],
+            type: Types.Enum("fast", "safe"),
+            multiple: true,
             default: ["fast"],
           },
+          verbose: Types.Counter,
         },
         run(ctx) {
           expectTypeOf(ctx.args.region).toEqualTypeOf<string>();
@@ -229,24 +228,21 @@ describe("core v2 route-signature & plugin types", () => {
           expectTypeOf(ctx.flags.port).toEqualTypeOf<number>();
           expectTypeOf(ctx.flags.cache).toEqualTypeOf<boolean>();
           expectTypeOf(ctx.flags.modes).toEqualTypeOf<("fast" | "safe")[]>();
+          expectTypeOf(ctx.flags.verbose).toEqualTypeOf<number>();
         },
       },
     );
   });
-  it("provides built-in ctx.help, ctx.log, and accumulates plugin flags cleanly", () => {
-    clerc({ name: "app", version: "1.0.0" })
-      .use(verbosityPlugin())
-      .command("build", {
-        run(ctx) {
-          expectTypeOf(ctx.help.render).toBeFunction();
-          expectTypeOf(ctx.help.print).toBeFunction();
-          expectTypeOf(ctx.log).toEqualTypeOf<Logger>();
-          expectTypeOf(ctx.flags.quiet).toEqualTypeOf<boolean>();
-          expectTypeOf(ctx.flags.verbose).toEqualTypeOf<number>();
-          expectTypeOf<
-            ExtractArgNames<"exec <cmd> -- [args...]">
-          >().toEqualTypeOf<"cmd" | "args">();
-        },
-      });
+  it("provides built-in ctx.help, ctx.log, and extracts double-dash arg names", () => {
+    clerc({ name: "app", version: "1.0.0" }).command("build", {
+      run(ctx) {
+        expectTypeOf(ctx.help.render).toBeFunction();
+        expectTypeOf(ctx.help.print).toBeFunction();
+        expectTypeOf(ctx.log).toEqualTypeOf<Logger>();
+        expectTypeOf<
+          ExtractArgNames<"exec <cmd> -- [args...]">
+        >().toEqualTypeOf<"cmd" | "args">();
+      },
+    });
   });
 });

@@ -6,6 +6,8 @@ title: Logger & Terminal UI
 
 Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/theme`), and you can also create standalone loggers anywhere via `createLogger()`.
 
+<CliPlayground preset="logger" lang="en" />
+
 ## Aligned Rail Typography
 
 All log methods (`step`, `info`, `success`, `warn`, `error`, `debug`) align along a 5-character right-aligned label column with a muted `│` detail gutter. Extra arguments are formatted automatically: strings split into lines, objects use `node:util` `inspect`, and `Error` instances render clean stack frames plus `Caused by:` chains.
@@ -80,4 +82,4 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
 
 ## Runtime Level, JSON Format & Custom Theme
 
-Mutate `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime - child loggers share the same state. Customize colors globally via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
+By default, `clerc()` wires built-in `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding cleanly if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also mutate `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.

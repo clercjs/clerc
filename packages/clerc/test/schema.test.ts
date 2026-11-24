@@ -38,7 +38,8 @@ describe("Types and Standard Schema v1", () => {
       args: { env: Types.Enum("dev", "prod") },
       flags: {
         port: { type: Types.Range(1, 65_535) },
-        tag: { type: [Types.Regex(/^v\d+$/g, "v<n>")] },
+        tag: { type: Types.Regex(/^v\d+$/g, "v<n>"), multiple: true },
+        verbose: { type: Types.Counter, short: "v" },
         workers: { type: Types.Integer },
       },
       run(ctx) {
@@ -58,13 +59,14 @@ describe("Types and Standard Schema v1", () => {
         "v3",
         "--workers",
         "4",
+        "-vv",
       ],
       { terminal },
     );
 
     expect(captured).toEqual({
       args: { env: "prod" },
-      flags: { port: 8080, tag: ["v2", "v3"], workers: 4 },
+      flags: { port: 8080, tag: ["v2", "v3"], workers: 4, verbose: 2 },
     });
 
     await expect(

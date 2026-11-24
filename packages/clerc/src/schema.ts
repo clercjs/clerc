@@ -1,5 +1,5 @@
 import { InvalidSchemaError, ValidationError } from "./errors";
-import type { SingleType, TypeFunction, TypeValue } from "./types";
+import type { SingleType, TypeFunction } from "./types";
 
 export interface StandardSchemaV1Issue {
   readonly message: string;
@@ -49,6 +49,10 @@ export interface ClercSchema<Output = unknown> extends StandardSchemaV1<
   Output
 > {
   readonly display: string;
+}
+
+export interface CounterSchema extends ClercSchema<number> {
+  readonly "~kind": "counter";
 }
 
 export type FlagKind = "boolean" | "counter" | "array" | "single";
@@ -120,40 +124,6 @@ const createFunctionConverter =
 
 const stringJsonSchema = (): Record<string, unknown> => ({ type: "string" });
 
-const BUILTIN_DESCRIPTORS = new Map<unknown, TypeDescriptor>([
-  [
-    Boolean,
-    {
-      kind: "boolean",
-      display: "boolean",
-      toJsonSchema: () => ({ type: "boolean" }),
-    },
-  ],
-  [
-    Number,
-    {
-      kind: "single",
-      display: "number",
-      convert: convertNumber,
-      toJsonSchema: () => ({ type: "number" }),
-    },
-  ],
-  [
-    String,
-    {
-      kind: "single",
-      display: "string",
-      toJsonSchema: stringJsonSchema,
-    },
-  ],
-]);
-
-const COUNTER_DESCRIPTOR: TypeDescriptor = {
-  kind: "counter",
-  display: "boolean",
-  toJsonSchema: () => ({ type: "integer", minimum: 0 }),
-};
-
 function readStandardJsonSchema(
   schema: StandardSchemaV1<any, any>,
 ): Record<string, unknown> {
@@ -181,13 +151,41 @@ function getDisplayLabel(type: SingleType): string {
 }
 
 function describeSingle(type: SingleType): TypeDescriptor {
-  const builtin = BUILTIN_DESCRIPTORS.get(type);
-  if (builtin) {
-    return builtin;
+  switch (type) {
+    case Boolean: {
+      return {
+        kind: "boolean",
+        display: "boolean",
+        toJsonSchema: () => ({ type: "boolean" }),
+      };
+    }
+    case Number: {
+      return {
+        kind: "single",
+        display: "number",
+        convert: convertNumber,
+        toJsonSchema: () => ({ type: "number" }),
+      };
+    }
+    case String: {
+      return {
+        kind: "single",
+        display: "string",
+        toJsonSchema: stringJsonSchema,
+      };
+    }
   }
 
   const display = getDisplayLabel(type);
   if (isStandardSchema(type)) {
+    if ("~kind" in type && type["~kind"] === "counter") {
+      return {
+        kind: "counter",
+        display,
+        toJsonSchema: () => readStandardJsonSchema(type),
+      };
+    }
+
     return {
       kind: "single",
       display,
@@ -208,23 +206,32 @@ function describeSingle(type: SingleType): TypeDescriptor {
  * Single source of truth for classifying any flag or argument type across flag
  * compilation, help rendering, completions, and MCP JSON Schema export.
  */
-export function describeType(type: TypeValue): TypeDescriptor {
-  if (!Array.isArray(type)) {
-    return describeSingle(type as SingleType);
+export function describeType(
+  type: SingleType,
+  multiple = false,
+): TypeDescriptor {
+  if (Array.isArray(type)) {
+    throw new InvalidSchemaError(
+      'Array tuple flag types ([Type]) are no longer supported. Use "{ type, multiple: true }" or "Types.Counter" instead.',
+    );
   }
 
-  const inner = type[0] as SingleType;
-  if (inner === Boolean) {
-    return COUNTER_DESCRIPTOR;
+  const singleDesc = describeSingle(type);
+  if (!multiple) {
+    return singleDesc;
   }
 
-  const innerDesc = describeSingle(inner);
+  if (singleDesc.kind === "boolean" || singleDesc.kind === "counter") {
+    throw new InvalidSchemaError(
+      'Cannot combine "multiple: true" with Boolean or Counter flags. Use "Types.Counter" to count occurrences.',
+    );
+  }
 
   return {
     kind: "array",
-    display: `${innerDesc.display}...`,
-    convert: innerDesc.convert,
-    toJsonSchema: () => ({ type: "array", items: innerDesc.toJsonSchema() }),
+    display: `${singleDesc.display}...`,
+    convert: singleDesc.convert,
+    toJsonSchema: () => ({ type: "array", items: singleDesc.toJsonSchema() }),
   };
 }
 
@@ -250,6 +257,17 @@ const createSchema = <T>(
     },
   },
 });
+
+export const Counter: CounterSchema = {
+  ...createSchema<number>("count", { type: "integer", minimum: 0 }, (raw) => {
+    const num = parseNumber(raw);
+
+    return Number.isInteger(num) && num >= 0
+      ? { value: num }
+      : fail("expected a non-negative integer");
+  }),
+  "~kind": "counter",
+};
 
 export function Enum<const T extends string>(
   ...values: readonly T[]
@@ -312,6 +330,7 @@ export const Integer: ClercSchema<number> = createSchema<number>(
 );
 
 export const Types = {
+  Counter,
   Enum,
   Range,
   Regex,

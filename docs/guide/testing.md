@@ -6,6 +6,8 @@ title: Testing & Programmatic Use
 
 Clerc never hard-codes `process.argv`, `process.env`, `process.stdout`, or `process.exit()` inside its execution core. Every CLI can be exercised in memory in a few milliseconds.
 
+<CliPlayground preset="testing" lang="en" />
+
 ## Testing with `createMemoryTerminal()`
 
 `createMemoryTerminal()` creates an isolated in-memory `Terminal` with configurable `env`, `cwd`, `isTTY`, `color`, `unicode`, and `columns`, plus helpers to read captured `stdoutText()` and `stderrText()`:

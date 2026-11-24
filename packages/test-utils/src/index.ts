@@ -14,6 +14,7 @@ export const createTestBaseCli = (options?: Partial<ClercOptions>) =>
     description: "Test CLI",
     version: "1.0.0",
     help: false,
+    verbosity: false,
     ...options,
   });
 

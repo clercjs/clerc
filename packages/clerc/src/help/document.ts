@@ -3,6 +3,7 @@ import type {
   ArgDescriptor,
   CliModel,
   CommandNode,
+  CommandTree,
   FlagDescriptor,
   GroupDefinition,
 } from "../types";
@@ -244,6 +245,27 @@ function buildUsage(
   };
 }
 
+function resolveNodeGroup(
+  node: CommandNode,
+  tree: CommandTree,
+): string | undefined {
+  if (node.command?.group) {
+    return node.command.group;
+  }
+  const children = tree.listVisibleChildren(node);
+  if (children.length === 0) {
+    return undefined;
+  }
+  const first = resolveNodeGroup(children[0], tree);
+  if (!first) {
+    return undefined;
+  }
+
+  return children.every((child) => resolveNodeGroup(child, tree) === first)
+    ? first
+    : undefined;
+}
+
 export async function buildHelpDocument(
   model: CliModel,
   node: CommandNode = model.tree.root,
@@ -259,8 +281,12 @@ export async function buildHelpDocument(
 
   const visibleLocalFlags = node.localFlags.filter((f) => !f.hidden);
   const localFlagNames = new Set(node.localFlags.map((f) => f.name));
+  const isStandalone =
+    Boolean(command?.standalone) || Boolean(command?.builtin);
   const visibleGlobalFlags = [
-    ...globalFlags.filter((f) => !f.hidden && !localFlagNames.has(f.name)),
+    ...(isStandalone
+      ? []
+      : globalFlags.filter((f) => !f.hidden && !localFlagNames.has(f.name))),
     ...node.builtinFlags.filter((f) => !f.hidden),
   ];
   const hasCommandFlags = visibleLocalFlags.length > 0;
@@ -295,7 +321,7 @@ export async function buildHelpDocument(
     arguments: node.args.map(buildArgumentItem),
     commandGroups: groupItems(
       orderedChildren,
-      (child) => child.command?.group,
+      (child) => resolveNodeGroup(child, tree),
       (child) => ({
         name: child.name,
         aliases: child.aliases,

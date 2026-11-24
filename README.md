@@ -34,13 +34,13 @@ pnpm add clerc
 ```
 
 ```ts
-import { Types, clerc, verbosityPlugin } from "clerc";
+import { Types, clerc } from "clerc";
 
 const cli = clerc({
   name: "acme",
   version: "2.0.0",
   description: "Build and deploy TypeScript services",
-}).use(verbosityPlugin());
+});
 
 cli.command("deploy <env> [region]", {
   aliases: "d",
@@ -180,13 +180,14 @@ test("previews staging deploy", async () => {
 
 ## Packages
 
-| Package                                                      | Description                                                                                                                                                      |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`clerc`](./packages/clerc)                                  | Core framework: POSIX argv parser, `clerc`, `plugin`, help renderer, diagnostics, Standard Schema v1, `Terminal`, `verbosityPlugin`, and `updateNotifierPlugin`. |
-| [`@clerc/logger`](./packages/logger)                         | CLI logger with aligned word labels, `node:util` object/error formatting, streaming `.line()`, `box`, `spinner`, `task`, and JSON output.                        |
-| [`@clerc/theme`](./packages/theme)                           | Zero-dependency semantic ANSI theme and terminal color/Unicode detection.                                                                                        |
-| [`@clerc/plugin-completions`](./packages/plugin-completions) | Shell completion generator for Bash, Zsh, Fish, and PowerShell powered by `@bomb.sh/tab`.                                                                        |
-| [`@clerc/plugin-mcp`](./packages/plugin-mcp)                 | Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.                                                                     |
+| Package                                                              | Description                                                                                                                                         |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`clerc`](./packages/clerc)                                          | Core framework: POSIX argv parser, `clerc`, `plugin`, help renderer, diagnostics, built-in `-v`/`-q` verbosity, Standard Schema v1, and `Terminal`. |
+| [`@clerc/logger`](./packages/logger)                                 | CLI logger with aligned word labels, `node:util` object/error formatting, streaming `.line()`, `box`, `spinner`, `task`, and JSON output.           |
+| [`@clerc/theme`](./packages/theme)                                   | Zero-dependency semantic ANSI theme and terminal color/Unicode detection.                                                                           |
+| [`@clerc/plugin-completions`](./packages/plugin-completions)         | Zero-dependency shell completions for Bash, Zsh, Fish, and PowerShell with async context-aware `complete()`.                                        |
+| [`@clerc/plugin-mcp`](./packages/plugin-mcp)                         | Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.                                                        |
+| [`@clerc/plugin-update-notifier`](./packages/plugin-update-notifier) | Zero-dependency background npm update checker and banner renderer.                                                                                  |
 
 ## Documentation & Examples
 

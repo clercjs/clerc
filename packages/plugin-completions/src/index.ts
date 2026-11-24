@@ -1,33 +1,41 @@
-import { RootCommand } from "@bomb.sh/tab";
 import { ClercError, Types, plugin } from "clerc";
 
 import type {
-  ArgCompletionMeta,
-  CommandCompletionMeta,
-  FlagCompletionMeta,
-} from "./tab";
-import { buildTabModel } from "./tab";
+  ResolveCompletionsOptions,
+  ResolvedCompletions,
+} from "./complete";
+import { formatCompletionOutput, resolveCompletions } from "./complete";
+import type { SupportedShell } from "./shells";
+import {
+  SUPPORTED_SHELLS,
+  ShellCompDirective,
+  renderCompletionScript,
+} from "./shells";
 
-export type { ArgCompletionMeta, CommandCompletionMeta, FlagCompletionMeta };
+export type { ResolveCompletionsOptions, ResolvedCompletions, SupportedShell };
+export {
+  SUPPORTED_SHELLS,
+  ShellCompDirective,
+  formatCompletionOutput,
+  renderCompletionScript,
+  resolveCompletions,
+};
 
-declare module "clerc" {
-  interface CommandCustomMeta {
-    readonly completions?: CommandCompletionMeta;
-  }
-  interface FlagCustomMeta {
-    readonly completions?: FlagCompletionMeta;
-  }
-  interface ArgCustomMeta {
-    readonly completions?: ArgCompletionMeta;
-  }
+export interface CompletionsPluginOptions {
+  /**
+   * Executable command invoked by the generated shell completion script.
+   * Defaults to `ctx.meta.name`.
+   */
+  readonly executable?: string;
 }
 
-const supportedShellEnum = Types.Enum("zsh", "bash", "fish", "powershell");
+const supportedShellEnum = Types.Enum(...SUPPORTED_SHELLS);
 
-export const completionsPlugin = () =>
+export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
   plugin("clerc:completions")
     .command("completions [shell]", {
       description: "Generate shell completion scripts",
+      standalone: true,
       args: {
         shell: {
           description: "Shell type",
@@ -56,16 +64,26 @@ export const completionsPlugin = () =>
           );
         }
 
-        const root = new RootCommand();
-        buildTabModel(root, ctx.model);
-        root.setup(ctx.meta.name, ctx.meta.name, shell);
+        ctx.terminal.stdout(
+          renderCompletionScript(
+            shell,
+            ctx.meta.name,
+            options.executable ?? ctx.meta.name,
+          ),
+        );
       },
     })
     .command("complete -- [input...]", {
       hidden: true,
-      run(ctx) {
-        const root = new RootCommand();
-        buildTabModel(root, ctx.model);
-        root.parse(ctx.args.input);
+      standalone: true,
+      async run(ctx) {
+        try {
+          const resolved = await resolveCompletions(ctx.model, ctx.args.input, {
+            terminal: ctx.terminal,
+          });
+          ctx.terminal.stdout(formatCompletionOutput(resolved));
+        } catch {
+          ctx.terminal.stdout(`:${ShellCompDirective.Error}`);
+        }
       },
     });

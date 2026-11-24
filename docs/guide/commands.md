@@ -6,6 +6,8 @@ title: Commands & Routing
 
 In Clerc, command names, subcommand paths, and positional arguments live in a single route-style signature string passed to `.command()`.
 
+<CliPlayground preset="commands" lang="en" />
+
 ## Defining Commands
 
 ```ts
@@ -39,9 +41,10 @@ Separate subcommand segments with spaces. Any parent path without a `run` handle
 ```ts
 const cli = clerc({ name: "acme", version: "1.0.0" });
 
-// Optional metadata-only parent gives the namespace a description in root --help
+// Optional run-less parent sets namespace description/group (and can gain run() later)
 cli.command("db", {
   description: "Database management commands",
+  group: "data",
 });
 
 cli.command("db migrate", {

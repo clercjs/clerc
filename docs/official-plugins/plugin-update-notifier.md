@@ -1,15 +1,30 @@
 ---
-title: "updateNotifierPlugin (Built-in)"
+title: "@clerc/plugin-update-notifier"
 ---
 
-# `updateNotifierPlugin`
+# `@clerc/plugin-update-notifier`
 
-Built directly into `clerc` with zero third-party dependencies. Checks the npm registry concurrently in the background while the command runs, caches results on disk (`$XDG_CACHE_HOME/clerc-update-notifier`), and renders a `ctx.log.box.warn` banner after execution finishes without slowing down fast commands.
+Zero-dependency background npm update checker. Starts checking the npm registry concurrently while the command runs, caches results on disk (`$XDG_CACHE_HOME/clerc-update-notifier`), and renders a `ctx.log.box.warn` banner after execution finishes without slowing down fast commands.
+
+## Installation
+
+::: code-group
+
+```sh [pnpm]
+pnpm add @clerc/plugin-update-notifier
+```
+
+```sh [npm]
+npm install @clerc/plugin-update-notifier
+```
+
+:::
 
 ## Usage
 
 ```ts
-import { clerc, updateNotifierPlugin } from "clerc";
+import { updateNotifierPlugin } from "@clerc/plugin-update-notifier";
+import { clerc } from "clerc";
 
 const cli = clerc({
   name: "acme-cli",
@@ -28,5 +43,6 @@ const cli = clerc({
 ## Smart Defaults
 
 - Automatically skipped in CI (`CI` env set), when `NO_UPDATE_NOTIFIER` is set, or when `!ctx.terminal.isTTY`.
+- Suppressed automatically when `-q, --quiet` is passed.
 - Runs with `{ enforce: "pre" }`: starts the `fetch` as early as possible and prints the banner after all other middlewares finish.
 - Unref'd `postRunGraceMs` timer (default `250ms`) guarantees slow networks never hang a completed CLI command.

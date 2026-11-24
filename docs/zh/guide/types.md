@@ -14,6 +14,8 @@ Clerc 中的选项与位置参数共用同一套类型描述管线。你可以�
 4. **Shell 自动补全候选值**（枚举值在 `@clerc/plugin-completions` 中自动补全）
 5. **MCP 工具的 `inputSchema`**（在 `@clerc/plugin-mcp` 中通过 Standard JSON Schema v1 导出）
 
+<CliPlayground preset="types" lang="zh" />
+
 ## 直接使用 Zod / Valibot / ArkType
 
 无需任何适配层，直接将 Schema 传给 `type`：
@@ -92,7 +94,7 @@ cli.command("invite <email>", {
 
 ## 内置零依赖 `Types`
 
-不想引入外部校验库时，`clerc` 内置了四个常用 Standard Schema 构造器：
+不想引入外部校验库时，`clerc` 内置了五个常用 Standard Schema 构造器：
 
 ```ts
 import { Types, clerc } from "clerc";
@@ -107,6 +109,7 @@ cli.command("release <channel>", {
     port: { type: Types.Range(1, 65_535), default: 3000 },
     workers: { type: Types.Integer, default: 4 },
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
+    verbose: { type: Types.Counter, short: "v" },
   },
   run(ctx) {
     ctx.args.channel;
@@ -139,7 +142,7 @@ parseKeyValue.display = "KEY=VALUE";
 
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
   flags: {
-    define: { type: [parseKeyValue], short: "D" },
+    define: { type: parseKeyValue, multiple: true, short: "D" },
   },
   run(ctx) {
     ctx.flags.define;

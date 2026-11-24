@@ -6,6 +6,8 @@ title: Flags
 
 Flags configure commands via `--long` options, `-s` short aliases, or environment variables. Define camelCase keys in `flags` and Clerc automatically accepts both `--kebab-case` and `--camelCase` on the command line.
 
+<CliPlayground preset="flags" lang="en" />
+
 ## Shorthand vs Full Definition
 
 When a flag only needs a type, pass the constructor or schema directly. Use an options object when adding metadata, defaults, or constraints:
@@ -47,21 +49,26 @@ Clerc's built-in POSIX argv parser supports all standard flag conventions:
 
 ## Repeatable Arrays, Delimiters & Counters
 
-Wrap a type in a single-element tuple `[Type]` to collect multiple occurrences:
+Set `multiple: true` to collect repeatable occurrences into an array, or use `Types.Counter` to count repeated short/long flags:
 
 ```ts
+import { Types, clerc } from "clerc";
+
+const cli = clerc({ name: "acme", version: "1.0.0" });
+
 cli.command("build", {
   flags: {
     // Repeatable array with comma delimiter: -t a,b -t c -> ["a", "b", "c"]
     tags: {
-      type: [String],
+      type: String,
+      multiple: true,
       short: "t",
       delimiter: ",",
       description: "Release tags",
     },
-    // Counter: [Boolean] counts occurrences: -vvv -> 3 (defaults to 0)
+    // Counter: Types.Counter counts occurrences: -vvv -> 3 (defaults to 0)
     verbose: {
-      type: [Boolean],
+      type: Types.Counter,
       short: "v",
       description: "Increase verbosity",
     },

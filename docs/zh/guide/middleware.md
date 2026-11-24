@@ -6,6 +6,8 @@ title: 中间件与状态
 
 Clerc 采用洋葱模型中间件包裹命令执行。中间件仅在真正匹配到可执行命令并通过参数/选项校验后运行 - `--help` 与 `--version` 会直接返回，不会无谓地触发数据库连接或鉴权请求。
 
+<CliPlayground preset="middleware" lang="zh" />
+
 ## 洋葱生命周期与资源清理
 
 调用 `await next()` 进入下游中间件与命令处理函数。配合 `try / finally` 可以在同一个词法作用域里安全释放连接或统计耗时：
@@ -67,7 +69,7 @@ cli.command("users", {
 
 默认情况下，中间件严格按 `.use()` / `.middleware()` 的注册顺序执行。由于插件会将中间件封装在内部，用户无需关心 `.use()` 顺序即可让基础设施插件固定在正确层级：
 
-1. `{ enforce: "pre" }` - 最外层：进入时**最先**执行，`finally` 退出时**最后**执行（例如 `verbosityPlugin` 借此确保 `-v` / `-q` 对所有中间件生效，`updateNotifierPlugin` 借此确保更新提示框在所有清理日志之后打印）。
+1. `{ enforce: "pre" }` - 最外层：进入时**最先**执行，`finally` 退出时**最后**执行（例如 `@clerc/plugin-update-notifier` 借此在进入时尽早发起检查，并在所有清理日志之后再打印升级提示框）。
 2. _(默认)_ - 普通中间件，保持注册顺序。
 3. `{ enforce: "post" }` - 最内层：在所有普通中间件完成 `ctx.state` 注入之后、`command.run()` 之前执行（适合权限校验或审计插件）。
 

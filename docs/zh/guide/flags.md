@@ -6,6 +6,8 @@ title: 选项 (Flags)
 
 在 `flags` 中使用驼峰命名定义选项，命令行会自动同时接受 `--kebab-case` 与 `--camelCase`。
 
+<CliPlayground preset="flags" lang="zh" />
+
 ## 简写与完整配置
 
 只需要指定类型时可直接传入构造函数或 Schema；需要短选项、默认值、环境变量或约束时传入配置对象：
@@ -45,21 +47,26 @@ cli.command("serve", {
 
 ## 数组选项、分隔符与计数器
 
-用单元素数组 `[Type]` 表示可重复传入多次的选项：
+通过 `multiple: true` 收集多次传入的值为数组，或使用 `Types.Counter` 统计重复出现的次数：
 
 ```ts
+import { Types, clerc } from "clerc";
+
+const cli = clerc({ name: "acme", version: "1.0.0" });
+
 cli.command("build", {
   flags: {
     // 支持重复传入与逗号切分：-t a,b -t c -> ["a", "b", "c"]
     tags: {
-      type: [String],
+      type: String,
+      multiple: true,
       short: "t",
       delimiter: ",",
       description: "发布标签",
     },
-    // 计数器：[Boolean] 统计出现次数：-vvv -> 3（未传时为 0）
+    // 计数器：Types.Counter 统计出现次数：-vvv -> 3（未传时为 0）
     verbose: {
-      type: [Boolean],
+      type: Types.Counter,
       short: "v",
       description: "日志详细程度",
     },

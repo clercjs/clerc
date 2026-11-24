@@ -13,6 +13,7 @@ import Llms, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
 
 import pkg from "../../../packages/clerc/package.json" with { type: "json" };
 import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
+import { BrowserClercShims } from "../plugins/browser-clerc-shims.ts";
 import {
   MarkdownTransform,
   clercImports,
@@ -93,6 +94,7 @@ export const sharedConfig = defineConfig({
             module: 99,
             moduleResolution: 100,
             strict: true,
+            types: ["node", "vite/client"],
             paths: Object.fromEntries(
               Object.entries(tsconfigBase.compilerOptions.paths).map(
                 ([key, paths]) => [key, paths.map((p) => path.join("..", p))],
@@ -115,6 +117,7 @@ export const sharedConfig = defineConfig({
   },
   vite: {
     plugins: [
+      BrowserClercShims(),
       GroupIconVitePlugin(),
       UnoCSS(),
       MarkdownTransform(),

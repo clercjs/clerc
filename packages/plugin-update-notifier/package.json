@@ -1,0 +1,45 @@
+{
+  "name": "@clerc/plugin-update-notifier",
+  "version": "2.0.0-beta.1",
+  "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
+  "type": "module",
+  "description": "Non-blocking npm update notifier plugin for Clerc.",
+  "keywords": [
+    "clerc",
+    "clerc-plugin",
+    "cli",
+    "update-notifier",
+    "terminal"
+  ],
+  "homepage": "https://github.com/clercjs/clerc/tree/main/packages/plugin-update-notifier#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clercjs/clerc.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/clercjs/clerc/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "clerc": "workspace:*"
+  },
+  "peerDependencies": {
+    "clerc": "*"
+  }
+}

@@ -6,6 +6,8 @@ title: Help & Diagnostics
 
 Clerc treats terminal output as a user interface: `--help` uses an editorial layout with a single hairline rule, uppercase section headings, smart column snapping, and atomic metadata tags that never split across line wraps.
 
+<CliPlayground preset="diagnostics" lang="en" />
+
 ## Grouping Commands & Options
 
 Organize large CLIs with `.groups()` and assign `group` keys on commands or flags:

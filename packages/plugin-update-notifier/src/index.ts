@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { plugin } from "../cli";
+import { plugin } from "clerc";
 
 export interface UpdateInfo {
   readonly current: string;

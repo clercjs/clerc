@@ -93,6 +93,7 @@ export function mcpPlugin(options: McpPluginOptions = {}) {
 
   return plugin("clerc:mcp").command(commandName, {
     description: "Start an MCP stdio server exposing CLI commands as tools",
+    standalone: true,
     async run(ctx) {
       const handler = createMcpHandler({
         model: ctx.model,

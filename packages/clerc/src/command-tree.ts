@@ -245,10 +245,7 @@ export class CommandTreeBuilder implements CommandTree {
       remainingArgv = argv.filter((_, index) => !matchedSet.has(index));
     }
 
-    if (
-      current.command &&
-      (current.command.run || current.children.size === 0)
-    ) {
+    if (current.command?.run) {
       return {
         kind: "matched",
         node: current,

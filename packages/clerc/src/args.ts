@@ -170,6 +170,7 @@ function compileArgSlice(
       placeholder: norm?.placeholder,
       default: norm?.default,
       env: norm?.env,
+      complete: norm?.complete,
       meta: norm?.meta,
       toJsonSchema: typeDesc ? typeDesc.toJsonSchema : defaultStringJsonSchema,
       convert: typeDesc?.convert,

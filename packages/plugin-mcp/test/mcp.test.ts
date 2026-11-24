@@ -31,7 +31,7 @@ describe("@clerc/plugin-mcp", () => {
     const cli = createTestCli()
       .flags({
         verbose: {
-          type: [Boolean],
+          type: Types.Counter,
           short: "v",
           description: "Verbosity level",
         },
@@ -123,7 +123,7 @@ describe("@clerc/plugin-mcp", () => {
       description: "Publish release",
       args: { channel: Types.Enum("alpha", "beta") },
       flags: {
-        tags: { type: [String] },
+        tags: { type: String, multiple: true },
         dryRun: Boolean,
         strict: { type: Boolean, default: true, negatable: false },
       },

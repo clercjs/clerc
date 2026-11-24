@@ -21,7 +21,7 @@ import type {
   FlagDescriptor,
   FlagOptions,
   FlagsDefinition,
-  TypeValue,
+  SingleType,
 } from "./types";
 import {
   camelCase,
@@ -43,12 +43,13 @@ export interface CompiledFlags {
 }
 
 function normalizeFlagValue(flag: FlagDefinitionValue): FlagOptions {
-  if (
-    typeof flag === "function" ||
-    Array.isArray(flag) ||
-    isStandardSchema(flag)
-  ) {
-    return { type: flag as TypeValue };
+  if (typeof flag === "function" || isStandardSchema(flag)) {
+    return { type: flag as SingleType };
+  }
+  if (Array.isArray(flag)) {
+    throw new InvalidSchemaError(
+      'Array tuple flag types ([Type]) are no longer supported. Use "{ type, multiple: true }" or "Types.Counter" instead.',
+    );
   }
 
   return flag as FlagOptions;
@@ -75,12 +76,13 @@ export const createBuiltinFlagDescriptor = (
   name: string,
   short: string | undefined,
   description: string,
+  kind: "boolean" | "counter" = "boolean",
 ): FlagDescriptor => ({
   name,
   target: formatFlagName(name),
   short,
   aliases: [],
-  kind: "boolean",
+  kind,
   display: "boolean",
   description,
   required: false,
@@ -88,7 +90,8 @@ export const createBuiltinFlagDescriptor = (
   hidden: false,
   conflicts: [],
   implies: [],
-  toJsonSchema: () => ({ type: "boolean" }),
+  toJsonSchema: () =>
+    kind === "counter" ? { type: "integer", minimum: 0 } : { type: "boolean" },
 });
 
 export function compileFlagEntries(
@@ -98,18 +101,16 @@ export function compileFlagEntries(
 
   for (const name of Object.keys(flags)) {
     const norm = normalizeFlagValue(flags[name]);
-    if (Array.isArray(norm.type) && norm.type.length !== 1) {
-      throw new InvalidSchemaError(
-        `Flag "${name}" has an invalid type array. Only single-element arrays are allowed to denote multiple occurrences.`,
-      );
-    }
     if (norm.required && norm.default !== undefined) {
       throw new InvalidSchemaError(
         `Flag "${name}" cannot be both required and have a default value.`,
       );
     }
 
-    const { kind, display, convert, toJsonSchema } = describeType(norm.type);
+    const { kind, display, convert, toJsonSchema } = describeType(
+      norm.type,
+      Boolean(norm.multiple),
+    );
     if (norm.delimiter !== undefined) {
       if (kind !== "array") {
         throw new InvalidSchemaError(
@@ -150,6 +151,7 @@ export function compileFlagEntries(
       deprecated: norm.deprecated,
       conflicts: norm.conflicts ? toArray(norm.conflicts) : [],
       implies: norm.implies ? toArray(norm.implies) : [],
+      complete: norm.complete,
       meta: norm.meta,
       toJsonSchema,
       convert,

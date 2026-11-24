@@ -4,7 +4,7 @@ title: Getting Started
 
 # Getting Started
 
-Clerc is an ESM-only CLI framework for **Node.js 24+**. Core features - `--help`, `--version`, strict flag checking, typo suggestions, and a structured terminal logger - are built directly into `clerc` with no mandatory plugin setup.
+Clerc is an ESM-only CLI framework for **Node.js 24+**. Core features - `--help`, `--version`, `-v`/`-q` verbosity, strict flag checking, typo suggestions, and a structured terminal logger - are built directly into `clerc` with no mandatory plugin setup.
 
 ## Installation
 
@@ -88,9 +88,7 @@ Run it directly with Node.js 24+ native TypeScript support:
 
 <TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
-## Interactive Sandbox
-
-Try running `--help`, passing flags, or making deliberate typos against an `acme` CLI right here:
+## Try It Live
 
 <CliPlayground lang="en" />
 
@@ -107,10 +105,11 @@ Clerc separates process-level execution from pure invocation:
 
 Install only what your CLI needs:
 
-| Package                                                             | Purpose                                                                                                                    |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `clerc`                                                             | Core CLI router, POSIX argv parser, help & diagnostics, Standard Schema v1, `verbosityPlugin`, and `updateNotifierPlugin`. |
-| `@clerc/logger`                                                     | Standalone CLI logger (re-exported by `clerc` as `ctx.log` and `createLogger`).                                            |
-| `@clerc/theme`                                                      | Zero-dependency ANSI styling and terminal capability detection (re-exported by `clerc`).                                   |
-| [`@clerc/plugin-completions`](/official-plugins/plugin-completions) | Shell completion scripts and runtime completions for Bash, Zsh, Fish, and PowerShell.                                      |
-| [`@clerc/plugin-mcp`](/official-plugins/plugin-mcp)                 | Turns your CLI into a Model Context Protocol stdio server (`<cli> mcp`).                                                   |
+| Package                                                                     | Purpose                                                                                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `clerc`                                                                     | Core CLI router, POSIX argv parser, help & diagnostics, built-in `-v`/`-q` verbosity, and Standard Schema v1. |
+| `@clerc/logger`                                                             | Standalone CLI logger (re-exported by `clerc` as `ctx.log` and `createLogger`).                               |
+| `@clerc/theme`                                                              | Zero-dependency ANSI styling and terminal capability detection (re-exported by `clerc`).                      |
+| [`@clerc/plugin-completions`](/official-plugins/plugin-completions)         | Shell completion scripts and runtime completions for Bash, Zsh, Fish, and PowerShell.                         |
+| [`@clerc/plugin-mcp`](/official-plugins/plugin-mcp)                         | Turns your CLI into a Model Context Protocol stdio server (`<cli> mcp`).                                      |
+| [`@clerc/plugin-update-notifier`](/official-plugins/plugin-update-notifier) | Non-blocking background npm update checker and banner renderer.                                               |

@@ -10,6 +10,7 @@ import {
   MissingRequiredArgumentError,
   MissingRequiredFlagError,
   NoCommandError,
+  Types,
   UnexpectedArgumentError,
   UnknownCommandError,
   UnknownFlagError,
@@ -269,7 +270,7 @@ describe("Clerc execution pipeline", () => {
     const terminal = createMemoryTerminal();
     const cli = createTestBaseCli().flags({
       config: { type: String, short: "c" },
-      verbose: { type: [Boolean], short: "v" },
+      verbose: { type: Types.Counter, short: "v" },
     });
     cli.command("deploy <env>", {
       flags: {
@@ -356,8 +357,13 @@ describe("Clerc execution pipeline", () => {
       },
       flags: {
         output: { type: String, short: "o", aliases: ["out", "outFile"] },
-        tags: { type: [String], delimiter: ",", env: "DEPLOY_TAGS" },
-        nums: { type: [Number], delimiter: "," },
+        tags: {
+          type: String,
+          multiple: true,
+          delimiter: ",",
+          env: "DEPLOY_TAGS",
+        },
+        nums: { type: Number, multiple: true, delimiter: "," },
         inspect: { type: Number, short: "I", implicitValue: 9229 },
         color: {
           type: String,
@@ -503,7 +509,9 @@ describe("Clerc execution pipeline", () => {
     let seenDefaultTags: string[] = [];
     const arrayDefaultCli = createTestBaseCli();
     arrayDefaultCli.command("tag", {
-      flags: { tags: { type: [String], default: ["latest"] } },
+      flags: {
+        tags: { type: String, multiple: true, default: ["latest"] },
+      },
       run(ctx) {
         ctx.flags.tags.push("mutated");
         seenDefaultTags = ctx.flags.tags;
@@ -531,7 +539,7 @@ describe("Clerc execution pipeline", () => {
     const badEnvTerm = createMemoryTerminal({ env: { VERBOSE: "banana" } });
     const envCli = createTestBaseCli();
     envCli.command("ping", {
-      flags: { verbose: { type: [Boolean], env: "VERBOSE" } },
+      flags: { verbose: { type: Types.Counter, env: "VERBOSE" } },
       run() {},
     });
 

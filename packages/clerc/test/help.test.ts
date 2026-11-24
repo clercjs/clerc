@@ -88,6 +88,7 @@ describe("built-in v2 editorial help", () => {
         "      --cache, --no-cache     Use build cache  [default: true]",
         "",
         "GLOBAL OPTIONS",
+        "  -q, --quiet                 Suppress non-error output",
         "  -h, --help                  Show help",
       ].join("\n"),
     );
@@ -277,5 +278,33 @@ describe("built-in v2 editorial help", () => {
     expect(customTerm.stdoutText()).toContain("=== acme ===");
     expect(customTerm.stdoutText()).not.toContain("NOTES");
     expect(customTerm.stdoutText()).not.toContain("Hidden note");
+
+    // Implicit namespace inherits shared group & run-less .command("pr", ...) prints help instead of silent no-op
+    const nsTerm = createMemoryTerminal({ columns: 80 });
+    const nsCli = clerc({ name: "firn", version: "1.0.0" }).groups({
+      commands: { admin: "Admin" },
+    });
+    nsCli.command("pr", {
+      description: "Inspect and manage PR overlays",
+      group: "admin",
+    });
+    nsCli.command("cache ls", {
+      description: "List cache entries",
+      group: "admin",
+      run() {},
+    });
+
+    await nsCli.run(["--help"], { terminal: nsTerm });
+
+    expect(nsTerm.stdoutText()).toContain(
+      "ADMIN\n  pr              Inspect and manage PR overlays\n  cache",
+    );
+
+    nsTerm.clear();
+    const emptyNsRes = await nsCli.run(["pr"], { terminal: nsTerm });
+
+    expect(emptyNsRes.ok).toBeTruthy();
+    expect(nsTerm.stdoutText()).toContain("firn pr v1.0.0");
+    expect(nsTerm.stdoutText()).toContain("Inspect and manage PR overlays");
   });
 });

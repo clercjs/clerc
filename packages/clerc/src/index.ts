@@ -76,12 +76,11 @@ export {
   renderHelpDocument,
 } from "./help/renderer";
 export type {
-  UpdateInfo,
-  UpdateNotifierPluginOptions,
-} from "./plugins/update-notifier";
-export { updateNotifierPlugin } from "./plugins/update-notifier";
-export { verbosityPlugin } from "./plugins/verbosity";
-export type { ClercSchema, FlagKind, StandardSchemaV1 } from "./schema";
+  ClercSchema,
+  CounterSchema,
+  FlagKind,
+  StandardSchemaV1,
+} from "./schema";
 export { Types, isStandardSchema } from "./schema";
 export type {
   MemoryTerminal,
@@ -107,6 +106,12 @@ export type {
   CommandNode,
   CommandOptions,
   CommandTree,
+  CompletionCandidate,
+  CompletionContext,
+  CompletionDirectiveResult,
+  CompletionHandler,
+  CompletionItem,
+  CompletionResult,
   CustomState,
   DefaultValue,
   DefaultValueFunction,
@@ -136,5 +141,4 @@ export type {
   SingleType,
   State,
   TypeFunction,
-  TypeValue,
 } from "./types";

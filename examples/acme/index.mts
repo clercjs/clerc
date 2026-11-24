@@ -1,6 +1,6 @@
 import { completionsPlugin } from "@clerc/plugin-completions";
 import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc, plugin, verbosityPlugin } from "clerc";
+import { Types, clerc, plugin } from "clerc";
 
 // 1. Custom plugin with global flag + async context derivation
 const configPlugin = plugin("acme:config")
@@ -11,6 +11,7 @@ const configPlugin = plugin("acme:config")
       default: "acme.config.ts",
       env: "ACME_CONFIG",
       description: "Path to config file",
+      complete: () => ({ files: ["ts", "json"] }),
     },
   })
   .middleware(async (ctx, next) =>
@@ -96,7 +97,6 @@ const cli = clerc({
     commands: { deploy: "Deployment", db: "Database" },
     flags: { network: "Network Options", output: "Output Options" },
   })
-  .use(verbosityPlugin())
   .use(configPlugin)
   .use(timingPlugin)
   .use(dbPlugin)
@@ -114,6 +114,10 @@ cli.command("deploy <env> [region]", {
     },
     region: {
       description: "Cloud region (defaults to us-east-1)",
+      complete: () => [
+        { value: "us-east-1", description: "US East (N. Virginia)" },
+        { value: "eu-west-1", description: "Europe (Ireland)" },
+      ],
     },
   },
   flags: {
@@ -136,7 +140,8 @@ cli.command("deploy <env> [region]", {
       description: "Use build cache",
     },
     tags: {
-      type: [String],
+      type: String,
+      multiple: true,
       short: "t",
       description: "Release tags (repeatable)",
     },

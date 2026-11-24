@@ -6,6 +6,8 @@ title: 命令与路由
 
 Clerc 将命令路径与位置参数合并在一条直观的路由签名字符串中传给 `.command()`。
 
+<CliPlayground preset="commands" lang="zh" />
+
 ## 定义命令
 
 ```ts
@@ -39,9 +41,10 @@ cli.command("clone <repo> [dir]", {
 ```ts
 const cli = clerc({ name: "acme", version: "1.0.0" });
 
-// 可选：注册不带 run 的父节点，为命名空间补充描述信息
+// 可选：不传 run 时作为命名空间展示帮助与分组；日后需要直接调用 db 时补上 run(ctx) 即可
 cli.command("db", {
   description: "数据库管理命令",
+  group: "data",
 });
 
 cli.command("db migrate", {

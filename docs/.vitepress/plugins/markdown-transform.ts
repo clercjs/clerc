@@ -20,8 +20,6 @@ export const clercImports = [
   "renderHelp",
   "renderHelpDocument",
   "Types",
-  "updateNotifierPlugin",
-  "verbosityPlugin",
 ];
 
 export const MarkdownTransform = (): Plugin => ({

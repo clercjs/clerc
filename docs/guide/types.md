@@ -14,6 +14,8 @@ One schema automatically drives five places:
 4. **Shell tab-completion candidates** (enum values complete automatically in `@clerc/plugin-completions`)
 5. **MCP tool `inputSchema`** (via Standard JSON Schema v1 in `@clerc/plugin-mcp`)
 
+<CliPlayground preset="types" lang="en" />
+
 ## Standard Schema v1 (Zod, Valibot, ArkType)
 
 Pass any Standard Schema v1 object directly as `type` - no adapter package needed:
@@ -115,6 +117,8 @@ cli.command("release <channel>", {
     workers: { type: Types.Integer, default: 4 },
     // Displays <v<major>.<minor>> (or regex literal if label omitted)
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
+    // Counts occurrences (-vvv -> 3, defaults to 0)
+    verbose: { type: Types.Counter, short: "v" },
   },
   run(ctx) {
     ctx.args.channel;
@@ -148,7 +152,8 @@ parseKeyValue.display = "KEY=VALUE";
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
   flags: {
     define: {
-      type: [parseKeyValue],
+      type: parseKeyValue,
+      multiple: true,
       short: "D",
       description: "Define build constants",
     },

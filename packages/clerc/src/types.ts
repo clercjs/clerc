@@ -4,7 +4,7 @@ import type { Theme, ThemeStyleMap } from "@clerc/theme";
 import type { ClercError } from "./errors";
 import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType } from "./parser";
-import type { FlagKind, StandardSchemaV1 } from "./schema";
+import type { CounterSchema, FlagKind, StandardSchemaV1 } from "./schema";
 import type { Terminal } from "./terminal";
 import type {
   CamelCase,
@@ -28,8 +28,6 @@ export interface TypeFunction<T = unknown> {
 
 export type SingleType<T = any> = TypeFunction<T> | StandardSchemaV1<any, T>;
 
-export type TypeValue<T = any> = SingleType<T> | readonly [SingleType<T>];
-
 export interface CommandCustomMeta {}
 export interface FlagCustomMeta {}
 export interface ArgCustomMeta {}
@@ -43,8 +41,63 @@ export type State<TState extends Record<string, any> = {}> = Prettify<
   CustomState & TState
 >;
 
-export interface FlagOptions<T extends TypeValue = TypeValue> {
+export interface CompletionCandidate {
+  readonly value: string;
+  readonly description?: string;
+}
+
+export type CompletionItem = string | CompletionCandidate;
+
+export interface CompletionDirectiveResult {
+  readonly items?: readonly CompletionItem[];
+  /**
+   * Native shell path completion behavior:
+   *
+   * - `true`: allow shell file path completion
+   * - `false` (default): disable shell file path fallback
+   * - `"dirs"`: complete directories only
+   * - `readonly string[]`: complete files matching extensions (e.g. `["json",
+   *   "ts"]`)
+   */
+  readonly files?: boolean | "dirs" | readonly string[];
+  /**
+   * Suppress trailing space after accepting a completion.
+   */
+  readonly noSpace?: boolean;
+  /**
+   * Preserve candidate order instead of sorting alphabetically in the shell.
+   */
+  readonly keepOrder?: boolean;
+}
+
+export type CompletionResult =
+  readonly CompletionItem[] | CompletionDirectiveResult | void;
+
+export interface CompletionContext<
+  Args extends Record<string, any> = Record<string, any>,
+  Flags extends Record<string, any> = Record<string, any>,
+> {
+  readonly current: string;
+  readonly words: readonly string[];
+  readonly rawWords: readonly string[];
+  readonly argIndex?: number;
+  readonly args: Partial<Args>;
+  readonly flags: Partial<Flags>;
+  readonly node: CommandNode;
+  readonly model: CliModel;
+  readonly terminal: Terminal;
+}
+
+export type CompletionHandler<
+  Args extends Record<string, any> = Record<string, any>,
+  Flags extends Record<string, any> = Record<string, any>,
+> = (
+  ctx: CompletionContext<Args, Flags>,
+) => CompletionResult | Promise<CompletionResult>;
+
+export interface FlagOptions<T extends SingleType = SingleType> {
   readonly type: T;
+  readonly multiple?: boolean;
   readonly short?: string;
   readonly aliases?: MaybeArray<string>;
   readonly description?: string;
@@ -60,10 +113,11 @@ export interface FlagOptions<T extends TypeValue = TypeValue> {
   readonly deprecated?: boolean | string;
   readonly conflicts?: MaybeArray<string>;
   readonly implies?: MaybeArray<string>;
+  readonly complete?: false | CompletionHandler;
   readonly meta?: FlagMeta;
 }
 
-export type FlagDefinitionValue = FlagOptions | TypeValue;
+export type FlagDefinitionValue = FlagOptions | SingleType;
 export type FlagsDefinition = Record<string, FlagDefinitionValue>;
 
 type StrictOptions<T, Allowed> = T extends object
@@ -72,7 +126,7 @@ type StrictOptions<T, Allowed> = T extends object
 
 type ContextualFlagValue<V> = [V] extends [never]
   ? FlagOptions
-  : V extends SingleType | readonly [SingleType]
+  : V extends SingleType
     ? V
     : StrictOptions<V, FlagOptions>;
 
@@ -100,6 +154,7 @@ export interface FlagDescriptor {
   readonly deprecated?: boolean | string;
   readonly conflicts: readonly string[];
   readonly implies: readonly string[];
+  readonly complete?: false | CompletionHandler;
   readonly meta?: FlagMeta;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
@@ -116,6 +171,7 @@ export interface ArgDescriptor {
   readonly placeholder?: string;
   readonly default?: unknown;
   readonly env?: string;
+  readonly complete?: false | CompletionHandler;
   readonly meta?: ArgMeta;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
@@ -172,12 +228,9 @@ type IsTypeAny<T extends FlagDefinitionValue> =
 type InferSingleFlag<T extends FlagDefinitionValue> =
   IsTypeAny<T> extends true
     ? any
-    : T extends
-          | readonly [BooleanConstructor]
-          | { readonly type: readonly [BooleanConstructor] }
+    : T extends CounterSchema | { readonly type: CounterSchema }
       ? number
-      : T extends
-            readonly [infer Item] | { readonly type: readonly [infer Item] }
+      : T extends { readonly type: infer Item; readonly multiple: true }
         ? InferSingleType<Item>[]
         : T extends { readonly type: infer Item }
           ? | InferSingleType<Item>
@@ -207,6 +260,7 @@ export interface ArgOptions<T extends SingleType = SingleType> {
   readonly placeholder?: string;
   readonly default?: DefaultValue;
   readonly env?: string;
+  readonly complete?: false | CompletionHandler;
   readonly meta?: ArgMeta;
 }
 
@@ -460,11 +514,18 @@ export interface CommandOptions<
   readonly args?: ContextualArgs<Spec, Args>;
   readonly flags?: ContextualFlags<Flags>;
   readonly stopAtFirstPositional?: boolean;
+  readonly standalone?: boolean;
   readonly group?: string;
   readonly hidden?: boolean;
   readonly deprecated?: boolean | string;
   readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
+  readonly complete?:
+    | false
+    | CompletionHandler<
+        InferCommandArgs<Spec, NoInfer<Args>>,
+        MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
+      >;
   readonly run?: CommandHandler<
     Spec,
     NoInfer<Args>,
@@ -546,6 +607,7 @@ export interface ClercOptions {
   readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
   readonly help?: boolean | HelpOptions;
+  readonly verbosity?: boolean;
   readonly strictFlags?: boolean;
   readonly theme?: Partial<ThemeStyleMap>;
   readonly logger?: LoggerOptions;

@@ -32,11 +32,13 @@ import { DOUBLE_DASH, createArgvParser } from "./parser";
 import { createTerminal } from "./terminal";
 import type {
   AnyCommandDefinition,
+  ArgDefinitionValue,
   ClercOptions,
   CliMeta,
   CliModel,
   CommandNode,
   CommandOptions,
+  CompletionContext,
   ContextualFlags,
   ErrorContext,
   ErrorHandler,
@@ -93,6 +95,8 @@ interface CompiledNodeRuntime {
   readonly args?: CompiledArgs;
   readonly hasBuiltinHelp: boolean;
   readonly hasBuiltinVersion: boolean;
+  readonly hasBuiltinQuiet: boolean;
+  readonly hasBuiltinVerbose: boolean;
 }
 
 interface CompiledCli {
@@ -126,6 +130,8 @@ const formatCliVersion = (meta: CliMeta): string =>
 
 function resolveNodeBuiltins(options: {
   readonly isRoot: boolean;
+  readonly isStandalone: boolean;
+  readonly enableVerbosity: boolean;
   readonly enableVersion: boolean;
   readonly enableHelp: boolean;
   readonly userFlags: CompiledFlags;
@@ -133,10 +139,19 @@ function resolveNodeBuiltins(options: {
   readonly descriptors: readonly FlagDescriptor[];
   readonly specs: readonly ArgvFlagSpec[];
   readonly names: readonly string[];
+  readonly hasQuiet: boolean;
+  readonly hasVerbose: boolean;
   readonly hasHelp: boolean;
   readonly hasVersion: boolean;
 } {
-  const { isRoot, enableVersion, enableHelp, userFlags } = options;
+  const {
+    isRoot,
+    isStandalone,
+    enableVerbosity,
+    enableVersion,
+    enableHelp,
+    userFlags,
+  } = options;
   const usedNames = new Set(userFlags.knownNames);
   const usedShorts = new Set<string>();
   for (const spec of userFlags.specs) {
@@ -149,7 +164,12 @@ function resolveNodeBuiltins(options: {
   const specs: ArgvFlagSpec[] = [];
   const names: string[] = [];
 
-  function tryAdd(key: string, shortChar: string, desc: string): boolean {
+  function tryAdd(
+    key: string,
+    shortChar: string,
+    desc: string,
+    kind: "boolean" | "counter" = "boolean",
+  ): boolean {
     if (usedNames.has(key)) {
       return false;
     }
@@ -157,8 +177,8 @@ function resolveNodeBuiltins(options: {
     if (short) {
       usedShorts.add(short);
     }
-    descriptors.push(createBuiltinFlagDescriptor(key, short, desc));
-    specs.push({ key, kind: "boolean", short, negatable: false });
+    descriptors.push(createBuiltinFlagDescriptor(key, short, desc, kind));
+    specs.push({ key, kind, short, negatable: false });
     names.push(key);
 
     return true;
@@ -168,6 +188,14 @@ function resolveNodeBuiltins(options: {
     descriptors,
     specs,
     names,
+    hasQuiet:
+      !isStandalone &&
+      enableVerbosity &&
+      tryAdd("quiet", "q", "Suppress non-error output"),
+    hasVerbose:
+      !isStandalone &&
+      enableVerbosity &&
+      tryAdd("verbose", "v", "Enable verbose debug logging", "counter"),
     hasVersion:
       isRoot && enableVersion && tryAdd("version", "V", "Show version"),
     hasHelp: enableHelp && tryAdd("help", "h", "Show help"),
@@ -231,7 +259,7 @@ export class Plugin<
     this.pluginName = name;
   }
 
-  public flags<const Flags extends Record<string, any>>(
+  public flags<const Flags extends FlagsDefinition>(
     definitions: ContextualFlags<Flags>,
   ): Plugin<TGlobalFlags & Flags, TState> {
     Object.assign(this.#state.flags, definitions);
@@ -255,13 +283,15 @@ export class Plugin<
     return this;
   }
 
-  public command<const Flags extends Record<string, any> = {}>(
+  public command<const Flags extends FlagsDefinition = {}>(
     options: RootCommandOptions<Flags, TGlobalFlags, TState>,
   ): this;
   public command<
     const Spec extends string,
-    const Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
-    const Flags extends Record<string, any> = {},
+    const Args extends Partial<
+      Record<ExtractArgNames<Spec>, ArgDefinitionValue>
+    > = {},
+    const Flags extends FlagsDefinition = {},
   >(
     spec: NonEmptySpec<Spec>,
     options?: CommandOptions<Spec, Args, Flags, TGlobalFlags, TState>,
@@ -337,6 +367,7 @@ export class Clerc<
   readonly #meta: CliMeta;
   readonly #defaultCommand?: string;
   readonly #helpOptions: false | HelpOptions;
+  readonly #verbosity: boolean;
   readonly #strictFlags: boolean;
   readonly #themeOverrides?: Partial<ThemeStyleMap>;
   readonly #loggerOptions?: LoggerOptions;
@@ -362,6 +393,7 @@ export class Clerc<
         : typeof options.help === "object"
           ? options.help
           : {};
+    this.#verbosity = options.verbosity ?? true;
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
@@ -370,7 +402,7 @@ export class Clerc<
     };
   }
 
-  public override flags<const Flags extends Record<string, any>>(
+  public override flags<const Flags extends FlagsDefinition>(
     definitions: ContextualFlags<Flags>,
   ): Clerc<TGlobalFlags & Flags, TState> {
     super.flags(definitions);
@@ -437,6 +469,7 @@ export class Clerc<
         argTokens: [],
         description: "Show version",
         builtin: true,
+        standalone: true,
         run(ctx) {
           ctx.terminal.stdout(formatCliVersion(ctx.meta));
         },
@@ -454,6 +487,27 @@ export class Clerc<
         argTokens,
         description: "Show help for a command",
         builtin: true,
+        standalone: true,
+        args: {
+          command: {
+            description: "Command to inspect",
+            complete({ words, model }: CompletionContext) {
+              const parent =
+                words.length > 0 ? model.tree.findNode(words) : model.tree.root;
+              if (!parent) {
+                return [];
+              }
+
+              return model.tree
+                .listVisibleChildren(parent)
+                .filter((child) => child.command?.complete !== false)
+                .map((child) => ({
+                  value: child.name,
+                  description: child.command?.description ?? "",
+                }));
+            },
+          },
+        },
         examples: (meta) => [
           [`$ ${meta.name} help`, "Show general help"],
           [`$ ${meta.name} help <command>`, "Show help for a command"],
@@ -481,11 +535,14 @@ export class Clerc<
     const globalFlags = buildCompiledFlags(rawGlobalEntries);
     const enableVersion = Boolean(this.#meta.version);
     const enableHelp = this.#helpOptions !== false;
+    const enableVerbosity = this.#verbosity;
     const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
 
     for (const node of tree.walkNodes()) {
       const isRoot = node.fullPath.length === 0;
       const cmd = node.command;
+      const isNodeStandalone =
+        Boolean(cmd?.standalone) || Boolean(cmd?.builtin);
       const localEntries = cmd?.flags
         ? compileFlagEntries(cmd.flags)
         : undefined;
@@ -503,6 +560,8 @@ export class Clerc<
       }
       const builtins = resolveNodeBuiltins({
         isRoot,
+        isStandalone: isNodeStandalone,
+        enableVerbosity,
         enableVersion,
         enableHelp,
         userFlags,
@@ -531,6 +590,8 @@ export class Clerc<
         args: compiledArgs,
         hasBuiltinHelp: builtins.hasHelp,
         hasBuiltinVersion: builtins.hasVersion,
+        hasBuiltinQuiet: builtins.hasQuiet,
+        hasBuiltinVerbose: builtins.hasVerbose,
       });
     }
 
@@ -709,6 +770,16 @@ export class Clerc<
     ctx.unknown = parsed.unknown;
     ctx.doubleDash = parsed.doubleDash;
 
+    if (runtime.hasBuiltinQuiet && parsed.flags.quiet === true) {
+      ctx.log.level = "error";
+    } else if (
+      runtime.hasBuiltinVerbose &&
+      typeof parsed.flags.verbose === "number" &&
+      parsed.flags.verbose > 0
+    ) {
+      ctx.log.level = "debug";
+    }
+
     // 3. Built-in --version, explicit --help, and unknown command handling
     if (match.kind === "unknown") {
       throw new UnknownCommandError(match.commandName, match.parentPath);
@@ -759,7 +830,15 @@ export class Clerc<
     );
     ctx.flags = flags as any;
 
-    validateResolvedFlags(runtime.userFlags, missingRequired, provided);
+    const matchedCommand = match.command;
+    const isStandalone =
+      Boolean(matchedCommand.standalone) || Boolean(matchedCommand.builtin);
+
+    validateResolvedFlags(
+      runtime.userFlags,
+      isStandalone ? [] : missingRequired,
+      provided,
+    );
 
     ctx.args = await executeCompiledArgs(
       runtime.args!,
@@ -768,7 +847,6 @@ export class Clerc<
       ctx.terminal.env,
     );
 
-    const matchedCommand = match.command;
     const runCtx = ctx as unknown as RunContext<TGlobalFlags, TState>;
 
     async function runCore(): Promise<void> {
@@ -787,7 +865,7 @@ export class Clerc<
     }
 
     // 6. Run onion middleware chain wrapping command execution
-    if (compiledCli.middlewares.length === 0) {
+    if (isStandalone || compiledCli.middlewares.length === 0) {
       await runCore();
     } else {
       async function dispatch(

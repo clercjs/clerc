@@ -6,6 +6,8 @@ title: Middleware & State
 
 Clerc uses an onion middleware pipeline around command execution. Middlewares only run when an actual command is matched and validated - built-in `--help` and `--version` requests return immediately without triggering database connections or auth checks.
 
+<CliPlayground preset="middleware" lang="en" />
+
 ## Onion Lifecycle & Teardown
 
 Call `await next()` to run downstream middlewares and the matched command handler. Wrap `await next()` in `try / finally` to guarantee cleanup even if the command throws:
@@ -67,7 +69,7 @@ cli.command("users", {
 
 By default, middlewares run in registration order (`.use()` and `.middleware()` order). Because plugins encapsulate middlewares behind `.use(somePlugin())`, infrastructure plugins can pin their position in the onion using `{ enforce: "pre" | "post" }`:
 
-1. `enforce: "pre"` - outermost layer: runs **first** on entry and **last** in `finally` (used by `verbosityPlugin` so `-v` / `-q` apply to all other middlewares, and by `updateNotifierPlugin` so the update banner prints after all teardown logs).
+1. `enforce: "pre"` - outermost layer: runs **first** on entry and **last** in `finally` (used by `@clerc/plugin-update-notifier` so the registry fetch starts immediately and the update banner prints after all teardown logs).
 2. _(default)_ - normal middlewares in registration order.
 3. `enforce: "post"` - innermost layer: runs right before `command.run()`, after all normal middlewares have populated `ctx.state`.
 

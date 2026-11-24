@@ -121,7 +121,7 @@ export function listExposedCommands(
       node.fullPath.length === 1 && node.fullPath[0] === mcpCommandName;
     if (
       mcpMeta?.enabled !== true &&
-      (cmd.hidden || cmd.builtin || isMcpCommand)
+      (cmd.hidden || cmd.builtin || cmd.standalone || isMcpCommand)
     ) {
       continue;
     }

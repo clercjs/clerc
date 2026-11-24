@@ -6,6 +6,8 @@ title: 位置参数
 
 位置参数直接在命令签名中用尖括号 `<必填>` 和方括号 `[可选]` 声明。
 
+<CliPlayground preset="arguments" lang="zh" />
+
 ## 签名语法对照
 
 | 语法            | 含义                       | 默认推导的 `ctx.args` 类型 |

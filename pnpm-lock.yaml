@@ -173,9 +173,6 @@ settings:
 
 catalogs:
   cli:
-    '@bomb.sh/tab':
-      specifier: ^0.0.23
-      version: 0.0.23
     '@clack/prompts':
       specifier: ^1.9.0
       version: 1.9.0
@@ -273,6 +270,9 @@ importers:
       '@clerc/plugin-mcp':
         specifier: workspace:*
         version: link:packages/plugin-mcp
+      '@clerc/plugin-update-notifier':
+        specifier: workspace:*
+        version: link:packages/plugin-update-notifier
       '@clerc/test-utils':
         specifier: workspace:*
         version: link:packages/test-utils
@@ -375,14 +375,17 @@ importers:
 
   packages/plugin-completions:
     devDependencies:
-      '@bomb.sh/tab':
-        specifier: catalog:cli
-        version: 0.0.23(cac@7.1.1)(citty@0.1.6)
       clerc:
         specifier: workspace:*
         version: link:../clerc
 
   packages/plugin-mcp:
+    devDependencies:
+      clerc:
+        specifier: workspace:*
+        version: link:../clerc
+
+  packages/plugin-update-notifier:
     devDependencies:
       clerc:
         specifier: workspace:*
@@ -504,21 +507,6 @@ packages:
   '@babel/types@7.29.15':
     resolution: {integrity: sha512-/XKpKDakL//LZ66bq1XsZOswuqeI5MZqPLDu18o3XdkU1fNJ7bdPtzgnc4ZNS+bBGHV0FJG8jjb8SwcC3nNVQQ==}
     engines: {node: '>=6.9.0'}
-
-  '@bomb.sh/tab@0.0.23':
-    resolution: {integrity: sha512-EEVg7jd4zpc0RJLI/pMCvJ3PKCF1NGcgH8eXaJOKnnQU9EzwYmOnvaIZUErd5t3sVIEzIrA+QGwTCaeTVlG1zA==}
-    hasBin: true
-    peerDependencies:
-      cac: ^6.7.14 || ^7.0.0
-      citty: ^0.1.6 || ^0.2.0
-      commander: ^13.1.0 || ^14.0.0 || ^15.0.0
-    peerDependenciesMeta:
-      cac:
-        optional: true
-      citty:
-        optional: true
-      commander:
-        optional: true
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -4953,11 +4941,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.15
       '@babel/helper-validator-identifier': 7.29.7
-
-  '@bomb.sh/tab@0.0.23(cac@7.1.1)(citty@0.1.6)':
-    optionalDependencies:
-      cac: 7.1.1
-      citty: 0.1.6
 
   '@cacheable/memory@2.2.0':
     dependencies:

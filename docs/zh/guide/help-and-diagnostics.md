@@ -6,6 +6,8 @@ title: 帮助与错误诊断
 
 Clerc 内置排版级 `--help` 渲染器与 Cargo / Clap 风格诊断输出：单根顶部分隔线、全大写分组标题、自适应列宽对齐，以及绝不在换行处被截断的元数据标签（`[default: ...]`、`[env: ...]`）。
 
+<CliPlayground preset="diagnostics" lang="zh" />
+
 ## 命令与选项分组
 
 使用 `.groups()` 定义分组标题，并在命令或选项上指定 `group`：
