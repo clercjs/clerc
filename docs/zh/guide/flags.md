@@ -24,7 +24,7 @@ cli.command("serve", {
     open: Boolean, // 简写：boolean（默认 false）
     host: String, // 简写：string | undefined
     port: {
-      type: Types.Range(1, 65_535),
+      type: Types.Integer({ min: 1, max: 65_535 }),
       short: "p",
       aliases: ["listen"],
       default: 3000,

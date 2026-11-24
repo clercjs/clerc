@@ -35,9 +35,9 @@ export const defaultCommand: PlaygroundScenario = {
       name: "vite",
       version: "2.0.0",
       description: "Frontend build tool",
-      defaultCommand: "dev",
     })
       .command("dev [root]", {
+        default: true,
         description: "Start dev server",
         flags: { port: { type: Number, short: "p", default: 5173 } },
         run({ args, flags, log }) {

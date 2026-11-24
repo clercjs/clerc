@@ -65,7 +65,7 @@ await expect(
 
 ## Inspecting the Compiled `CliModel`
 
-Call `cli.buildModel()` to obtain the immutable `CliModel` (`meta`, `tree`, `defaultCommand`, `globalFlags`, `groups`). Useful for generating custom documentation, man pages, or inspecting registered commands and JSON Schemas programmatically:
+Call `cli.buildModel()` to obtain the immutable `CliModel` (`meta`, `tree`, `globalFlags`, `globalRules`, `groups`). Useful for generating custom documentation, man pages, or inspecting registered commands and JSON Schemas programmatically:
 
 ```ts
 import { buildHelpDocument, clerc } from "clerc";

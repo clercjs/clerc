@@ -113,10 +113,14 @@ cli.command("release <channel>", {
     channel: Types.Enum("alpha", "beta", "rc", "stable"),
   },
   flags: {
-    // Displays <1..65535>, validates inclusive numeric bounds
-    port: { type: Types.Range(1, 65_535), default: 3000 },
-    // Displays <integer>, rejects floats like "1.5" or empty strings
-    workers: { type: Types.Integer, default: 4 },
+    // Displays <1..65535>, validates inclusive integer bounds
+    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
+    // Displays >=1, rejects floats like "1.5" or empty strings
+    workers: { type: Types.Integer({ min: 1 }), default: 4 },
+    // Displays <0..1>, validates floating-point bounds
+    ratio: { type: Types.Number({ min: 0, max: 1 }) },
+    // Trims whitespace and rejects empty strings
+    token: { type: Types.String({ trim: true, nonEmpty: true }) },
     // Displays <v<major>.<minor>> (or regex literal if label omitted)
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
     // Counts occurrences (-vvv -> 3, defaults to 0)

@@ -112,9 +112,9 @@ const cli = clerc({ name: "bumpp", version: "1.0.0" }).command("[files...]", {
 
 :::
 
-## Default Subcommand (`defaultCommand`)
+## Default Subcommand (`default: true`)
 
-Tools like `vite` have subcommands (`vite build`, `vite preview`), yet running bare `vite` or `vite ./my-app` invokes `vite dev`. Pass `defaultCommand` in `clerc()`:
+Tools like `vite` have subcommands (`vite build`, `vite preview`), yet running bare `vite` or `vite ./my-app` invokes `vite dev`. Mark a command with `default: true`:
 
 ```ts
 import { clerc } from "clerc";
@@ -122,10 +122,10 @@ import { clerc } from "clerc";
 const cli = clerc({
   name: "vite",
   version: "1.0.0",
-  defaultCommand: "dev",
 });
 
 cli.command("dev [root]", {
+  default: true,
   description: "Start dev server",
   flags: { port: { type: Number, short: "p", default: 5173 } },
   run(ctx) {
@@ -139,7 +139,7 @@ cli.command("build [root]", {
 });
 ```
 
-How Clerc routes `defaultCommand`:
+How Clerc routes `default: true` (on root or any `subcommand()`):
 
 - `vite` or `vite -p 3000` runs `dev`.
 - `vite --help` or `vite --version` prints root help (with `[default]` next to `dev`) or the version.

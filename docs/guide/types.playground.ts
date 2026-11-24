@@ -25,8 +25,8 @@ export const builtinTypes: PlaygroundScenario = {
         },
       },
       flags: {
-        port: { type: Types.Range(1, 65_535), default: 3000 },
-        workers: { type: Types.Integer, default: 4 },
+        port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
+        workers: { type: Types.Integer({ min: 1 }), default: 4 },
         tag: {
           type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>"),
           description: "Version tag",

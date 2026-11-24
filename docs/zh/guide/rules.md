@@ -87,6 +87,6 @@ const cli = clerc({ name: "acme", version: "2.0.0" })
 
 - **`--help` 与 `--version` 优先短路**：不会被 `oneOf` 或 `atLeastOne` 阻断。
 - **结构化报错**：校验失败抛出 `RuleError`（`code: "ERR_RULE_VIOLATION"`，退出码 `2`），并自动附带当前命令的 `usage` 行。
-- **`--help` 展示**：声明式规则会自动渲染在 `CONSTRAINTS` 区块中。
+- **`--help` 展示**：声明式规则会自动内联渲染为选项/参数标签（如 `[conflicts: --yaml]`、`[requires: --cert, --key]`）或分组标题注解（如 `MONITOR FIELDS  [at least one]`），带描述的自定义规则会归入 `NOTES`。
 - **`@clerc/plugin-completions`**：`exclusive` 与 `oneOf` 规则会自动隐藏已冲突的选项，并跳过与已传选项冲突的位置参数补全。
 - **`@clerc/plugin-mcp`**：声明式规则会自动导出为 JSON Schema 的 `dependentRequired` 与 `allOf` 约束。

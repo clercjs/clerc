@@ -14,7 +14,11 @@ const scenario: PlaygroundScenario = {
         group: "db",
         description: "Run pending database migrations",
         flags: {
-          steps: { type: Types.Integer, short: "s", description: "Max steps" },
+          steps: {
+            type: Types.Integer(),
+            short: "s",
+            description: "Max steps",
+          },
           dryRun: { type: Boolean, short: "n", description: "Preview SQL" },
         },
         run({ flags, log }) {
@@ -56,7 +60,7 @@ const scenario: PlaygroundScenario = {
         },
         flags: {
           port: {
-            type: Types.Range(1, 65_535),
+            type: Types.Integer({ min: 1, max: 65_535 }),
             short: "p",
             default: 3000,
             env: "PORT",
@@ -144,7 +148,7 @@ cli.command("deploy <env> [region]", {
   },
   flags: {
     port: {
-      type: Types.Range(1, 65_535),
+      type: Types.Integer({ min: 1, max: 65_535 }),
       short: "p",
       default: 3000,
     },

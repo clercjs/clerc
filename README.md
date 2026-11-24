@@ -21,7 +21,7 @@
 ## Why Clerc
 
 - **Signature-driven TypeScript types** - Write `"deploy <env> [region] -- [extra...]"` and get `ctx.args` inferred as `{ env: string; region: string | undefined; extra: string[] }` without `as const`. Typos in `args` or `flags` option keys fail at compile time.
-- **Standard Schema v1 everywhere** - Pass Zod, Valibot, ArkType, or built-in `Types.Enum` / `Types.Range` / `Types.Integer` / `Types.Regex` directly to `type`. One schema drives runtime validation, TypeScript output types, `--help` placeholders, shell completion candidates, and MCP JSON Schemas.
+- **Standard Schema v1 everywhere** - Pass Zod, Valibot, ArkType, or built-in `Types.Enum` / `Types.Integer` / `Types.Number` / `Types.String` / `Types.Regex` directly to `type`. One schema drives runtime validation, TypeScript output types, `--help` placeholders, shell completion candidates, and MCP JSON Schemas.
 - **Editorial `--help`, typo hints, and `ctx.log` built in** - Every CLI gets aligned `--help` pages (command/flag groups, examples, notes), Cargo-style error diagnostics with Levenshtein suggestions (`buid` -> `'build'`, `--prt` -> `'--port'`), and a structured logger (`step`, `box`, `spinner`, `task`, streaming `.line()`, and JSON mode).
 - **One API for apps and plugins** - `clerc()` and `plugin()` share `.command()`, `.flags()`, `.groups()`, `.middleware()`, `.onError()`, and `.use()`. Onion middlewares inject typed `ctx.state` via `next({ db })`, clean up in `try / finally`, and support `{ enforce: "pre" | "post" }`.
 - **Shell completions and MCP server from one definition** - Add `@clerc/plugin-completions` for Bash, Zsh, Fish, and PowerShell tab-completion. Add `@clerc/plugin-mcp` and `<cli> mcp` exposes your commands as Model Context Protocol tools and help pages as resources for AI agents.
@@ -57,7 +57,7 @@ cli.command("deploy <env> [region]", {
   },
   flags: {
     port: {
-      type: Types.Range(1, 65_535),
+      type: Types.Integer({ min: 1, max: 65_535 }),
       short: "p",
       default: 3000,
       env: "PORT",

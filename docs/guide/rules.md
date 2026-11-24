@@ -87,6 +87,6 @@ Rules run **after** flag/argument parsing, environment fallbacks, required check
 
 - **Built-in `--help` & `--version`** short-circuit before rule evaluation, so help and version output are never blocked by `oneOf` or `atLeastOne`.
 - **Diagnostics**: failing rules throw `RuleError` (`code: "ERR_RULE_VIOLATION"`, exit code `2`) with the command's `usage` line attached automatically.
-- **`--help`**: declarative rules render under a `CONSTRAINTS` section automatically.
+- **`--help`**: declarative rules render inline as option/argument tags (e.g. `[conflicts: --yaml]`, `[requires: --cert, --key]`) or on flag group headings (e.g. `MONITOR FIELDS  [at least one]`), and documented custom rules appear under `NOTES`.
 - **`@clerc/plugin-completions`**: `exclusive` and `oneOf` rules hide conflicting flags and skip conflicting positional argument completions once a partner is already present.
 - **`@clerc/plugin-mcp`**: declarative rules export directly to JSON Schema `dependentRequired` and `allOf` constraints on exposed tool schemas.

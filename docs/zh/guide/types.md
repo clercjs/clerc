@@ -96,7 +96,7 @@ cli.command("invite <email>", {
 
 ## 内置 `Types`
 
-不想引入外部校验库时，`clerc` 内置了五个常用 Standard Schema 构造器：
+不想引入外部校验库时，`clerc` 内置了常用 Standard Schema 构造器：
 
 ```ts
 import { Types, clerc } from "clerc";
@@ -108,8 +108,10 @@ cli.command("release <channel>", {
     channel: Types.Enum("alpha", "beta", "rc", "stable"),
   },
   flags: {
-    port: { type: Types.Range(1, 65_535), default: 3000 },
-    workers: { type: Types.Integer, default: 4 },
+    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
+    workers: { type: Types.Integer({ min: 1 }), default: 4 },
+    ratio: { type: Types.Number({ min: 0, max: 1 }) },
+    token: { type: Types.String({ trim: true, nonEmpty: true }) },
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
     verbose: { type: Types.Counter, short: "v" },
   },

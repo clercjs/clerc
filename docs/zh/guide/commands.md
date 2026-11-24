@@ -112,9 +112,9 @@ const cli = clerc({ name: "bumpp", version: "1.0.0" }).command("[files...]", {
 
 :::
 
-## 默认子命令（`defaultCommand`）
+## 默认子命令（`default: true`）
 
-像 `vite` 这样既有 `vite build` 子命令，又希望直接运行 `vite` 或 `vite ./my-app` 时默认走 `dev` 的工具，可在 `clerc()` 中配置 `defaultCommand`：
+像 `vite` 这样既有 `vite build` 子命令，又希望直接运行 `vite` 或 `vite ./my-app` 时默认走 `dev` 的工具，可在子命令上声明 `default: true`（根级和任意 `subcommand()` 下都支持）：
 
 ```ts
 import { clerc } from "clerc";
@@ -122,10 +122,10 @@ import { clerc } from "clerc";
 const cli = clerc({
   name: "vite",
   version: "1.0.0",
-  defaultCommand: "dev",
 });
 
 cli.command("dev [root]", {
+  default: true,
   description: "启动开发服务器",
   flags: { port: { type: Number, short: "p", default: 5173 } },
   run(ctx) {

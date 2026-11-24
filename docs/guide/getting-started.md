@@ -56,7 +56,7 @@ cli.command("deploy <env> [region]", {
   },
   flags: {
     port: {
-      type: Types.Range(1, 65_535),
+      type: Types.Integer({ min: 1, max: 65_535 }),
       short: "p",
       default: 3000,
       env: "PORT",
