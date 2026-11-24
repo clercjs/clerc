@@ -82,20 +82,15 @@ function buildAnnotations(
   if (!mcpMeta) {
     return undefined;
   }
-  const annotations: {
-    readOnlyHint?: boolean;
-    destructiveHint?: boolean;
-    idempotentHint?: boolean;
-  } = {};
-  if (mcpMeta.readOnly !== undefined) {
-    annotations.readOnlyHint = mcpMeta.readOnly;
-  }
-  if (mcpMeta.destructive !== undefined) {
-    annotations.destructiveHint = mcpMeta.destructive;
-  }
-  if (mcpMeta.idempotent !== undefined) {
-    annotations.idempotentHint = mcpMeta.idempotent;
-  }
+  const annotations: McpToolAnnotations = {
+    ...(mcpMeta.readOnly !== undefined && { readOnlyHint: mcpMeta.readOnly }),
+    ...(mcpMeta.destructive !== undefined && {
+      destructiveHint: mcpMeta.destructive,
+    }),
+    ...(mcpMeta.idempotent !== undefined && {
+      idempotentHint: mcpMeta.idempotent,
+    }),
+  };
 
   return Object.keys(annotations).length > 0 ? annotations : undefined;
 }
@@ -157,7 +152,13 @@ function buildToolEntry(
 
     const itemSchema = { ...arg.toJsonSchema() };
     const prop: Record<string, unknown> = arg.isVariadic
-      ? { type: "array", items: itemSchema }
+      ? {
+          type: "array",
+          items: itemSchema,
+          ...(arg.unique ? { uniqueItems: true } : {}),
+          ...(arg.minItems === undefined ? {} : { minItems: arg.minItems }),
+          ...(arg.maxItems === undefined ? {} : { maxItems: arg.maxItems }),
+        }
       : itemSchema;
 
     if (arg.description) {
@@ -173,9 +174,12 @@ function buildToolEntry(
     }
   }
 
+  const isStandalone = Boolean(cmd.standalone);
   const localNames = new Set(node.localFlags.map((f) => f.name));
   const mergedFlags = [
-    ...model.globalFlags.filter((f) => !localNames.has(f.name)),
+    ...(isStandalone
+      ? []
+      : model.globalFlags.filter((f) => !localNames.has(f.name))),
     ...node.localFlags,
   ];
   const flags = new Map<string, FlagSlot>();
@@ -204,10 +208,7 @@ function buildToolEntry(
     });
   }
 
-  const isStandalone = Boolean(cmd.standalone);
-  const activeRules: readonly RuleDescriptor[] = isStandalone
-    ? node.rules
-    : [...model.globalRules, ...node.rules];
+  const activeRules: readonly RuleDescriptor[] = node.rules;
   const argNames = new Set(node.args.map((a) => a.name));
 
   function resolveMcpProp(ref: RuleRef): string | undefined {

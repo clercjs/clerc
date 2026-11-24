@@ -37,34 +37,41 @@ export async function resolveCompletions(
   const priorTokens = input.length > 0 ? input.slice(0, -1) : [];
   const rawCurrent = input.at(-1) ?? "";
 
-  const defaultNode =
-    !model.tree.root.command && model.defaultCommand
-      ? model.tree.findNode(model.defaultCommand)
-      : undefined;
-
-  const rootScanNode =
-    !model.tree.root.command && defaultNode ? defaultNode : model.tree.root;
-  const rootScanner = createArgvParser(
-    flagsToSpecs(getScopeFlags(rootScanNode, model, true)),
-  );
-
   let node: CommandNode = model.tree.root;
   const matchedIndices: number[] = [];
   let isContiguousPrefix = true;
+  let startIndex = 0;
 
-  rootScanner.scan(priorTokens, (tok, index) => {
-    const child = node.children.get(tok) ?? node.aliasIndex.get(tok);
-    if (!child) {
-      return false;
-    }
-    if (index !== matchedIndices.length) {
-      isContiguousPrefix = false;
-    }
-    node = child;
-    matchedIndices.push(index);
+  while (startIndex < priorTokens.length) {
+    const scanNode =
+      !node.command?.run && node.defaultChild ? node.defaultChild : node;
+    const scanner = createArgvParser(
+      flagsToSpecs(getScopeFlags(scanNode, model, true)),
+    );
+    let matched = false;
+    scanner.scan(
+      priorTokens,
+      (tok, index) => {
+        const child = node.children.get(tok) ?? node.aliasIndex.get(tok);
+        if (!child) {
+          return false;
+        }
+        if (index !== matchedIndices.length) {
+          isContiguousPrefix = false;
+        }
+        node = child;
+        matchedIndices.push(index);
+        startIndex = index + 1;
+        matched = true;
 
-    return true;
-  });
+        return false;
+      },
+      startIndex,
+    );
+    if (!matched) {
+      break;
+    }
+  }
 
   const remainingPrior =
     matchedIndices.length === 0
@@ -74,9 +81,7 @@ export async function resolveCompletions(
         : priorTokens.filter((_, idx) => !new Set(matchedIndices).has(idx));
 
   const targetNode =
-    node === model.tree.root && !node.command && defaultNode
-      ? defaultNode
-      : node;
+    !node.command?.run && node.defaultChild ? node.defaultChild : node;
 
   const activeFlags = getScopeFlags(targetNode, model, true);
   const flagByName = new Map(activeFlags.map((flag) => [flag.name, flag]));
@@ -140,12 +145,13 @@ export async function resolveCompletions(
     return completeFlagValue(pendingFlag, baseCtx);
   }
 
-  const activeRules = targetNode.command?.standalone
-    ? targetNode.rules
-    : [...model.globalRules, ...targetNode.rules];
   const usedFlags = new Set(parsed.provided);
   const usedArgs = new Set(Object.keys(resolvedArgs));
-  const conflicted = collectConflictedTargets(activeRules, usedFlags, usedArgs);
+  const conflicted = collectConflictedTargets(
+    targetNode.rules,
+    usedFlags,
+    usedArgs,
+  );
 
   if (!afterDoubleDash && !parsed.stoppedEarly) {
     const inlineHit = matchInlineFlagValue(

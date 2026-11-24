@@ -48,7 +48,7 @@ describe("@clerc/plugin-mcp", () => {
       },
       flags: {
         port: {
-          type: Types.Range(1, 65_535),
+          type: Types.Integer({ min: 1, max: 65_535 }),
           default: 3000,
           description: "Server port",
         },
@@ -90,7 +90,7 @@ describe("@clerc/plugin-mcp", () => {
         items: { type: "string" },
       },
       port: {
-        type: "number",
+        type: "integer",
         minimum: 1,
         maximum: 65_535,
         default: 3000,
@@ -363,5 +363,64 @@ describe("@clerc/plugin-mcp", () => {
     expect(() => listMcpTools(dupCli.buildModel())).toThrow(
       "Duplicate MCP tool name: 'db_migrate'",
     );
+  });
+
+  it("exports scoped flags, scoped rules, and array constraints (uniqueItems/minItems/maxItems) into MCP schemas", () => {
+    const cli = createTestCli().use(mcpPlugin());
+
+    const admin = cli
+      .scope({ group: "admin" })
+      .flags({
+        token: { type: String, description: "API token" },
+        tokenFile: { type: String, description: "Token file" },
+      })
+      .rules((r) => [r.oneOf(r.flag("token"), r.flag("tokenFile"))]);
+
+    const node = admin.subcommand("node", { description: "Manage nodes" });
+    node.command("order <ids...>", {
+      description: "Order nodes",
+      args: {
+        ids: { unique: true, minItems: 1, maxItems: 10 },
+      },
+      flags: {
+        tags: {
+          type: String,
+          multiple: true,
+          unique: true,
+          minItems: 1,
+          maxItems: 5,
+        },
+      },
+      run() {},
+    });
+
+    const server = cli.scope({ group: "server" }).flags({ db: String });
+    server.command("serve", { description: "Start server", run() {} });
+
+    const tools = listMcpTools(cli.buildModel());
+    const orderTool = tools.find((t) => t.name === "node_order")!;
+    const serveTool = tools.find((t) => t.name === "serve")!;
+
+    expect(orderTool.inputSchema.properties.ids).toMatchObject({
+      type: "array",
+      items: { type: "string" },
+      uniqueItems: true,
+      minItems: 1,
+      maxItems: 10,
+    });
+    expect(orderTool.inputSchema.properties.tags).toMatchObject({
+      type: "array",
+      items: { type: "string" },
+      uniqueItems: true,
+      minItems: 1,
+      maxItems: 5,
+    });
+    expect(orderTool.inputSchema.properties.token).toBeDefined();
+    expect(orderTool.inputSchema.properties.db).toBeUndefined();
+    expect(orderTool.inputSchema.allOf).toBeDefined();
+
+    expect(serveTool.inputSchema.properties.db).toBeDefined();
+    expect(serveTool.inputSchema.properties.token).toBeUndefined();
+    expect(serveTool.inputSchema.allOf).toBeUndefined();
   });
 });

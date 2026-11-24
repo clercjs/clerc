@@ -7,7 +7,7 @@ import { ShellCompDirective, completionsPlugin } from "../src";
 describe("plugin-completions v2", () => {
   it("generates zsh, bash, fish, and powershell scripts via ctx.terminal and completes enums & flags", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli({ defaultCommand: "build" })
+    const cli = createTestCli()
       .flags({
         token: {
           type: String,
@@ -18,6 +18,7 @@ describe("plugin-completions v2", () => {
       .use(completionsPlugin());
 
     cli.command("build [env]", {
+      default: true,
       aliases: ["b"],
       description: "Build project",
       args: {
@@ -277,11 +278,12 @@ describe("plugin-completions v2", () => {
     );
   });
 
-  it("omits already-used non-repeatable flags and rule conflicts (flag + arg), keeps counters/arrays, and parses defaultCommand flags", async () => {
+  it("omits already-used non-repeatable flags and rule conflicts (flag + arg), keeps counters/arrays, and parses default command flags", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli({ defaultCommand: "deploy" })
+    const cli = createTestCli()
       .use(completionsPlugin())
       .command("deploy [env]", {
+        default: true,
         args: { env: Types.Enum("staging", "prod") },
         flags: {
           port: { type: Number, short: "p", description: "Server port" },
@@ -398,5 +400,30 @@ describe("plugin-completions v2", () => {
     });
 
     expect(terminal.stdoutText()).toBe(":4");
+  });
+
+  it("completes scoped flags and subcommands when scoped flags precede subcommand names", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli().use(completionsPlugin());
+
+    const pr = cli
+      .subcommand("pr", { description: "Manage pull requests" })
+      .flags({
+        repo: {
+          type: String,
+          short: "R",
+          description: "Target repository",
+        },
+      });
+    pr.command("ls", { default: true, description: "List PRs", run() {} });
+    pr.command("merge <id>", { description: "Merge PR", run() {} });
+
+    await cli.run(["complete", "--", "pr", "--repo", "org/app", ""], {
+      terminal,
+    });
+    const out = terminal.stdoutText();
+
+    expect(out).toContain("ls	List PRs");
+    expect(out).toContain("merge	Merge PR");
   });
 });
