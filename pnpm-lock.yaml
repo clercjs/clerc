@@ -235,6 +235,9 @@ catalogs:
     vitepress-plugin-llms:
       specifier: ^1.15.0
       version: 1.15.0
+    vue:
+      specifier: ^3.5.46
+      version: 3.5.46
     vue-tsc:
       specifier: ^3.3.14
       version: 3.3.14
@@ -330,6 +333,9 @@ importers:
       vitepress-plugin-llms:
         specifier: catalog:docs
         version: 1.15.0(supports-color@9.4.0)
+      vue:
+        specifier: catalog:docs
+        version: 3.5.46(typescript-native-bridge@6.0.3-bridge.19.tsgo.7.0.2)
       vue-tsc:
         specifier: catalog:docs
         version: 3.3.14(typescript-native-bridge@6.0.3-bridge.19.tsgo.7.0.2)

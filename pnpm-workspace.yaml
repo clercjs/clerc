@@ -37,6 +37,7 @@ catalogs:
     vitepress: "2.0.0-alpha.21"
     vitepress-plugin-group-icons: "^1.8.2"
     vitepress-plugin-llms: "^1.15.0"
+    vue: "^3.5.46"
     vue-tsc: "^3.3.14"
   lint:
     "@so1ve/eslint-config": "^4.7.0"
