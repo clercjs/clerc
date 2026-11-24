@@ -340,7 +340,7 @@ export function formatDiagnostic(
   } = options;
   const message = Error.isError(error) ? error.message : String(error);
   const lines: string[] = [
-    `${formatLogLabel("error", theme.error)}  ${message}`,
+    `${formatLogLabel("error", theme.error)} ${message}`,
   ];
 
   if (error instanceof ClercError) {
@@ -354,14 +354,14 @@ export function formatDiagnostic(
       lines.push("");
       for (const hint of error.hints) {
         lines.push(
-          `${formatLogLabel("tip", (s) => theme.bold(theme.accent(s)))}  ${hint}`,
+          `${formatLogLabel("tip", (s) => theme.bold(theme.accent(s)))} ${hint}`,
         );
       }
     }
 
     if (error.usage) {
       lines.push("");
-      lines.push(`${formatLogLabel("usage", theme.bold)}  ${error.usage}`);
+      lines.push(`${formatLogLabel("usage", theme.bold)} ${error.usage}`);
     }
 
     if (showHelpHint && name && error.exitCode === 2) {

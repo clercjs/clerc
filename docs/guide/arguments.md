@@ -69,7 +69,7 @@ cli.command("deploy <token> [region]", {
 
 When a required argument with `env` is missing from both `argv` and `process.env`, Clerc automatically appends a helpful hint:
 
-<TerminalWindow command="acme deploy" :lines='["{red:error}  missing required argument &#39;&lt;token&gt;&#39;","","{tip:tip  }  provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","       {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 
 ## Double-Dash (`--`) Arguments
 

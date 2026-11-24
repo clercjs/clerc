@@ -332,16 +332,16 @@ function diagnostic(
   message: string,
   opts: { detail?: string; hint?: string; cmdPath?: string } = {},
 ): { readonly exitCode: number; readonly lines: readonly Line[] } {
-  const lines: Line[] = [[s("error", "t-red"), s("  "), s(message)]];
+  const lines: Line[] = [[s("error", "t-red"), s(" "), s(message)]];
   if (opts.detail) {
-    lines.push([s("       "), s(opts.detail, "t-muted")]);
+    lines.push([s("      "), s(opts.detail, "t-muted")]);
   }
   if (opts.hint) {
-    lines.push(plain(), [s("tip  ", "t-tip"), s("  "), s(opts.hint)]);
+    lines.push(plain(), [s("  "), s("tip", "t-tip"), s(" "), s(opts.hint)]);
   }
   const suffix = opts.cmdPath ? ` ${opts.cmdPath}` : "";
   lines.push(plain(), [
-    s("       "),
+    s("      "),
     s(`For more information, try 'acme${suffix} --help'.`, "t-muted"),
   ]);
 
@@ -604,56 +604,64 @@ function evaluateCli(rawInput: string): {
     if (verbose > 0) {
       out.push([
         s("debug", "t-faint"),
-        s("  "),
+        s(" "),
         s(`Loaded config from ${configPath}`, "t-faint"),
       ]);
     }
     out.push(
       [
-        s("step ", "t-brand"),
-        s("  "),
+        s(" "),
+        s("step", "t-brand"),
+        s(" "),
         s(`Deploying to ${env} (${region})`, "t-bold"),
       ],
       [
-        s("       "),
+        s("      "),
         s("│ ", "t-faint"),
         s(`port=${port}, cache=${String(cache)}`, "t-muted"),
       ],
     );
     if (tags.length > 0) {
-      out.push([s("info ", "t-cyan"), s("  "), s(`Tags: ${tags.join(", ")}`)]);
+      out.push([
+        s(" "),
+        s("info", "t-cyan"),
+        s(" "),
+        s(`Tags: ${tags.join(", ")}`),
+      ]);
     }
     if (dryRun) {
       out.push(
         [
-          s("info ", "t-cyan"),
-          s("  "),
+          s(" "),
+          s("info", "t-cyan"),
+          s(" "),
           s("╭─ ", "t-faint"),
           s("Dry run complete", "t-bold"),
           s(" ──────────────────────╮", "t-faint"),
         ],
         [
-          s("       "),
+          s("      "),
           s("│  ", "t-faint"),
           s("No remote resources were modified.", "t-muted"),
           s("     │", "t-faint"),
         ],
         [
-          s("       "),
+          s("      "),
           s("╰─────────────────────────────────────────╯", "t-faint"),
         ],
       );
     } else {
       out.push([
-        s("done ", "t-green"),
-        s("  "),
+        s(" "),
+        s("done", "t-green"),
+        s(" "),
         s(`Deployed ${env} successfully!`),
       ]);
     }
     if (verbose > 0) {
       out.push([
         s("debug", "t-faint"),
-        s("  "),
+        s(" "),
         s("Command 'deploy' finished in 1.4ms", "t-faint"),
       ]);
     }
@@ -737,36 +745,39 @@ function evaluateCli(rawInput: string): {
       if (verbose > 0) {
         out.push([
           s("debug", "t-faint"),
-          s("  "),
+          s(" "),
           s("db › Connected to sqlite://local.db", "t-faint"),
         ]);
       }
       out.push(
         [
-          s("step ", "t-brand"),
-          s("  "),
+          s(" "),
+          s("step", "t-brand"),
+          s(" "),
           s("db", "t-muted"),
           s(" › ", "t-faint"),
           s("Running database migrations", "t-bold"),
         ],
         [
-          s("       "),
+          s("      "),
           s("│ ", "t-faint"),
           s(`steps: ${stepsRaw ?? "all"}`, "t-muted"),
         ],
       );
       if (parsed.flags.dryRun) {
         out.push([
-          s("info ", "t-cyan"),
-          s("  "),
+          s(" "),
+          s("info", "t-cyan"),
+          s(" "),
           s("db", "t-muted"),
           s(" › ", "t-faint"),
           s("Dry run enabled - no schema changes applied."),
         ]);
       } else {
         out.push([
-          s("done ", "t-green"),
-          s("  "),
+          s(" "),
+          s("done", "t-green"),
+          s(" "),
           s("db", "t-muted"),
           s(" › ", "t-faint"),
           s("Database is up to date!"),
@@ -775,7 +786,7 @@ function evaluateCli(rawInput: string): {
       if (verbose > 0) {
         out.push([
           s("debug", "t-faint"),
-          s("  "),
+          s(" "),
           s("Command 'db migrate' finished in 2.1ms", "t-faint"),
         ]);
       }
@@ -787,15 +798,17 @@ function evaluateCli(rawInput: string): {
         exitCode: 0,
         lines: [
           [
-            s("step ", "t-brand"),
-            s("  "),
+            s(" "),
+            s("step", "t-brand"),
+            s(" "),
             s("db", "t-muted"),
             s(" › ", "t-faint"),
             s("Seeding database", "t-bold"),
           ],
           [
-            s("done ", "t-green"),
-            s("  "),
+            s(" "),
+            s("done", "t-green"),
+            s(" "),
             s("db", "t-muted"),
             s(" › ", "t-faint"),
             s("Inserted 42 sample records."),

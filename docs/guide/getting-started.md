@@ -86,7 +86,7 @@ Hover over `env`, `region`, `port`, or `dryRun` in the code block above to inspe
 
 Run it directly with Node.js 24+ native TypeScript support:
 
-<TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='["{brand:step }  {bold:Deploying to prod (us-east-1)}","       {faint:│} {muted:port=8080}","{cyan:info }  {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","       {faint:│}  {muted:No remote resources were modified.}     {faint:│}","       {faint:╰─────────────────────────────────────────╯}"]' />
+<TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
 ## Interactive Sandbox
 

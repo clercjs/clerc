@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createLogger } from "../src";
 
 describe("@clerc/logger", () => {
-  it("renders flush-left word labels, variadic details, child scopes, and isomorphic log.box.* panels", () => {
+  it("renders right-aligned word labels, variadic details, child scopes, and isomorphic log.box.* panels", () => {
     const unicodeTerm = createMemoryTerminal({ color: false, unicode: true });
     const log = createLogger({ terminal: unicodeTerm, level: "debug" });
 
@@ -17,20 +17,20 @@ describe("@clerc/logger", () => {
 
     expect(unicodeTerm.stdoutText()).toBe(
       [
-        "step   Building",
-        "       │ entry: src/index.ts",
-        "       │ minify: true",
-        "info   Found 3 files",
-        "done   Built",
-        "       │ 12ms",
-        "debug  db:migrate › Query took 1.2ms",
+        " step Building",
+        "      │ entry: src/index.ts",
+        "      │ minify: true",
+        " info Found 3 files",
+        " done Built",
+        "      │ 12ms",
+        "debug db:migrate › Query took 1.2ms",
       ].join("\n"),
     );
     expect(unicodeTerm.stderrText()).toBe(
       [
-        "warn   Deprecated option",
-        "error  Build failed",
-        "       │ syntax error",
+        " warn Deprecated option",
+        "error Build failed",
+        "      │ syntax error",
       ].join("\n"),
     );
 
@@ -44,24 +44,24 @@ describe("@clerc/logger", () => {
     boxLog.box.warn("Update available", "Run npm i -g test");
     boxLog.box.error(new TypeError("Invalid port"));
 
-    expect(boxTerm.stdoutText()).toMatch(/^info {3}╭─ Dry run /);
+    expect(boxTerm.stdoutText()).toMatch(/^ info ╭─ Dry run /);
     expect(boxTerm.stdoutText()).toContain(
-      "\n       │  No remote resources mutated.",
+      "\n      │  No remote resources mutated.",
     );
     expect(boxTerm.stdoutText()).toContain(
-      "\n       │  Pass --confirm to publish.",
+      "\n      │  Pass --confirm to publish.",
     );
-    expect(boxTerm.stderrText()).toMatch(/^warn {3}╭─ Update available /);
-    expect(boxTerm.stderrText()).toContain("\n       │  Run npm i -g test");
-    expect(boxTerm.stderrText()).toContain("error  ╭─ Invalid port ");
+    expect(boxTerm.stderrText()).toMatch(/^ warn ╭─ Update available /);
+    expect(boxTerm.stderrText()).toContain("\n      │  Run npm i -g test");
+    expect(boxTerm.stderrText()).toContain("error ╭─ Invalid port ");
     expect(boxTerm.stderrText()).toContain("│  TypeError: Invalid port");
 
     const asciiTerm = createMemoryTerminal({ color: false, unicode: false });
     const asciiLog = createLogger({ terminal: asciiTerm });
     asciiLog.box.step("ASCII title", "ASCII body");
 
-    expect(asciiTerm.stdoutText()).toMatch(/^step {3}\+- ASCII title /);
-    expect(asciiTerm.stdoutText()).toContain("\n       |  ASCII body");
+    expect(asciiTerm.stdoutText()).toMatch(/^ step \+- ASCII title /);
+    expect(asciiTerm.stdoutText()).toContain("\n      |  ASCII body");
   });
 
   it("formats Error chains cleanly, inspects objects via node:util, and serializes JSON", () => {
@@ -75,9 +75,9 @@ describe("@clerc/logger", () => {
       }),
     );
 
-    expect(term.stdoutText()).toContain("debug  Resolved config");
+    expect(term.stdoutText()).toContain("debug Resolved config");
     expect(term.stdoutText()).toContain("port: 3000");
-    expect(term.stderrText()).toContain("error  Invalid port");
+    expect(term.stderrText()).toContain("error Invalid port");
     expect(term.stderrText()).toContain("│ TypeError: Invalid port");
     expect(term.stderrText()).toContain("│   at ");
     expect(term.stderrText()).toContain(
@@ -124,11 +124,11 @@ describe("@clerc/logger", () => {
 
     expect(term.stderrText()).toBe(
       [
-        "warn   Preflight warnings",
-        "       │ Initial check",
-        "       │ Slow upstream response",
-        "       │ Line A",
-        "       │ Line B",
+        " warn Preflight warnings",
+        "      │ Initial check",
+        "      │ Slow upstream response",
+        "      │ Line A",
+        "      │ Line B",
       ].join("\n"),
     );
 
@@ -142,11 +142,11 @@ describe("@clerc/logger", () => {
 
     expect(term.stdoutText()).toBe(
       [
-        "step   Phase 1",
-        "       │ checking",
-        "done   Phase 1 done",
-        "step   Phase 2",
-        "done   Phase 2 done",
+        " step Phase 1",
+        "      │ checking",
+        " done Phase 1 done",
+        " step Phase 2",
+        " done Phase 2 done",
       ].join("\n"),
     );
 
@@ -159,11 +159,9 @@ describe("@clerc/logger", () => {
 
     expect(out).toBe("Bundled in 40ms");
     expect(term.stdoutText()).toBe(
-      [
-        "step   Bundling...",
-        "       │ 2 chunks",
-        "done   Bundled in 40ms",
-      ].join("\n"),
+      [" step Bundling...", "      │ 2 chunks", " done Bundled in 40ms"].join(
+        "\n",
+      ),
     );
 
     term.clear();
@@ -174,6 +172,6 @@ describe("@clerc/logger", () => {
       }),
     ).rejects.toThrow("Connection reset");
 
-    expect(term.stderrText()).toBe("error  Connection reset");
+    expect(term.stderrText()).toBe("error Connection reset");
   });
 });

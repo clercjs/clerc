@@ -8,7 +8,7 @@ title: 日志与终端 UI
 
 ## 对齐左脊排版与对象 / Error 渲染
 
-全部六个日志方法（`step`、`info`、`success`、`warn`、`error`、`debug`）共享 5 字符宽左对齐词标与 `│` 详情导轨。附加参数如果是普通对象会经 `node:util` `inspect` 高亮格式化，如果是 `Error` 则自动提取堆栈并递归展示 `Caused by:` 原因链：
+全部六个日志方法（`step`、`info`、`success`、`warn`、`error`、`debug`）共享 5 字符宽右对齐词标与 `│` 详情导轨。附加参数如果是普通对象会经 `node:util` `inspect` 高亮格式化，如果是 `Error` 则自动提取堆栈并递归展示 `Caused by:` 原因链：
 
 ```ts
 import { createLogger } from "clerc";
@@ -25,7 +25,7 @@ log.error(
 );
 ```
 
-<TerminalWindow title="日志输出效果" :lines='["{brand:step }  {bold:Building targets}","       {faint:│} {muted:entry: src/index.ts}","       {faint:│} {muted:minify: true}","{cyan:info }  Resolved config","       {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug  db:migrate › Query took 1.2ms}","{red:error}  {bold:Invalid port}","       {faint:│} {muted:TypeError: Invalid port}","       {faint:│   at ...}","       {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
+<TerminalWindow title="日志输出效果" :lines='[" {brand:step} {bold:Building targets}","      {faint:│} {muted:entry: src/index.ts}","      {faint:│} {muted:minify: true}"," {cyan:info} Resolved config","      {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug db:migrate › Query took 1.2ms}","{red:error} {bold:Invalid port}","      {faint:│} {muted:TypeError: Invalid port}","      {faint:│   at ...}","      {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
 
 ## 流式追加 `.line()` 与同构 `log.box.*`
 

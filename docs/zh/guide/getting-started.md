@@ -86,7 +86,7 @@ await cli.runMain();
 
 使用 Node.js 24+ 原生 TypeScript 支持直接运行：
 
-<TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='["{brand:step }  {bold:Deploying to prod (us-east-1)}","       {faint:│} {muted:port=8080}","{cyan:info }  {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","       {faint:│}  {muted:No remote resources were modified.}     {faint:│}","       {faint:╰─────────────────────────────────────────╯}"]' />
+<TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
 ## 在线交互沙盒
 

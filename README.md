@@ -115,11 +115,11 @@ Mistyping a command or option prints actionable diagnostics:
 
 ```text
 $ acme deply
-error  unknown command 'deply'
+error unknown command 'deply'
 
-tip    a similar command exists: 'deploy'
+  tip a similar command exists: 'deploy'
 
-       For more information, try 'acme --help'.
+      For more information, try 'acme --help'.
 ```
 
 ## Plugins, Typed State & MCP

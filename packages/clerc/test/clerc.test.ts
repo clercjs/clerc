@@ -71,11 +71,11 @@ describe("clerc() integration", () => {
     expect(res.exitCode).toBe(2);
     expect(terminal.stderrText()).toBe(
       [
-        "error  unknown command 'buid'",
+        "error unknown command 'buid'",
         "",
-        "tip    a similar command exists: 'build'",
+        "  tip a similar command exists: 'build'",
         "",
-        "       For more information, try 'test --help'.",
+        "      For more information, try 'test --help'.",
       ].join("\n"),
     );
 
@@ -138,13 +138,13 @@ describe("clerc() integration", () => {
       formatDiagnostic(customErr, { theme: createTheme(false), name: "test" }),
     ).toBe(
       [
-        "error  missing target",
+        "error missing target",
         "",
-        "tip    pass 'staging' or 'prod'",
+        "  tip pass 'staging' or 'prod'",
         "",
-        "usage  test deploy <env>",
+        "usage test deploy <env>",
         "",
-        "       For more information, try 'test --help'.",
+        "      For more information, try 'test --help'.",
       ].join("\n"),
     );
 

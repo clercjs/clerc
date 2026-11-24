@@ -11,7 +11,7 @@ function divider(title: string): void {
   );
 }
 
-// 1. 统一左脊词标 + 可变详情参数 + node:util inspect + 分层 Error 堆栈
+// 1. 右对齐词标 + 可变详情参数 + node:util inspect + 分层 Error 堆栈
 divider("1. Word Labels, Inspect & Layered Error Stack");
 
 log.info("Found 5 build targets", {

@@ -8,7 +8,7 @@ Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/t
 
 ## Aligned Rail Typography
 
-All log methods (`step`, `info`, `success`, `warn`, `error`, `debug`) align along a 5-character flush-left label column with a muted `│` detail gutter. Extra arguments are formatted automatically: strings split into lines, objects use `node:util` `inspect`, and `Error` instances render clean stack frames plus `Caused by:` chains.
+All log methods (`step`, `info`, `success`, `warn`, `error`, `debug`) align along a 5-character right-aligned label column with a muted `│` detail gutter. Extra arguments are formatted automatically: strings split into lines, objects use `node:util` `inspect`, and `Error` instances render clean stack frames plus `Caused by:` chains.
 
 ```ts
 import { createLogger } from "clerc";
@@ -25,7 +25,7 @@ log.error(
 );
 ```
 
-<TerminalWindow title="Logger output" :lines='["{brand:step }  {bold:Building targets}","       {faint:│} {muted:entry: src/index.ts}","       {faint:│} {muted:minify: true}","{cyan:info }  Resolved config","       {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug  db:migrate › Query took 1.2ms}","{red:error}  {bold:Invalid port}","       {faint:│} {muted:TypeError: Invalid port}","       {faint:│   at ...}","       {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
+<TerminalWindow title="Logger output" :lines='[" {brand:step} {bold:Building targets}","      {faint:│} {muted:entry: src/index.ts}","      {faint:│} {muted:minify: true}"," {cyan:info} Resolved config","      {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug db:migrate › Query took 1.2ms}","{red:error} {bold:Invalid port}","      {faint:│} {muted:TypeError: Invalid port}","      {faint:│   at ...}","      {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
 
 `warn` and `error` write to `stderr`; `step`, `info`, `success`, and `debug` write to `stdout`.
 

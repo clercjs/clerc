@@ -23,7 +23,7 @@ const cli = clerc({
 );
 ```
 
-<TerminalWindow title="命令结束后的 stderr 提示框" :lines='["{yellow:warn }  {faint:╭─} {bold:Update available:} {muted:2.0.0} → {green:2.1.0} {faint:───╮}","       {faint:│}  {muted:Run} {cyan:npm i -g acme-cli} {muted:to update}    {faint:│}","       {faint:╰─────────────────────────────────────╯}"]' />
+<TerminalWindow title="命令结束后的 stderr 提示框" :lines='[" {yellow:warn} {faint:╭─} {bold:Update available:} {muted:2.0.0} → {green:2.1.0} {faint:───╮}","      {faint:│}  {muted:Run} {cyan:npm i -g acme-cli} {muted:to update}    {faint:│}","      {faint:╰─────────────────────────────────────╯}"]' />
 
 ## 默认行为
 

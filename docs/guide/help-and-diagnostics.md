@@ -71,7 +71,7 @@ Inside any command handler, `await ctx.help.print()` prints help for the root or
 
 Parse and validation errors exit with code `2` (usage error), while runtime/schema errors exit with code `1`. Unknown commands and unknown flags automatically compute Levenshtein distances to suggest the closest match:
 
-<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error}  unexpected option: &#39;--outpt&#39;","","{tip:tip  }  a similar option exists: &#39;--output&#39;","","       {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error} unexpected option: &#39;--outpt&#39;","","  {tip:tip} a similar option exists: &#39;--output&#39;","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 
 Throw `ClercError` in your own commands to render matching diagnostics with `detail`, `hints`, and `usage`:
 

@@ -23,7 +23,7 @@ const cli = clerc({
 );
 ```
 
-<TerminalWindow title="Stderr after command finishes" :lines='["{yellow:warn }  {faint:╭─} {bold:Update available:} {muted:2.0.0} → {green:2.1.0} {faint:───╮}","       {faint:│}  {muted:Run} {cyan:npm i -g acme-cli} {muted:to update}    {faint:│}","       {faint:╰─────────────────────────────────────╯}"]' />
+<TerminalWindow title="Stderr after command finishes" :lines='[" {yellow:warn} {faint:╭─} {bold:Update available:} {muted:2.0.0} → {green:2.1.0} {faint:───╮}","      {faint:│}  {muted:Run} {cyan:npm i -g acme-cli} {muted:to update}    {faint:│}","      {faint:╰─────────────────────────────────────╯}"]' />
 
 ## Smart Defaults
 

@@ -67,7 +67,7 @@ cli.command("deploy <token> [region]", {
 
 当绑定了 `env` 的必填参数既未通过命令行传入、环境变量也未设置时，诊断输出会自动附上提示：
 
-<TerminalWindow command="acme deploy" :lines='["{red:error}  missing required argument &#39;&lt;token&gt;&#39;","","{tip:tip  }  provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","       {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 
 ## 双破折号（`--`）参数处理
 

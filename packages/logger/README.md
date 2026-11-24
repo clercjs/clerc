@@ -1,6 +1,6 @@
 # @clerc/logger
 
-Minimal CLI logger with 7-column aligned word labels, `node:util` `inspect`, Clack-powered `box` / `spinner` / `task`, and structured JSON output.
+Minimal CLI logger with right-aligned word labels, `node:util` `inspect`, Clack-powered `box` / `spinner` / `task`, and structured JSON output.
 
 ## Usage
 

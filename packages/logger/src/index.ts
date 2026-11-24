@@ -99,7 +99,7 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 };
 
 export const LOG_LABEL_WIDTH = 5;
-export const LOG_GUTTER = " ".repeat(LOG_LABEL_WIDTH + 2);
+export const LOG_GUTTER = " ".repeat(LOG_LABEL_WIDTH + 1);
 
 const KIND_META: Record<
   LogKind,
@@ -146,7 +146,7 @@ export const formatLogLabel = (
   label: string,
   style: (text: string) => string = identity,
 ): string =>
-  `${style(label)}${" ".repeat(Math.max(0, LOG_LABEL_WIDTH - label.length))}`;
+  `${" ".repeat(Math.max(0, LOG_LABEL_WIDTH - label.length))}${style(label)}`;
 
 const formatLabel = (
   label: string,
@@ -415,7 +415,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
         ? theme.bold(headline)
         : headline;
 
-    write(`${label}  ${scopePrefix}${body}`);
+    write(`${label} ${scopePrefix}${body}`);
     if (extraLines.length > 0) {
       for (const line of extraLines) {
         write(`${detailPrefix}${line}`);
@@ -500,7 +500,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
 
     const label = formatLabel(meta.label, theme, meta.token, !isDebug);
     for (const [index, line] of rawLines.entries()) {
-      write(`${index === 0 ? `${label}  ` : LOG_GUTTER}${line}`);
+      write(`${index === 0 ? `${label} ` : LOG_GUTTER}${line}`);
     }
   }
 
@@ -550,7 +550,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
               options?.frames ??
               (unicode ? ["◒", "◐", "◓", "◑"] : ["-", "\\", "|", "/"]),
             styleFrame: (frame) =>
-              formatLogLabel(frame, (s) => theme.bold(theme.brand(s))),
+              `${" ".repeat(Math.max(0, LOG_LABEL_WIDTH - 1 - frame.length))}${theme.bold(theme.brand(frame))}`,
           });
           rawSpinner.start(
             msg.length > 0 ? `${scopePrefix}${msg}` : scopePrefix.trimEnd(),

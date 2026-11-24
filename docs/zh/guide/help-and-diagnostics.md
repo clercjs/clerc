@@ -69,7 +69,7 @@ const cli = clerc({
 
 命令行用法错误退出码为 `2`，运行期与 Schema 错误退出码为 `1`。未知命令与未知选项会自动计算编辑距离并给出修复提示：
 
-<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error}  unexpected option: &#39;--outpt&#39;","","{tip:tip  }  a similar option exists: &#39;--output&#39;","","       {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error} unexpected option: &#39;--outpt&#39;","","  {tip:tip} a similar option exists: &#39;--output&#39;","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 
 在业务代码中抛出 `ClercError` 即可获得风格一致的 `detail`、`tip` 与 `usage` 渲染：
 
