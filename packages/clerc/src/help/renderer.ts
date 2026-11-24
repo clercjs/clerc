@@ -70,7 +70,6 @@ export interface RenderHelpOptions extends BaseRenderHelpOptions {
   readonly footer?: MetaAsyncGetter<string | undefined | void>;
 }
 
-const MAX_RULE_WIDTH = 72;
 const SNAP_MAX_COL_WIDTH = 24;
 const SNAP_MAX_DIFF = 10;
 
@@ -278,7 +277,8 @@ export const defaultHelpSections: HelpSectionRenderers = {
     return [firstLine, ...descLines].join("\n");
   },
 
-  usage(doc, { theme }) {
+  usage(doc, ctx) {
+    const { theme } = ctx;
     const { command, subcommand, hasOptions, args } = doc.usage;
     const parts = [
       theme.command(command),
@@ -295,7 +295,7 @@ export const defaultHelpSections: HelpSectionRenderers = {
       ),
     ].filter(Boolean);
 
-    return `${theme.heading("USAGE")}   ${parts.join(" ")}`;
+    return ctx.section("Usage", [`  ${parts.join(" ")}`]);
   },
 
   arguments(doc, ctx) {
@@ -436,23 +436,10 @@ export function renderHelpDocument(
         : undefined,
   };
 
-  const ruleChar = unicode ? "─" : "-";
-  const topRule = theme.muted(
-    ruleChar.repeat(Math.min(columns, MAX_RULE_WIDTH)),
-  );
-  const headerText = sections.header(doc, ctx);
-  const usageText = sections.usage(doc, ctx);
-  const masthead = [
-    headerText,
-    headerText && usageText ? topRule : undefined,
-    usageText,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
   const blocks = [
     options.header,
-    masthead || undefined,
+    sections.header(doc, ctx),
+    sections.usage(doc, ctx),
     sections.arguments(doc, ctx),
     sections.commands(doc, ctx),
     sections.options(doc, ctx),

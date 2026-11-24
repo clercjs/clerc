@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { Types, clerc } from "../src";
 
 describe("built-in v2 editorial help", () => {
-  it("renders single top hairline, eyebrow headings, and aligned sections", async () => {
+  it("renders clean header, unified section headings, and aligned columns", async () => {
     const terminal = createMemoryTerminal({ columns: 96 });
 
     const cli = clerc({
@@ -71,8 +71,9 @@ describe("built-in v2 editorial help", () => {
       [
         "acme build v2.0.0  alias: b",
         "Compile source files",
-        "────────────────────────────────────────────────────────────────────────",
-        "USAGE   acme build [options] <entry>",
+        "",
+        "USAGE",
+        "  acme build [options] <entry>",
         "",
         "ARGUMENTS",
         "  <entry>                     Entry file path",
@@ -146,7 +147,7 @@ describe("built-in v2 editorial help", () => {
     expect(terminal.stdoutText()).toContain("Resolution strategy");
   });
 
-  it("falls back to ASCII top rule and stacked examples on narrow terminals", async () => {
+  it("renders stacked examples and notes cleanly on narrow terminals", async () => {
     const terminal = createMemoryTerminal({ columns: 68, unicode: false });
     const cli = clerc({
       name: "acme",
@@ -163,10 +164,7 @@ describe("built-in v2 editorial help", () => {
 
     const out = terminal.stdoutText();
 
-    expect(out).toContain(
-      "--------------------------------------------------------------------",
-    );
-    expect(out).not.toContain("─");
+    expect(out).toContain("USAGE\n  acme <command> [options]");
     expect(out).toContain(
       "  # Preview a production deploy\n  $ acme deploy prod --port 8080 -n",
     );
@@ -196,7 +194,9 @@ describe("built-in v2 editorial help", () => {
     await cli.run(["exec", "--help"], { terminal });
 
     expect(terminal.stdoutText()).not.toContain("\nARGUMENTS\n");
-    expect(terminal.stdoutText()).toContain("USAGE   test exec [options] [--]");
+    expect(terminal.stdoutText()).toContain(
+      "USAGE\n  test exec [options] [--]",
+    );
   });
 
   it("renders dynamic CLI name in help command examples", async () => {

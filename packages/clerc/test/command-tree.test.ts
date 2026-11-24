@@ -215,7 +215,7 @@ describe("CommandTree", () => {
     term.clear();
     await noArgCli.run(["--help"], { terminal: term });
 
-    expect(term.stdoutText()).toContain("USAGE   vite [command] [options]");
+    expect(term.stdoutText()).toContain("USAGE\n  vite [command] [options]");
     expect(term.stdoutText()).toContain("Start dev server  [default]");
 
     // 2. default subcommand with positional args forwards unmatched args like Vite
