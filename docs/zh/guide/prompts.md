@@ -3,14 +3,16 @@ title: 进度与交互
 ---
 
 <script setup>
-import scenario from "../../guide/prompts.playground.ts";
+import {
+  interactivePrompts,
+  manualSpinner,
+  taskSpinner,
+} from "../../guide/prompts.playground.ts";
 </script>
 
 # 进度与交互
 
 `ctx.log` 内置了任务进度 Spinner，同时 `clerc` 直接重导出了 `@clack/prompts`（`prompts`），用于构建交互式命令行问答。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 任务进度（`ctx.log.task`）
 
@@ -30,6 +32,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("upload", {
 });
 ```
 
+<CliPlayground :scenario="taskSpinner" lang="zh" />
+
 ## 手动控制 Spinner（`ctx.log.spinner`）
 
 需要手动管理起止状态时，可使用 `ctx.log.spinner()`，提供 `.start()`、`.message()`、`.stop()`、`.cancel()` 和 `.error()` 方法：
@@ -40,6 +44,8 @@ s.start("正在连接集群...");
 s.message("校验凭证...");
 s.stop("已连接");
 ```
+
+<CliPlayground :scenario="manualSpinner" lang="zh" />
 
 ## 交互式提问（`prompts`）
 
@@ -59,3 +65,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
   },
 });
 ```
+
+<CliPlayground :scenario="interactivePrompts" lang="zh" />

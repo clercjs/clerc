@@ -3,14 +3,12 @@ title: 选项
 ---
 
 <script setup>
-import scenario from "../../guide/flags.playground.ts";
+import { arraysAndCounters, constraints, implicitValue } from "../../guide/flags.playground.ts";
 </script>
 
 # 选项
 
 在 `flags` 中使用驼峰命名定义选项，命令行会自动同时接受 `--kebab-case` 与 `--camelCase`。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 简写与完整配置
 
@@ -84,6 +82,8 @@ cli.command("build", {
 });
 ```
 
+<CliPlayground :scenario="arraysAndCounters" lang="zh" />
+
 ## 可选值选项（`implicitValue`）
 
 类似 `node --inspect` 或 `git log --color` 的选项：不传时为 `undefined`（或 `default`），单独传 `--inspect` 时取 `implicitValue`，显式传 `--inspect=9230` 时取解析后的值：
@@ -111,6 +111,8 @@ cli.command("dev", {
 ::: info 显式传值请使用 `=`
 为避免把后面的位置参数误吞为选项值（例如 `acme dev -I src/index.ts`），为带有 `implicitValue` 的选项显式指定值时请使用 `--inspect=9230` 或 `-I9230`。
 :::
+
+<CliPlayground :scenario="implicitValue" lang="zh" />
 
 ## 声明式约束：`required`、`conflicts` 与 `implies`
 
@@ -143,6 +145,8 @@ cli.command("deploy", {
   },
 });
 ```
+
+<CliPlayground :scenario="constraints" lang="zh" />
 
 ## 全局选项与局部覆盖
 

@@ -1,7 +1,10 @@
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import { clerc } from "../.vitepress/components/playground-runtime.ts";
+import {
+  clerc,
+  defaultHelpSections,
+} from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
+export const groupedHelp: PlaygroundScenario = {
   createCli: () =>
     clerc({
       name: "acme",
@@ -40,28 +43,26 @@ const scenario: PlaygroundScenario = {
           log.success("Database migrated");
         },
       }),
-  source: `const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-  description: "Build and publish packages",
-  notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-})
-  .groups({ commands: { core: "Core" }, flags: { input: "Input Options" } })
-  .command("build <entry>", {
-    aliases: "b",
-    group: "core",
-    flags: {
-      output: { type: String, short: "o" },
-      cache: { type: Boolean, default: true, group: "input" },
-    },
-    run({ args, log }) { log.success(args.entry); },
-  });`,
-  presets: [
-    { cmd: "build --help" },
-    { cmd: "--help" },
-    { cmd: "db --help" },
-    { cmd: "build src/index.ts -o dist" },
-  ],
+  presets: [{ cmd: "build --help" }, { cmd: "--help" }, { cmd: "db --help" }],
 };
 
-export default scenario;
+export const customHelp: PlaygroundScenario = {
+  createCli: () =>
+    clerc({
+      name: "acme",
+      version: "2.0.0",
+      description: "Build and publish packages",
+      notes: ["This note is hidden by sections.notes."],
+      help: {
+        footer: (meta) => `Docs: https://example.com/${meta.name}`,
+        sections: {
+          header: (doc, ctx) => defaultHelpSections.header(doc, ctx),
+          notes: () => undefined,
+        },
+      },
+    }).command("build <entry>", {
+      description: "Compile source files",
+      run() {},
+    }),
+  presets: [{ cmd: "--help" }, { cmd: "build --help" }],
+};

@@ -94,7 +94,7 @@ await cli.runMain();
 
 ## 在线交互演示
 
-<CliPlayground :scenario="scenario" lang="zh" />
+<CliPlayground :scenario="scenario" variant="compact" lang="zh" />
 
 ## `runMain()` 与 `run()` 的区别
 

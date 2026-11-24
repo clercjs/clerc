@@ -3,14 +3,12 @@ title: 日志
 ---
 
 <script setup>
-import scenario from "../../guide/logger.playground.ts";
+import { alignedOutput, calloutBox, levelsAndJson } from "../../guide/logger.playground.ts";
 </script>
 
 # 日志
 
 每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 和 `@clerc/theme` 驱动），默认挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` 或 `-v` 会自动让位，也可通过 `verbosity: false` 关闭）。你也可以在任意模块中通过 `createLogger()` 独立创建日志器。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 对齐输出与对象、Error 格式化
 
@@ -31,7 +29,7 @@ log.error(
 );
 ```
 
-<TerminalWindow title="日志输出效果" :lines='[" {brand:step} {bold:Building targets}","      {faint:│} {muted:entry: src/index.ts}","      {faint:│} {muted:minify: true}"," {cyan:info} Resolved config","      {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug db:migrate › Query took 1.2ms}","{red:error} {bold:Invalid port}","      {faint:│} {muted:TypeError: Invalid port}","      {faint:│   at ...}","      {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
+<CliPlayground :scenario="alignedOutput" lang="zh" />
 
 `warn` 和 `error` 输出到 `stderr`；`step`、`info`、`success` 和 `debug` 输出到 `stdout`。
 
@@ -52,6 +50,10 @@ ctx.log.box.info(
 );
 ```
 
+<CliPlayground :scenario="calloutBox" lang="zh" />
+
 ## 运行期级别、JSON 格式与主题
 
 可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`）或 `ctx.log.format`（`"pretty" | "json"`），也可以在 `clerc({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。
+
+<CliPlayground :scenario="levelsAndJson" lang="zh" />

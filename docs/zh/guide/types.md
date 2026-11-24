@@ -3,7 +3,7 @@ title: 类型与校验
 ---
 
 <script setup>
-import scenario from "../../guide/types.playground.ts";
+import { builtinTypes, customParser } from "../../guide/types.playground.ts";
 </script>
 
 # 类型与校验
@@ -17,8 +17,6 @@ Clerc 的选项和位置参数共用同一套类型系统。你可以使用原�
 3. **`--help` 中的占位标签**（如 `<staging|prod>`、`<1..65535>`）
 4. **Shell 自动补全候选值**（枚举值在 `@clerc/plugin-completions` 中自动补全）
 5. **MCP 工具的 `inputSchema`**（在 `@clerc/plugin-mcp` 中通过 Standard JSON Schema v1 导出）
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 直接使用 Zod / Valibot / ArkType
 
@@ -126,6 +124,8 @@ cli.command("release <channel>", {
 });
 ```
 
+<CliPlayground :scenario="builtinTypes" lang="zh" />
+
 ## 自定义解析函数
 
 任意形如 `(raw: string) => T` 的函数都可作为类型使用。校验失败时直接 `throw new Error(...)` 即可转为标准 `ValidationError`；设置可选的 `.display` 属性可以自定义 `--help` 中显示的类型名称：
@@ -154,3 +154,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
   },
 });
 ```
+
+<CliPlayground :scenario="customParser" lang="zh" />

@@ -1,27 +1,37 @@
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
 import { Types, clerc } from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
+export const memoryTerminal: PlaygroundScenario = {
   env: { ACME_TOKEN: "secret_123" },
-  createCli: () => {
-    const cli = clerc({
+  createCli: () =>
+    clerc({
       name: "acme",
       version: "2.0.0",
       description: "In-memory testable CLI (env: ACME_TOKEN=secret_123)",
-    })
-      .command("deploy <env>", {
-        description: "Deploy using ACME_TOKEN from MemoryTerminal env",
-        args: { env: Types.Enum("staging", "prod") },
-        flags: {
-          token: { type: String, required: true, env: "ACME_TOKEN" },
-        },
-        run({ args, flags, log }) {
-          log.success(
-            `Deployed to ${args.env}`,
-            `token=${flags.token.slice(0, 6)}***`,
-          );
-        },
-      })
+    }).command("deploy <env>", {
+      description: "Deploy using ACME_TOKEN from MemoryTerminal env",
+      args: { env: Types.Enum("staging", "prod") },
+      flags: {
+        token: { type: String, required: true, env: "ACME_TOKEN" },
+      },
+      run({ args, flags, log }) {
+        log.success(
+          `Deployed to ${args.env}`,
+          `token=${flags.token.slice(0, 6)}***`,
+        );
+      },
+    }),
+  presets: [
+    { cmd: "deploy staging" },
+    { cmd: "deploy qa" },
+    { cmd: "deploy --help" },
+  ],
+};
+
+export const inspectModel: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "acme", version: "2.0.0" })
+      .command("build", { description: "Build project", run() {} })
       .command("inspect-model", {
         description: "Inspect immutable cli.buildModel() metadata",
         run({ model, log }) {
@@ -34,25 +44,6 @@ const scenario: PlaygroundScenario = {
             commands,
           });
         },
-      });
-
-    return cli;
-  },
-  source: `const terminal = createMemoryTerminal({
-  env: { ACME_TOKEN: "secret_123" },
-});
-
-const ok = await cli.run(["deploy", "staging"], { terminal });
-// ok.exitCode === 0, terminal.stdoutText() captured in memory
-
-const bad = await cli.run(["deploy", "qa"], { terminal });
-// bad.exitCode === 2, no process.exit() called`,
-  presets: [
-    { cmd: "deploy staging" },
-    { cmd: "deploy qa" },
-    { cmd: "inspect-model" },
-    { cmd: "deploy --help" },
-  ],
+      }),
+  presets: [{ cmd: "inspect-model" }],
 };
-
-export default scenario;

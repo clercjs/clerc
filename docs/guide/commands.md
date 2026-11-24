@@ -3,14 +3,17 @@ title: Commands
 ---
 
 <script setup>
-import scenario from "./commands.playground.ts";
+import {
+  defaultCommand,
+  deprecated,
+  stopAtFirstPositional,
+  subcommands,
+} from "./commands.playground.ts";
 </script>
 
 # Commands
 
 In Clerc, command names, subcommand paths, and positional arguments live in a single route-style signature string passed to `.command()`.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Defining Commands
 
@@ -69,6 +72,8 @@ cli.command("db seed", {
 ```
 
 Global flags can appear **before or after** the subcommand path on the command line: both `acme -v db migrate` and `acme db migrate -v` resolve to `db migrate`.
+
+<CliPlayground :scenario="subcommands" lang="en" />
 
 ## Single-Command CLIs (Root Command)
 
@@ -141,6 +146,8 @@ How Clerc routes `defaultCommand`:
 - If `dev` accepts positional arguments (`dev [root]`), `vite ./app` forwards `./app` to `dev`.
 - If `dev` takes **no** positional arguments, `vite biuld` still throws `UnknownCommandError` and suggests `'build'`.
 
+<CliPlayground :scenario="defaultCommand" lang="en" />
+
 ## Wrapper Commands (`stopAtFirstPositional`)
 
 When building a task runner like `npx` or `exec <cmd> [args...]` where flags after `<cmd>` belong to the child process rather than your CLI, enable `stopAtFirstPositional`:
@@ -159,6 +166,8 @@ cli.command("exec <cmd> [args...]", {
   },
 });
 ```
+
+<CliPlayground :scenario="stopAtFirstPositional" lang="en" />
 
 ## Lazy-Loaded Handlers
 
@@ -184,3 +193,5 @@ cli.command("init-legacy", {
   run() {},
 });
 ```
+
+<CliPlayground :scenario="deprecated" lang="en" />

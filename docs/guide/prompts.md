@@ -3,14 +3,16 @@ title: Spinners and Prompts
 ---
 
 <script setup>
-import scenario from "./prompts.playground.ts";
+import {
+  interactivePrompts,
+  manualSpinner,
+  taskSpinner,
+} from "./prompts.playground.ts";
 </script>
 
 # Spinners and Prompts
 
 Clerc includes task spinners on `ctx.log` and re-exports `@clack/prompts` as `prompts` for interactive terminal input.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Task Spinners (`ctx.log.task`)
 
@@ -30,6 +32,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("upload", {
 });
 ```
 
+<CliPlayground :scenario="taskSpinner" lang="en" />
+
 ## Manual Spinner (`ctx.log.spinner`)
 
 When you need explicit lifecycle control, use `ctx.log.spinner()`, which exposes `.start()`, `.message()`, `.stop()`, `.cancel()`, and `.error()`.
@@ -40,6 +44,8 @@ s.start("Connecting to cluster...");
 s.message("Authenticating...");
 s.stop("Connected");
 ```
+
+<CliPlayground :scenario="manualSpinner" lang="en" />
 
 ## Interactive Prompts
 
@@ -61,3 +67,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
   },
 });
 ```
+
+<CliPlayground :scenario="interactivePrompts" lang="en" />

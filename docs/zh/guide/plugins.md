@@ -3,7 +3,7 @@ title: 插件
 ---
 
 <script setup>
-import scenario from "../../guide/plugins.playground.ts";
+import { authPluginDemo, rbacMetaDemo } from "../../guide/plugins.playground.ts";
 </script>
 
 # 插件
@@ -16,8 +16,6 @@ import scenario from "../../guide/plugins.playground.ts";
 - `.middleware()`：注册洋葱中间件并注入类型化的 `ctx.state`
 - `.onError()`：注册后进先出（LIFO）错误处理器
 - `.use()`：组合其他插件
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 编写插件
 
@@ -56,6 +54,8 @@ cli.command("whoami", {
 });
 ```
 
+<CliPlayground :scenario="authPluginDemo" lang="zh" />
+
 ## 同名去重与覆盖
 
 每个插件都有唯一名称（如 `"acme:auth"` 或 `"clerc:update-notifier"`）。多个插件重复 `.use()` 同名依赖时只会加载一次；如果根 CLI 之后再次调用 `.use(authPlugin("editor"))`，新实例会在原有位置替换旧实例。
@@ -93,3 +93,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" })
     run() {},
   });
 ```
+
+<CliPlayground :scenario="rbacMetaDemo" lang="zh" />

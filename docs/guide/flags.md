@@ -3,14 +3,12 @@ title: Flags
 ---
 
 <script setup>
-import scenario from "./flags.playground.ts";
+import { arraysAndCounters, constraints, implicitValue } from "./flags.playground.ts";
 </script>
 
 # Flags
 
 Flags configure commands via `--long` options, `-s` short aliases, or environment variables. Define camelCase keys in `flags` and Clerc automatically accepts both `--kebab-case` and `--camelCase` on the command line.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Shorthand vs Full Definition
 
@@ -86,6 +84,8 @@ cli.command("build", {
 });
 ```
 
+<CliPlayground :scenario="arraysAndCounters" lang="en" />
+
 ## Optional-Value Flags (`implicitValue`)
 
 Flags like `node --inspect` or `git log --color` accept an optional `=value`, falling back to `implicitValue` when passed bare and `default` (or `undefined`) when omitted:
@@ -113,6 +113,8 @@ cli.command("dev", {
 ::: info Why `=` is required for explicit values
 To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I src/index.ts`), pass explicit values attached via `=` (`--inspect=9230` or `-I9230`).
 :::
+
+<CliPlayground :scenario="implicitValue" lang="en" />
 
 ## Constraints: `required`, `conflicts`, and `implies`
 
@@ -151,6 +153,8 @@ cli.command("deploy", {
 - `conflicts`: throws `FlagConflictError` if both flags are provided.
 - `implies`: throws `FlagImpliesError` if `--tls-key` is passed without `--tls-cert`.
 - Unknown or self-referencing flag names inside `conflicts` or `implies` are caught upfront when building the CLI model (`InvalidSchemaError`).
+
+<CliPlayground :scenario="constraints" lang="en" />
 
 ## Global Flags vs Command Flags
 

@@ -1,10 +1,11 @@
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
 import { clerc } from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
+export const signature: PlaygroundScenario = {
   createCli: () =>
-    clerc({ name: "acme", version: "2.0.0" })
-      .command("copy <source-path> [dest-path] [extra-files...]", {
+    clerc({ name: "acme", version: "2.0.0" }).command(
+      "copy <source-path> [dest-path] [extra-files...]",
+      {
         description: "Copy files into destination",
         args: {
           sourcePath: { description: "Source file" },
@@ -14,47 +15,53 @@ const scenario: PlaygroundScenario = {
         run({ args, log }) {
           log.info("Resolved ctx.args", args);
         },
-      })
-      .command("deploy <token> [region]", {
+      },
+    ),
+  presets: [
+    { cmd: "copy src/index.ts" },
+    { cmd: "copy src/index.ts out a.ts b.ts" },
+    { cmd: "copy --help" },
+  ],
+};
+
+export const envFallback: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "acme", version: "2.0.0" }).command(
+      "deploy <token> [region]",
+      {
         description: "Deploy using token arg or DEPLOY_TOKEN",
         args: {
           token: { env: "DEPLOY_TOKEN", description: "API token" },
           region: { default: "us-east-1", description: "Target region" },
         },
         run({ args, log }) {
-          log.success(`Authenticated (${args.region})`);
+          log.success(`Authenticated (${args.region})`, `token=${args.token}`);
         },
-      })
-      .command("run <script> -- [pass-through...]", {
-        description: "Run package script with passthrough args",
-        run({ args, log }) {
-          log.step(`Running script '${args.script}'`, {
-            passThrough: args.passThrough,
-          });
-        },
-      }),
-  source: `cli
-  .command("copy <source-path> [dest-path] [extra-files...]", {
-    args: { destPath: { default: "./dist" } },
-    run({ args, log }) { log.info("Resolved ctx.args", args); },
-  })
-  .command("deploy <token> [region]", {
-    args: {
-      token: { env: "DEPLOY_TOKEN" },
-      region: { default: "us-east-1" },
-    },
-    run: ({ args, log }) => log.success(\`Authenticated (\${args.region})\`),
-  })
-  .command("run <script> -- [pass-through...]", {
-    run: ({ args, log }) =>
-      log.step(\`Running '\${args.script}'\`, { passThrough: args.passThrough }),
-  });`,
+      },
+    ),
   presets: [
-    { cmd: "copy src/index.ts out a.ts b.ts" },
     { cmd: "deploy" },
-    { cmd: "run test -- --watch --bail" },
-    { cmd: "copy --help" },
+    { cmd: "deploy tok_live_99 eu-west-1" },
+    { cmd: "deploy --help" },
   ],
 };
 
-export default scenario;
+export const doubleDash: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "acme", version: "2.0.0" }).command(
+      "run <script> -- [pass-through...]",
+      {
+        description: "Run package script with passthrough args",
+        run({ args, raw, log }) {
+          log.step(`Running script '${args.script}'`, {
+            passThrough: args.passThrough,
+            doubleDash: raw.doubleDash,
+          });
+        },
+      },
+    ),
+  presets: [
+    { cmd: "run test -- --watch --bail" },
+    { cmd: "run build -- --sourcemap" },
+  ],
+};

@@ -3,14 +3,12 @@ title: Logger
 ---
 
 <script setup>
-import scenario from "./logger.playground.ts";
+import { alignedOutput, calloutBox, levelsAndJson } from "./logger.playground.ts";
 </script>
 
 # Logger
 
 Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/theme`), and you can create standalone loggers anywhere with `createLogger()`.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Aligned Output and Error Formatting
 
@@ -31,7 +29,7 @@ log.error(
 );
 ```
 
-<TerminalWindow title="Logger output" :lines='[" {brand:step} {bold:Building targets}","      {faint:│} {muted:entry: src/index.ts}","      {faint:│} {muted:minify: true}"," {cyan:info} Resolved config","      {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug db:migrate › Query took 1.2ms}","{red:error} {bold:Invalid port}","      {faint:│} {muted:TypeError: Invalid port}","      {faint:│   at ...}","      {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
+<CliPlayground :scenario="alignedOutput" lang="en" />
 
 `warn` and `error` write to `stderr`; `step`, `info`, `success`, and `debug` write to `stdout`.
 
@@ -57,6 +55,10 @@ ctx.log.box.warn(
 );
 ```
 
+<CliPlayground :scenario="calloutBox" lang="en" />
+
 ## Log Level, JSON Format, and Themes
 
 By default, `clerc()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
+
+<CliPlayground :scenario="levelsAndJson" lang="en" />

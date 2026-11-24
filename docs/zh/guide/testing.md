@@ -3,14 +3,12 @@ title: 测试
 ---
 
 <script setup>
-import scenario from "../../guide/testing.playground.ts";
+import { inspectModel, memoryTerminal } from "../../guide/testing.playground.ts";
 </script>
 
 # 测试
 
 Clerc 核心执行管线完全不依赖全局 `process.argv`、`process.env` 或 `process.exit()`，所有命令、中间件和错误诊断都可以在内存中直接做单元测试。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 使用 `createMemoryTerminal()` 编写测试
 
@@ -46,6 +44,8 @@ test("读取模拟环境变量并校验枚举参数", async () => {
 });
 ```
 
+<CliPlayground :scenario="memoryTerminal" lang="zh" />
+
 ## 直接断言异常实例（`throwOnError`）
 
 如果想在测试中用 `rejects.toThrow(...)` 直接断言具体的 `ClercError` 子类，传入 `throwOnError: true` 即可跳过默认的 `stderr` 渲染并向外抛出原始错误对象：
@@ -64,3 +64,5 @@ await expect(
 ## 读取编译后的 `CliModel`
 
 调用 `cli.buildModel()` 可以拿到只读的完整命令树与选项元数据模型，适合用于自动生成文档、自定义帮助页或静态检查命令配置。
+
+<CliPlayground :scenario="inspectModel" lang="zh" />

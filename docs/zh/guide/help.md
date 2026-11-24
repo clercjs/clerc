@@ -3,14 +3,12 @@ title: 帮助文档
 ---
 
 <script setup>
-import scenario from "../../guide/help.playground.ts";
+import { customHelp, groupedHelp } from "../../guide/help.playground.ts";
 </script>
 
 # 帮助文档
 
 Clerc 内置结构清晰的 `--help` 输出，包含顶部分隔线、分组标题、自动列对齐，以及不会被换行截断的元数据标签（`[default: ...]`、`[env: ...]`）。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 命令与选项分组
 
@@ -49,7 +47,7 @@ cli.command("build <entry>", {
 });
 ```
 
-<TerminalWindow command="acme build --help" :lines='["{muted:acme} {brand:build} {muted:v2.0.0  alias: b}","编译源码文件","{muted:────────────────────────────────────────────────────────────────────}","{heading:USAGE}   {bold:acme build} {muted:[options]} {muted:&lt;entry&gt;}","","{heading:ARGUMENTS}","  {bold:&lt;entry&gt;}                  入口文件路径","","{heading:OPTIONS}","  {cyan:-o}{muted:, }{cyan:--output} {muted:&lt;string&gt;}    输出目录","","{heading:INPUT OPTIONS}","      {cyan:--src} {muted:&lt;string&gt;}       源码目录","      {cyan:--cache}{muted:, }{cyan:--no-cache}  启用构建缓存  {muted:[default: true]}","","{heading:GLOBAL OPTIONS}","  {cyan:-h}{muted:, }{cyan:--help}               Show help"]' />
+<CliPlayground :scenario="groupedHelp" lang="zh" />
 
 ## 定制帮助区块与 AST
 
@@ -72,3 +70,5 @@ const cli = clerc({
 ```
 
 在命令处理函数中，调用 `await ctx.help.print()` 可打印根帮助，传入子命令路径（如 `await ctx.help.print(["db", "migrate"])`）可打印指定命令帮助。
+
+<CliPlayground :scenario="customHelp" lang="zh" />

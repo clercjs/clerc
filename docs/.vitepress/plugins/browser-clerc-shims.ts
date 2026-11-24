@@ -11,7 +11,13 @@ const CLERC_SHIM_ID = "\0clerc-browser:clerc-core";
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const themeEntry = path.resolve(repoRoot, "packages/theme/src/index.ts");
 const loggerEntry = path.resolve(repoRoot, "packages/logger/src/index.ts");
+const completionsEntry = path.resolve(
+  repoRoot,
+  "packages/plugin-completions/src/index.ts",
+);
 const cliEntry = path.resolve(repoRoot, "packages/clerc/src/cli.ts");
+const errorsEntry = path.resolve(repoRoot, "packages/clerc/src/errors.ts");
+const schemaEntry = path.resolve(repoRoot, "packages/clerc/src/schema.ts");
 const terminalEntry = path.resolve(repoRoot, "packages/clerc/src/terminal.ts");
 const rendererEntry = path.resolve(
   repoRoot,
@@ -27,7 +33,8 @@ function isClercPkgImporter(importer?: string): boolean {
   return (
     normalized.includes("/packages/theme/") ||
     normalized.includes("/packages/logger/") ||
-    normalized.includes("/packages/plugin-mcp/")
+    normalized.includes("/packages/plugin-mcp/") ||
+    normalized.includes("/packages/plugin-completions/")
   );
 }
 
@@ -40,6 +47,9 @@ export const BrowserClercShims = (): Plugin => ({
     }
     if (id === "@clerc/logger") {
       return loggerEntry;
+    }
+    if (id === "@clerc/plugin-completions") {
+      return completionsEntry;
     }
     if (isClercPkgImporter(importer)) {
       if (id === "node:tty") {
@@ -78,6 +88,8 @@ export const BrowserClercShims = (): Plugin => ({
 
     if (id === CLERC_SHIM_ID) {
       return `export { plugin } from ${JSON.stringify(cliEntry)};
+export { ClercError } from ${JSON.stringify(errorsEntry)};
+export { Types } from ${JSON.stringify(schemaEntry)};
 export { createMemoryTerminal } from ${JSON.stringify(terminalEntry)};
 export { renderHelp } from ${JSON.stringify(rendererEntry)};
 export { createTheme } from "@clerc/theme";

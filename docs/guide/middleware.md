@@ -3,14 +3,12 @@ title: Middleware
 ---
 
 <script setup>
-import scenario from "./middleware.playground.ts";
+import { onionState } from "./middleware.playground.ts";
 </script>
 
 # Middleware
 
 Clerc wraps command execution in an onion middleware pipeline. Middleware only runs after a command matches and passes validation; built-in `--help` and `--version` requests return immediately without opening connections or running auth checks.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Onion Lifecycle and Teardown
 
@@ -68,6 +66,8 @@ cli.command("users", {
   },
 });
 ```
+
+<CliPlayground :scenario="onionState" lang="en" />
 
 ## Execution Order and `enforce`
 

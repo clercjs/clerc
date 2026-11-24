@@ -3,18 +3,16 @@ title: 错误处理
 ---
 
 <script setup>
-import scenario from "../../guide/errors.playground.ts";
+import { clercError, jsonError, typoSuggestions } from "../../guide/errors.playground.ts";
 </script>
 
 # 错误处理
 
 命令行用法错误退出码为 `2`，运行期与 Schema 校验错误退出码为 `1`。遇到未知命令或选项时，Clerc 会查找最相近的名称并给出建议。
 
-<CliPlayground :scenario="scenario" lang="zh" />
-
 ## 拼写提示
 
-<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error} unexpected option: &#39;--outpt&#39;","","  {tip:tip} a similar option exists: &#39;--output&#39;","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<CliPlayground :scenario="typoSuggestions" lang="zh" />
 
 ## 抛出自定义 `ClercError`
 
@@ -33,6 +31,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
   },
 });
 ```
+
+<CliPlayground :scenario="clercError" lang="zh" />
 
 ## 自定义 `.onError()` 拦截
 
@@ -60,3 +60,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).onError((err, ctx) => {
   }
 }
 ```
+
+<CliPlayground :scenario="jsonError" lang="zh" />

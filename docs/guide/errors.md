@@ -3,18 +3,16 @@ title: Error Handling
 ---
 
 <script setup>
-import scenario from "./errors.playground.ts";
+import { clercError, jsonError, typoSuggestions } from "./errors.playground.ts";
 </script>
 
 # Error Handling
 
 Parse and usage errors exit with code `2`, while runtime and validation errors exit with code `1`. For unknown commands and flags, Clerc suggests the closest match.
 
-<CliPlayground :scenario="scenario" lang="en" />
-
 ## Typo Suggestions
 
-<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error} unexpected option: &#39;--outpt&#39;","","  {tip:tip} a similar option exists: &#39;--output&#39;","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<CliPlayground :scenario="typoSuggestions" lang="en" />
 
 ## Throwing `ClercError`
 
@@ -33,6 +31,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
   },
 });
 ```
+
+<CliPlayground :scenario="clercError" lang="en" />
 
 ## Custom `.onError()` Handlers
 
@@ -60,3 +60,5 @@ When `ctx.log.format === "json"` (or `logger: { format: "json" }`), unhandled er
   }
 }
 ```
+
+<CliPlayground :scenario="jsonError" lang="en" />

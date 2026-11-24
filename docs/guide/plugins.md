@@ -3,7 +3,7 @@ title: Plugins
 ---
 
 <script setup>
-import scenario from "./plugins.playground.ts";
+import { authPluginDemo, rbacMetaDemo } from "./plugins.playground.ts";
 </script>
 
 # Plugins
@@ -16,8 +16,6 @@ In Clerc v2, `Clerc` extends `Plugin`. Both share the exact same methods:
 - `.middleware()`: wrap execution and inject typed `ctx.state`
 - `.onError()`: register LIFO error handlers
 - `.use()`: compose child plugins
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Writing a Plugin
 
@@ -56,6 +54,8 @@ cli.command("whoami", {
 });
 ```
 
+<CliPlayground :scenario="authPluginDemo" lang="en" />
+
 ## Deduplication and Overrides
 
 Every plugin has a `pluginName` (such as `"acme:auth"` or `"clerc:update-notifier"`). If multiple plugins `.use()` a shared dependency, Clerc runs it once. If the root CLI calls `.use(authPlugin("editor"))` after a preset bundle already registered `"acme:auth"`, the later instance replaces the earlier one in its original slot.
@@ -93,3 +93,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" })
     run() {},
   });
 ```
+
+<CliPlayground :scenario="rbacMetaDemo" lang="en" />

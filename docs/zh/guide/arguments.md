@@ -3,14 +3,12 @@ title: 位置参数
 ---
 
 <script setup>
-import scenario from "../../guide/arguments.playground.ts";
+import { doubleDash, envFallback, signature } from "../../guide/arguments.playground.ts";
 </script>
 
 # 位置参数
 
 位置参数直接在命令签名中用尖括号 `<必填>` 和方括号 `[可选]` 声明。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 签名语法对照
 
@@ -46,6 +44,8 @@ cli.command("copy <source-path> [dest-path] [extra-files...]", {
 `args: { ... }` 中的属性名严格受命令签名约束，拼错成 `sourcePth` 会在编译期直接报错。
 :::
 
+<CliPlayground :scenario="signature" lang="zh" />
+
 ## 默认值与环境变量回退（`env`）
 
 可选参数支持 `default`（值或工厂函数），必填与可选参数均支持 `env` 环境变量回退：
@@ -73,7 +73,7 @@ cli.command("deploy <token> [region]", {
 
 当绑定了 `env` 的必填参数既未通过命令行传入、环境变量也未设置时，诊断输出会自动附上提示：
 
-<TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<CliPlayground :scenario="envFallback" lang="zh" />
 
 ## `--` 分隔符与透传参数
 
@@ -82,3 +82,5 @@ cli.command("deploy <token> [region]", {
 1. **签名中在 `--` 后声明了参数**（如 `"test [filter] -- [vitest-args...]"`）：`--` 前绑定到 `filter`，`--` 后绑定到 `ctx.args.vitestArgs` 并参与类型转换与帮助文档生成。
 2. **签名以裸 `--` 结尾**（如 `"run <script> --"`）：`--` 后的内容仅保留在 `ctx.raw.doubleDash` 中，不触发多余参数报错。
 3. **签名不含 `--`**（如 `"rm <file>"`）：遵循 POSIX 惯例，`acme rm -- -weird-name.txt` 会将 `-weird-name.txt` 作为普通位置参数传给 `<file>`。
+
+<CliPlayground :scenario="doubleDash" lang="zh" />

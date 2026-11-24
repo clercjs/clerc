@@ -2,7 +2,7 @@ import { createMcpHandler } from "../../packages/plugin-mcp/src/protocol.ts";
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
 import { Types, clerc } from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
+export const mcpRpc: PlaygroundScenario = {
   createCli: () => {
     const app = clerc({
       name: "acme",
@@ -71,21 +71,6 @@ const scenario: PlaygroundScenario = {
       },
     });
   },
-  source: `import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc } from "clerc";
-
-const cli = clerc({ name: "acme", version: "2.0.0" })
-  .use(mcpPlugin())
-  .command("deploy <env>", {
-    args: { env: Types.Enum("staging", "prod") },
-    flags: { dryRun: Boolean },
-    meta: { mcp: { destructive: true } },
-    run({ args, flags, log }) { log.info(\`Deployed \${args.env}\`); },
-  })
-  .command("status", {
-    meta: { mcp: { readOnly: true, idempotent: true } },
-    run({ terminal }) { terminal.stdout("cluster=healthy"); },
-  });`,
   presets: [
     { cmd: "rpc tools/list" },
     { cmd: "rpc tools/call deploy --env prod --dry-run" },
@@ -94,5 +79,3 @@ const cli = clerc({ name: "acme", version: "2.0.0" })
     { cmd: "rpc resources/read clerc://help/deploy" },
   ],
 };
-
-export default scenario;

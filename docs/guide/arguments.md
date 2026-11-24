@@ -3,14 +3,12 @@ title: Arguments
 ---
 
 <script setup>
-import scenario from "./arguments.playground.ts";
+import { doubleDash, envFallback, signature } from "./arguments.playground.ts";
 </script>
 
 # Positional Arguments
 
 Positional arguments are declared directly in the command signature string using angle brackets `<required>` and square brackets `[optional]`.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Signature Syntax
 
@@ -46,6 +44,8 @@ cli.command("copy <source-path> [dest-path] [extra-files...]", {
 The keys inside `args: { ... }` are constrained to the exact argument names extracted from your command signature. Mistyping `sourcePth` produces an immediate TypeScript error.
 :::
 
+<CliPlayground :scenario="signature" lang="en" />
+
 ## Defaults and Environment Fallbacks
 
 Optional arguments support `default` values (or factory functions). Both required and optional arguments support `env` fallbacks:
@@ -75,7 +75,7 @@ cli.command("deploy <token> [region]", {
 
 When a required argument with `env` is missing from both `argv` and `process.env`, Clerc appends a hint:
 
-<TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
+<CliPlayground :scenario="envFallback" lang="en" />
 
 ## Double-Dash (`--`) Arguments
 
@@ -95,3 +95,5 @@ cli.command("run <script> -- [pass-through...]", {
   },
 });
 ```
+
+<CliPlayground :scenario="doubleDash" lang="en" />

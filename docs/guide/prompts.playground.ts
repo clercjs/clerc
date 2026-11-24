@@ -1,17 +1,24 @@
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
 import { clerc } from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
-  createCli: () =>
+export const taskSpinner: PlaygroundScenario = {
+  live: true,
+  createCli: (live) =>
     clerc({ name: "acme", version: "2.0.0" }).command("upload", {
-      description: "Upload build artifacts with ctx.log.task()",
+      description: "Upload build artifacts with live animated ctx.log.task()",
       flags: {
         fail: { type: Boolean, description: "Simulate upload failure" },
       },
       async run({ flags, log }) {
-        await log.task("Uploading artifacts...", async (s) => {
+        if (!live) {
+          return;
+        }
+        await live.task(log, "Uploading artifacts...", async (s) => {
+          await live.sleep(520);
           s.message("Compressing 14 chunks...");
+          await live.sleep(560);
           s.message("Verifying sha256 checksums...");
+          await live.sleep(520);
           if (flags.fail) {
             throw new Error("registry returned HTTP 503");
           }
@@ -20,18 +27,69 @@ const scenario: PlaygroundScenario = {
         });
       },
     }),
-  source: `cli.command("upload", {
-  flags: { fail: Boolean },
-  async run({ flags, log }) {
-    await log.task("Uploading artifacts...", async (s) => {
-      s.message("Compressing 14 chunks...");
-      s.message("Verifying sha256 checksums...");
-      if (flags.fail) throw new Error("registry returned HTTP 503");
-      return "Uploaded 14 chunks in 420ms";
-    });
-  },
-});`,
   presets: [{ cmd: "upload" }, { cmd: "upload --fail" }, { cmd: "upload -q" }],
 };
 
-export default scenario;
+export const manualSpinner: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "acme", version: "2.0.0" }).command("connect", {
+      description: "Control spinner lifecycle manually",
+      run() {},
+    }),
+  presets: [{ cmd: "connect" }],
+  manualSpinner: {
+    startText: "Connecting to cluster...",
+    messages: [
+      "Authenticating...",
+      "Verifying TLS handshake...",
+      "Syncing cluster state...",
+    ],
+    stopText: "Connected",
+    cancelText: "Cancelled",
+    errorText: "Connection refused",
+  },
+};
+
+export const interactivePrompts: PlaygroundScenario = {
+  live: true,
+  createCli: (live) =>
+    clerc({ name: "acme", version: "2.0.0" }).command("deploy", {
+      description: "Interactive deploy wizard using prompts + log.task()",
+      async run({ log }) {
+        if (!live) {
+          return;
+        }
+        const env = await live.select({
+          message: "Select target environment",
+          options: [
+            { value: "staging", label: "staging", hint: "us-east-1" },
+            { value: "prod", label: "prod", hint: "multi-region" },
+          ],
+        });
+        if (live.isCancel(env)) {
+          log.warn("Deployment cancelled.");
+
+          return;
+        }
+
+        const confirmed = await live.confirm({
+          message: `Deploy release to ${env}?`,
+          initialValue: true,
+        });
+        if (live.isCancel(confirmed) || !confirmed) {
+          log.warn("Deployment cancelled.");
+
+          return;
+        }
+
+        await live.task(log, `Deploying to ${env}...`, async (s) => {
+          await live.sleep(500);
+          s.message(`Uploading bundle to ${env} edge nodes...`);
+          await live.sleep(560);
+
+          return `Deployed to ${env} successfully`;
+        });
+      },
+    }),
+  presets: [{ cmd: "deploy" }],
+};

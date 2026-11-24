@@ -3,14 +3,17 @@ title: 命令
 ---
 
 <script setup>
-import scenario from "../../guide/commands.playground.ts";
+import {
+  defaultCommand,
+  deprecated,
+  stopAtFirstPositional,
+  subcommands,
+} from "../../guide/commands.playground.ts";
 </script>
 
 # 命令
 
 在 Clerc 中，命令路径和位置参数直接写在 `.command()` 的签名字符串里。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 定义命令
 
@@ -69,6 +72,8 @@ cli.command("db seed", {
 ```
 
 全局选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
+
+<CliPlayground :scenario="subcommands" lang="zh" />
 
 ## 单命令 CLI（根命令）
 
@@ -141,6 +146,8 @@ cli.command("build [root]", {
 - 若默认命令声明了位置参数（如 `dev [root]`），`vite ./app` 会将 `./app` 转发给 `dev`。
 - 若默认命令**不接受**位置参数，输错 `vite biuld` 依然会抛出 `UnknownCommandError` 并提示 `'build'`。
 
+<CliPlayground :scenario="defaultCommand" lang="zh" />
+
 ## 透传子命令参数（`stopAtFirstPositional`）
 
 编写类似 `npx` 或 `exec <cmd> [args...]` 的命令时，开启 `stopAtFirstPositional: true` 会在遇到第一个位置参数后停止解析选项，把后续 `--flag` 原样传给目标程序：
@@ -160,7 +167,11 @@ cli.command("exec <cmd> [args...]", {
 });
 ```
 
+<CliPlayground :scenario="stopAtFirstPositional" lang="zh" />
+
 ## 懒加载与弃用提示
 
 - **懒加载**：在 `async run(ctx)` 中使用 `await import("./commands/analyze.js")`，让 `--help` 和其他子命令不加载重型依赖。
 - **弃用提示**：设置 `deprecated: "use 'acme create' instead"`，`--help` 会显示弃用标签，调用时自动向 `stderr` 输出警告（在 `-q` 静默模式下自动隐藏）。
+
+<CliPlayground :scenario="deprecated" lang="zh" />

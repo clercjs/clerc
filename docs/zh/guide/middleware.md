@@ -3,14 +3,12 @@ title: 中间件
 ---
 
 <script setup>
-import scenario from "../../guide/middleware.playground.ts";
+import { onionState } from "../../guide/middleware.playground.ts";
 </script>
 
 # 中间件
 
 Clerc 采用洋葱模型中间件包裹命令执行。中间件只在匹配到可执行命令且参数校验通过后运行，`--help` 和 `--version` 会直接返回，不会触发数据库连接或鉴权逻辑。
-
-<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 洋葱生命周期与资源清理
 
@@ -68,6 +66,8 @@ cli.command("users", {
   },
 });
 ```
+
+<CliPlayground :scenario="onionState" lang="zh" />
 
 ## 执行顺序与 `enforce`
 

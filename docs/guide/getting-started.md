@@ -94,7 +94,7 @@ Run it directly:
 
 ## Try It Live
 
-<CliPlayground :scenario="scenario" lang="en" />
+<CliPlayground :scenario="scenario" variant="compact" lang="en" />
 
 ## `runMain()` vs `run()`
 

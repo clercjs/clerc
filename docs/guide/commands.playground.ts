@@ -1,7 +1,35 @@
 import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
 import { clerc } from "../.vitepress/components/playground-runtime.ts";
 
-const scenario: PlaygroundScenario = {
+export const subcommands: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "acme", version: "2.0.0" })
+      .command("db", { description: "Database utilities" })
+      .command("db migrate", {
+        aliases: "m",
+        description: "Apply pending migrations",
+        run({ calledAs, commandPath, log }) {
+          log.success("Applied 3 migrations", {
+            calledAs,
+            commandPath,
+          });
+        },
+      })
+      .command("db seed", {
+        description: "Seed sample data",
+        run({ log }) {
+          log.success("Seeded 42 records");
+        },
+      }),
+  presets: [
+    { cmd: "db" },
+    { cmd: "db migrate" },
+    { cmd: "db m" },
+    { cmd: "db migrat" },
+  ],
+};
+
+export const defaultCommand: PlaygroundScenario = {
   createCli: () =>
     clerc({
       name: "vite",
@@ -25,60 +53,54 @@ const scenario: PlaygroundScenario = {
         run({ args, log }) {
           log.success(`Built '${args.root ?? "."}' into dist/`);
         },
-      })
-      .command("db", { description: "Database utilities" })
-      .command("db migrate", {
-        aliases: "m",
-        description: "Apply pending migrations",
-        run({ log }) {
-          log.success("Applied 3 migrations");
+      }),
+  presets: [
+    { cmd: "./app -p 4000" },
+    { cmd: "" },
+    { cmd: "build ./app" },
+    { cmd: "--help" },
+  ],
+};
+
+export const stopAtFirstPositional: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "vite", version: "2.0.0" }).command("exec <cmd> [args...]", {
+      description: "Run tool forwarding child flags",
+      stopAtFirstPositional: true,
+      flags: {
+        quiet: {
+          type: Boolean,
+          short: "q",
+          description: "Suppress wrapper output",
         },
-      })
-      .command("exec <cmd> [args...]", {
-        description: "Run tool forwarding child flags",
-        stopAtFirstPositional: true,
-        flags: { quiet: { type: Boolean, short: "q" } },
-        run({ args, flags, log }) {
-          log.info(`cmd=${args.cmd}, quiet=${String(flags.quiet)}`, {
-            forwardedArgs: args.args,
-          });
-        },
-      })
+      },
+      run({ args, flags, log }) {
+        log.info(`cmd=${args.cmd}, quiet=${String(flags.quiet)}`, {
+          forwardedArgs: args.args,
+        });
+      },
+    }),
+  presets: [
+    { cmd: "exec -q git --status -s" },
+    { cmd: "exec node -e 'console.log(1)'" },
+  ],
+};
+
+export const deprecated: PlaygroundScenario = {
+  createCli: () =>
+    clerc({ name: "vite", version: "2.0.0" })
       .command("init-legacy", {
         description: "Scaffold legacy template",
         deprecated: "use 'vite create' instead",
         run({ log }) {
-          log.info("Initialized template");
+          log.info("Initialized legacy template");
+        },
+      })
+      .command("create [dir]", {
+        description: "Scaffold a new project",
+        run({ args, log }) {
+          log.success(`Created project in '${args.dir ?? "."}'`);
         },
       }),
-  source: `const cli = clerc({
-  name: "vite",
-  version: "2.0.0",
-  defaultCommand: "dev",
-})
-  .command("dev [root]", {
-    flags: { port: { type: Number, short: "p", default: 5173 } },
-    run: ({ args, flags, log }) =>
-      log.step(\`Dev server for '\${args.root ?? "."}'\`, \`port=\${flags.port}\`),
-  })
-  .command("db", { description: "Database utilities" })
-  .command("db migrate", { aliases: "m", run({ log }) { log.success("Migrated"); } })
-  .command("exec <cmd> [args...]", {
-    stopAtFirstPositional: true,
-    flags: { quiet: { type: Boolean, short: "q" } },
-    run: ({ args, flags, log }) => log.info(\`cmd=\${args.cmd}\`, args.args),
-  })
-  .command("init-legacy", {
-    deprecated: "use 'vite create' instead",
-    run({ log }) { log.info("Initialized"); },
-  });`,
-  presets: [
-    { cmd: "./app -p 4000" },
-    { cmd: "--help" },
-    { cmd: "db" },
-    { cmd: "exec -q git --status -s" },
-    { cmd: "init-legacy" },
-  ],
+  presets: [{ cmd: "init-legacy" }, { cmd: "create my-app" }],
 };
-
-export default scenario;

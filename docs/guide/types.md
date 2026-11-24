@@ -3,7 +3,7 @@ title: Types
 ---
 
 <script setup>
-import scenario from "./types.playground.ts";
+import { builtinTypes, customParser } from "./types.playground.ts";
 </script>
 
 # Types
@@ -17,8 +17,6 @@ One schema automatically drives five places:
 3. **`--help` placeholder labels** (e.g. `<staging|prod>`, `<1..65535>`)
 4. **Shell tab-completion candidates** (enum values complete automatically in `@clerc/plugin-completions`)
 5. **MCP tool `inputSchema`** (via Standard JSON Schema v1 in `@clerc/plugin-mcp`)
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Standard Schema v1 (Zod, Valibot, ArkType)
 
@@ -135,6 +133,8 @@ cli.command("release <channel>", {
 });
 ```
 
+<CliPlayground :scenario="builtinTypes" lang="en" />
+
 ## Custom Parser Functions
 
 Any function `(raw: string) => T` is a valid type. Throw an `Error` to report a structured `ValidationError`, and attach an optional `.display` string to customize the `<placeholder>` shown in `--help`:
@@ -168,3 +168,5 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
   },
 });
 ```
+
+<CliPlayground :scenario="customParser" lang="en" />

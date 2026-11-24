@@ -3,14 +3,12 @@ title: Help
 ---
 
 <script setup>
-import scenario from "./help.playground.ts";
+import { customHelp, groupedHelp } from "./help.playground.ts";
 </script>
 
 # Help
 
 Clerc formats `--help` with a top rule, uppercase section headings, aligned columns, and metadata tags (`[default: ...]`, `[env: ...]`) that stay intact when lines wrap.
-
-<CliPlayground :scenario="scenario" lang="en" />
 
 ## Grouping Commands and Options
 
@@ -49,7 +47,7 @@ cli.command("build <entry>", {
 });
 ```
 
-<TerminalWindow command="acme build --help" :lines='["{muted:acme} {brand:build} {muted:v2.0.0  alias: b}","Compile source files","{muted:────────────────────────────────────────────────────────────────────}","{heading:USAGE}   {bold:acme build} {muted:[options]} {muted:&lt;entry&gt;}","","{heading:ARGUMENTS}","  {bold:&lt;entry&gt;}                  Entry file path","","{heading:OPTIONS}","  {cyan:-o}{muted:, }{cyan:--output} {muted:&lt;string&gt;}    Output directory","","{heading:INPUT OPTIONS}","      {cyan:--src} {muted:&lt;string&gt;}       Source directory","      {cyan:--cache}{muted:, }{cyan:--no-cache}  Use build cache  {muted:[default: true]}","","{heading:GLOBAL OPTIONS}","  {cyan:-h}{muted:, }{cyan:--help}               Show help"]' />
+<CliPlayground :scenario="groupedHelp" lang="en" />
 
 ## Customizing Help Sections
 
@@ -72,3 +70,5 @@ const cli = clerc({
 ```
 
 Inside any command handler, call `await ctx.help.print()` to print root help or pass a command path such as `await ctx.help.print(["db", "migrate"])`.
+
+<CliPlayground :scenario="customHelp" lang="en" />
