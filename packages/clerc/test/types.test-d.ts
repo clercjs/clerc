@@ -2,7 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 
 import type { FlagsDefinition, Logger, StandardSchemaV1 } from "../src";
 import { Types, clerc, plugin } from "../src";
-import type { ExtractArgNames } from "../src/types";
+import type { ExtractArgNames } from "../src/args";
 
 import "@clerc/plugin-completions";
 import "@clerc/plugin-mcp";
@@ -246,5 +246,25 @@ describe("core v2 route-signature & plugin types", () => {
         >().toEqualTypeOf<"cmd" | "args">();
       },
     });
+  });
+
+  it("types r.flag() and r.arg() strictly inside rules", () => {
+    clerc({ name: "app", version: "1.0.0" })
+      .flags({ json: Boolean })
+      .command("format [files...]", {
+        flags: { stdin: Boolean, yaml: Boolean },
+        rules: ({ exclusive, oneOf, flag, arg }) => [
+          exclusive(flag("json"), flag("yaml")),
+          exclusive(flag("stdin"), arg("files")),
+          oneOf(arg("files"), flag("stdin")),
+          // @ts-expect-error bare strings without flag()/arg() must be rejected
+          exclusive("json", "yaml"),
+          // @ts-expect-error unknown flag key must be rejected at compile time
+          exclusive(flag("json"), flag("yml")),
+          // @ts-expect-error unknown arg key must be rejected at compile time
+          oneOf(arg("missing"), flag("stdin")),
+        ],
+        run() {},
+      });
   });
 });

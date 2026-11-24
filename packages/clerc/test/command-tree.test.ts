@@ -6,12 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { AnyCommandDefinition } from "../src";
-import {
-  InvalidCommandError,
-  UnknownCommandError,
-  clerc,
-  plugin,
-} from "../src";
+import { InvalidSchemaError, UnknownCommandError, clerc, plugin } from "../src";
 import { CommandTreeBuilder } from "../src/command-tree";
 
 const makeDef = (
@@ -122,14 +117,14 @@ describe("CommandTree", () => {
     expect(children.map((n) => n.name)).toEqual(["build", "dev"]);
   });
 
-  it("throws InvalidCommandError on duplicate commands or conflicting aliases", () => {
+  it("throws InvalidSchemaError on duplicate commands or conflicting aliases", () => {
     const tree = new CommandTreeBuilder();
     tree.register(makeDef("build", ["b"]));
 
-    expect(() => tree.register(makeDef("build"))).toThrow(InvalidCommandError);
-    expect(() => tree.register(makeDef("b"))).toThrow(InvalidCommandError);
+    expect(() => tree.register(makeDef("build"))).toThrow(InvalidSchemaError);
+    expect(() => tree.register(makeDef("b"))).toThrow(InvalidSchemaError);
     expect(() => tree.register(makeDef("bundle", ["b"]))).toThrow(
-      InvalidCommandError,
+      InvalidSchemaError,
     );
 
     tree.register(makeDef(""));
@@ -163,16 +158,16 @@ describe("CommandTree", () => {
     expect(seen).toEqual(["root::3000", "root::8080", "sub:build"]);
 
     expect(() => (cli.command as any)("", { run() {} })).toThrow(
-      InvalidCommandError,
+      InvalidSchemaError,
     );
     expect(() => (cli.command as any)("   ", { run() {} })).toThrow(
-      InvalidCommandError,
+      InvalidSchemaError,
     );
 
     const tree = new CommandTreeBuilder();
 
     expect(() => tree.register(makeDef("build", [""]))).toThrow(
-      InvalidCommandError,
+      InvalidSchemaError,
     );
   });
 
@@ -267,12 +262,12 @@ describe("CommandTree", () => {
     });
     missingDefault.command("build", { run() {} });
 
-    expect(() => missingDefault.buildModel()).toThrow(InvalidCommandError);
+    expect(() => missingDefault.buildModel()).toThrow(InvalidSchemaError);
 
     const nsDefault = clerc({ name: "vite", defaultCommand: "db" });
     nsDefault.command("db migrate", { run() {} });
 
-    expect(() => nsDefault.buildModel()).toThrow(InvalidCommandError);
+    expect(() => nsDefault.buildModel()).toThrow(InvalidSchemaError);
 
     const conflictDefault = clerc({
       name: "vite",
@@ -281,6 +276,6 @@ describe("CommandTree", () => {
     conflictDefault.command({ run() {} });
     conflictDefault.command("dev", { run() {} });
 
-    expect(() => conflictDefault.buildModel()).toThrow(InvalidCommandError);
+    expect(() => conflictDefault.buildModel()).toThrow(InvalidSchemaError);
   });
 });

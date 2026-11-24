@@ -1,6 +1,7 @@
 import type { Theme } from "@clerc/theme";
 
-import type { CliModel, CommandNode, MetaAsyncGetter } from "../types";
+import type { CommandNode } from "../command-tree";
+import type { CliModel, MetaAsyncGetter } from "../types";
 import { resolveAsyncValue } from "../utils";
 import type {
   HelpArgumentItem,
@@ -54,6 +55,10 @@ export interface HelpSectionRenderers {
     ctx: HelpRenderContext,
   ) => string | undefined;
   readonly globalOptions: (
+    doc: HelpDocument,
+    ctx: HelpRenderContext,
+  ) => string | undefined;
+  readonly constraints: (
     doc: HelpDocument,
     ctx: HelpRenderContext,
   ) => string | undefined;
@@ -339,6 +344,22 @@ export const defaultHelpSections: HelpSectionRenderers = {
     return renderOptionGroups(doc.globalOptionGroups, ctx);
   },
 
+  constraints(doc, ctx) {
+    if (doc.constraints.length === 0) {
+      return undefined;
+    }
+
+    return ctx.section(
+      "Constraints",
+      ctx.formatOptions(
+        doc.constraints.map((item) => [
+          ctx.theme.muted(item.label),
+          { text: item.text },
+        ]),
+      ),
+    );
+  },
+
   examples(doc, ctx) {
     if (doc.examples.length === 0) {
       return undefined;
@@ -462,6 +483,7 @@ export function renderHelpDocument(
     sections.commands(doc, ctx),
     sections.options(doc, ctx),
     sections.globalOptions(doc, ctx),
+    sections.constraints(doc, ctx),
     sections.examples(doc, ctx),
     sections.notes(doc, ctx),
     options.footer,

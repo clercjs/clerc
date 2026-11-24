@@ -1,41 +1,25 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
 import type { ThemeStyleMap } from "@clerc/theme";
 
+import type { ContextualArgs, ExtractArgNames, InferCommandArgs } from "./args";
+import type { CommandNode, CommandTree } from "./command-tree";
 import type { ClercError } from "./errors";
+import type {
+  ContextualFlags,
+  FlagDescriptor,
+  InferFlags,
+  MergedFlags,
+} from "./flags";
 import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType } from "./parser";
-import type { CounterSchema, FlagKind, StandardSchemaV1 } from "./schema";
+import type { RuleDescriptor, RulesFactory } from "./rules";
 import type { Terminal } from "./terminal";
-import type {
-  CamelCase,
-  IsAny,
-  MaybeArray,
-  MaybeAsyncGetter,
-  Prettify,
-} from "./utils";
-
-export interface DefaultValueFunction<T> {
-  (): T;
-  display?: string;
-}
-
-export type DefaultValue<T = unknown> = T | DefaultValueFunction<T>;
-
-export interface TypeFunction<T = unknown> {
-  (value: string): T;
-  display?: string;
-}
-
-export type SingleType<T = any> = TypeFunction<T> | StandardSchemaV1<any, T>;
+import type { MaybeArray, MaybeAsyncGetter, Prettify } from "./utils";
 
 export interface CommandCustomMeta {}
-export interface FlagCustomMeta {}
-export interface ArgCustomMeta {}
 export interface CustomState {}
 
 export type CommandMeta = CommandCustomMeta & Record<string, unknown>;
-export type FlagMeta = FlagCustomMeta & Record<string, unknown>;
-export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
 
 export type State<TState extends Record<string, any> = {}> = Prettify<
   CustomState & TState
@@ -95,283 +79,6 @@ export type CompletionHandler<
   ctx: CompletionContext<Args, Flags>,
 ) => CompletionResult | Promise<CompletionResult>;
 
-export interface FlagOptions<T extends SingleType = SingleType> {
-  readonly type: T;
-  readonly multiple?: boolean;
-  readonly short?: string;
-  readonly aliases?: MaybeArray<string>;
-  readonly description?: string;
-  readonly placeholder?: string;
-  readonly default?: DefaultValue;
-  readonly implicitValue?: DefaultValue;
-  readonly delimiter?: string;
-  readonly required?: boolean;
-  readonly env?: string;
-  readonly negatable?: boolean;
-  readonly group?: string;
-  readonly hidden?: boolean;
-  readonly deprecated?: boolean | string;
-  readonly conflicts?: MaybeArray<string>;
-  readonly implies?: MaybeArray<string>;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: FlagMeta;
-}
-
-export type FlagDefinitionValue = FlagOptions | SingleType;
-export type FlagsDefinition = Record<string, FlagDefinitionValue>;
-
-type StrictOptions<T, Allowed> = T extends object
-  ? Allowed & Readonly<Partial<Record<Exclude<keyof T, keyof Allowed>, never>>>
-  : Allowed;
-
-type ContextualFlagValue<V> = [V] extends [never]
-  ? FlagOptions
-  : V extends SingleType
-    ? V
-    : StrictOptions<V, FlagOptions>;
-
-export type ContextualFlags<Flags extends Record<string, any>> = {
-  readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
-};
-
-export interface FlagDescriptor {
-  readonly name: string;
-  readonly target: string;
-  readonly short?: string;
-  readonly aliases: readonly string[];
-  readonly kind: FlagKind;
-  readonly display: string;
-  readonly description?: string;
-  readonly placeholder?: string;
-  readonly default?: unknown;
-  readonly implicitValue?: unknown;
-  readonly delimiter?: string;
-  readonly required: boolean;
-  readonly env?: string;
-  readonly negatable: boolean;
-  readonly group?: string;
-  readonly hidden: boolean;
-  readonly deprecated?: boolean | string;
-  readonly conflicts: readonly string[];
-  readonly implies: readonly string[];
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: FlagMeta;
-  readonly toJsonSchema: () => Record<string, unknown>;
-}
-
-export interface ArgDescriptor {
-  readonly name: string;
-  readonly rawName: string;
-  readonly token: string;
-  readonly isRequired: boolean;
-  readonly isVariadic: boolean;
-  readonly afterDoubleDash: boolean;
-  readonly display?: string;
-  readonly description?: string;
-  readonly placeholder?: string;
-  readonly default?: unknown;
-  readonly env?: string;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: ArgMeta;
-  readonly toJsonSchema: () => Record<string, unknown>;
-}
-
-type InferStandardSchemaOutput<T extends StandardSchemaV1<any, any>> =
-  T["~standard"] extends {
-    readonly types?: { readonly output: infer Output } | undefined;
-  }
-    ? IsAny<Output> extends true
-      ? any
-      : unknown extends Output
-        ? T extends StandardSchemaV1<any, infer U>
-          ? U
-          : Output
-        : Output
-    : T extends StandardSchemaV1<any, infer U>
-      ? U
-      : never;
-
-type InferSingleType<T> =
-  T extends StandardSchemaV1<any, any>
-    ? InferStandardSchemaOutput<T>
-    : T extends TypeFunction<infer U>
-      ? U
-      : never;
-
-type UnwrapDefault<D> = D extends () => infer R ? R : D;
-
-type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
-  readonly default: infer D;
-}
-  ? [D] extends [undefined]
-    ? Fallback
-    : UnwrapDefault<D>
-  : Fallback;
-
-type InferFlagImplicitValue<T extends FlagDefinitionValue> = T extends {
-  readonly implicitValue: infer D;
-}
-  ? [D] extends [undefined]
-    ? never
-    : UnwrapDefault<D>
-  : never;
-
-type IsTypeAny<T extends FlagDefinitionValue> =
-  IsAny<T> extends true
-    ? true
-    : T extends { readonly type: infer Type }
-      ? IsAny<Type> extends true
-        ? true
-        : false
-      : false;
-
-type InferSingleFlag<T extends FlagDefinitionValue> =
-  IsTypeAny<T> extends true
-    ? any
-    : T extends CounterSchema | { readonly type: CounterSchema }
-      ? number
-      : T extends { readonly type: infer Item; readonly multiple: true }
-        ? InferSingleType<Item>[]
-        : T extends { readonly type: infer Item }
-          ? | InferSingleType<Item>
-            | InferFlagImplicitValue<T>
-            | InferFlagDefault<
-                T,
-                [InferSingleType<Item>] extends [boolean]
-                  ? never
-                  : T extends { readonly required: true }
-                    ? never
-                    : undefined
-              >
-          : T extends SingleType
-            ? | InferSingleType<T>
-              | ([InferSingleType<T>] extends [boolean] ? never : undefined)
-            : never;
-
-export type InferFlags<T extends Record<string, any>> = Prettify<{
-  [K in keyof T]: T[K] extends FlagDefinitionValue
-    ? InferSingleFlag<T[K]>
-    : never;
-}>;
-
-export interface ArgOptions<T extends SingleType = SingleType> {
-  readonly type?: T;
-  readonly description?: string;
-  readonly placeholder?: string;
-  readonly default?: DefaultValue;
-  readonly env?: string;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: ArgMeta;
-}
-
-export type ArgDefinitionValue = SingleType | ArgOptions;
-
-type ContextualArgValue<V> = [V] extends [never]
-  ? ArgOptions
-  : V extends SingleType
-    ? V
-    : StrictOptions<V, ArgOptions>;
-
-export type ContextualArgs<
-  Spec extends string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, any>>,
-> = {
-  readonly [K in keyof Args]: K extends ExtractArgNames<Spec>
-    ? ContextualArgValue<Args[K]>
-    : never;
-} & Partial<Record<Exclude<ExtractArgNames<Spec>, keyof Args>, ArgOptions>>;
-
-type TrimWhitespace<S extends string> = S extends
-  | ` ${infer R}`
-  | `${infer R} `
-  | `\t${infer R}`
-  | `${infer R}\t`
-  | `\n${infer R}`
-  | `${infer R}\n`
-  ? TrimWhitespace<R>
-  : S;
-
-export type NonEmptySpec<S extends string> = string extends S
-  ? S
-  : TrimWhitespace<S> extends ""
-    ? never
-    : S;
-
-type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
-
-type ExtractSingleArgName<Token extends string> = Token extends
-  `<${infer Raw}>` | `[${infer Raw}]`
-  ? CamelCase<StripVariadic<Raw>>
-  : never;
-
-export type ExtractArgNames<S extends string> =
-  S extends `${infer Head} ${infer Rest}`
-    ? ExtractSingleArgName<Head> | ExtractArgNames<Rest>
-    : ExtractSingleArgName<S>;
-
-type ResolveArgType<
-  Name extends string,
-  Args extends Partial<Record<string, any>>,
-> = Name extends keyof Args
-  ? NonNullable<Args[Name]> extends { readonly type: infer T }
-    ? [T] extends [undefined]
-      ? string
-      : InferSingleType<T>
-    : NonNullable<Args[Name]> extends SingleType
-      ? InferSingleType<NonNullable<Args[Name]>>
-      : string
-  : string;
-
-type InferArgDefault<
-  Name extends string,
-  Args extends Partial<Record<string, any>>,
-  Fallback,
-> = Name extends keyof Args
-  ? NonNullable<Args[Name]> extends { readonly default: infer D }
-    ? [D] extends [undefined]
-      ? Fallback
-      : UnwrapDefault<D>
-    : Fallback
-  : Fallback;
-
-type InferTokenArg<
-  Token extends string,
-  Args extends Partial<Record<string, any>>,
-> = Token extends `<${infer Name}...>`
-  ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
-  : Token extends `[${infer Name}...]`
-    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
-    : Token extends `<${infer Name}>`
-      ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
-      : Token extends `[${infer Name}]`
-        ? Record<
-            CamelCase<Name>,
-            | ResolveArgType<CamelCase<Name>, Args>
-            | InferArgDefault<CamelCase<Name>, Args, undefined>
-          >
-        : {};
-
-type InferSpecArgsAcc<
-  S extends string,
-  Args extends Partial<Record<string, any>>,
-> = S extends `${infer Head} ${infer Rest}`
-  ? InferTokenArg<Head, Args> & InferSpecArgsAcc<Rest, Args>
-  : InferTokenArg<S, Args>;
-
-export type InferCommandArgs<
-  Spec extends string,
-  Args extends Partial<Record<string, any>> = {},
-> = string extends Spec
-  ? Record<string, any>
-  : Prettify<InferSpecArgsAcc<Spec, Args>>;
-
-type KnownKeys<T> = string extends keyof T ? never : keyof T;
-
-export type MergedFlags<
-  LocalFlags extends Record<string, any>,
-  GlobalFlags extends Record<string, any>,
-> = InferFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
-
 export interface GroupDefinition {
   readonly key: string;
   readonly title: string;
@@ -396,34 +103,12 @@ export interface CliMeta {
   readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
-export interface CommandNode {
-  readonly name: string;
-  readonly fullPath: readonly string[];
-  readonly parent?: CommandNode;
-  readonly children: ReadonlyMap<string, CommandNode>;
-  readonly aliasIndex: ReadonlyMap<string, CommandNode>;
-  readonly aliases: readonly string[];
-  readonly command?: AnyCommandDefinition;
-  readonly args: readonly ArgDescriptor[];
-  readonly localFlags: readonly FlagDescriptor[];
-  readonly builtinFlags: readonly FlagDescriptor[];
-}
-
-export interface CommandTree {
-  readonly root: CommandNode;
-  findNode: (path: readonly string[]) => CommandNode | undefined;
-  listChildren: (node?: CommandNode) => readonly CommandNode[];
-  listVisibleChildren: (node?: CommandNode) => readonly CommandNode[];
-  walkCommands: () => readonly (CommandNode & {
-    readonly command: AnyCommandDefinition;
-  })[];
-}
-
 export interface CliModel {
   readonly meta: CliMeta;
   readonly tree: CommandTree;
   readonly defaultCommand?: readonly string[];
   readonly globalFlags: readonly FlagDescriptor[];
+  readonly globalRules: readonly RuleDescriptor[];
   readonly groups: {
     readonly commands: readonly GroupDefinition[];
     readonly flags: readonly GroupDefinition[];
@@ -515,6 +200,12 @@ export interface CommandOptions<
   readonly description?: string;
   readonly args?: ContextualArgs<Spec, Args>;
   readonly flags?: ContextualFlags<Flags>;
+  readonly rules?: RulesFactory<
+    keyof MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>> & string,
+    ExtractArgNames<Spec>,
+    InferCommandArgs<Spec, NoInfer<Args>>,
+    MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
+  >;
   readonly stopAtFirstPositional?: boolean;
   readonly standalone?: boolean;
   readonly group?: string;

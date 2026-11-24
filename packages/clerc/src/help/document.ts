@@ -1,12 +1,9 @@
+import type { ArgDescriptor } from "../args";
+import type { CommandNode, CommandTree } from "../command-tree";
+import type { FlagDescriptor } from "../flags";
 import { DOUBLE_DASH } from "../parser";
-import type {
-  ArgDescriptor,
-  CliModel,
-  CommandNode,
-  CommandTree,
-  FlagDescriptor,
-  GroupDefinition,
-} from "../types";
+import { formatRuleConstraint } from "../rules";
+import type { CliModel, GroupDefinition } from "../types";
 import { formatFlagName, formatVersion, resolveAsyncValue } from "../utils";
 
 export interface HelpHeader {
@@ -79,6 +76,11 @@ export interface HelpExampleItem {
   readonly description?: string;
 }
 
+export interface HelpConstraintItem {
+  readonly label: string;
+  readonly text: string;
+}
+
 export interface HelpDocument {
   readonly header: HelpHeader;
   readonly usage: HelpUsage;
@@ -86,6 +88,7 @@ export interface HelpDocument {
   readonly commandGroups: readonly HelpCommandGroup[];
   readonly optionGroups: readonly HelpOptionGroup[];
   readonly globalOptionGroups: readonly HelpOptionGroup[];
+  readonly constraints: readonly HelpConstraintItem[];
   readonly examples: readonly HelpExampleItem[];
   readonly notes: readonly string[];
 }
@@ -145,7 +148,7 @@ function buildOptionItem(flag: FlagDescriptor): HelpOptionItem {
 const buildArgumentItem = (arg: ArgDescriptor): HelpArgumentItem => ({
   name: arg.name,
   token: arg.token,
-  typeLabel: arg.placeholder ?? arg.display,
+  typeLabel: arg.display,
   description: arg.description,
   defaultText:
     arg.default === undefined ? undefined : formatDefaultValue(arg.default),
@@ -257,8 +260,7 @@ export function formatCommandUsage(
 
   const isRoot = node.fullPath.length === 0;
   const visibleChildren = model.tree.listVisibleChildren(node);
-  const isStandalone =
-    Boolean(node.command?.standalone) || Boolean(node.command?.builtin);
+  const isStandalone = Boolean(node.command?.standalone);
   const hasVisibleFlags =
     node.localFlags.some((f) => !f.hidden) ||
     node.builtinFlags.some((f) => !f.hidden) ||
@@ -312,7 +314,7 @@ export async function buildHelpDocument(
   model: CliModel,
   node: CommandNode = model.tree.root,
 ): Promise<HelpDocument> {
-  const { meta, tree, globalFlags, groups } = model;
+  const { meta, tree, globalFlags, globalRules, groups } = model;
   const command = node.command;
   const isRoot = node.fullPath.length === 0;
   const visibleChildren = tree.listVisibleChildren(node);
@@ -323,8 +325,7 @@ export async function buildHelpDocument(
 
   const visibleLocalFlags = node.localFlags.filter((f) => !f.hidden);
   const localFlagNames = new Set(node.localFlags.map((f) => f.name));
-  const isStandalone =
-    Boolean(command?.standalone) || Boolean(command?.builtin);
+  const isStandalone = Boolean(command?.standalone);
   const visibleGlobalFlags = [
     ...(isStandalone
       ? []
@@ -342,6 +343,23 @@ export async function buildHelpDocument(
 
   const notesSource = command?.notes ?? (isRoot ? meta.notes : undefined);
   const notes = notesSource ? await resolveAsyncValue(notesSource, meta) : [];
+
+  const flagMap = new Map<string, FlagDescriptor>();
+  for (const f of globalFlags) {
+    flagMap.set(f.name, f);
+  }
+  for (const f of node.localFlags) {
+    flagMap.set(f.name, f);
+  }
+  const argMap = new Map<string, ArgDescriptor>(
+    node.args.map((a) => [a.name, a]),
+  );
+  const activeRules = isStandalone
+    ? node.rules
+    : [...globalRules, ...node.rules];
+  const constraints: HelpConstraintItem[] = activeRules.map((rule) =>
+    formatRuleConstraint(rule, flagMap, argMap),
+  );
 
   return {
     header: {
@@ -389,6 +407,7 @@ export async function buildHelpDocument(
           false,
         )
       : [],
+    constraints,
     globalOptionGroups: hasGlobalFlags
       ? groupItems(
           visibleGlobalFlags,

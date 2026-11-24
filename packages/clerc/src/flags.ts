@@ -1,6 +1,4 @@
 import {
-  FlagConflictError,
-  FlagImpliesError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredFlagError,
@@ -13,23 +11,141 @@ import {
   INVALID_BOOL_MSG,
   parseBooleanLiteral,
 } from "./parser";
-import type { FlagKind, TypeConverter } from "./schema";
+import type {
+  CounterSchema,
+  DefaultValue,
+  FlagKind,
+  InferSingleType,
+  SingleType,
+  StrictOptions,
+  TypeConverter,
+  UnwrapDefault,
+} from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
-import type {
-  FlagDefinitionValue,
-  FlagDescriptor,
-  FlagOptions,
-  FlagsDefinition,
-  SingleType,
-} from "./types";
-import {
-  camelCase,
-  evaluateDefault,
-  formatFlagName,
-  kebabCase,
-  toArray,
-} from "./utils";
+import type { CompletionHandler } from "./types";
+import type { IsAny, MaybeArray, Prettify } from "./utils";
+import { evaluateDefault, formatFlagName, kebabCase, toArray } from "./utils";
+
+export interface FlagCustomMeta {}
+export type FlagMeta = FlagCustomMeta & Record<string, unknown>;
+
+export interface FlagOptions<T extends SingleType = SingleType> {
+  readonly type: T;
+  readonly multiple?: boolean;
+  readonly short?: string;
+  readonly aliases?: MaybeArray<string>;
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly default?: DefaultValue;
+  readonly implicitValue?: DefaultValue;
+  readonly delimiter?: string;
+  readonly required?: boolean;
+  readonly env?: string;
+  readonly negatable?: boolean;
+  readonly group?: string;
+  readonly hidden?: boolean;
+  readonly deprecated?: boolean | string;
+  readonly complete?: false | CompletionHandler;
+  readonly meta?: FlagMeta;
+}
+
+export type FlagDefinitionValue = FlagOptions | SingleType;
+export type FlagsDefinition = Record<string, FlagDefinitionValue>;
+
+type ContextualFlagValue<V> = [V] extends [never]
+  ? FlagOptions
+  : V extends SingleType
+    ? V
+    : StrictOptions<V, FlagOptions>;
+
+export type ContextualFlags<Flags extends Record<string, any>> = {
+  readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
+};
+
+export interface FlagDescriptor {
+  readonly name: string;
+  readonly target: string;
+  readonly short?: string;
+  readonly aliases: readonly string[];
+  readonly kind: FlagKind;
+  readonly display: string;
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly default?: unknown;
+  readonly implicitValue?: unknown;
+  readonly delimiter?: string;
+  readonly required: boolean;
+  readonly env?: string;
+  readonly negatable: boolean;
+  readonly group?: string;
+  readonly hidden: boolean;
+  readonly deprecated?: boolean | string;
+  readonly complete?: false | CompletionHandler;
+  readonly meta?: FlagMeta;
+  readonly toJsonSchema: () => Record<string, unknown>;
+}
+
+type InferFlagDefault<T extends FlagDefinitionValue, Fallback> = T extends {
+  readonly default: infer D;
+}
+  ? [D] extends [undefined]
+    ? Fallback
+    : UnwrapDefault<D>
+  : Fallback;
+
+type InferFlagImplicitValue<T extends FlagDefinitionValue> = T extends {
+  readonly implicitValue: infer D;
+}
+  ? [D] extends [undefined]
+    ? never
+    : UnwrapDefault<D>
+  : never;
+
+type IsTypeAny<T extends FlagDefinitionValue> =
+  IsAny<T> extends true
+    ? true
+    : T extends { readonly type: infer Type }
+      ? IsAny<Type> extends true
+        ? true
+        : false
+      : false;
+
+type InferSingleFlag<T extends FlagDefinitionValue> =
+  IsTypeAny<T> extends true
+    ? any
+    : T extends CounterSchema | { readonly type: CounterSchema }
+      ? number
+      : T extends { readonly type: infer Item; readonly multiple: true }
+        ? InferSingleType<Item>[]
+        : T extends { readonly type: infer Item }
+          ? | InferSingleType<Item>
+            | InferFlagImplicitValue<T>
+            | InferFlagDefault<
+                T,
+                [InferSingleType<Item>] extends [boolean]
+                  ? never
+                  : T extends { readonly required: true }
+                    ? never
+                    : undefined
+              >
+          : T extends SingleType
+            ? | InferSingleType<T>
+              | ([InferSingleType<T>] extends [boolean] ? never : undefined)
+            : never;
+
+export type InferFlags<T extends Record<string, any>> = Prettify<{
+  [K in keyof T]: T[K] extends FlagDefinitionValue
+    ? InferSingleFlag<T[K]>
+    : never;
+}>;
+
+type KnownKeys<T> = string extends keyof T ? never : keyof T;
+
+export type MergedFlags<
+  LocalFlags extends Record<string, any>,
+  GlobalFlags extends Record<string, any>,
+> = InferFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
 
 export interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
@@ -88,8 +204,7 @@ export const createBuiltinFlagDescriptor = (
   required: false,
   negatable: false,
   hidden: false,
-  conflicts: [],
-  implies: [],
+
   toJsonSchema: () =>
     kind === "counter" ? { type: "integer", minimum: 0 } : { type: "boolean" },
 });
@@ -149,8 +264,7 @@ export function compileFlagEntries(
       group: norm.group,
       hidden: Boolean(norm.hidden),
       deprecated: norm.deprecated,
-      conflicts: norm.conflicts ? toArray(norm.conflicts) : [],
-      implies: norm.implies ? toArray(norm.implies) : [],
+
       complete: norm.complete,
       meta: norm.meta,
       toJsonSchema,
@@ -164,66 +278,8 @@ export function compileFlagEntries(
 }
 
 export function buildCompiledFlags(
-  rawEntries: readonly CompiledFlagEntry[],
+  entries: readonly CompiledFlagEntry[],
 ): CompiledFlags {
-  let entries = rawEntries;
-  if (rawEntries.some((e) => e.conflicts.length > 0 || e.implies.length > 0)) {
-    const canonicalByRef = new Map<string, string>();
-    for (const entry of rawEntries) {
-      for (const raw of [entry.name, ...entry.aliases]) {
-        canonicalByRef.set(raw, entry.name);
-        canonicalByRef.set(camelCase(raw), entry.name);
-        canonicalByRef.set(kebabCase(raw), entry.name);
-      }
-      if (entry.short) {
-        canonicalByRef.set(entry.short, entry.name);
-      }
-    }
-
-    function resolveRef(
-      owner: string,
-      raw: string,
-      relation: "conflicts with" | "implies",
-    ): string {
-      const stripped = raw.replace(/^-+/, "");
-      const target = stripped ? canonicalByRef.get(stripped) : undefined;
-      if (!target) {
-        throw new InvalidSchemaError(
-          `Flag "${owner}" ${relation} unknown flag "${raw}".`,
-        );
-      }
-      if (target === owner) {
-        throw new InvalidSchemaError(
-          `Flag "${owner}" cannot ${relation === "implies" ? "imply" : "conflict with"} itself.`,
-        );
-      }
-
-      return target;
-    }
-
-    entries = rawEntries.map((entry) => {
-      if (entry.conflicts.length === 0 && entry.implies.length === 0) {
-        return entry;
-      }
-
-      return {
-        ...entry,
-        conflicts: [
-          ...new Set(
-            entry.conflicts.map((c) =>
-              resolveRef(entry.name, c, "conflicts with"),
-            ),
-          ),
-        ],
-        implies: [
-          ...new Set(
-            entry.implies.map((im) => resolveRef(entry.name, im, "implies")),
-          ),
-        ],
-      };
-    });
-  }
-
   const byName = new Map<string, CompiledFlagEntry>();
   const specs: ArgvFlagSpec[] = [];
   const knownNames: string[] = [];
@@ -444,10 +500,9 @@ export function validateParsedFlags(
   }
 }
 
-export function validateResolvedFlags(
+export function validateMissingRequiredFlags(
   compiled: CompiledFlags,
   missingRequired: readonly string[],
-  provided: ReadonlySet<string>,
 ): void {
   if (missingRequired.length > 0) {
     const hints: string[] = [];
@@ -462,22 +517,5 @@ export function validateResolvedFlags(
       missingRequired,
       hints.length > 0 ? hints : undefined,
     );
-  }
-
-  for (const name of provided) {
-    const entry = compiled.byName.get(name);
-    if (!entry) {
-      continue;
-    }
-    for (const other of entry.conflicts) {
-      if (provided.has(other)) {
-        throw new FlagConflictError(name, other);
-      }
-    }
-    for (const required of entry.implies) {
-      if (!provided.has(required)) {
-        throw new FlagImpliesError(name, required);
-      }
-    }
   }
 }

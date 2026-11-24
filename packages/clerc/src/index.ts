@@ -12,7 +12,7 @@ export type {
   SpinnerOptions,
   TaskSpinner,
 } from "@clerc/logger";
-export { createLogger, prompts } from "@clerc/logger";
+export { createLogger } from "@clerc/logger";
 export type {
   StyleFormat,
   Theme,
@@ -25,7 +25,16 @@ export {
   detectColor,
   detectUnicode,
 } from "@clerc/theme";
-export { Clerc, Plugin, clerc, plugin } from "./cli";
+export type {
+  ArgCustomMeta,
+  ArgDefinitionValue,
+  ArgDescriptor,
+  ArgMeta,
+  ArgOptions,
+  InferCommandArgs,
+} from "./args";
+export { Clerc, clerc } from "./cli";
+export type { CommandNode, CommandTree } from "./command-tree";
 export type {
   ClercErrorCode,
   ClercErrorOptions,
@@ -34,16 +43,12 @@ export type {
 } from "./errors";
 export {
   ClercError,
-  FlagConflictError,
-  FlagImpliesError,
-  InvalidArgumentError,
-  InvalidCommandError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredArgumentError,
   MissingRequiredFlagError,
-  MissingRequiredMetadataError,
   NoCommandError,
+  RuleError,
   UnexpectedArgumentError,
   UnknownCommandError,
   UnknownFlagError,
@@ -52,9 +57,19 @@ export {
   formatJsonError,
 } from "./errors";
 export type {
+  FlagCustomMeta,
+  FlagDefinitionValue,
+  FlagDescriptor,
+  FlagMeta,
+  FlagOptions,
+  FlagsDefinition,
+  InferFlags,
+} from "./flags";
+export type {
   HelpArgumentItem,
   HelpCommandGroup,
   HelpCommandItem,
+  HelpConstraintItem,
   HelpDocument,
   HelpExampleItem,
   HelpHeader,
@@ -76,10 +91,41 @@ export {
   renderHelpDocument,
 } from "./help/renderer";
 export type {
+  ArgvFlagSpec,
+  ArgvParseResult,
+  ArgvParser,
+  ArgvParserOptions,
+  FlagValues,
+  InvalidFlagValue,
+  ScanCallback,
+  ScanResult,
+} from "./parser";
+export {
+  IMPLICIT_FLAG_VALUE,
+  createArgvParser,
+  parseBooleanLiteral,
+} from "./parser";
+export { Plugin, plugin } from "./plugin";
+export type {
+  ArgRef,
+  CustomRuleFn,
+  FlagRef,
+  RuleBuilder,
+  RuleCheckContext,
+  RuleDescriptor,
+  RuleInput,
+  RuleRef,
+  RulesFactory,
+} from "./rules";
+export type {
   ClercSchema,
   CounterSchema,
+  DefaultValue,
+  DefaultValueFunction,
   FlagKind,
+  SingleType,
   StandardSchemaV1,
+  TypeFunction,
 } from "./schema";
 export { Types, isStandardSchema } from "./schema";
 export type {
@@ -90,11 +136,6 @@ export type {
 export { createMemoryTerminal, createTerminal } from "./terminal";
 export type {
   AnyCommandDefinition,
-  ArgCustomMeta,
-  ArgDefinitionValue,
-  ArgDescriptor,
-  ArgMeta,
-  ArgOptions,
   ClercOptions,
   CliMeta,
   CliModel,
@@ -103,9 +144,7 @@ export type {
   CommandDefinition,
   CommandHandler,
   CommandMeta,
-  CommandNode,
   CommandOptions,
-  CommandTree,
   CompletionCandidate,
   CompletionContext,
   CompletionDirectiveResult,
@@ -113,23 +152,13 @@ export type {
   CompletionItem,
   CompletionResult,
   CustomState,
-  DefaultValue,
-  DefaultValueFunction,
   ErrorContext,
   ErrorHandler,
   ExampleInput,
-  FlagCustomMeta,
-  FlagDefinitionValue,
-  FlagDescriptor,
-  FlagMeta,
-  FlagOptions,
-  FlagsDefinition,
   GroupDefinition,
   GroupsInput,
   HelpHelper,
   HelpOptions,
-  InferCommandArgs,
-  InferFlags,
   Middleware,
   MiddlewareNext,
   MiddlewareOptions,
@@ -139,7 +168,5 @@ export type {
   RunContext,
   RunOptions,
   RunResult,
-  SingleType,
   State,
-  TypeFunction,
 } from "./types";

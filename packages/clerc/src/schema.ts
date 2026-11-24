@@ -1,6 +1,48 @@
 import { InvalidSchemaError, ValidationError } from "./errors";
 import { findClosest } from "./suggest";
-import type { SingleType, TypeFunction } from "./types";
+import type { IsAny } from "./utils";
+
+export interface DefaultValueFunction<T> {
+  (): T;
+  display?: string;
+}
+
+export type DefaultValue<T = unknown> = T | DefaultValueFunction<T>;
+
+export interface TypeFunction<T = unknown> {
+  (value: string): T;
+  display?: string;
+}
+
+export type SingleType<T = any> = TypeFunction<T> | StandardSchemaV1<any, T>;
+
+export type StrictOptions<T, Allowed> = T extends object
+  ? Allowed & Readonly<Partial<Record<Exclude<keyof T, keyof Allowed>, never>>>
+  : Allowed;
+
+export type UnwrapDefault<D> = D extends () => infer R ? R : D;
+
+type InferStandardSchemaOutput<T extends StandardSchemaV1<any, any>> =
+  T["~standard"] extends {
+    readonly types?: { readonly output: infer Output } | undefined;
+  }
+    ? IsAny<Output> extends true
+      ? any
+      : unknown extends Output
+        ? T extends StandardSchemaV1<any, infer U>
+          ? U
+          : Output
+        : Output
+    : T extends StandardSchemaV1<any, infer U>
+      ? U
+      : never;
+
+export type InferSingleType<T> =
+  T extends StandardSchemaV1<any, any>
+    ? InferStandardSchemaOutput<T>
+    : T extends TypeFunction<infer U>
+      ? U
+      : never;
 
 export interface StandardSchemaV1Issue {
   readonly message: string;

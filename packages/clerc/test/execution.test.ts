@@ -2,14 +2,12 @@ import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import {
-  FlagConflictError,
-  FlagImpliesError,
-  InvalidArgumentError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredArgumentError,
   MissingRequiredFlagError,
   NoCommandError,
+  RuleError,
   Types,
   UnexpectedArgumentError,
   UnknownCommandError,
@@ -105,62 +103,142 @@ describe("Clerc execution pipeline", () => {
     });
   });
 
-  it("enforces required flags, conflicts, implies, and validates Number", async () => {
+  it("enforces required flags, declarative & custom rules (args + flags), and validates Number", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli();
-    cli.command("deploy", {
+    let middlewareRan = false;
+    const cli = createTestBaseCli({ help: true })
+      .flags({
+        json: Boolean,
+        yaml: Boolean,
+      })
+      .rules(({ exclusive, flag }) => [exclusive(flag("json"), flag("yaml"))])
+      .middleware(async (_ctx, next) => {
+        middlewareRan = true;
+        await next();
+      });
+
+    cli.command("deploy [env]", {
       flags: {
         token: { type: String, required: true, env: "DEPLOY_TOKEN" },
         port: { type: Number },
-        json: { type: Boolean, conflicts: "yaml" },
-        dryRun: Boolean,
-        forcePush: { type: Boolean, conflicts: "dry-run" },
-        yaml: { type: Boolean },
-        tlsKey: { type: String, implies: "tlsCert" },
-        tlsCert: { type: String },
+        all: Boolean,
+        tlsKey: String,
+        tlsCert: String,
+        sudo: Boolean,
       },
+      rules: ({ oneOf, together, flag, arg }) => [
+        oneOf(arg("env"), flag("all")),
+        together(flag("tlsKey"), flag("tlsCert")),
+        ({ flags }) => {
+          if (flags.port !== undefined && flags.port < 1024 && !flags.sudo) {
+            return "ports below 1024 require --sudo";
+          }
+        },
+      ],
       run() {},
     });
 
     await expect(
-      cli.run(["deploy"], { terminal, throwOnError: true }),
+      cli.run(["deploy", "prod"], { terminal, throwOnError: true }),
     ).rejects.toThrow(MissingRequiredFlagError);
 
     await expect(
-      cli.run(["deploy", "--token", "ok", "--port", "not-a-num"], {
+      cli.run(["deploy", "prod", "--token", "ok", "--port", "not-a-num"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
+    // Global exclusive rule: --json vs --yaml (uniform ERR_RULE_VIOLATION code)
+    const conflictRes = await cli.run(
+      ["deploy", "prod", "--token", "ok", "--json", "--yaml"],
+      { terminal },
+    );
+
+    expect(conflictRes.ok).toBeFalsy();
+    expect(conflictRes.error).toBeInstanceOf(RuleError);
+    expect((conflictRes.error as RuleError).code).toBe("ERR_RULE_VIOLATION");
+
+    // Mixed arg + flag oneOf rule: missing both & providing both
     await expect(
-      cli.run(["deploy", "--token", "ok", "--json", "--yaml"], {
+      cli.run(["deploy", "--token", "ok"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(RuleError);
+
+    await expect(
+      cli.run(["deploy", "prod", "--all", "--token", "ok"], {
         terminal,
         throwOnError: true,
       }),
-    ).rejects.toThrow(FlagConflictError);
+    ).rejects.toThrow(RuleError);
 
+    // Together rule: partial pair fails
     await expect(
-      cli.run(["deploy", "--token", "ok", "--dry-run", "--force-push"], {
+      cli.run(["deploy", "prod", "--token", "ok", "--tls-key", "k.pem"], {
         terminal,
         throwOnError: true,
       }),
-    ).rejects.toThrow(FlagConflictError);
+    ).rejects.toThrow(RuleError);
 
-    await expect(
-      cli.run(["deploy", "--token", "ok", "--tls-key", "k.pem"], {
-        terminal,
-        throwOnError: true,
-      }),
-    ).rejects.toThrow(FlagImpliesError);
+    // Custom rule runs BEFORE middleware and attaches usage on failure
+    const customFailTerm = createMemoryTerminal();
+    const customFail = await cli.run(
+      ["deploy", "prod", "--token", "ok", "--port", "80"],
+      { terminal: customFailTerm },
+    );
 
-    const invalidRelationCli = createTestBaseCli();
-    invalidRelationCli.command("deploy", {
-      flags: { json: { type: Boolean, conflicts: "non-existent" } },
+    expect(customFail.ok).toBeFalsy();
+    expect(customFail.exitCode).toBe(2);
+    expect(middlewareRan).toBeFalsy();
+    expect(customFailTerm.stderrText()).toContain(
+      "ports below 1024 require --sudo",
+    );
+    expect(customFailTerm.stderrText()).toContain(
+      "usage test deploy [options] [env]",
+    );
+
+    // Help renders CONSTRAINTS section and never runs rules
+    const helpTerm = createMemoryTerminal();
+    const helpRes = await cli.run(["deploy", "--help"], { terminal: helpTerm });
+
+    expect(helpRes.ok).toBeTruthy();
+    expect(helpTerm.stdoutText()).toContain("CONSTRAINTS");
+    expect(helpTerm.stdoutText()).toContain("exclusive");
+    expect(helpTerm.stdoutText()).toContain("--json, --yaml");
+    expect(helpTerm.stdoutText()).toContain("[env], --all");
+    expect(helpTerm.stdoutText()).toContain("--tls-key, --tls-cert");
+
+    // Valid invocation passes all rules and reaches middleware
+    const okRes = await cli.run(
+      [
+        "deploy",
+        "--all",
+        "--token",
+        "ok",
+        "--tls-key",
+        "k.pem",
+        "--tls-cert",
+        "c.pem",
+        "--port",
+        "80",
+        "--sudo",
+      ],
+      { terminal },
+    );
+
+    expect(okRes.ok).toBeTruthy();
+    expect(middlewareRan).toBeTruthy();
+
+    // Invalid rule reference fails upfront during buildModel()
+    const invalidRuleCli = createTestBaseCli();
+    invalidRuleCli.command("deploy", {
+      flags: { json: Boolean },
+      rules: ({ exclusive, flag }) => [
+        exclusive(flag("json"), flag("nonExistent" as never)),
+      ],
       run() {},
     });
 
-    expect(() => invalidRelationCli.buildModel()).toThrow(InvalidSchemaError);
+    expect(() => invalidRuleCli.buildModel()).toThrow(InvalidSchemaError);
   });
 
   it("supports async handlers including dynamic lazy loading", async () => {
@@ -480,7 +558,7 @@ describe("Clerc execution pipeline", () => {
 
     await expect(
       badArgDefaultCli.run(["bad"], { terminal, throwOnError: true }),
-    ).rejects.toThrow(InvalidArgumentError);
+    ).rejects.toThrow(InvalidSchemaError);
 
     const unknownArgKeyCli = createTestBaseCli();
     unknownArgKeyCli.command("bad <entry>", {
@@ -488,7 +566,7 @@ describe("Clerc execution pipeline", () => {
       run() {},
     });
 
-    expect(() => unknownArgKeyCli.buildModel()).toThrow(InvalidArgumentError);
+    expect(() => unknownArgKeyCli.buildModel()).toThrow(InvalidSchemaError);
 
     const zeroArgUnknownKeyCli = createTestBaseCli();
     zeroArgUnknownKeyCli.command("bad", {
@@ -496,14 +574,12 @@ describe("Clerc execution pipeline", () => {
       run() {},
     });
 
-    expect(() => zeroArgUnknownKeyCli.buildModel()).toThrow(
-      InvalidArgumentError,
-    );
+    expect(() => zeroArgUnknownKeyCli.buildModel()).toThrow(InvalidSchemaError);
 
     const dupDdArgCli = createTestBaseCli();
     dupDdArgCli.command("bad <x> -- <x>", { run() {} });
 
-    expect(() => dupDdArgCli.buildModel()).toThrow(InvalidArgumentError);
+    expect(() => dupDdArgCli.buildModel()).toThrow(InvalidSchemaError);
 
     // Array literal defaults are cloned per invocation
     let seenDefaultTags: string[] = [];

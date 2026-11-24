@@ -147,7 +147,6 @@ cli.command("deploy <env> [region]", {
     },
     json: {
       type: Boolean,
-      conflicts: "yaml",
       group: "output",
       description: "Format summary as JSON",
     },
@@ -157,6 +156,7 @@ cli.command("deploy <env> [region]", {
       description: "Format summary as YAML",
     },
   },
+  rules: ({ exclusive, flag }) => [exclusive(flag("json"), flag("yaml"))],
   examples: [
     ["$ acme deploy staging", "Deploy to staging with defaults"],
     [

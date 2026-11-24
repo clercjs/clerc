@@ -1,20 +1,151 @@
 import {
-  InvalidArgumentError,
-  InvalidCommandError,
+  InvalidSchemaError,
   MissingRequiredArgumentError,
   UnexpectedArgumentError,
 } from "./errors";
 import { convertItemList } from "./flags";
 import { DOUBLE_DASH } from "./parser";
-import type { TypeConverter } from "./schema";
-import { describeType, isStandardSchema } from "./schema";
 import type {
-  ArgDefinitionValue,
-  ArgDescriptor,
-  ArgOptions,
+  DefaultValue,
+  InferSingleType,
   SingleType,
-} from "./types";
+  StrictOptions,
+  TypeConverter,
+  UnwrapDefault,
+} from "./schema";
+import { describeType, isStandardSchema } from "./schema";
+import type { CompletionHandler } from "./types";
+import type { CamelCase, Prettify } from "./utils";
 import { camelCase, evaluateDefault } from "./utils";
+
+export interface ArgCustomMeta {}
+export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
+
+export interface ArgDescriptor {
+  readonly name: string;
+  readonly rawName: string;
+  readonly token: string;
+  readonly isRequired: boolean;
+  readonly isVariadic: boolean;
+  readonly afterDoubleDash: boolean;
+  readonly display?: string;
+  readonly description?: string;
+  readonly default?: unknown;
+  readonly env?: string;
+  readonly complete?: false | CompletionHandler;
+  readonly meta?: ArgMeta;
+  readonly toJsonSchema: () => Record<string, unknown>;
+}
+
+export interface ArgOptions<T extends SingleType = SingleType> {
+  readonly type?: T;
+  readonly description?: string;
+  readonly default?: DefaultValue;
+  readonly env?: string;
+  readonly complete?: false | CompletionHandler;
+  readonly meta?: ArgMeta;
+}
+
+export type ArgDefinitionValue = SingleType | ArgOptions;
+
+type ContextualArgValue<V> = [V] extends [never]
+  ? ArgOptions
+  : V extends SingleType
+    ? V
+    : StrictOptions<V, ArgOptions>;
+
+export type ContextualArgs<
+  Spec extends string,
+  Args extends Partial<Record<ExtractArgNames<Spec>, any>>,
+> = {
+  readonly [K in keyof Args]: K extends ExtractArgNames<Spec>
+    ? ContextualArgValue<Args[K]>
+    : never;
+} & Partial<Record<Exclude<ExtractArgNames<Spec>, keyof Args>, ArgOptions>>;
+
+type TrimWhitespace<S extends string> = S extends
+  | ` ${infer R}`
+  | `${infer R} `
+  | `\t${infer R}`
+  | `${infer R}\t`
+  | `\n${infer R}`
+  | `${infer R}\n`
+  ? TrimWhitespace<R>
+  : S;
+
+export type NonEmptySpec<S extends string> = string extends S
+  ? S
+  : TrimWhitespace<S> extends ""
+    ? never
+    : S;
+
+type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
+
+type ExtractSingleArgName<Token extends string> = Token extends
+  `<${infer Raw}>` | `[${infer Raw}]`
+  ? CamelCase<StripVariadic<Raw>>
+  : never;
+
+export type ExtractArgNames<S extends string> =
+  S extends `${infer Head} ${infer Rest}`
+    ? ExtractSingleArgName<Head> | ExtractArgNames<Rest>
+    : ExtractSingleArgName<S>;
+
+type ResolveArgType<
+  Name extends string,
+  Args extends Partial<Record<string, any>>,
+> = Name extends keyof Args
+  ? NonNullable<Args[Name]> extends { readonly type: infer T }
+    ? [T] extends [undefined]
+      ? string
+      : InferSingleType<T>
+    : NonNullable<Args[Name]> extends SingleType
+      ? InferSingleType<NonNullable<Args[Name]>>
+      : string
+  : string;
+
+type InferArgDefault<
+  Name extends string,
+  Args extends Partial<Record<string, any>>,
+  Fallback,
+> = Name extends keyof Args
+  ? NonNullable<Args[Name]> extends { readonly default: infer D }
+    ? [D] extends [undefined]
+      ? Fallback
+      : UnwrapDefault<D>
+    : Fallback
+  : Fallback;
+
+type InferTokenArg<
+  Token extends string,
+  Args extends Partial<Record<string, any>>,
+> = Token extends `<${infer Name}...>`
+  ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
+  : Token extends `[${infer Name}...]`
+    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
+    : Token extends `<${infer Name}>`
+      ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
+      : Token extends `[${infer Name}]`
+        ? Record<
+            CamelCase<Name>,
+            | ResolveArgType<CamelCase<Name>, Args>
+            | InferArgDefault<CamelCase<Name>, Args, undefined>
+          >
+        : {};
+
+type InferSpecArgsAcc<
+  S extends string,
+  Args extends Partial<Record<string, any>>,
+> = S extends `${infer Head} ${infer Rest}`
+  ? InferTokenArg<Head, Args> & InferSpecArgsAcc<Rest, Args>
+  : InferTokenArg<S, Args>;
+
+export type InferCommandArgs<
+  Spec extends string,
+  Args extends Partial<Record<string, any>> = {},
+> = string extends Spec
+  ? Record<string, any>
+  : Prettify<InferSpecArgsAcc<Spec, Args>>;
 
 const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
 
@@ -78,7 +209,7 @@ function parseArgToken(token: string): {
     (match[1] === "<" && match[4] !== ">") ||
     (match[1] === "[" && match[4] !== "]")
   ) {
-    throw new InvalidArgumentError(`invalid argument definition: ${token}`);
+    throw new InvalidSchemaError(`invalid argument definition: ${token}`);
   }
 
   return {
@@ -93,7 +224,7 @@ function parseArgToken(token: string): {
 export function parseCommandSpec(spec: string): ParsedCommandSpec {
   const trimmed = spec.trim();
   if (trimmed === "") {
-    throw new InvalidCommandError(
+    throw new InvalidSchemaError(
       "command spec cannot be empty; pass options directly to command({ ... }) to register a root command",
     );
   }
@@ -105,7 +236,7 @@ export function parseCommandSpec(spec: string): ParsedCommandSpec {
   for (const token of tokens) {
     if (argTokens.length > 0 || isArgToken(token)) {
       if (!isArgToken(token)) {
-        throw new InvalidArgumentError(
+        throw new InvalidSchemaError(
           `unexpected command segment "${token}" after argument in "${spec}"`,
         );
       }
@@ -134,18 +265,18 @@ function compileArgSlice(
     const info = parseArgToken(tokens[i]);
 
     if (seen.has(info.name)) {
-      throw new InvalidArgumentError(`duplicate argument name: ${info.name}`);
+      throw new InvalidSchemaError(`duplicate argument name: ${info.name}`);
     }
     seen.add(info.name);
 
     if (info.isVariadic && i !== tokens.length - 1) {
-      throw new InvalidArgumentError(
+      throw new InvalidSchemaError(
         "variadic argument must be the last argument in the signature",
       );
     }
     if (info.isRequired) {
       if (hasOptional) {
-        throw new InvalidArgumentError(
+        throw new InvalidSchemaError(
           `required argument "${info.name}" cannot appear after an optional argument`,
         );
       }
@@ -156,7 +287,7 @@ function compileArgSlice(
     const def = argDefs?.[info.name];
     const norm = def ? normalizeArgValue(def) : undefined;
     if (info.isRequired && norm?.default !== undefined) {
-      throw new InvalidArgumentError(
+      throw new InvalidSchemaError(
         `required argument "${info.name}" cannot have a default value`,
       );
     }
@@ -167,7 +298,6 @@ function compileArgSlice(
       afterDoubleDash,
       display: typeDesc?.display,
       description: norm?.description,
-      placeholder: norm?.placeholder,
       default: norm?.default,
       env: norm?.env,
       complete: norm?.complete,
@@ -192,7 +322,7 @@ export function compileArgs(
   if (argDefs) {
     for (const key of Object.keys(argDefs)) {
       if (!seen.has(key)) {
-        throw new InvalidArgumentError(
+        throw new InvalidSchemaError(
           `argument "${key}" is not defined in command signature`,
         );
       }
@@ -222,6 +352,7 @@ async function applyArgSlice(
   items: readonly CompiledArgItem[],
   values: readonly string[],
   result: Record<string, unknown>,
+  provided: Set<string>,
   env: Readonly<Record<string, string | undefined>>,
 ): Promise<void> {
   const hasVariadic = items.some((item) => item.isVariadic);
@@ -236,6 +367,7 @@ async function applyArgSlice(
       : raw === undefined;
 
     if (!isMissing) {
+      provided.add(item.name);
       result[item.name] = await convertArgValue(item, raw);
 
       continue;
@@ -243,6 +375,7 @@ async function applyArgSlice(
 
     const envValue = item.env ? env[item.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
+      provided.add(item.name);
       result[item.name] = await convertArgValue(
         item,
         item.isVariadic ? envValue.split(",").map((s) => s.trim()) : envValue,
@@ -278,18 +411,28 @@ export async function executeCompiledArgs(
   values: readonly string[],
   doubleDashValues: readonly string[],
   env: Readonly<Record<string, string | undefined>> = {},
-): Promise<Record<string, unknown>> {
+): Promise<{
+  readonly args: Record<string, unknown>;
+  readonly provided: Set<string>;
+}> {
   const result: Record<string, unknown> = {};
+  const provided = new Set<string>();
   if (compiled.doubleDash.length > 0) {
-    await applyArgSlice(compiled.main, values, result, env);
-    await applyArgSlice(compiled.doubleDash, doubleDashValues, result, env);
+    await applyArgSlice(compiled.main, values, result, provided, env);
+    await applyArgSlice(
+      compiled.doubleDash,
+      doubleDashValues,
+      result,
+      provided,
+      env,
+    );
   } else if (compiled.hasDoubleDashSpec) {
-    await applyArgSlice(compiled.main, values, result, env);
+    await applyArgSlice(compiled.main, values, result, provided, env);
   } else {
     const combined =
       doubleDashValues.length > 0 ? [...values, ...doubleDashValues] : values;
-    await applyArgSlice(compiled.main, combined, result, env);
+    await applyArgSlice(compiled.main, combined, result, provided, env);
   }
 
-  return result;
+  return { args: result, provided };
 }

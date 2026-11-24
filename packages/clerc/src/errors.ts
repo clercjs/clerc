@@ -15,12 +15,8 @@ export type ClercErrorCode =
   | "ERR_UNEXPECTED_ARGUMENT"
   | "ERR_UNKNOWN_FLAG"
   | "ERR_VALIDATION"
-  | "ERR_FLAG_CONFLICT"
-  | "ERR_FLAG_IMPLIES"
-  | "ERR_INVALID_SCHEMA"
-  | "ERR_INVALID_COMMAND"
-  | "ERR_INVALID_ARGUMENT"
-  | "ERR_MISSING_METADATA";
+  | "ERR_RULE_VIOLATION"
+  | "ERR_INVALID_SCHEMA";
 
 export interface ValidationIssue {
   readonly message: string;
@@ -189,35 +185,9 @@ export class ValidationError extends ClercError {
   }
 }
 
-export class FlagConflictError extends ClercError {
-  public readonly flag: string;
-  public readonly conflictsWith: string;
-
-  constructor(flag: string, conflictsWith: string) {
-    super(
-      `option '${formatFlagName(flag)}' cannot be used together with '${formatFlagName(conflictsWith)}'`,
-      {
-        code: "ERR_FLAG_CONFLICT",
-      },
-    );
-    this.flag = flag;
-    this.conflictsWith = conflictsWith;
-  }
-}
-
-export class FlagImpliesError extends ClercError {
-  public readonly flag: string;
-  public readonly requiresFlag: string;
-
-  constructor(flag: string, requiresFlag: string) {
-    super(
-      `option '${formatFlagName(flag)}' requires '${formatFlagName(requiresFlag)}' to also be provided`,
-      {
-        code: "ERR_FLAG_IMPLIES",
-      },
-    );
-    this.flag = flag;
-    this.requiresFlag = requiresFlag;
+export class RuleError extends ClercError {
+  constructor(message: string) {
+    super(message, { code: "ERR_RULE_VIOLATION", exitCode: 2 });
   }
 }
 
@@ -230,39 +200,13 @@ export class InvalidSchemaError extends ClercError {
   }
 }
 
-export class InvalidCommandError extends ClercError {
-  constructor(message: string) {
-    super(message, {
-      code: "ERR_INVALID_COMMAND",
-      exitCode: 1,
-    });
-  }
-}
-
-export class InvalidArgumentError extends ClercError {
-  constructor(message: string) {
-    super(message, {
-      code: "ERR_INVALID_ARGUMENT",
-      exitCode: 1,
-    });
-  }
-}
-
-export class MissingRequiredMetadataError extends ClercError {
-  constructor(metadataName: string) {
-    super(`CLI ${metadataName} is required`, {
-      code: "ERR_MISSING_METADATA",
-      exitCode: 1,
-    });
-  }
-}
-
 const COMMAND_DISTANCE_THRESHOLD = 4;
 
 const USAGE_ERROR_CODES = new Set<ClercErrorCode>([
   "ERR_MISSING_ARGUMENT",
   "ERR_MISSING_FLAG",
   "ERR_MISSING_FLAG_VALUE",
+  "ERR_RULE_VIOLATION",
   "ERR_UNEXPECTED_ARGUMENT",
 ]);
 

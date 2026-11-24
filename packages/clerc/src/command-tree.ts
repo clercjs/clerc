@@ -1,14 +1,35 @@
-import { InvalidCommandError } from "./errors";
+import type { ArgDescriptor } from "./args";
+import { InvalidSchemaError } from "./errors";
+import type { FlagDescriptor } from "./flags";
 import type { ScanCallback, ScanResult } from "./parser";
 import { DOUBLE_DASH } from "./parser";
-import type {
-  AnyCommandDefinition,
-  ArgDescriptor,
-  CommandNode,
-  CommandTree,
-  FlagDescriptor,
-} from "./types";
+import type { RuleDescriptor } from "./rules";
+import type { AnyCommandDefinition } from "./types";
 import { toArray } from "./utils";
+
+export interface CommandNode {
+  readonly name: string;
+  readonly fullPath: readonly string[];
+  readonly parent?: CommandNode;
+  readonly children: ReadonlyMap<string, CommandNode>;
+  readonly aliasIndex: ReadonlyMap<string, CommandNode>;
+  readonly aliases: readonly string[];
+  readonly command?: AnyCommandDefinition;
+  readonly args: readonly ArgDescriptor[];
+  readonly localFlags: readonly FlagDescriptor[];
+  readonly builtinFlags: readonly FlagDescriptor[];
+  readonly rules: readonly RuleDescriptor[];
+}
+
+export interface CommandTree {
+  readonly root: CommandNode;
+  findNode: (path: readonly string[]) => CommandNode | undefined;
+  listChildren: (node?: CommandNode) => readonly CommandNode[];
+  listVisibleChildren: (node?: CommandNode) => readonly CommandNode[];
+  walkCommands: () => readonly (CommandNode & {
+    readonly command: AnyCommandDefinition;
+  })[];
+}
 
 export type CommandMatch =
   | {
@@ -52,6 +73,7 @@ interface MutableCommandNode {
   args: readonly ArgDescriptor[];
   localFlags: readonly FlagDescriptor[];
   builtinFlags: readonly FlagDescriptor[];
+  rules: readonly RuleDescriptor[];
 }
 
 const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
@@ -70,6 +92,7 @@ const createNode = (
   args: EMPTY_DESCRIPTORS,
   localFlags: EMPTY_DESCRIPTORS,
   builtinFlags: EMPTY_DESCRIPTORS,
+  rules: EMPTY_DESCRIPTORS,
 });
 
 const isVisibleNode = (node: CommandNode): boolean =>
@@ -92,7 +115,7 @@ export class CommandTreeBuilder implements CommandTree {
       let child = current.children.get(seg);
       if (!child) {
         if (checkAliasConflict && current.aliasIndex.has(seg)) {
-          throw new InvalidCommandError(
+          throw new InvalidSchemaError(
             `command "${segments.slice(0, i + 1).join(" ")}" conflicts with an existing alias`,
           );
         }
@@ -115,7 +138,7 @@ export class CommandTreeBuilder implements CommandTree {
         ? "root command"
         : `command "${segments.join(" ")}"`;
     if (current.command) {
-      throw new InvalidCommandError(`${targetLabel} already exists`);
+      throw new InvalidSchemaError(`${targetLabel} already exists`);
     }
 
     current.command = cmd;
@@ -126,7 +149,7 @@ export class CommandTreeBuilder implements CommandTree {
     for (const rawAlias of rawAliases) {
       const alias = rawAlias.trim();
       if (alias === "") {
-        throw new InvalidCommandError(
+        throw new InvalidSchemaError(
           `${targetLabel} cannot have an empty alias`,
         );
       }
@@ -140,7 +163,7 @@ export class CommandTreeBuilder implements CommandTree {
           : defaultAliasHost;
 
       if (host.children.has(leaf) || host.aliasIndex.has(leaf)) {
-        throw new InvalidCommandError(`alias "${alias}" already exists`);
+        throw new InvalidSchemaError(`alias "${alias}" already exists`);
       }
       host.aliasIndex.set(leaf, current);
     }
@@ -158,12 +181,14 @@ export class CommandTreeBuilder implements CommandTree {
       readonly args: readonly ArgDescriptor[];
       readonly localFlags: readonly FlagDescriptor[];
       readonly builtinFlags: readonly FlagDescriptor[];
+      readonly rules: readonly RuleDescriptor[];
     },
   ): void {
     const target = node as MutableCommandNode;
     target.args = compiled.args;
     target.localFlags = compiled.localFlags;
     target.builtinFlags = compiled.builtinFlags;
+    target.rules = compiled.rules;
   }
 
   public findNode(path: readonly string[]): CommandNode | undefined {

@@ -35,11 +35,13 @@ export type FlagValues = Record<
 export interface ArgvParseResult {
   readonly positionals: readonly string[];
   readonly doubleDash: readonly string[];
+  readonly hasDoubleDash: boolean;
   readonly flags: FlagValues;
   readonly unknown: Readonly<Record<string, RawInputType>>;
   readonly provided: readonly string[];
   readonly missingValueFlags: readonly string[];
   readonly missingValueCandidates: Readonly<Record<string, string>>;
+  readonly trailingMissingValueFlag?: string;
   readonly invalidValues: readonly InvalidFlagValue[];
 }
 
@@ -266,9 +268,11 @@ export function createArgvParser(
     const provided: string[] = [];
     let positionals: string[] | undefined;
     let doubleDash: readonly string[] = EMPTY_STRINGS;
+    let hasDoubleDash = false;
     let unknown: Record<string, RawInputType> | undefined;
     let missingValueFlags: string[] | undefined;
     let missingValueCandidates: Record<string, string> | undefined;
+    let trailingMissingValueFlag: string | undefined;
     let invalidValues: InvalidFlagValue[] | undefined;
 
     function setFlag(key: string, val: FlagValues[string]): void {
@@ -289,7 +293,9 @@ export function createArgvParser(
         if (!missingValueFlags.includes(key)) {
           missingValueFlags.push(key);
         }
-        if (nextIndex < args.length && args[nextIndex] !== DOUBLE_DASH) {
+        if (nextIndex >= args.length) {
+          trailingMissingValueFlag = key;
+        } else if (args[nextIndex] !== DOUBLE_DASH) {
           (missingValueCandidates ??= {})[key] ??= args[nextIndex];
         }
       } else if (kind === "array") {
@@ -314,6 +320,7 @@ export function createArgvParser(
 
       if (c1 !== 0) {
         if (c1 === CHAR_DASH && curLen === 2) {
+          hasDoubleDash = true;
           doubleDash = args.slice(i + 1);
 
           break;
@@ -425,11 +432,13 @@ export function createArgvParser(
     return {
       positionals: positionals ?? EMPTY_STRINGS,
       doubleDash,
+      hasDoubleDash,
       flags,
       unknown: unknown ?? EMPTY_UNKNOWN,
       provided,
       missingValueFlags: missingValueFlags ?? EMPTY_STRINGS,
       missingValueCandidates: missingValueCandidates ?? EMPTY_CANDIDATES,
+      trailingMissingValueFlag,
       invalidValues: invalidValues ?? EMPTY_INVALID,
     };
   }
