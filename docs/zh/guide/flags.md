@@ -1,175 +1,138 @@
 ---
-title: 选项
+title: 选项 (Flags)
 ---
 
-# 选项
+# 选项 (Flags)
 
-选项用于为命令提供额外的配置和参数。Clerc 支持多种类型的选项，包括 JavaScript 内置的类型，如布尔值、字符串、数字等，也支持自定义类型。
+在 `flags` 中使用驼峰命名定义选项，命令行会自动同时接受 `--kebab-case` 与 `--camelCase`。
 
-_Clerc_ 的选项解析由 [`@clerc/parser`](https://github.com/clercjs/clerc/blob/main/packages/parser) 提供支持，并具有许多功能：
+## 简写与完整配置
 
-- 数组和自定义类型
-- 选项分隔符：`--flag value`、`--flag=value`、`--flag:value` 和 `--flag.value`
-- 组合别名：`-abcd 2` → `-a -b -c -d 2`
-- [选项结束符](https://unix.stackexchange.com/a/11382)：传递 `--` 来结束选项解析
-
-可以在 `flags` 对象属性中指定选项，其中键是选项名称，值是选项类型函数或描述选项的对象。
-
-建议使用驼峰命名法作为选项名称，因为它将被解释为解析短横线分隔的等效选项。
-
-选项类型函数可以是任何接受字符串并返回解析后的值的函数。默认的 JavaScript 构造函数应该涵盖大多数用例：[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String)、[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number)、[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean) 等。
-
-选项描述对象可用于存储有关选项的其他信息，例如 `short`、`default` 和 `description`。要接受选项的多个值，请将类型函数包装在数组中。
-
-所有提供的信息将用于生成更好的帮助文档。
-
-## 选项短名称
-
-选项短名称允许用户使用单个字符来指定选项。这对于为常用的选项提供便捷的快捷方式很有用。
-
-### 定义短名称
-
-你可以使用`short`属性为选项定义一个单字符的短名称：
+只需要指定类型时可直接传入构造函数或 Schema；需要短选项、默认值、环境变量或约束时传入配置对象：
 
 ```ts
-const cli = Cli()
-  .command("build", "构建项目", {
-    flags: {
-      output: {
-        type: String,
-        short: "o",
-        description: "输出目录",
-      },
+import { Types, clerc } from "clerc";
 
-      verbose: {
-        type: Boolean,
-        short: "v",
-        description: "启用详细输出",
-      },
+const cli = clerc({ name: "acme", version: "1.0.0" });
+
+cli.command("serve", {
+  flags: {
+    open: Boolean, // 简写：boolean（默认 false）
+    host: String, // 简写：string | undefined
+    port: {
+      type: Types.Range(1, 65_535),
+      short: "p",
+      aliases: ["listen"],
+      default: 3000,
+      env: "PORT",
+      description: "监听端口",
     },
-  })
-  .on("build", (ctx) => {
-    // $ node cli.mjs build --output dist
-    // $ node cli.mjs build -o dist
-    // 两者的工作方式相同
-    // $ node cli.mjs build --verbose
-    // $ node cli.mjs build -v
-    // 两者都启用详细输出
-  })
-  .parse();
+  },
+  run(ctx) {
+    ctx.flags;
+    //  ^?
+  },
+});
 ```
 
-### 验证规则
+## 支持的命令行写法
 
-- flag名称必须至少包含2个字符
-- `short`属性必须恰好为1个字符
+- **长选项**：`--port 8080` 或 `--port=8080`
+- **短选项**：`-p 8080`、`-p=8080` 或紧贴写法 `-p8080`
+- **短选项合并**：`-vrn` 等价于 `-v -r -n`；`-vo dist` 会开启 `-v` 并将 `dist` 传给 `-o`
+- **布尔取反**：`Boolean` 默认支持 `--no-<flag>`（当 `default: true` 时，`--help` 会自动展示 `--cache, --no-cache`；可通过 `negatable: false` 关闭）
+- **显式布尔值**：`--cache=false`、`--cache=0`、`--cache=true`、`--cache=1`
 
-### 组合短名称
+## 数组选项、分隔符与计数器
 
-使用短名称（单个字符）时，它们可以组合在一起：
-
-```ts
-const cli = Cli()
-  .command("compress", "压缩文件", {
-    flags: {
-      output: {
-        type: String,
-        short: "o",
-        description: "输出文件",
-      },
-
-      verbose: {
-        type: Boolean,
-        short: "v",
-        description: "详细输出",
-      },
-
-      recursive: {
-        type: Boolean,
-        short: "r",
-        description: "递归模式",
-      },
-    },
-  })
-  .on("compress", (ctx) => {
-    // $ node cli.mjs compress -vrh input.zip
-    // 等同于：
-    // $ node cli.mjs compress -v -r -h input.zip
-    // 这设置了：verbose = true，recursive = true，并将 "input.zip" 作为参数传递
-  })
-  .parse();
-```
-
-## 标志描述
-
-`description` 属性是可选的，如果你不需要记录标志，可以省略它：
+用单元素数组 `[Type]` 表示可重复传入多次的选项：
 
 ```ts
-const cli = Cli()
-  .command("build", "构建项目", {
-    flags: {
-      verbose: {
-        type: Boolean,
-        // 描述是可选的
-      },
-
-      output: {
-        type: String,
-        description: "输出目录", // 或包含它以获得更好的文档
-      },
+cli.command("build", {
+  flags: {
+    // 支持重复传入与逗号切分：-t a,b -t c -> ["a", "b", "c"]
+    tags: {
+      type: [String],
+      short: "t",
+      delimiter: ",",
+      description: "发布标签",
     },
-  })
-  .parse();
-```
-
-## 必需的选项
-
-要使选项成为必需的，可以在选项描述对象中将 `required` 属性设置为 `true`：
-
-```ts
-const cli = Cli()
-  .command("deploy", "部署应用程序", {
-    flags: {
-      env: {
-        type: String,
-        description: "部署环境",
-        required: true, // 这个选项是必需的
-      },
+    // 计数器：[Boolean] 统计出现次数：-vvv -> 3（未传时为 0）
+    verbose: {
+      type: [Boolean],
+      short: "v",
+      description: "日志详细程度",
     },
-  })
-  .on("deploy", (ctx) => {
-    ctx.flags.env; // 这将始终有一个值
+  },
+  run(ctx) {
+    ctx.flags.tags;
     //        ^?
-  })
-  .parse();
+    ctx.flags.verbose;
+    //        ^?
+  },
+});
 ```
 
-## 默认值
+## 可选值选项（`implicitValue`）
 
-你可以在选项描述对象中使用 `default` 属性为选项提供默认值：
+类似 `node --inspect` 或 `git log --color` 的选项：不传时为 `undefined`（或 `default`），单独传 `--inspect` 时取 `implicitValue`，显式传 `--inspect=9230` 时取解析后的值：
 
 ```ts
-const cli = Cli()
-  .command("serve", "启动服务器", {
-    flags: {
-      port: {
-        type: Number,
-        description: "端口号",
-        default: 3000, // 默认端口是 3000
-      },
+cli.command("dev", {
+  flags: {
+    inspect: {
+      type: Number,
+      short: "I",
+      implicitValue: 9229,
+      description: "开启调试端口",
     },
-  })
-  .on("serve", (ctx) => {
-    ctx.flags.port; // 如果未提供，则默认为 3000
+  },
+  run(ctx) {
+    // $ acme dev                -> undefined
+    // $ acme dev --inspect      -> 9229
+    // $ acme dev --inspect=9230 -> 9230
+    ctx.flags.inspect;
     //        ^?
-  })
-  .parse();
+  },
+});
 ```
 
-:::warning
-如果一个标志被标记为 `required` 并且也有一个 `default` 值，那么在运行时会抛出一个 `InvalidSchemaError`，并且在类型检查期间会引发类型错误。
+::: info 显式传值请使用 `=`
+为避免把后面的位置参数误吞为选项值（例如 `acme dev -I src/index.ts`），为带有 `implicitValue` 的选项显式指定值时请使用 `--inspect=9230` 或 `-I9230`。
 :::
 
-## 标志类型
+## 声明式约束：`required`、`conflicts` 与 `implies`
 
-关于标志类型的详细信息，包括内置基础类型（String、Boolean、Array、Counter、Object）和高级类型（Enum、Range、Regex），以及自定义类型定义，请参阅[类型](./types)指南。
+```ts
+cli.command("deploy", {
+  flags: {
+    token: {
+      type: String,
+      required: true,
+      env: "ACME_TOKEN",
+    },
+    json: {
+      type: Boolean,
+      conflicts: ["yaml"], // 与 --yaml 互斥
+    },
+    yaml: {
+      type: Boolean,
+    },
+    tlsKey: {
+      type: String,
+      implies: ["tlsCert"], // 传入 --tls-key 时必须同时提供 --tls-cert
+    },
+    tlsCert: {
+      type: String,
+    },
+  },
+  run(ctx) {
+    ctx.flags.token;
+    //        ^?
+  },
+});
+```
+
+## 全局选项与局部覆盖
+
+在 `cli.flags({ ... })` 或 `plugin().flags({ ... })` 上注册全局选项后，所有命令的 `ctx.flags` 都会自动合并全局与局部选项类型。如果某个子命令定义了同名局部选项，该子命令内优先使用局部选项的类型与配置。

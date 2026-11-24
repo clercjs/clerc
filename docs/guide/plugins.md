@@ -4,77 +4,86 @@ title: Plugins
 
 # Plugins
 
-A plugin is a function that can accept a `Clerc` instance and extend it.
+In Clerc v2, `Clerc` extends `Plugin`. Both share the exact same methods:
 
-:::info
+- `.flags()` - register global flags
+- `.groups()` - register help section groups (`commands`, `flags`, `globalFlags`)
+- `.command()` - register commands or subcommand namespaces
+- `.middleware()` - wrap execution and inject typed `ctx.state`
+- `.onError()` - register LIFO error handlers
+- `.use()` - compose child plugins
 
-The plugin system allows you to add rich functionality according to your needs.
+## Writing a Plugin
 
-:::
-
-## Usage
-
-```ts
-import { definePlugin } from "clerc";
-
-const plugin = definePlugin({
-  setup: (cli) =>
-    cli.command("foo", "A foo command").on("foo", (ctx) => {
-      console.log("It works!");
-    }),
-});
-
-const cli = Cli()
-  .scriptName("foo-cli")
-  .description("A simple CLI")
-  .version("1.0.0")
-  .use(plugin)
-  .parse();
-```
-
-## Development
-
-In the `setup` function, you can directly get the `Clerc` instance and perform various configurations and extensions on it, such as adding commands, event listeners, etc.
+Create a plugin with `plugin("scope:name")` and chain what it provides. Always omit an explicit `: Plugin` return type annotation on factory functions so TypeScript preserves the inferred flag and `ctx.state` types:
 
 ```ts
-import { definePlugin } from "clerc";
+import { clerc, plugin } from "clerc";
 
-export const myPlugin = definePlugin({
-  setup: (cli) => {
-    // Extend the cli here
-    return cli.command("bar", "A bar command").on("bar", (ctx) => {
-      console.log("Bar command executed!");
+export const authPlugin = (defaultRole = "viewer") =>
+  plugin("acme:auth")
+    .flags({
+      token: {
+        type: String,
+        env: "ACME_TOKEN",
+        description: "API authentication token",
+      },
+    })
+    .middleware(async (ctx, next) => {
+      const user = ctx.flags.token
+        ? { name: "ray", role: "admin" as const }
+        : { name: "guest", role: defaultRole };
+
+      return next({ user });
     });
+
+const cli = clerc({ name: "acme", version: "1.0.0" }).use(authPlugin());
+
+cli.command("whoami", {
+  run(ctx) {
+    ctx.flags.token;
+    //        ^?
+    ctx.state.user;
+    //        ^?
+    ctx.log.info(`${ctx.state.user.name} (${ctx.state.user.role})`);
   },
 });
 ```
 
-## Extending Custom Option Types
+## Deduplication & Atomic Overrides
 
-If your plugin needs to add custom types for commands, flags or parameters, you can use the following method:
+Every plugin has a `pluginName` (such as `"acme:auth"` or `"clerc:verbosity"`). If multiple plugins `.use()` a shared dependency, Clerc runs it once. If the root CLI calls `.use(authPlugin("editor"))` after a preset bundle already registered `"acme:auth"`, the later instance atomically replaces the earlier one at its dependency slot.
+
+## Typed `meta` Augmentation
+
+Commands, flags, and arguments each accept an open `meta` object for user-written, plugin-read configuration (used by `@clerc/plugin-mcp` and `@clerc/plugin-completions`).
+
+Augment `CommandCustomMeta`, `FlagCustomMeta`, or `ArgCustomMeta` so users get autocomplete and type checking inside `meta`:
 
 ```ts
-declare module "@clerc/core" {
-  // For adding custom types to commands
-  export interface CommandCustomOptions {
-    foo: string;
-  }
+import { clerc, plugin } from "clerc";
 
-  // For adding custom types to options
-  export interface FlagCustomOptions {
-    foo: string;
-  }
-
-  // For adding custom types to parameters
-  export interface ParameterCustomOptions {
-    foo: string;
+declare module "clerc" {
+  interface CommandCustomMeta {
+    readonly permissions?: readonly ("read" | "write" | "admin")[];
   }
 }
+
+const rbacPlugin = plugin("acme:rbac").middleware(
+  async (ctx, next) => {
+    const required = ctx.command.meta?.permissions;
+    if (required?.includes("admin")) {
+      ctx.log.debug("Checking admin permission...");
+    }
+    await next();
+  },
+  { enforce: "post" },
+);
+
+const cli = clerc({ name: "acme", version: "1.0.0" })
+  .use(rbacPlugin)
+  .command("nuke", {
+    meta: { permissions: ["admin"] },
+    run() {},
+  });
 ```
-
-## Publishing Plugins
-
-While not mandatory, it is recommended that you follow the following conventions when publishing plugins to make it easier for users to identify and use your plugins:
-
-- Use `clerc-plugin-<name>` as the package name.
-- Add the keyword `clerc-plugin` in `package.json`.

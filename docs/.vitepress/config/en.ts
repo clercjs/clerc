@@ -15,54 +15,16 @@ const guideSidebar: DefaultTheme.Config["sidebar"] = [
   {
     text: "Guide",
     items: [
-      {
-        text: "Getting Started",
-        link: "/guide/getting-started",
-      },
-      {
-        text: "Commands",
-        link: "/guide/commands",
-      },
-      {
-        text: "Context",
-        link: "/guide/context",
-      },
-      {
-        text: "Parameters",
-        link: "/guide/parameters",
-      },
-      {
-        text: "Flags",
-        link: "/guide/flags",
-      },
-      {
-        text: "Global Flags",
-        link: "/guide/global-flags",
-      },
-      {
-        text: "Types",
-        link: "/guide/types",
-      },
-      {
-        text: "Interceptors",
-        link: "/guide/interceptors",
-      },
-      {
-        text: "Plugins",
-        link: "/guide/plugins",
-      },
-      {
-        text: "Error Handling",
-        link: "/guide/error-handling",
-      },
-      {
-        text: "Caveats",
-        link: "/guide/caveats",
-      },
-      {
-        text: "Advanced Usage",
-        link: "/guide/advanced",
-      },
+      { text: "Getting Started", link: "/guide/getting-started" },
+      { text: "Commands & Routing", link: "/guide/commands" },
+      { text: "Arguments", link: "/guide/arguments" },
+      { text: "Flags", link: "/guide/flags" },
+      { text: "Types & Schemas", link: "/guide/types" },
+      { text: "Middleware & State", link: "/guide/middleware" },
+      { text: "Plugins", link: "/guide/plugins" },
+      { text: "Help & Diagnostics", link: "/guide/help-and-diagnostics" },
+      { text: "Logger & Terminal UI", link: "/guide/logger" },
+      { text: "Testing & Programmatic Use", link: "/guide/testing" },
     ],
   },
   {
@@ -85,7 +47,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = {
       `/reference/api/${pkg}/`,
       [
         {
-          text: "Go back to guide",
+          text: "Back to Guide",
           link: "/guide/getting-started",
         },
         {
@@ -102,18 +64,13 @@ const sidebar: DefaultTheme.Config["sidebar"] = {
 
 export const enConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
   lang: "en-US",
-  description: "The The full-featured Command-Line Interface library",
+  description:
+    "Strongly-typed CLI framework for Node.js 24+ with built-in help, diagnostics, logger, completions, and MCP.",
   themeConfig: {
-    siteTitle: "Clerc Docs",
+    siteTitle: "Clerc",
     nav: [
-      {
-        text: "Guide",
-        link: "/guide/getting-started",
-      },
-      {
-        text: "Official Plugins",
-        items: pluginNavigation,
-      },
+      { text: "Guide", link: "/guide/getting-started" },
+      { text: "Official Plugins", items: pluginNavigation },
       {
         text: "API Reference",
         items: [
@@ -124,25 +81,22 @@ export const enConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
           })),
         ],
       },
-      {
-        text: "Members",
-        link: "/members",
-      },
+      { text: "Members", link: "/members" },
     ],
     sidebar,
     editLink: {
-      text: "Suggest to this page",
+      text: "Edit this page on GitHub",
       pattern: "https://github.com/clercjs/clerc/tree/main/docs/:path",
     },
     outline: {
-      label: "This page",
+      label: "On this page",
     },
     docFooter: {
       prev: "Previous",
       next: "Next",
     },
     footer: {
-      message: "Released under the MIT license",
+      message: "Released under the MIT License",
       copyright: "Copyright © 2023-present Clerc Developers",
     },
   },

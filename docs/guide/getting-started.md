@@ -4,65 +4,113 @@ title: Getting Started
 
 # Getting Started
 
-:::warning
-
-Clerc is ESM-only!
-
-:::
+Clerc is an ESM-only CLI framework for **Node.js 24+**. Core features - `--help`, `--version`, strict flag checking, typo suggestions, and a structured terminal logger - are built directly into `clerc` with no mandatory plugin setup.
 
 ## Installation
 
-:::info
+::: code-group
 
-The `clerc` package exports a `Cli` function, which is equivalent to `Clerc.create().use(versionPlugin).use(helpPlugin)`. This provides a convenient way to create a CLI with both version and help plugins built-in.
-
-If you need more control, you can use `Clerc.create()` directly and manually add plugins.
-
-Note that the `clerc` package may be larger in size since it re-exports all official plugins. However, if your bundler supports tree-shaking, this shouldn't be an issue. To reduce bundle size, consider installing only `@clerc/core` and the plugins you need.
-
-:::
-
-:::code-group
+```sh [pnpm]
+pnpm add clerc
+```
 
 ```sh [npm]
-$ npm install clerc
+npm install clerc
 ```
 
 ```sh [yarn]
-$ yarn add clerc
-```
-
-```sh [pnpm]
-$ pnpm add clerc
+yarn add clerc
 ```
 
 :::
 
-## Simplest CLI Example
+## Your First CLI in 30 Seconds
 
-Install clerc, and create a file named `cli.mjs`:
+Create `cli.ts`:
 
 ```ts
-import { Cli } from "clerc";
+import { Types, clerc } from "clerc";
 
-Cli() // Create a new CLI with help and version plugins
-  .name("foo") // Optional, CLI readable name
-  .scriptName("foo") // CLI script name (the command used to run the CLI)
-  .description("A foo CLI") // CLI description
-  .version("0.0.0") // CLI version
-  .command(
-    "bar", // Command name
-    "A bar command", // Command description
-  )
-  .on(
-    "bar",
-    (
-      _ctx, // Command context, but we're not using it yet
-    ) => {
-      console.log("Hello, world from Clerc.js!");
+const cli = clerc({
+  name: "acme",
+  version: "2.0.0",
+  description: "Build and deploy TypeScript services",
+});
+
+cli.command("deploy <env> [region]", {
+  aliases: "d",
+  description: "Deploy service to target environment",
+  args: {
+    env: {
+      type: Types.Enum("staging", "prod"),
+      description: "Target environment",
     },
-  )
-  .parse(); // Parse arguments and run!
+    region: {
+      default: "us-east-1",
+      description: "Cloud region",
+    },
+  },
+  flags: {
+    port: {
+      type: Types.Range(1, 65_535),
+      short: "p",
+      default: 3000,
+      env: "PORT",
+      description: "Server port",
+    },
+    dryRun: {
+      type: Boolean,
+      short: "n",
+      description: "Preview without deploying",
+    },
+  },
+  run(ctx) {
+    const { env, region } = ctx.args;
+    //      ^?
+    const { port, dryRun } = ctx.flags;
+    //      ^?
+
+    ctx.log.step(`Deploying to ${env} (${region})`, `port=${port}`);
+    if (dryRun) {
+      ctx.log.box.info("Dry run", "No remote resources were modified.");
+    } else {
+      ctx.log.success("Deployment complete");
+    }
+  },
+});
+
+await cli.runMain();
 ```
 
-Then run: `node cli.mjs bar`. It should output in your shell: `Hello, world from Clerc.js!`
+Hover over `env`, `region`, `port`, or `dryRun` in the code block above to inspect the exact TypeScript types inferred from your signature and schema.
+
+Run it directly with Node.js 24+ native TypeScript support:
+
+<TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='["{brand:step }  {bold:Deploying to prod (us-east-1)}","       {faint:│} {muted:port=8080}","{cyan:info }  {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","       {faint:│}  {muted:No remote resources were modified.}     {faint:│}","       {faint:╰─────────────────────────────────────────╯}"]' />
+
+## Interactive Sandbox
+
+Try running `--help`, passing flags, or making deliberate typos against an `acme` CLI right here:
+
+<CliPlayground lang="en" />
+
+## `runMain()` vs `run()`
+
+Clerc separates process-level execution from pure invocation:
+
+| Method                         | Behavior                                                                                                           | Best for                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `await cli.runMain()`          | Reads `process.argv`, prints diagnostics on failure, and sets `process.exitCode` without calling `process.exit()`. | Your CLI entry file (`bin`).                  |
+| `await cli.run(argv, options)` | Runs against an explicit `argv` and optional `terminal` without mutating `process.exitCode`.                       | Unit tests, sub-invocations, and MCP servers. |
+
+## Ecosystem Packages
+
+Install only what your CLI needs:
+
+| Package                                                             | Purpose                                                                                                                    |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `clerc`                                                             | Core CLI router, POSIX argv parser, help & diagnostics, Standard Schema v1, `verbosityPlugin`, and `updateNotifierPlugin`. |
+| `@clerc/logger`                                                     | Standalone CLI logger (re-exported by `clerc` as `ctx.log` and `createLogger`).                                            |
+| `@clerc/theme`                                                      | Zero-dependency ANSI styling and terminal capability detection (re-exported by `clerc`).                                   |
+| [`@clerc/plugin-completions`](/official-plugins/plugin-completions) | Shell completion scripts and runtime completions for Bash, Zsh, Fish, and PowerShell.                                      |
+| [`@clerc/plugin-mcp`](/official-plugins/plugin-mcp)                 | Turns your CLI into a Model Context Protocol stdio server (`<cli> mcp`).                                                   |

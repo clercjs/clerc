@@ -1,101 +1,89 @@
 ---
-title: Completions Plugin
+title: "@clerc/plugin-completions"
 ---
 
-# @clerc/plugin-completions
+# `@clerc/plugin-completions`
 
-A plugin to add command-line autocompletion functionality to your CLI, based on [@bomb.sh/tab](https://github.com/bombshell-dev/tab).
+Adds static shell completion script generation and dynamic runtime tab-completion for **Zsh**, **Bash**, **Fish**, and **PowerShell**, powered by [`@bomb.sh/tab`](https://github.com/bombshell-dev/tab).
 
-## 📦 Installation
+## Installation
 
-:::code-group
-
-```sh [npm]
-$ npm install @clerc/plugin-completions
-```
-
-```sh [yarn]
-$ yarn add @clerc/plugin-completions
-```
+::: code-group
 
 ```sh [pnpm]
-$ pnpm add @clerc/plugin-completions
+pnpm add @clerc/plugin-completions
+```
+
+```sh [npm]
+npm install @clerc/plugin-completions
 ```
 
 :::
 
-## 🚀 Usage
-
-### Import
+## Usage
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
-// Or import directly from clerc
-import { completionsPlugin } from "clerc";
+import { Types, clerc } from "clerc";
+
+const cli = clerc({
+  name: "acme",
+  version: "2.0.0",
+}).use(completionsPlugin());
+
+cli.command("deploy <env>", {
+  aliases: ["d"],
+  description: "Deploy application",
+  args: {
+    // Enum values ("staging", "prod") are completed automatically!
+    env: Types.Enum("staging", "prod"),
+  },
+  flags: {
+    region: {
+      type: String,
+      short: "r",
+      meta: {
+        completions: {
+          handler(complete) {
+            complete("us-east-1", "US East (N. Virginia)");
+            complete("eu-west-1", "Europe (Ireland)");
+            complete("ap-northeast-1", "Asia Pacific (Tokyo)");
+          },
+        },
+      },
+    },
+  },
+  run() {},
+});
+
+await cli.runMain();
 ```
 
-### Basic Usage
+## Activating in Your Shell
 
-```ts
-const cli = Clerc.create()
-  .scriptName("my-cli")
-  .description("My CLI application")
-  .version("1.0.0")
-  .use(completionsPlugin()) // Add the autocompletion plugin
-  .command("start", "Start the service")
-  .on("start", (ctx) => {
-    console.log("Service started");
-  })
-  .command("stop", "Stop the service")
-  .on("stop", (ctx) => {
-    console.log("Service stopped");
-  })
-  .parse();
+::: code-group
+
+```sh [Zsh]
+eval "$(acme completions zsh)"
 ```
 
-### Running Effect
-
-```bash
-# Generate autocompletion script for Bash
-$ my-cli completions bash
-
-# Execute directly to enable autocompletion
-# PowerShell
-$ my-cli completions powershell | Out-String | Invoke-Expression
-
-# Bash
-$ eval "$(my-cli completions bash)"
-
-# Zsh
-$ eval "$(my-cli completions zsh)"
-
-# You can also specify the shell type with the --shell parameter
-$ eval "$(my-cli completions --shell bash)"
+```sh [Bash]
+eval "$(acme completions bash)"
 ```
 
-## 📝 Features
-
-### Automatic Completion Script Generation
-
-The plugin automatically generates a full autocompletion script for your CLI, supporting:
-
-- Command autocompletion
-- Flag autocompletion
-
-### Completion Logic
-
-```sh
-$ my-cli <TAB> # Complete available commands
-$ my-cli command <TAB> # Complete subcommands of the specified command
-$ my-cli -<TAB> # Complete all global short flags, e.g., -h, -V
-$ my-cli --<TAB> # Complete all global long flags
-$ my-cli command -<TAB> # Complete short flags for the specified command (including global flags), e.g., -h, -V
-$ my-cli command --<TAB> # Complete all available flags for the specified command, including global flags
+```fish [Fish]
+acme completions fish | source
 ```
 
-### Supported Shells
+```powershell [PowerShell]
+acme completions powershell | Out-String | Invoke-Expression
+```
 
-- **Bash** - Default shell for Linux and macOS
-- **Zsh** - Default shell for macOS Catalina and later versions
-- **Fish** - A modern shell
-- **PowerShell** - Default shell for Windows
+:::
+
+## What Gets Completed Automatically
+
+- Subcommands, nested namespaces, and command aliases
+- Kebab-case long flags (`--dry-run`), flag aliases, and short flags (`-n`)
+- `Types.Enum(...)` and Standard JSON Schema `enum` values on both flags and arguments
+- Custom dynamic completion handlers via `meta.completions.handler` on commands, flags, and arguments (hide specific items from completion with `meta: { completions: { show: false } }`)

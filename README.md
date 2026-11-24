@@ -1,7 +1,7 @@
 ![Clerc Card](.github/assets/ClercCard.png)
 
 <p align="center">
-  <a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a modern, strongly-typed CLI framework for Node.js 24+.
+  <a target="_blank" href="https://clerc.so1ve.dev" noreferrer noopener>Clerc</a> is a strongly-typed CLI framework for Node.js 24+, with built-in help, Cargo-style diagnostics, structured logging, shell completions, and MCP support.
 </p>
 
 <div align="center">
@@ -18,36 +18,46 @@
 > [!NOTE]
 > ESM-only, targeting Node.js >= 24.
 
-# ✨ Features
+## Why Clerc
 
-- **Route-Style Typed Command Signatures** - Write `"deploy <target> [region] -- [extra...]"` and get full template-literal inference + `args` key autocompletion with zero `as const`.
-- **Batteries-Included Core** - Native `--help`, `--version`, strict unknown-flag checks with typo suggestions, and Cargo/Clap-inspired diagnostics (plus JSON mode) right out of the box.
-- **Unified `Clerc` & `plugin()` Primitives** - Plugins and apps share the exact same clean verbs (`.flags()`, `.groups()`, `.command()`, `.middleware()`, `.onError()`, `.use()`), with typed `ctx.state` injection via `next({ ... })` and atomic named overrides.
-- **Standard Schema v1** - Use Zod, Valibot, ArkType, or built-in `Types` directly for flags and arguments, with `env` fallbacks, `conflicts`, and `implies`.
-- **Testable by Design** - Pure per-invocation `cli.run(argv, { terminal })` with `createMemoryTerminal()`, zero `process.exit()` side effects.
+- **Signature-driven TypeScript types** - Write `"deploy <env> [region] -- [extra...]"` and get `ctx.args` inferred as `{ env: string; region: string | undefined; extra: string[] }` without `as const`. Typos in `args` or `flags` option keys fail at compile time.
+- **Standard Schema v1 everywhere** - Pass Zod, Valibot, ArkType, or built-in `Types.Enum` / `Types.Range` / `Types.Integer` / `Types.Regex` directly to `type`. One schema drives runtime validation, TypeScript output types, `--help` placeholders, shell completion candidates, and MCP JSON Schemas.
+- **Editorial `--help`, typo hints, and `ctx.log` built in** - Every CLI gets aligned `--help` pages (command/flag groups, examples, notes), Cargo-style error diagnostics with Levenshtein suggestions (`buid` -> `'build'`, `--prt` -> `'--port'`), and a structured logger (`step`, `box`, `spinner`, `task`, streaming `.line()`, and JSON mode).
+- **One API for apps and plugins** - `clerc()` and `plugin()` share `.command()`, `.flags()`, `.groups()`, `.middleware()`, `.onError()`, and `.use()`. Onion middlewares inject typed `ctx.state` via `next({ db })`, clean up in `try / finally`, and support `{ enforce: "pre" | "post" }`.
+- **Shell completions and MCP server from one definition** - Add `@clerc/plugin-completions` for Bash, Zsh, Fish, and PowerShell tab-completion. Add `@clerc/plugin-mcp` and `<cli> mcp` exposes your commands as Model Context Protocol tools and help pages as resources for AI agents.
+- **In-memory testing without `process.exit()`** - `await cli.run(["deploy", "prod"], { terminal: createMemoryTerminal() })` captures `stdout`, `stderr`, and `exitCode` in memory without mutating globals or killing your test runner.
 
-# 😊 Quick Start
+## Quick Start
+
+```sh
+pnpm add clerc
+```
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, clerc, verbosityPlugin } from "clerc";
 
 const cli = clerc({
   name: "acme",
   version: "2.0.0",
-  description: "Build and deploy modern TypeScript apps",
-});
+  description: "Build and deploy TypeScript services",
+}).use(verbosityPlugin());
 
-cli.command("deploy <target> [region]", {
-  description: "Deploy application to target environment",
+cli.command("deploy <env> [region]", {
+  aliases: "d",
+  description: "Deploy service to target environment",
   args: {
-    target: {
+    env: {
       type: Types.Enum("staging", "prod"),
       description: "Target environment",
+    },
+    region: {
+      default: "us-east-1",
+      description: "Cloud region",
     },
   },
   flags: {
     port: {
-      type: Number,
+      type: Types.Range(1, 65_535),
       short: "p",
       default: 3000,
       env: "PORT",
@@ -60,11 +70,18 @@ cli.command("deploy <target> [region]", {
     },
   },
   run(ctx) {
-    ctx.log.step(`Deploying to ${ctx.args.target} on port ${ctx.flags.port}`);
+    // ctx.args.env    -> "staging" | "prod"
+    // ctx.args.region -> string
+    // ctx.flags.port  -> number
+    ctx.log.step(
+      `Deploying to ${ctx.args.env} (${ctx.args.region})`,
+      `port=${ctx.flags.port}`,
+    );
+
     if (ctx.flags.dryRun) {
-      ctx.log.info("Dry run enabled, no changes applied.");
+      ctx.log.box.info("Dry run", "No remote resources were modified.");
     } else {
-      ctx.log.success("Deployed!");
+      ctx.log.success("Deployment complete");
     }
   },
 });
@@ -72,25 +89,110 @@ cli.command("deploy <target> [region]", {
 await cli.runMain();
 ```
 
-# 📦 Packages
+Running `acme deploy --help` renders:
 
-- `clerc` - Core CLI framework: POSIX argv parser, `clerc`, `plugin`, layered help & diagnostics, Standard Schema v1, `Terminal`, `Theme`, and first-party plugins (`verbosityPlugin`, `updateNotifierPlugin`).
-- `@clerc/theme` - Zero-dependency semantic CLI theme and terminal capability detection.
-- `@clerc/logger` - Minimal CLI logger with aligned word labels and JSON mode.
-- `@clerc/plugin-completions` - Shell completion generator powered by `@bomb.sh/tab`.
-- `@clerc/plugin-mcp` - Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.
+```text
+acme deploy v2.0.0  alias: d
+Deploy service to target environment
+────────────────────────────────────────────────────────────────────────
+USAGE   acme deploy [options] <env> [region]
 
-# 📖 Documentation
+ARGUMENTS
+  <env>                    Target environment  [staging|prod]
+  [region]                 Cloud region  [default: us-east-1]
 
-Please see https://clerc.so1ve.dev.
+OPTIONS
+  -p, --port <1..65535>    Server port  [default: 3000] [env: PORT]
+  -n, --dry-run            Preview without deploying
 
-# 🦄 Examples
+GLOBAL OPTIONS
+  -q, --quiet              Suppress non-error output
+  -v, --verbose            Enable verbose debug logging
+  -h, --help               Show help
+```
 
-- [Acme](./examples/acme)
-- [Greeting](./examples/greeting)
-- [Bumpp](./examples/bumpp)
-- [Logger](./examples/logger)
+Mistyping a command or option prints actionable diagnostics:
 
-# 📝 License
+```text
+$ acme deply
+error  unknown command 'deply'
 
-[MIT](./LICENSE). Made with ❤️ by [Ray](https://github.com/so1ve)
+tip    a similar command exists: 'deploy'
+
+       For more information, try 'acme --help'.
+```
+
+## Plugins, Typed State & MCP
+
+Plugins encapsulate flags, subcommands, and middlewares, then compose onto any CLI with full type inference:
+
+```ts
+import { completionsPlugin } from "@clerc/plugin-completions";
+import { mcpPlugin } from "@clerc/plugin-mcp";
+import { clerc, plugin } from "clerc";
+
+const dbPlugin = plugin("acme:db")
+  .flags({
+    databaseUrl: {
+      type: String,
+      env: "DATABASE_URL",
+      default: "sqlite://local.db",
+    },
+  })
+  .middleware(async (ctx, next) => {
+    const db = await connectDb(ctx.flags.databaseUrl);
+    try {
+      return await next({ db });
+    } finally {
+      await db.close();
+    }
+  });
+
+const cli = clerc({ name: "acme", version: "2.0.0" })
+  .use(dbPlugin)
+  .use(completionsPlugin()) // adds 'acme completions <shell>'
+  .use(mcpPlugin()); // adds 'acme mcp' stdio server
+
+cli.command("users list", {
+  meta: { mcp: { readOnly: true } },
+  async run(ctx) {
+    // ctx.state.db is typed from dbPlugin
+    const users = await ctx.state.db.query("SELECT id, email FROM users");
+    ctx.log.info(`Found ${users.length} users`);
+  },
+});
+```
+
+## Testing in Memory
+
+```ts
+import { createMemoryTerminal } from "clerc";
+import { expect, test } from "vitest";
+
+test("previews staging deploy", async () => {
+  const terminal = createMemoryTerminal({ env: { PORT: "8080" } });
+  const result = await cli.run(["deploy", "staging", "-n"], { terminal });
+
+  expect(result.ok).toBe(true);
+  expect(terminal.stdoutText()).toContain("port=8080");
+});
+```
+
+## Packages
+
+| Package                                                      | Description                                                                                                                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`clerc`](./packages/clerc)                                  | Core framework: POSIX argv parser, `clerc`, `plugin`, help renderer, diagnostics, Standard Schema v1, `Terminal`, `verbosityPlugin`, and `updateNotifierPlugin`. |
+| [`@clerc/logger`](./packages/logger)                         | CLI logger with aligned word labels, `node:util` object/error formatting, streaming `.line()`, `box`, `spinner`, `task`, and JSON output.                        |
+| [`@clerc/theme`](./packages/theme)                           | Zero-dependency semantic ANSI theme and terminal color/Unicode detection.                                                                                        |
+| [`@clerc/plugin-completions`](./packages/plugin-completions) | Shell completion generator for Bash, Zsh, Fish, and PowerShell powered by `@bomb.sh/tab`.                                                                        |
+| [`@clerc/plugin-mcp`](./packages/plugin-mcp)                 | Zero-dependency MCP stdio server exposing CLI commands as tools and help pages as resources.                                                                     |
+
+## Documentation & Examples
+
+- **Documentation**: [clerc.so1ve.dev](https://clerc.so1ve.dev)
+- **Examples**: [`examples/acme`](./examples/acme) (full v2 tour) · [`examples/logger`](./examples/logger) · [`examples/bumpp`](./examples/bumpp) · [`examples/greeting`](./examples/greeting)
+
+## License
+
+[MIT](./LICENSE). Made by [Ray](https://github.com/so1ve).

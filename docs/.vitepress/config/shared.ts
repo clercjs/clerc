@@ -38,10 +38,10 @@ const flattenItems = (
     })
     .toSorted((a, b) => a.text!.localeCompare(b.text!));
 
-export function getTypedocSidebar(pkg: string) {
+export function getTypedocSidebar(pkgName: string) {
   const filepath = path.resolve(
     import.meta.dirname,
-    `../../reference/api/${pkg}/typedoc-sidebar.json`,
+    `../../reference/api/${pkgName}/typedoc-sidebar.json`,
   );
   if (!existsSync(filepath)) {
     return [];
@@ -54,7 +54,7 @@ export function getTypedocSidebar(pkg: string) {
 
     return flattenItems(items);
   } catch (error) {
-    console.error(`Failed to load typedoc sidebar for ${pkg}:`, error);
+    console.error(`Failed to load typedoc sidebar for ${pkgName}:`, error);
 
     return [];
   }
@@ -62,7 +62,6 @@ export function getTypedocSidebar(pkg: string) {
 
 export const sharedConfig = defineConfig({
   title: "Clerc",
-  // appearance: "dark",
   lastUpdated: true,
   head: [["link", { rel: "icon", href: "/logo.webp", type: "image/webp" }]],
   themeConfig: {
@@ -90,6 +89,10 @@ export const sharedConfig = defineConfig({
       transformerTwoslash({
         twoslashOptions: {
           compilerOptions: {
+            target: 99,
+            module: 99,
+            moduleResolution: 100,
+            strict: true,
             paths: Object.fromEntries(
               Object.entries(tsconfigBase.compilerOptions.paths).map(
                 ([key, paths]) => [key, paths.map((p) => path.join("..", p))],
@@ -106,10 +109,9 @@ export const sharedConfig = defineConfig({
             `// ---cut-start---\nimport { ${clercImports.join(", ")} } from "clerc";\n// ---cut-end---`,
           ],
         ]),
-        // typesCache: createFileSystemTypesCache(),
       }),
     ],
-    languages: ["js", "jsx", "ts", "tsx"],
+    languages: ["js", "jsx", "ts", "tsx", "sh", "bash", "json"],
   },
   vite: {
     plugins: [

@@ -1,666 +1,149 @@
 ---
-title: 类型
+title: 类型与 Schema
 ---
 
-# 类型
+# 类型与 Schema
 
-类型允许你验证、转换和解析选项和参数的值。Clerc 提供了多个内置的类型函数，也支持自定义类型。
+Clerc 中的选项与位置参数共用同一套类型描述管线。你可以使用原生构造函数、内置 `Types.*`、自定义解析函数，或者直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
 
-## 内置基础类型
+同一份 Schema 会自动驱动五处能力：
 
-Clerc 支持标准的 JavaScript 类型构造函数以处理常见的用例：
+1. **运行期校验与类型转换**（支持同步与异步）
+2. **`ctx.args` 与 `ctx.flags` 的 TypeScript 输出类型推导**
+3. **`--help` 中的占位标签**（如 `<staging|prod>`、`<1..65535>`）
+4. **Shell 自动补全候选值**（枚举值在 `@clerc/plugin-completions` 中自动补全）
+5. **MCP 工具的 `inputSchema`**（在 `@clerc/plugin-mcp` 中通过 Standard JSON Schema v1 导出）
 
-- **String**: 用于字符串值（默认值：`undefined`）
-- **Number**: 用于数字值（可以直接使用）
-- **Boolean**: 用于布尔开关（默认值：`false`）
-- **Object**: 用于键值对（默认值：`{}`）
+## 直接使用 Zod / Valibot / ArkType
 
-### String 类型
+无需任何适配层，直接将 Schema 传给 `type`：
 
-`String` 类型用于接受字符串值的选项和参数。这是最基础的类型。
+::: code-group
 
-**默认值行为：** 如果未指定，其值为 `undefined`（除非设置了 `default` 属性）。
+```ts [Zod v4] no-twoslash
+import { clerc } from "clerc";
+import { z } from "zod";
 
-```ts
-const cli = Cli()
-  .command("greet", "问候某人", {
-    flags: {
-      name: {
-        type: String,
-        description: "用户名",
-        default: "世界",
-      },
+const cli = clerc({ name: "acme", version: "1.0.0" });
 
-      message: {
-        type: String,
-        short: "m",
-        description: "问候信息",
-      },
+cli.command("invite <email>", {
+  args: {
+    email: z.email(),
+  },
+  flags: {
+    role: {
+      type: z.enum(["member", "admin"]),
+      default: "member",
     },
-  })
-  .on("greet", (ctx) => {
-    console.log(`${ctx.flags.message}, ${ctx.flags.name}!`);
-    // $ node cli.mjs greet --name 张三 --message 你好
-    // 你好, 张三!
-    // $ node cli.mjs greet --message 你好
-    // ctx.flags.message => "你好"
-    // ctx.flags.name => "世界" (使用默认值)
-  })
-  .parse();
-```
-
-### Boolean 类型
-
-`Boolean` 类型用于创建布尔开关选项。默认情况下，只需提及选项名称即可将其设置为 `true`。
-
-**默认值行为：** 如果未指定该选项，其值为 `false`。
-
-```ts
-const cli = Cli()
-  .command("build", "构建项目", {
-    flags: {
-      production: {
-        type: Boolean,
-        description: "构建生产版本",
-      },
-
-      watch: {
-        type: Boolean,
-        short: "w",
-        description: "启用监视模式",
-      },
+    ttlHours: {
+      type: z.coerce.number().int().min(1).max(168),
+      default: 24,
     },
-  })
-  .on("build", (ctx) => {
-    // $ node cli.mjs build --production --watch
-    ctx.flags.production; // => true
-    ctx.flags.watch; // => true
-
-    // $ node cli.mjs build
-    ctx.flags.production; // => false
-    ctx.flags.watch; // => false
-  })
-  .parse();
+  },
+  run(ctx) {
+    // ctx.args.email     -> string
+    // ctx.flags.role     -> "member" | "admin"
+    // ctx.flags.ttlHours -> number
+  },
+});
 ```
 
-#### Boolean 的 Negatable 属性
+```ts [Valibot] no-twoslash
+import { clerc } from "clerc";
+import * as v from "valibot";
 
-Boolean 类型支持 `negatable` 属性，允许你决定是否启用否定选项。默认情况下，`negatable` 为 `true`，这意味着 `--no-flag` 会将 `flag` 选项设置为 `false`。
+const cli = clerc({ name: "acme", version: "1.0.0" });
 
-```ts
-const cli = Cli()
-  .command("start", "启动应用", {
-    flags: {
-      color: {
-        type: Boolean,
-        negatable: true, // 默认
-        description: "启用彩色输出",
-        default: true,
-      },
-
-      cache: {
-        type: Boolean,
-        negatable: false, // 禁用否定形式
-        description: "启用缓存",
-        default: true,
-      },
+cli.command("invite <email>", {
+  args: {
+    email: v.pipe(v.string(), v.email()),
+  },
+  flags: {
+    role: {
+      type: v.picklist(["member", "admin"]),
+      default: "member",
     },
-  })
-  .on("start", (ctx) => {
-    // $ node cli.mjs start
-    ctx.flags.color; // => true
-    ctx.flags.cache; // => true
-
-    // $ node cli.mjs start --no-color --no-cache
-    ctx.flags.color; // => false
-    ctx.flags.cache; // => true
-
-    // 必须使用 --cache=false 来禁用缓存
-    // $ node cli.mjs start --cache=false
-    ctx.flags.cache; // => false
-  })
-  .parse();
+  },
+  run(ctx) {},
+});
 ```
 
-### Array 类型
+```ts [ArkType] no-twoslash
+import { type } from "arktype";
+import { clerc } from "clerc";
 
-`Array` 类型用于接受多个值的选项和参数。通过将类型函数包装在数组中来定义：
+const cli = clerc({ name: "acme", version: "1.0.0" });
 
-**默认值行为：** 如果未指定，其值为 `[]`（空数组）。
-
-```ts
-const cli = Cli()
-  .command("copy", "复制文件", {
-    flags: {
-      // 使用 [String] 来接受多个字符串值
-      include: {
-        type: [String],
-        short: "i",
-        description: "包含的文件模式",
-      },
-
-      // 使用 [Number] 来接受多个数字值
-      ports: {
-        type: [Number],
-        short: "p",
-        description: "要监听的端口",
-      },
+cli.command("invite <email>", {
+  args: {
+    email: type("string.email"),
+  },
+  flags: {
+    role: {
+      type: type("'member' | 'admin'"),
+      default: "member",
     },
-  })
-  .on("copy", (ctx) => {
-    // $ node cli.mjs copy -i "*.js" -i "*.ts" -p 3000 -p 3001
-    ctx.flags.include; // => ["*.js", "*.ts"]
-    ctx.flags.ports; // => [3000, 3001]
-
-    // $ node cli.mjs copy
-    ctx.flags.include; // => []
-    ctx.flags.ports; // => []
-  })
-  .parse();
+  },
+  run(ctx) {},
+});
 ```
-
-### 计数器类型
-
-计数器类型用于计算选项被指定的次数。通过使用 `[Boolean]` 类型可以实现计数器功能：
-
-**默认值行为：** 如果未指定，其值为 `0`。
-
-```ts
-const cli = Cli()
-  .command("log", "显示日志", {
-    flags: {
-      // [Boolean] 类型会计数选项被使用的次数
-      verbose: {
-        type: [Boolean],
-        short: "v",
-        description: "详细日志级别（-v, -vv, -vvv）",
-      },
-    },
-  })
-  .on("log", (ctx) => {
-    // $ node cli.mjs log -v
-    ctx.flags.verbose; // => 1
-
-    // $ node cli.mjs log -vvv
-    ctx.flags.verbose; // => 3
-
-    // $ node cli.mjs log -v -v -v
-    ctx.flags.verbose; // => 3
-
-    // $ node cli.mjs log
-    ctx.flags.verbose; // => 0
-  })
-  .parse();
-```
-
-### Object 类型
-
-`Object` 类型用于接受键值对形式的选项。使用点号或其他分隔符来指定对象的属性：
-
-**默认值行为：** 如果未指定，其值为 `{}`（空对象）。
-
-```ts
-const cli = Cli()
-  .command("config", "配置应用", {
-    flags: {
-      define: {
-        type: Object,
-        short: "d",
-        description: "定义环境变量",
-      },
-    },
-  })
-  .on("config", (ctx) => {
-    // $ node cli.mjs config --define.apiUrl http://api.example.com --define.debug
-    ctx.flags.define; // => { apiUrl: "http://api.example.com", debug: true }
-
-    // $ node cli.mjs config
-    ctx.flags.define; // => {}
-  })
-  .parse();
-```
-
-:::info
-
-如果你想传入类似 `K=V` 这样的键值对，可以在命令行中使用冒号分隔符：
-
-```bash
-$ node cli.mjs config --define:env=production --define:version=1.0.0
-```
-
-实际上 `--define=env=production` 也可以正常工作，只是看起来不太直观。
 
 :::
 
-#### 使用 `objectType()` 的高级对象类型
+## 内置零依赖 `Types`
 
-为了更好地控制对象选项的解析、类型转换和默认值合并，你可以使用 `@clerc/parser` 提供的 `objectType()` 函数：
-
-```ts
-import { coerceObjectValue, objectType, setDotValues } from "@clerc/parser";
-
-// 或者 import { objectType, setDotValues, coerceObjectValue } from "clerc";
-
-const cli = Cli()
-  .command("dev", "启动开发服务器", {
-    flags: {
-      env: {
-        type: objectType<{ PORT?: number; DEBUG?: boolean; HOST?: string }>({
-          setValue: (object, path, value) => {
-            // 根据字段名进行自定义类型转换
-            if (path === "PORT") {
-              setDotValues(object, path, Number(value));
-            } else if (path === "DEBUG") {
-              setDotValues(object, path, value === "true");
-            } else {
-              // 对于其他字段，使用默认强制转换
-              setDotValues(object, path, coerceObjectValue(value));
-            }
-          },
-        }),
-        default: { PORT: 3000, HOST: "0.0.0.0" }, // 默认值
-      },
-    },
-  })
-  .on("dev", (ctx) => {
-    // $ node cli.mjs dev --env.PORT 8080 --env.DEBUG true
-    ctx.flags.env.PORT; // => 8080 (number)
-    ctx.flags.env.DEBUG; // => true (boolean)
-    ctx.flags.env.HOST; // => "0.0.0.0" (从默认值合并而来)
-  })
-  .parse();
-```
-
-**主要特性：**
-
-1. **类型安全的泛型支持**：使用 `objectType<T>()` 指定预期的对象结构
-2. **自定义值转换**：`setValue` 函数接收以下参数：
-   - `object`：正在构建的当前对象
-   - `path`：点分隔的路径（例如 `"PORT"` 或 `"foo.bar"`）
-   - `value`：原始 CLI 字符串值
-3. **自动默认值合并**：当你在 flag 配置中提供 `default` 值时，它会自动与用户提供的值合并（默认为浅合并）
-4. **辅助函数**：使用 `setDotValues`、`appendDotValues` 和 `coerceObjectValue` 进行常见操作
-
-**默认行为（不使用自定义 `setValue`）：**
+不想引入外部校验库时，`clerc` 内置了四个常用 Standard Schema 构造器：
 
 ```ts
-import { objectType } from "@clerc/parser";
+import { Types, clerc } from "clerc";
 
-// 或者 import { objectType } from "clerc";
+const cli = clerc({ name: "acme", version: "1.0.0" });
 
-const cli = Cli()
-  .command("config", "配置设置", {
-    flags: {
-      settings: {
-        type: objectType(), // 使用默认行为
-        default: { theme: "dark", language: "zh" },
-      },
-    },
-  })
-  .on("config", (ctx) => {
-    // $ node cli.mjs config --settings.name app --settings.version 1.0.0
-    ctx.flags.settings; // => { name: "app", version: "1.0.0", theme: "dark", language: "zh" }
-
-    // $ node cli.mjs config --settings.tags a --settings.tags b
-    ctx.flags.settings; // => { tags: ["a", "b"], theme: "dark", language: "zh" }
-    // 重复的键自动变为数组，默认值被合并
-  })
-  .parse();
-```
-
-默认行为会自动：
-
-- 将 `"true"` 或空值转换为布尔值 `true`
-- 将 `"false"` 转换为布尔值 `false`
-- 通过创建数组来处理重复的键
-- **合并外部 `default` 值**与用户提供的值（浅合并）
-
-**自定义合并逻辑：**
-
-默认情况下，`objectType` 在合并默认值与用户提供的值时执行浅合并。你可以使用 `mergeObject` 选项自定义此行为：
-
-```ts
-import { objectType } from "@clerc/parser";
-
-const cli = Cli()
-  .command("start", "启动服务器", {
-    flags: {
-      config: {
-        type: objectType({
-          mergeObject: (target, defaults) => {
-            // 自定义合并逻辑：深度合并嵌套对象
-            for (const [key, val] of Object.entries(defaults)) {
-              if (
-                typeof val === "object" &&
-                val !== null &&
-                typeof target[key] === "object"
-              ) {
-                // 深度合并嵌套对象
-                Object.assign(target[key], val, target[key]);
-              } else if (!(key in target)) {
-                // 从默认值添加缺失的键
-                target[key] = val;
-              }
-            }
-          },
-        }),
-        default: { db: { host: "localhost", port: 5432 }, cache: { ttl: 300 } },
-      },
-    },
-  })
-  .on("start", (ctx) => {
-    // $ node cli.mjs start --config.db.host example.com
-    ctx.flags.config;
-    // => { db: { host: "example.com", port: 5432 }, cache: { ttl: 300 } }
-    // 深度合并保留了默认值中的 db.port
-  })
-  .parse();
-```
-
-**工具函数：**
-
-- `setDotValues(object, path, value)`：在嵌套路径上设置值（覆盖现有值）
-- `appendDotValues(object, path, value)`：在嵌套路径上设置值（将重复项转换为数组）
-- `coerceObjectValue(value)`：默认布尔值强制转换（`"true"` → `true`，`"false"` → `false`）
-
-:::tip
-
-`objectType()` 函数相比基本的 `Object` 类型提供了更强大和类型安全的替代方案，特别适用于以下场景：
-
-- 需要对每个字段进行自定义类型转换
-- 需要更好的 TypeScript 类型推断
-- 需要与模式验证库集成
-
-:::
-
-## 内置的高级类型
-
-Clerc 提供了一些内置的高级类型函数，方便处理常见的需求：
-
-- `Enum`: 限制选项和参数值为预定义的集合。
-- `Range`: 限制数字值在特定范围内并转换为数字。
-- `Regex`: 验证值是否符合正则表达式模式。
-
-这些类型函数可以同时用于选项和参数，允许你在整个 CLI 中共享相同的类型定义：
-
-```ts
-import { Types } from "clerc";
-
-Cli()
-  .command("serve", "启动服务器", {
-    flags: {
-      mode: {
-        type: Types.Enum("development", "production", "test"),
-        default: "development" as const,
-        description: "设置应用程序模式",
-      },
-    },
-    parameters: [
-      {
-        key: "[port]",
-        type: Types.Range(1024, 65_535),
-        description: "端口号",
-      },
-    ],
-  })
-  .on("serve", (ctx) => {
-    ctx.flags.mode;
+cli.command("release <channel>", {
+  args: {
+    channel: Types.Enum("alpha", "beta", "rc", "stable"),
+  },
+  flags: {
+    port: { type: Types.Range(1, 65_535), default: 3000 },
+    workers: { type: Types.Integer, default: 4 },
+    tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
+  },
+  run(ctx) {
+    ctx.args.channel;
+    //       ^?
+    ctx.flags.port;
     //        ^?
-    ctx.parameters.port;
-    //             ^?
-  })
-  .parse();
+    ctx.flags.workers;
+    //        ^?
+  },
+});
 ```
 
-### Enum 类型
+## 自定义解析函数
 
-限制选项或参数值为一组预定义的选项：
+任意形如 `(raw: string) => T` 的函数都可作为类型使用。校验失败时直接 `throw new Error(...)` 即可转为标准 `ValidationError`；挂载可选的 `.display` 属性可自定义 `--help` 中的类型占位名：
 
 ```ts
-import { Types } from "clerc";
+import type { TypeFunction } from "clerc";
+import { clerc } from "clerc";
 
-const cli = Cli()
-  .scriptName("build-cli")
-  .description("构建工具")
-  .version("1.0.0")
-  .command("config", "配置构建设置", {
-    flags: {
-      format: {
-        type: Types.Enum("json", "yaml", "toml"),
-        description: "输出格式",
-      },
-    },
-    parameters: [
-      {
-        key: "<setting>",
-        type: Types.Enum("output", "target", "format"),
-        description: "设置名称",
-      },
-      {
-        key: "<value>",
-        description: "设置值",
-      },
-    ],
-  })
-  .on("config", (ctx) => {
-    console.log(`设置 ${ctx.parameters.setting} = ${ctx.parameters.value}`);
-  })
-  .parse();
-```
-
-使用方法：
-
-```bash
-$ build-cli config --format json output dist
-$ build-cli config --format yaml target es2020
-$ build-cli config --format invalid value
-# Error: Invalid value: invalid. Must be one of: json, yaml, toml
-```
-
-### Range 类型
-
-限制数字值在特定范围内并转换为数字：
-
-```ts
-import { Types } from "clerc";
-
-const cli = Cli()
-  .scriptName("server-cli")
-  .description("服务器管理工具")
-  .version("1.0.0")
-  .command("start", "启动服务器", {
-    flags: {
-      port: {
-        type: Types.Range(1024, 65_535),
-        description: "端口号",
-      },
-    },
-    parameters: [
-      {
-        key: "[timeout]",
-        type: Types.Range(1, 3600),
-        description: "超时时间（秒）",
-      },
-    ],
-  })
-  .on("start", (ctx) => {
-    const port = ctx.flags.port ?? 3000;
-    console.log(`在端口 ${port} 启动服务器`);
-  })
-  .parse();
-```
-
-使用方法：
-
-```bash
-$ server-cli start --port 3000
-$ server-cli start --port 8080
-$ server-cli start --port 100
-# Error: Invalid value: 100. Must be a number between 1024 and 65535
-```
-
-### Regex 类型
-
-验证值是否符合正则表达式模式：
-
-```ts
-import { Types } from "clerc";
-
-const cli = Cli()
-  .scriptName("git-clone")
-  .description("克隆仓库")
-  .version("1.0.0")
-  .command("clone", "克隆一个仓库", {
-    parameters: [
-      {
-        key: "<repo>",
-        type: Types.Regex(/^[\w\-.]+\/[\w\-.]+$/, "owner/repo format"),
-        description: "格式为 owner/repo 的仓库",
-      },
-    ],
-  })
-  .on("clone", (ctx) => {
-    console.log(`克隆 ${ctx.parameters.repo}`);
-  })
-  .parse();
-```
-
-使用方法：
-
-```bash
-$ git-clone clone clercjs/clerc
-$ git-clone clone myorg/myrepo
-$ git-clone clone invalid
-# Error: Invalid value: invalid. Must match: owner/repo format
-```
-
-## 自定义类型
-
-你可以通过提供一个接受字符串参数并返回解析后的值的函数来创建自定义类型。
-
-### 类型显示属性
-
-自定义类型函数可以包含一个可选的 `display` 属性，该属性为帮助输出中的类型提供用户友好的名称。这对于函数名不能清楚描述类型接受内容的复杂类型特别有用。
-
-```ts
-// 自定义类型函数，将逗号分隔的字符串解析为字符串数组
-const CommaSeparatedList = (value: string): string[] =>
-  value.split(",").map((item) => item.trim());
-
-// 添加显示属性以获得更好的帮助文档
-CommaSeparatedList.display = "item1,item2,...";
-
-const cli = Cli()
-  .scriptName("custom-cli")
-  .description("使用自定义类型的 CLI")
-  .version("1.0.0")
-  .command("list", "显示列表", {
-    flags: {
-      items: {
-        type: CommaSeparatedList,
-        default: [] as string[],
-        description: "逗号分隔的字符串列表",
-      },
-    },
-  })
-  .on("list", (ctx) => {
-    console.log("Items:", ctx.flags.items);
-    //                              ^?
-  })
-  .parse();
-```
-
-`display` 属性被帮助系统用来显示更具描述性的类型名称，而不是函数名。例如，在帮助输出中，它不会显示 "CommaSeparatedList"，而是显示 "item1,item2,..."。
-
-### 基本自定义类型示例
-
-```ts
-// 自定义类型函数，将逗号分隔的字符串解析为字符串数组
-const CommaSeparatedList = (value: string): string[] =>
-  value.split(",").map((item) => item.trim());
-
-const cli = Cli()
-  .scriptName("custom-cli")
-  .description("使用自定义类型的 CLI")
-  .version("1.0.0")
-  .command("list", "显示列表", {
-    flags: {
-      items: {
-        type: CommaSeparatedList,
-        default: [] as string[],
-        description: "逗号分隔的字符串列表",
-      },
-    },
-  })
-  .on("list", (ctx) => {
-    console.log("Items:", ctx.flags.items);
-    //                              ^?
-  })
-  .parse();
-```
-
-自定义类型函数也可以与数组语法一起使用，以接受多个值：
-
-```ts
-const cli = Cli()
-  .command("process", "处理文件", {
-    flags: {
-      // 使用 [CommaSeparatedList] 来接受多个逗号分隔的列表
-      patterns: {
-        type: [CommaSeparatedList],
-        short: "p",
-        description: "文件模式（逗号分隔）",
-      },
-    },
-  })
-  .on("process", (ctx) => {
-    // $ node cli.mjs process -p "*.js,*.ts" -p "src/**"
-    ctx.flags.patterns; // => [["*.js", "*.ts"], ["src/**"]]
-  })
-  .parse();
-```
-
-### 使用自定义类型与参数
-
-带有显示属性的自定义类型函数也可以用于参数，提供更好的帮助文档：
-
-```ts
-// 用于解析版本号的自定义类型函数
-function Version(value: string): string {
-  if (!/^\d+\.\d+\.\d+$/.test(value)) {
-    throw new Error(`无效的版本格式: ${value}。预期格式: x.y.z`);
+const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
+  const eq = raw.indexOf("=");
+  if (eq <= 0) {
+    throw new Error("expected KEY=VALUE format");
   }
 
-  return value;
-}
+  return [raw.slice(0, eq), raw.slice(eq + 1)];
+};
+parseKeyValue.display = "KEY=VALUE";
 
-// 为帮助文档添加显示属性
-Version.display = "x.y.z";
-
-const cli = Cli()
-  .scriptName("release-cli")
-  .description("发布管理工具")
-  .version("1.0.0")
-  .command("publish", "发布新版本", {
-    parameters: [
-      {
-        key: "<version>",
-        type: Version,
-        description: "要发布的版本号",
-      },
-      {
-        key: "[channel]",
-        type: Types.Enum("stable", "beta", "alpha"),
-        description: "发布渠道",
-      },
-    ],
-  })
-  .on("publish", (ctx) => {
-    console.log(
-      `发布版本 ${ctx.parameters.version} 到 ${ctx.parameters.channel || "stable"} 渠道`,
-    );
-  })
-  .parse();
+const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
+  flags: {
+    define: { type: [parseKeyValue], short: "D" },
+  },
+  run(ctx) {
+    ctx.flags.define;
+    //        ^?
+  },
+});
 ```
-
-在帮助输出中，类型不会显示为 "Version"，而是显示为 "x.y.z"，使预期的格式更加清晰。

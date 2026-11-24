@@ -1,56 +1,50 @@
-/**
- * Customize default theme styling by overriding CSS variables:
- * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
- */
-
-/**
- * Colors
- * -------------------------------------------------------------------------- */
-
 :root {
-  --vp-c-brand: #f472b6;
-  --vp-c-brand-light: #f9a8d4;
-  --vp-c-brand-lighter: #fbcfe8;
+  --vp-c-brand-1: #db2777;
+  --vp-c-brand-2: #ec4899;
+  --vp-c-brand-3: #f472b6;
+  --vp-c-brand-soft: rgba(236, 72, 153, 0.12);
+
+  --vp-c-brand: #db2777;
+  --vp-c-brand-light: #ec4899;
+  --vp-c-brand-lighter: #f9a8d4;
   --vp-c-brand-lightest: #fce7f3;
-  --vp-c-brand-dark: #ec4899;
-  --vp-c-brand-darker: #db2777;
-  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+  --vp-c-brand-dark: #be185d;
+  --vp-c-brand-darker: #9d174d;
+  --vp-c-brand-dimm: rgba(236, 72, 153, 0.1);
 }
 
-/**
- * Component: Button
- * -------------------------------------------------------------------------- */
+.dark {
+  --vp-c-brand-1: #f472b6;
+  --vp-c-brand-2: #ec4899;
+  --vp-c-brand-3: #db2777;
+  --vp-c-brand-soft: rgba(244, 114, 182, 0.14);
+}
 
 :root {
-  --vp-button-brand-border: var(--vp-c-brand-light);
-  --vp-button-brand-text: var(--vp-c-white);
-  --vp-button-brand-bg: var(--vp-c-brand);
-  --vp-button-brand-hover-border: var(--vp-c-brand-light);
-  --vp-button-brand-hover-text: var(--vp-c-white);
-  --vp-button-brand-hover-bg: var(--vp-c-brand-light);
-  --vp-button-brand-active-border: var(--vp-c-brand-light);
-  --vp-button-brand-active-text: var(--vp-c-white);
-  --vp-button-brand-active-bg: var(--vp-button-brand-bg);
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: #db2777;
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #be185d;
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: #9d174d;
 }
-
-/**
- * Component: Home
- * -------------------------------------------------------------------------- */
 
 :root {
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
+  --vp-home-hero-name-background: linear-gradient(
     120deg,
-    #e56fdc 30%,
-    #f1e1b2
+    #db2777 25%,
+    #f59e0b 100%
   );
-
   --vp-home-hero-image-background-image: linear-gradient(
     -45deg,
-    #e56fdc 50%,
-    #f1e1b2 50%
+    rgba(236, 72, 153, 0.35) 50%,
+    rgba(245, 158, 11, 0.28) 50%
   );
-  --vp-home-hero-image-filter: blur(40px);
+  --vp-home-hero-image-filter: blur(44px);
 }
 
 @media (min-width: 640px) {
@@ -61,34 +55,280 @@
 
 @media (min-width: 960px) {
   :root {
-    --vp-home-hero-image-filter: blur(72px);
+    --vp-home-hero-image-filter: blur(68px);
   }
 }
 
-/**
- * Component: Custom Block
- * -------------------------------------------------------------------------- */
-
-:root {
-  --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-darker);
-  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
-}
-
-.dark {
-  --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-lightest);
-  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
-}
-
-/**
- * Component: Algolia
- * -------------------------------------------------------------------------- */
-
 .DocSearch {
-  --docsearch-primary-color: var(--vp-c-brand) !important;
+  --docsearch-primary-color: var(--vp-c-brand-1) !important;
 }
 
 span {
   tab-size: 2;
+}
+
+/* Terminal semantic tokens shared by CliPlayground and TerminalWindow */
+:root {
+  --clerc-term-bg: #0c0e14;
+  --clerc-term-header: #141720;
+  --clerc-term-border: rgba(255, 255, 255, 0.1);
+  --clerc-term-fg: #e5e7eb;
+  --clerc-term-muted: #8b93a7;
+  --clerc-term-faint: #596174;
+  --clerc-term-brand: #f472b6;
+  --clerc-term-cyan: #38bdf8;
+  --clerc-term-green: #34d399;
+  --clerc-term-yellow: #fbbf24;
+  --clerc-term-red: #f87171;
+}
+
+/* TerminalWindow & CliPlayground styles */
+.clerc-term {
+  margin: 16px 0;
+  border-radius: 8px;
+  border: 1px solid var(--clerc-term-border);
+  background: var(--clerc-term-bg);
+  color: var(--clerc-term-fg);
+  overflow: hidden;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.clerc-term-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--clerc-term-header);
+  border-bottom: 1px solid var(--clerc-term-border);
+  font-size: 12.5px;
+}
+
+.clerc-term-cmd {
+  color: var(--clerc-term-fg);
+}
+
+.clerc-term-title {
+  color: var(--clerc-term-muted);
+}
+
+.clerc-term-body {
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  overflow-x: auto;
+  background: transparent !important;
+  color: var(--clerc-term-fg) !important;
+}
+
+.clerc-term-body code,
+.pg-output code,
+.pg-code code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.pg-shell {
+  margin: 20px 0 36px;
+}
+
+.pg-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pg-presets-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  margin-right: 2px;
+}
+
+.pg-chip {
+  padding: 4px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.pg-chip:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-text-1);
+}
+
+.pg-chip.active {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+}
+
+.pg-chip:focus-visible,
+.pg-tab:focus-visible,
+.pg-input:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+}
+
+.pg-window {
+  border-radius: 10px;
+  border: 1px solid var(--clerc-term-border);
+  background: var(--clerc-term-bg);
+  color: var(--clerc-term-fg);
+  overflow: hidden;
+  font-family: var(--vp-font-family-mono);
+}
+
+.pg-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--clerc-term-header);
+  border-bottom: 1px solid var(--clerc-term-border);
+}
+
+.pg-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.pg-tab {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--clerc-term-muted);
+  font-family: var(--vp-font-family-base);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pg-tab:hover {
+  color: #ffffff;
+}
+
+.pg-tab.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.pg-exit {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.pg-exit.ok {
+  color: var(--clerc-term-green);
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.pg-exit.err {
+  color: var(--clerc-term-red);
+  background: rgba(248, 113, 113, 0.14);
+}
+
+.pg-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13.5px;
+}
+
+.pg-bin {
+  color: var(--clerc-term-brand);
+  font-weight: 600;
+}
+
+.pg-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}
+
+.pg-input::placeholder {
+  color: var(--clerc-term-faint);
+}
+
+.pg-output,
+.pg-code {
+  margin: 0 !important;
+  padding: 16px !important;
+  min-height: 220px;
+  max-height: 440px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.62;
+  background: transparent !important;
+  color: var(--clerc-term-fg) !important;
+}
+
+.t-brand {
+  color: var(--clerc-term-brand);
+  font-weight: 600;
+}
+.t-cyan {
+  color: var(--clerc-term-cyan);
+}
+.t-tip {
+  color: var(--clerc-term-cyan);
+  font-weight: 600;
+}
+.t-green {
+  color: var(--clerc-term-green);
+  font-weight: 600;
+}
+.t-yellow {
+  color: var(--clerc-term-yellow);
+  font-weight: 600;
+}
+.t-red {
+  color: var(--clerc-term-red);
+  font-weight: 600;
+}
+.t-bold {
+  color: #ffffff;
+  font-weight: 600;
+}
+.t-heading {
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.t-muted {
+  color: var(--clerc-term-muted);
+}
+.t-faint {
+  color: var(--clerc-term-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-chip {
+    transition: none;
+  }
 }

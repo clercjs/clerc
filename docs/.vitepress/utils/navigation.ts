@@ -17,7 +17,7 @@ function extractTitleFromMarkdown(content: string): string | null {
   const titleRegex = /^title:\s*(.+?)\s*$/m;
   const titleMatch = frontmatter.match(titleRegex);
 
-  return titleMatch ? titleMatch[1].trim() : null;
+  return titleMatch ? titleMatch[1].trim().replace(/^["']|["']$/g, "") : null;
 }
 
 export async function getTitles(
