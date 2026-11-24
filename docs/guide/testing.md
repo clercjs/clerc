@@ -1,12 +1,16 @@
 ---
-title: Testing & Programmatic Use
+title: Testing
 ---
 
-# Testing & Programmatic Use
+<script setup>
+import scenario from "./testing.playground.ts";
+</script>
+
+# Testing
 
 Clerc never hard-codes `process.argv`, `process.env`, `process.stdout`, or `process.exit()` inside its execution core. Every CLI can be exercised in memory in a few milliseconds.
 
-<CliPlayground preset="testing" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Testing with `createMemoryTerminal()`
 

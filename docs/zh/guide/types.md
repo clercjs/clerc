@@ -1,12 +1,16 @@
 ---
-title: 类型与 Schema
+title: 类型与校验
 ---
 
-# 类型与 Schema
+<script setup>
+import scenario from "../../guide/types.playground.ts";
+</script>
 
-Clerc 中的选项与位置参数共用同一套类型描述管线。你可以使用原生构造函数、内置 `Types.*`、自定义解析函数，或者直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
+# 类型与校验
 
-同一份 Schema 会自动驱动五处能力：
+Clerc 的选项和位置参数共用同一套类型系统。你可以使用原生构造函数、内置 `Types.*`、自定义解析函数，或直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
+
+定义一次 Schema，会自动用于以下五个地方：
 
 1. **运行期校验与类型转换**（支持同步与异步）
 2. **`ctx.args` 与 `ctx.flags` 的 TypeScript 输出类型推导**
@@ -14,7 +18,7 @@ Clerc 中的选项与位置参数共用同一套类型描述管线。你可以�
 4. **Shell 自动补全候选值**（枚举值在 `@clerc/plugin-completions` 中自动补全）
 5. **MCP 工具的 `inputSchema`**（在 `@clerc/plugin-mcp` 中通过 Standard JSON Schema v1 导出）
 
-<CliPlayground preset="types" lang="zh" />
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 直接使用 Zod / Valibot / ArkType
 
@@ -92,7 +96,7 @@ cli.command("invite <email>", {
 
 :::
 
-## 内置零依赖 `Types`
+## 内置 `Types`
 
 不想引入外部校验库时，`clerc` 内置了五个常用 Standard Schema 构造器：
 
@@ -124,7 +128,7 @@ cli.command("release <channel>", {
 
 ## 自定义解析函数
 
-任意形如 `(raw: string) => T` 的函数都可作为类型使用。校验失败时直接 `throw new Error(...)` 即可转为标准 `ValidationError`；挂载可选的 `.display` 属性可自定义 `--help` 中的类型占位名：
+任意形如 `(raw: string) => T` 的函数都可作为类型使用。校验失败时直接 `throw new Error(...)` 即可转为标准 `ValidationError`；设置可选的 `.display` 属性可以自定义 `--help` 中显示的类型名称：
 
 ```ts
 import type { TypeFunction } from "clerc";

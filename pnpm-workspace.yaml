@@ -11,7 +11,7 @@ allowBuilds:
 packageExtensions:
   "@so1ve/eslint-config":
     dependencies:
-      typescript: "^6.0.3"
+      typescript: "npm:typescript-native-bridge@6.0.3-bridge.19.tsgo.7.0.2"
 
 catalogs:
   cli:
@@ -32,10 +32,7 @@ catalogs:
     vitest: "^5.1.1"
   docs:
     "@shikijs/vitepress-twoslash": "^4.6.0"
-    typedoc: "^0.28.20"
-    typedoc-plugin-markdown: "^4.14.1"
-    typedoc-vitepress-theme: "^1.1.4"
-    typescript: "^6.0.3"
+    typescript: "npm:typescript-native-bridge@6.0.3-bridge.19.tsgo.7.0.2"
     unocss: "^66.13.0"
     vitepress: "2.0.0-alpha.21"
     vitepress-plugin-group-icons: "^1.8.2"

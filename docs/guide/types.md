@@ -1,24 +1,28 @@
 ---
-title: Types & Schemas
+title: Types
 ---
 
-# Types & Schemas
+<script setup>
+import scenario from "./types.playground.ts";
+</script>
+
+# Types
 
 Every flag and positional argument in Clerc goes through a single type descriptor pipeline. You can use JavaScript constructors, built-in `Types.*`, custom parser functions, or **any [Standard Schema v1](https://standardschema.dev) validator** (Zod, Valibot, ArkType).
 
 One schema automatically drives five places:
 
-1. **Runtime validation & transformation** (sync or async)
+1. **Runtime validation and transformation** (sync or async)
 2. **TypeScript output type inference** on `ctx.args` and `ctx.flags`
 3. **`--help` placeholder labels** (e.g. `<staging|prod>`, `<1..65535>`)
 4. **Shell tab-completion candidates** (enum values complete automatically in `@clerc/plugin-completions`)
 5. **MCP tool `inputSchema`** (via Standard JSON Schema v1 in `@clerc/plugin-mcp`)
 
-<CliPlayground preset="types" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Standard Schema v1 (Zod, Valibot, ArkType)
 
-Pass any Standard Schema v1 object directly as `type` - no adapter package needed:
+Pass any Standard Schema v1 object directly as `type`. No adapter package is needed:
 
 ::: code-group
 
@@ -94,7 +98,7 @@ cli.command("invite <email>", {
 
 :::
 
-Async Standard Schema validators work seamlessly too, because Clerc resolves flags and arguments asynchronously before running middlewares and handlers.
+Async Standard Schema validators are also supported. Clerc resolves flags and arguments asynchronously before running middleware and handlers.
 
 ## Built-in `Types`
 

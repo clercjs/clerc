@@ -2,11 +2,15 @@
 title: "@clerc/plugin-completions"
 ---
 
-# `@clerc/plugin-completions`
+<script setup>
+import scenario from "./plugin-completions.playground.ts";
+</script>
+
+# @clerc/plugin-completions
 
 Zero-dependency static completion script generator and dynamic runtime completion engine for **Zsh**, **Bash**, **Fish**, and **PowerShell**.
 
-<CliPlayground preset="completions" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Installation
 
@@ -22,7 +26,7 @@ npm install @clerc/plugin-completions
 
 :::
 
-## Usage & Custom Async `complete()`
+## Usage and Custom `complete()`
 
 Subcommands, aliases, flags, `Types.Enum(...)` values, and built-in `help [command...]` paths complete automatically. Any command, argument, or flag can also provide a synchronous or `async` `complete(ctx)` function:
 
@@ -42,7 +46,7 @@ cli.command("deploy <env> [service]", {
     // Enum values ("staging", "prod") complete automatically
     env: Types.Enum("staging", "prod"),
     service: {
-      // Context-aware async completion reading already-typed args & flags
+      // Async completion using already-typed args and flags
       async complete({ args, flags }) {
         const target = args.env ?? "staging";
 

@@ -2,9 +2,13 @@
 title: Getting Started
 ---
 
+<script setup>
+import scenario from "./getting-started.playground.ts";
+</script>
+
 # Getting Started
 
-Clerc is an ESM-only CLI framework for **Node.js 24+**. Core features - `--help`, `--version`, `-v`/`-q` verbosity, strict flag checking, typo suggestions, and a structured terminal logger - are built directly into `clerc` with no mandatory plugin setup.
+Clerc is a typed CLI framework for Node.js. Core features such as `--help`, `--version`, `-v`/`-q` verbosity, strict flag checking, typo suggestions, and a structured logger are built into `clerc` out of the box.
 
 ## Installation
 
@@ -24,7 +28,7 @@ yarn add clerc
 
 :::
 
-## Your First CLI in 30 Seconds
+## Your First CLI
 
 Create `cli.ts`:
 
@@ -84,13 +88,13 @@ await cli.runMain();
 
 Hover over `env`, `region`, `port`, or `dryRun` in the code block above to inspect the exact TypeScript types inferred from your signature and schema.
 
-Run it directly with Node.js 24+ native TypeScript support:
+Run it directly:
 
 <TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
 ## Try It Live
 
-<CliPlayground lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## `runMain()` vs `run()`
 
@@ -105,11 +109,11 @@ Clerc separates process-level execution from pure invocation:
 
 Install only what your CLI needs:
 
-| Package                                                                     | Purpose                                                                                                       |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `clerc`                                                                     | Core CLI router, POSIX argv parser, help & diagnostics, built-in `-v`/`-q` verbosity, and Standard Schema v1. |
-| `@clerc/logger`                                                             | Standalone CLI logger (re-exported by `clerc` as `ctx.log` and `createLogger`).                               |
-| `@clerc/theme`                                                              | Zero-dependency ANSI styling and terminal capability detection (re-exported by `clerc`).                      |
-| [`@clerc/plugin-completions`](/official-plugins/plugin-completions)         | Shell completion scripts and runtime completions for Bash, Zsh, Fish, and PowerShell.                         |
-| [`@clerc/plugin-mcp`](/official-plugins/plugin-mcp)                         | Turns your CLI into a Model Context Protocol stdio server (`<cli> mcp`).                                      |
-| [`@clerc/plugin-update-notifier`](/official-plugins/plugin-update-notifier) | Non-blocking background npm update checker and banner renderer.                                               |
+| Package                                                                     | Purpose                                                                                                         |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `clerc`                                                                     | Core CLI router, POSIX argv parser, help and diagnostics, built-in `-v`/`-q` verbosity, and Standard Schema v1. |
+| `@clerc/logger`                                                             | Standalone CLI logger (re-exported by `clerc` as `ctx.log` and `createLogger`).                                 |
+| `@clerc/theme`                                                              | Zero-dependency ANSI styling and terminal capability detection (re-exported by `clerc`).                        |
+| [`@clerc/plugin-completions`](/official-plugins/plugin-completions)         | Shell completion scripts and runtime completions for Bash, Zsh, Fish, and PowerShell.                           |
+| [`@clerc/plugin-mcp`](/official-plugins/plugin-mcp)                         | Turns your CLI into a Model Context Protocol stdio server (`<cli> mcp`).                                        |
+| [`@clerc/plugin-update-notifier`](/official-plugins/plugin-update-notifier) | Non-blocking background npm update checker and banner renderer.                                                 |

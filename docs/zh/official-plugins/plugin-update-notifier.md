@@ -2,9 +2,9 @@
 title: "@clerc/plugin-update-notifier"
 ---
 
-# `@clerc/plugin-update-notifier`
+# @clerc/plugin-update-notifier
 
-零第三方依赖的后台 npm 更新检查插件。在命令运行期间并发查询最新版本，结果缓存至 `$XDG_CACHE_HOME/clerc-update-notifier`，并在命令结束后通过 `ctx.log.box.warn` 输出升级提示面板，绝不拖慢高频短命令。
+零依赖的后台 npm 更新检查插件。命令运行期间并发查询最新版本，结果缓存在 `$XDG_CACHE_HOME/clerc-update-notifier`，命令结束后通过 `ctx.log.box.warn` 输出升级提示，不会阻塞短时命令退出。
 
 ## 安装
 
@@ -44,5 +44,5 @@ const cli = clerc({
 
 - 在 CI 环境（存在 `CI` 环境变量）、设置了 `NO_UPDATE_NOTIFIER` 或非交互终端（`!ctx.terminal.isTTY`）下自动跳过。
 - 用户传入 `-q, --quiet` 时自动静默。
-- 使用 `{ enforce: "pre" }` 包裹最外层：进入时最早发起请求，退出时在所有其他中间件清理完毕后再打印面板。
-- `postRunGraceMs`（默认 `250ms`）使用 `unref()` 定时器，即使网络缓慢也绝不阻塞已执行完的命令退出。
+- 以 `{ enforce: "pre" }` 在最外层运行：命令开始时立即发起检查，等其他中间件清理完毕后再打印提示框。
+- `postRunGraceMs`（默认 `250ms`）使用 `unref()` 定时器，网络较慢时也不会拖延命令退出。

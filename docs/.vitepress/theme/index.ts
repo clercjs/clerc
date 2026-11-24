@@ -5,6 +5,7 @@ import CopyOrDownloadAsMarkdownButtons from "vitepress-plugin-llms/vitepress-com
 
 import { CliPlayground } from "../components/CliPlayground.ts";
 import { HomeLanding } from "../components/HomeLanding.ts";
+import { TeamPage } from "../components/TeamPage.ts";
 import { TerminalWindow } from "../components/TerminalWindow.ts";
 
 import "./style.css";
@@ -17,6 +18,7 @@ export default {
   enhanceApp({ app }) {
     app.component("CliPlayground", CliPlayground);
     app.component("HomeLanding", HomeLanding);
+    app.component("TeamPage", TeamPage);
     app.component("TerminalWindow", TerminalWindow);
     app.component(
       "CopyOrDownloadAsMarkdownButtons",

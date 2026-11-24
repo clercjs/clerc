@@ -1,12 +1,16 @@
 ---
-title: 帮助与错误诊断
+title: 帮助文档
 ---
 
-# 帮助与错误诊断
+<script setup>
+import scenario from "../../guide/help.playground.ts";
+</script>
 
-Clerc 内置排版级 `--help` 渲染器与 Cargo / Clap 风格诊断输出：单根顶部分隔线、全大写分组标题、自适应列宽对齐，以及绝不在换行处被截断的元数据标签（`[default: ...]`、`[env: ...]`）。
+# 帮助文档
 
-<CliPlayground preset="diagnostics" lang="zh" />
+Clerc 内置结构清晰的 `--help` 输出，包含顶部分隔线、分组标题、自动列对齐，以及不会被换行截断的元数据标签（`[default: ...]`、`[env: ...]`）。
+
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 命令与选项分组
 
@@ -18,7 +22,7 @@ import { clerc } from "clerc";
 const cli = clerc({
   name: "acme",
   version: "2.0.0",
-  description: "构建与部署现代 TypeScript 应用",
+  description: "构建与部署 TypeScript 应用",
   examples: [["$ acme build src/index.ts -p 8080", "使用自定义端口构建"]],
   notes: ["设置 NO_COLOR=1 可禁用 ANSI 颜色。"],
 }).groups({
@@ -49,7 +53,7 @@ cli.command("build <entry>", {
 
 ## 定制帮助区块与 AST
 
-可通过 `help.header`、`help.footer` 或 `help.sections` 按需覆写任意区块，也可通过 `buildHelpDocument(cli.buildModel())` 获取结构化帮助文档 AST 自行渲染：
+可以通过 `help.header`、`help.footer` 或 `help.sections` 按需覆写区块，也可以调用 `buildHelpDocument(cli.buildModel())` 获取结构化帮助 AST 自行渲染：
 
 ```ts
 import { clerc, defaultHelpSections } from "clerc";
@@ -67,26 +71,4 @@ const cli = clerc({
 });
 ```
 
-## 智能拼写提示与结构化 `ClercError`
-
-命令行用法错误退出码为 `2`，运行期与 Schema 错误退出码为 `1`。未知命令与未知选项会自动计算编辑距离并给出修复提示：
-
-<TerminalWindow command="acme deploy prod --outpt dist" :lines='["{red:error} unexpected option: &#39;--outpt&#39;","","  {tip:tip} a similar option exists: &#39;--output&#39;","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
-
-在业务代码中抛出 `ClercError` 即可获得风格一致的 `detail`、`tip` 与 `usage` 渲染：
-
-```ts
-import { ClercError, clerc } from "clerc";
-
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
-  run() {
-    throw new ClercError("尚未登录制品仓库", {
-      code: "ERR_VALIDATION",
-      detail: "未在 ~/.acmerc 或 ACME_TOKEN 中找到凭证",
-      usage: "acme login --registry https://registry.example.com",
-    }).addHint("请先运行 'acme login' 或设置环境变量 ACME_TOKEN");
-  },
-});
-```
-
-当 `ctx.log.format === "json"` 时，未捕获错误会自动以单行 JSON 输出到 `stderr`，便于脚本与 CI 消费。
+在命令处理函数中，调用 `await ctx.help.print()` 可打印根帮助，传入子命令路径（如 `await ctx.help.print(["db", "migrate"])`）可打印指定命令帮助。

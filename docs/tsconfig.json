@@ -6,5 +6,10 @@
     "types": ["node", "vitepress/client"],
     "allowImportingTsExtensions": true
   },
-  "include": [".vitepress/**/*.ts", ".vitepress/**/*.vue", "uno.config.ts"]
+  "include": [
+    "**/*.playground.ts",
+    ".vitepress/**/*.ts",
+    ".vitepress/**/*.vue",
+    "uno.config.ts"
+  ]
 }

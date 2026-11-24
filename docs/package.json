@@ -3,17 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm generate && NODE_OPTIONS=\"--max-old-space-size=8192\" vitepress build",
+    "build": "vitepress build",
     "dev": "vitepress dev",
-    "generate": "node .vitepress/scripts/generate-reference.ts",
     "preview": "vitepress preview",
     "typecheck": "vue-tsc"
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "catalog:docs",
-    "typedoc": "catalog:docs",
-    "typedoc-plugin-markdown": "catalog:docs",
-    "typedoc-vitepress-theme": "catalog:docs",
     "typescript": "catalog:docs",
     "unocss": "catalog:docs",
     "vitepress": "catalog:docs",

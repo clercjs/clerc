@@ -1,16 +1,20 @@
 ---
-title: 日志与终端 UI
+title: 日志
 ---
 
-# 日志与终端 UI
+<script setup>
+import scenario from "../../guide/logger.playground.ts";
+</script>
 
-每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 与 `@clerc/theme` 驱动），默认自动挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` / `-v` 会自动让位，也可通过 `verbosity: false` 关闭），还可以在任意模块中通过 `createLogger()` 独立创建。
+# 日志
 
-<CliPlayground preset="logger" lang="zh" />
+每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 和 `@clerc/theme` 驱动），默认挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` 或 `-v` 会自动让位，也可通过 `verbosity: false` 关闭）。你也可以在任意模块中通过 `createLogger()` 独立创建日志器。
 
-## 对齐左脊排版与对象 / Error 渲染
+<CliPlayground :scenario="scenario" lang="zh" />
 
-全部六个日志方法（`step`、`info`、`success`、`warn`、`error`、`debug`）共享 5 字符宽右对齐词标与 `│` 详情导轨。附加参数如果是普通对象会经 `node:util` `inspect` 高亮格式化，如果是 `Error` 则自动提取堆栈并递归展示 `Caused by:` 原因链：
+## 对齐输出与对象、Error 格式化
+
+六个日志方法（`step`、`info`、`success`、`warn`、`error`、`debug`）统一按 5 字符宽右对齐标签，并用 `│` 缩进展示附加详情。附加参数如果是普通对象会经 `node:util` `inspect` 高亮格式化，如果是 `Error` 则自动提取堆栈并递归展示 `Caused by:` 原因链：
 
 ```ts
 import { createLogger } from "clerc";
@@ -29,10 +33,12 @@ log.error(
 
 <TerminalWindow title="日志输出效果" :lines='[" {brand:step} {bold:Building targets}","      {faint:│} {muted:entry: src/index.ts}","      {faint:│} {muted:minify: true}"," {cyan:info} Resolved config","      {faint:│} {muted:{ port: 3000, cache: true }}","{faint:debug db:migrate › Query took 1.2ms}","{red:error} {bold:Invalid port}","      {faint:│} {muted:TypeError: Invalid port}","      {faint:│   at ...}","      {faint:│} {muted:Caused by: Error: PORT env malformed}"]' />
 
-## 流式追加 `.line()` 与同构 `log.box.*`
+`warn` 和 `error` 输出到 `stderr`；`step`、`info`、`success` 和 `debug` 输出到 `stdout`。
 
-- **流式追加**：每次日志调用都会返回支持链式调用的 `LogEntry`，可在异步步骤执行过程中随时调用 `entry.line("...")` 向同一导轨追加子行。
-- **边框面板**：`ctx.log.box` 提供完全同构的 `step` / `info` / `success` / `warn` / `error` / `debug` 六个方法，渲染与左脊对齐的圆角面板（不支持 Unicode 的终端自动降级为 `+---+`）。
+## 追加子行 `.line()` 与边框面板 `log.box.*`
+
+- **追加子行**：每次日志调用都会返回可链式调用的 `LogEntry`，可在异步步骤中随时调用 `entry.line("...")` 向同一缩进竖线追加子行。
+- **边框面板**：`ctx.log.box` 提供同样的六个方法，渲染与日志标签对齐的圆角边框面板（不支持 Unicode 的终端自动降级为 `+---+`）。
 
 ```ts
 const step = ctx.log.step("正在执行数据库迁移");
@@ -46,27 +52,6 @@ ctx.log.box.info(
 );
 ```
 
-## Spinner、Task 与交互式 Prompts
+## 运行期级别、JSON 格式与主题
 
-- `ctx.log.task(title, fn)`：在 TTY 下显示动画 Spinner，完成后自动收敛为 `done` 或 `error`（在 CI 或非 TTY 下自动退化为静态 `step` / `done` 日志，不污染日志流）。
-- `ctx.log.spinner()`：提供手动 `.start()`、`.message()`、`.stop()`、`.cancel()` 与 `.error()` 控制。
-- `prompts`：直接重导出 `@clack/prompts`（`text`、`select`、`confirm`、`multiselect`、`autocomplete`）。
-
-```ts
-import { clerc, prompts } from "clerc";
-
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
-  async run(ctx) {
-    const ok = await prompts.confirm({ message: "确认部署到生产环境？" });
-    if (!ok || prompts.isCancel(ok)) {
-      return;
-    }
-
-    await ctx.log.task("正在上传构建产物...", async (s) => {
-      s.message("正在压缩 14 个分块...");
-
-      return "已上传 14 个分块 (420ms)";
-    });
-  },
-});
-```
+可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`）或 `ctx.log.format`（`"pretty" | "json"`），也可以在 `clerc({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。

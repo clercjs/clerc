@@ -2,11 +2,15 @@
 title: Arguments
 ---
 
+<script setup>
+import scenario from "./arguments.playground.ts";
+</script>
+
 # Positional Arguments
 
 Positional arguments are declared directly in the command signature string using angle brackets `<required>` and square brackets `[optional]`.
 
-<CliPlayground preset="arguments" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Signature Syntax
 
@@ -69,7 +73,7 @@ cli.command("deploy <token> [region]", {
 });
 ```
 
-When a required argument with `env` is missing from both `argv` and `process.env`, Clerc automatically appends a helpful hint:
+When a required argument with `env` is missing from both `argv` and `process.env`, Clerc appends a hint:
 
 <TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 

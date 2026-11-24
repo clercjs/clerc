@@ -2,11 +2,15 @@
 title: 位置参数
 ---
 
-# 位置参数 (Arguments)
+<script setup>
+import scenario from "../../guide/arguments.playground.ts";
+</script>
+
+# 位置参数
 
 位置参数直接在命令签名中用尖括号 `<必填>` 和方括号 `[可选]` 声明。
 
-<CliPlayground preset="arguments" lang="zh" />
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 签名语法对照
 
@@ -71,9 +75,9 @@ cli.command("deploy <token> [region]", {
 
 <TerminalWindow command="acme deploy" :lines='["{red:error} missing required argument &#39;&lt;token&gt;&#39;","","  {tip:tip} provide &#39;&lt;token&gt;&#39; or set DEPLOY_TOKEN","","      {muted:For more information, try &#39;acme deploy --help&#39;.}"]' />
 
-## 双破折号（`--`）参数处理
+## `--` 分隔符与透传参数
 
-Clerc 根据签名中是否声明 `--` 智能处理 `--` 后的输入：
+根据命令签名中是否包含 `--`，Clerc 对 `--` 之后的参数有三种处理方式：
 
 1. **签名中在 `--` 后声明了参数**（如 `"test [filter] -- [vitest-args...]"`）：`--` 前绑定到 `filter`，`--` 后绑定到 `ctx.args.vitestArgs` 并参与类型转换与帮助文档生成。
 2. **签名以裸 `--` 结尾**（如 `"run <script> --"`）：`--` 后的内容仅保留在 `ctx.doubleDash` 中，不触发多余参数报错。

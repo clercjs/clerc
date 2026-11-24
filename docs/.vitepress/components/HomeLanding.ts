@@ -1,6 +1,7 @@
 import type { PropType } from "vue";
 import { defineComponent, h, onBeforeUnmount, ref } from "vue";
 
+import defaultScenario from "../../guide/getting-started.playground.ts";
 import { CliPlayground } from "./CliPlayground.ts";
 
 interface SpecItem {
@@ -11,7 +12,7 @@ interface SpecItem {
 
 const EN_ITEMS: readonly SpecItem[] = [
   {
-    title: "Commands & Routing",
+    title: "Commands and Routing",
     summary:
       "Subcommands, aliases, namespaces, and typed <required>, [optional], and [variadic...] arguments.",
     href: "/guide/commands",
@@ -19,29 +20,29 @@ const EN_ITEMS: readonly SpecItem[] = [
   {
     title: "Standard Schema v1",
     summary:
-      "Built-in Types plus direct validation and inference with Zod, Valibot, or ArkType.",
+      "Built-in Types, or pass Zod, Valibot, and ArkType schemas directly.",
     href: "/guide/types",
   },
   {
-    title: "Help & Diagnostics",
+    title: "Help and Diagnostics",
     summary:
-      "Grouped --help layout, semantic exit codes, and Levenshtein typo suggestions.",
-    href: "/guide/help-and-diagnostics",
+      "Grouped --help output, standard exit codes, and typo suggestions.",
+    href: "/guide/help",
   },
   {
-    title: "Logger & Terminal UI",
+    title: "Logger and Terminal UI",
     summary:
-      "Aligned log rails, rounded callout boxes, spinners, prompts, and JSON output.",
+      "Aligned terminal logs, callout boxes, spinners, prompts, and JSON output.",
     href: "/guide/logger",
   },
   {
-    title: "Plugins & Middleware",
+    title: "Plugins and Middleware",
     summary:
-      "Symmetric plugin() API and onion middleware for injecting typed ctx.state.",
+      "Shared plugin() API and onion middleware that injects typed ctx.state.",
     href: "/guide/middleware",
   },
   {
-    title: "Completions & MCP",
+    title: "Completions and MCP",
     summary:
       "Generate shell tab completions and expose stdio MCP tools from one definition.",
     href: "/official-plugins/plugin-completions",
@@ -52,32 +53,33 @@ const ZH_ITEMS: readonly SpecItem[] = [
   {
     title: "命令与路由",
     summary:
-      "子命令、别名、命名空间，以及自动推导类型的 <必填>、[可选] 与 [可变...] 参数。",
+      "支持子命令、别名、命名空间，以及带类型推导的 <必填>、[可选] 和 [可变...] 参数。",
     href: "/zh/guide/commands",
   },
   {
     title: "Standard Schema v1",
-    summary: "内置轻量 Types，并可直接接入 Zod、Valibot 或 ArkType 校验。",
+    summary: "内置常用校验类型 Types，也可直接使用 Zod、Valibot 或 ArkType。",
     href: "/zh/guide/types",
   },
   {
     title: "帮助与错误诊断",
-    summary: "分组 --help 排版、语义化退出码与编辑距离拼写相近提示。",
-    href: "/zh/guide/help-and-diagnostics",
+    summary: "分组 --help 输出、规范退出码和拼写纠错提示。",
+    href: "/zh/guide/help",
   },
   {
     title: "日志与终端 UI",
-    summary: "右对齐词标导轨、圆角面板、Spinner、交互提示与 JSON 输出。",
+    summary: "对齐的终端日志、圆角提示框、Spinner、交互提问和 JSON 输出。",
     href: "/zh/guide/logger",
   },
   {
     title: "插件与中间件",
-    summary: "应用与插件同构 API，通过洋葱中间件注入强类型 ctx.state。",
+    summary:
+      "应用和插件共用同一套链式 API，通过洋葱中间件向 ctx.state 注入类型化状态。",
     href: "/zh/guide/middleware",
   },
   {
     title: "自动补全与 MCP",
-    summary: "从同一份命令定义生成 Shell 补全脚本与 MCP 工具服务。",
+    summary: "基于同一份命令定义生成 Shell 自动补全脚本和 MCP 服务。",
     href: "/zh/official-plugins/plugin-completions",
   },
 ];
@@ -130,7 +132,7 @@ export const HomeLanding = defineComponent({
               class: "clerc-hero-logo",
             }),
             h("span", { class: "clerc-hero-name" }, "Clerc"),
-            h("span", { class: "clerc-hero-badge" }, "v2 · Node.js 24+"),
+            h("span", { class: "clerc-hero-badge" }, "v2"),
           ]),
           h(
             "h1",
@@ -141,8 +143,8 @@ export const HomeLanding = defineComponent({
             "p",
             { class: "clerc-hero-lead" },
             isZh
-              ? "用路由式签名与 Standard Schema 定义一次命令，解析、TS 类型、--help、错误诊断、Shell 补全与 MCP 自动同步。"
-              : "Define commands once with route signatures and Standard Schema. Parsing, types, --help, diagnostics, completions, and MCP stay in sync.",
+              ? "用路由式签名和 Standard Schema 定义一次命令，自动得到参数解析、TypeScript 类型、--help、错误提示、Shell 补全和 MCP 工具。"
+              : "Define commands once with route signatures and Standard Schema. Parsing, types, help output, completions, and MCP derive from one definition.",
           ),
           h("div", { class: "clerc-hero-actions" }, [
             h(
@@ -218,19 +220,15 @@ export const HomeLanding = defineComponent({
                     ),
               ],
             ),
-            h(
-              "a",
-              {
-                href: isZh ? "/zh/reference/api/" : "/reference/api/",
-                class: "clerc-link-secondary",
-              },
-              isZh ? "API 参考 →" : "API Reference →",
-            ),
           ]),
         ]),
 
         h("div", { class: "clerc-home-stage" }, [
-          h(CliPlayground, { lang: props.lang, variant: "split" }),
+          h(CliPlayground, {
+            lang: props.lang,
+            variant: "split",
+            scenario: defaultScenario,
+          }),
         ]),
 
         h(

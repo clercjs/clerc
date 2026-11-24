@@ -2,11 +2,15 @@
 title: "@clerc/plugin-mcp"
 ---
 
-# `@clerc/plugin-mcp`
+<script setup>
+import scenario from "../../official-plugins/plugin-mcp.playground.ts";
+</script>
 
-零额外依赖，将任意 Clerc CLI 直接暴露为 **Model Context Protocol (MCP)** stdio 服务器。每个可执行命令都会自动映射为带 JSON Schema 的 MCP Tool，每页 `--help` 文档都会映射为无 ANSI 转义码的 MCP Resource，供 Claude Desktop、Cursor、Windsurf、Zed 等 AI 客户端直接调用。
+# @clerc/plugin-mcp
 
-<CliPlayground preset="mcp" lang="zh" />
+零依赖将 Clerc CLI 暴露为 **Model Context Protocol (MCP)** stdio 服务。每个可执行命令自动映射为带 JSON Schema 的 MCP Tool，每页 `--help` 文档映射为纯文本 MCP Resource，供 Claude Desktop、Cursor、Windsurf、Zed 等客户端调用。
+
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 安装
 

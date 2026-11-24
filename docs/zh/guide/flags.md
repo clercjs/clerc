@@ -1,12 +1,16 @@
 ---
-title: 选项 (Flags)
+title: 选项
 ---
 
-# 选项 (Flags)
+<script setup>
+import scenario from "../../guide/flags.playground.ts";
+</script>
+
+# 选项
 
 在 `flags` 中使用驼峰命名定义选项，命令行会自动同时接受 `--kebab-case` 与 `--camelCase`。
 
-<CliPlayground preset="flags" lang="zh" />
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 简写与完整配置
 

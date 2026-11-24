@@ -1,12 +1,16 @@
 ---
-title: 命令与路由
+title: 命令
 ---
 
-# 命令与路由
+<script setup>
+import scenario from "../../guide/commands.playground.ts";
+</script>
 
-Clerc 将命令路径与位置参数合并在一条直观的路由签名字符串中传给 `.command()`。
+# 命令
 
-<CliPlayground preset="commands" lang="zh" />
+在 Clerc 中，命令路径和位置参数直接写在 `.command()` 的签名字符串里。
+
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 定义命令
 
@@ -36,7 +40,7 @@ cli.command("clone <repo> [dir]", {
 
 ## 多级子命令与命名空间
 
-命令名之间用空格分隔即可定义多级子命令。没有 `run` 处理函数的父节点会自动充当**命名空间**：运行 `acme db` 会打印 `db` 下的子命令帮助，而输错 `acme db migrat` 会精准提示 `db migrate`。
+命令名之间用空格分隔即可定义多级子命令。没有 `run` 处理函数的父节点会自动充当**命名空间**：运行 `acme db` 会打印 `db` 下的子命令帮助，输错 `acme db migrat` 时则会提示 `db migrate`。
 
 ```ts
 const cli = clerc({ name: "acme", version: "1.0.0" });
@@ -132,14 +136,14 @@ cli.command("build [root]", {
 
 路由规则：
 
-- `vite` 或 `vite -p 3000` -> 自动执行 `dev`。
-- `vite --help` 或 `vite --version` -> 仍显示根级帮助（为 `dev` 标注 `[default]`）或版本号。
+- 运行 `vite` 或 `vite -p 3000` 会执行 `dev`。
+- 运行 `vite --help` 或 `vite --version` 会显示根级帮助（在 `dev` 旁标注 `[default]`）或版本号。
 - 若默认命令声明了位置参数（如 `dev [root]`），`vite ./app` 会将 `./app` 转发给 `dev`。
 - 若默认命令**不接受**位置参数，输错 `vite biuld` 依然会抛出 `UnknownCommandError` 并提示 `'build'`。
 
-## 包装器命令（`stopAtFirstPositional`）
+## 透传子命令参数（`stopAtFirstPositional`）
 
-实现类似 `npx` 或 `exec <cmd> [args...]` 的命令转发器时，启用 `stopAtFirstPositional: true` 可在遇到第一个位置参数后停止解析选项，把后续 `--flag` 原样留给子命令：
+编写类似 `npx` 或 `exec <cmd> [args...]` 的命令时，开启 `stopAtFirstPositional: true` 会在遇到第一个位置参数后停止解析选项，把后续 `--flag` 原样传给目标程序：
 
 ```ts
 cli.command("exec <cmd> [args...]", {
@@ -156,7 +160,7 @@ cli.command("exec <cmd> [args...]", {
 });
 ```
 
-## 按需懒加载与弃用标记
+## 懒加载与弃用提示
 
 - **懒加载**：在 `async run(ctx)` 中使用 `await import("./commands/analyze.js")`，让 `--help` 和其他子命令不加载重型依赖。
 - **弃用提示**：设置 `deprecated: "use 'acme create' instead"`，`--help` 会显示弃用标签，调用时自动向 `stderr` 输出警告（在 `-q` 静默模式下自动隐藏）。

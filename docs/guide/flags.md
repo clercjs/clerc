@@ -2,11 +2,15 @@
 title: Flags
 ---
 
+<script setup>
+import scenario from "./flags.playground.ts";
+</script>
+
 # Flags
 
 Flags configure commands via `--long` options, `-s` short aliases, or environment variables. Define camelCase keys in `flags` and Clerc automatically accepts both `--kebab-case` and `--camelCase` on the command line.
 
-<CliPlayground preset="flags" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Shorthand vs Full Definition
 
@@ -47,7 +51,7 @@ Clerc's built-in POSIX argv parser supports all standard flag conventions:
 - **Boolean negation**: `Boolean` flags are negatable by default (`--no-cache` sets `cache: false`, and `--help` automatically shows `--cache, --no-cache` when `default: true`). Set `negatable: false` to disable.
 - **Explicit boolean literals**: `--cache=false`, `--cache=0`, `--cache=true`, `--cache=1`
 
-## Repeatable Arrays, Delimiters & Counters
+## Repeatable Arrays, Delimiters, and Counters
 
 Set `multiple: true` to collect repeatable occurrences into an array, or use `Types.Counter` to count repeated short/long flags:
 
@@ -112,7 +116,7 @@ To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I 
 
 ## Constraints: `required`, `conflicts`, and `implies`
 
-Declare cross-flag relationships declaratively instead of writing manual `if` checks inside handlers:
+Declare relationships between flags in the schema instead of writing manual checks in handlers:
 
 ```ts
 cli.command("deploy", {

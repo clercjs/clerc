@@ -2,11 +2,15 @@
 title: "@clerc/plugin-completions"
 ---
 
-# `@clerc/plugin-completions`
+<script setup>
+import scenario from "../../official-plugins/plugin-completions.playground.ts";
+</script>
 
-零第三方依赖的 **Zsh**、**Bash**、**Fish** 与 **PowerShell** 补全脚本生成器及异步上下文感知补全引擎。
+# @clerc/plugin-completions
 
-<CliPlayground preset="completions" lang="zh" />
+零依赖的 **Zsh**、**Bash**、**Fish** 和 **PowerShell** 自动补全插件，支持静态脚本生成与异步动态补全。
+
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## 安装
 

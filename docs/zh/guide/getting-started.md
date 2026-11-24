@@ -2,9 +2,13 @@
 title: 快速开始
 ---
 
+<script setup>
+import scenario from "../../guide/getting-started.playground.ts";
+</script>
+
 # 快速开始
 
-Clerc 是面向 **Node.js 24+** 的纯 ESM 命令行框架。`--help`、`--version`、`-v`/`-q` 日志级别控制、未知选项拦截、拼写相近提示与结构化终端日志均直接内置在 `clerc` 核心包中，无需堆叠基础插件。
+Clerc 是面向 Node.js 的强类型命令行框架。`--help`、`--version`、`-v`/`-q` 日志级别、未知选项检查、拼写提示和结构化终端日志都已内置在 `clerc` 中，开箱即用。
 
 ## 安装
 
@@ -24,7 +28,7 @@ yarn add clerc
 
 :::
 
-## 30 秒写出第一个 CLI
+## 第一个 CLI
 
 新建 `cli.ts`：
 
@@ -84,20 +88,20 @@ await cli.runMain();
 
 将鼠标悬停在上方代码中的 `env`、`region`、`port` 或 `dryRun` 上，可以直接查看 TypeScript 根据命令签名和 Schema 推导出的真实类型。
 
-使用 Node.js 24+ 原生 TypeScript 支持直接运行：
+直接运行：
 
 <TerminalWindow command="node cli.ts deploy prod -p 8080 -n" :lines='[" {brand:step} {bold:Deploying to prod (us-east-1)}","      {faint:│} {muted:port=8080}"," {cyan:info} {faint:╭─} {bold:Dry run} {faint:───────────────────────────────╮}","      {faint:│}  {muted:No remote resources were modified.}     {faint:│}","      {faint:╰─────────────────────────────────────────╯}"]' />
 
 ## 在线交互演示
 
-<CliPlayground lang="zh" />
+<CliPlayground :scenario="scenario" lang="zh" />
 
 ## `runMain()` 与 `run()` 的区别
 
 | 方法                           | 行为                                                                                                  | 适用场景                             |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | `await cli.runMain()`          | 默认读取 `process.argv`，报错时渲染诊断信息并设置 `process.exitCode`（不强行调用 `process.exit()`）。 | CLI 可执行入口文件（`bin`）。        |
-| `await cli.run(argv, options)` | 针对显式传入的 `argv` 与 `terminal` 执行，不修改 `process.exitCode`。                                 | 单元测试、命令内互相调用、MCP 服务。 |
+| `await cli.run(argv, options)` | 使用显式传入的 `argv` 和 `terminal` 运行，不修改 `process.exitCode`。                                 | 单元测试、命令内互相调用、MCP 服务。 |
 
 ## 包结构一览
 

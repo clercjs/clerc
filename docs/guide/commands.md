@@ -1,12 +1,16 @@
 ---
-title: Commands & Routing
+title: Commands
 ---
 
-# Commands & Routing
+<script setup>
+import scenario from "./commands.playground.ts";
+</script>
+
+# Commands
 
 In Clerc, command names, subcommand paths, and positional arguments live in a single route-style signature string passed to `.command()`.
 
-<CliPlayground preset="commands" lang="en" />
+<CliPlayground :scenario="scenario" lang="en" />
 
 ## Defining Commands
 
@@ -34,7 +38,7 @@ cli.command("clone <repo> [dir]", {
 });
 ```
 
-## Subcommands & Namespaces
+## Subcommands and Namespaces
 
 Separate subcommand segments with spaces. Any parent path without a `run` handler acts as a **namespace**: invoking `acme db` prints subcommand help for `db`, while mistyping `acme db migrat` suggests `db migrate`.
 
@@ -132,8 +136,8 @@ cli.command("build [root]", {
 
 How Clerc routes `defaultCommand`:
 
-- `vite` or `vite -p 3000` -> runs `dev`.
-- `vite --help` or `vite --version` -> prints root help (marking `dev` with `[default]`) or version.
+- `vite` or `vite -p 3000` runs `dev`.
+- `vite --help` or `vite --version` prints root help (with `[default]` next to `dev`) or the version.
 - If `dev` accepts positional arguments (`dev [root]`), `vite ./app` forwards `./app` to `dev`.
 - If `dev` takes **no** positional arguments, `vite biuld` still throws `UnknownCommandError` and suggests `'build'`.
 

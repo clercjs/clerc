@@ -1,16 +1,20 @@
 ---
-title: Logger & Terminal UI
+title: Logger
 ---
 
-# Logger & Terminal UI
+<script setup>
+import scenario from "./logger.playground.ts";
+</script>
 
-Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/theme`), and you can also create standalone loggers anywhere via `createLogger()`.
+# Logger
 
-<CliPlayground preset="logger" lang="en" />
+Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/theme`), and you can create standalone loggers anywhere with `createLogger()`.
 
-## Aligned Rail Typography
+<CliPlayground :scenario="scenario" lang="en" />
 
-All log methods (`step`, `info`, `success`, `warn`, `error`, `debug`) align along a 5-character right-aligned label column with a muted `│` detail gutter. Extra arguments are formatted automatically: strings split into lines, objects use `node:util` `inspect`, and `Error` instances render clean stack frames plus `Caused by:` chains.
+## Aligned Output and Error Formatting
+
+All six log methods (`step`, `info`, `success`, `warn`, `error`, `debug`) align along a 5-character right-aligned label column with a `│` detail gutter. Extra arguments are formatted automatically: strings split into lines, objects use `node:util` `inspect`, and `Error` instances render stack frames and `Caused by:` chains.
 
 ```ts
 import { createLogger } from "clerc";
@@ -33,7 +37,7 @@ log.error(
 
 ## Streaming `.line()` Appends
 
-Every log call returns a `LogEntry` with a chainable `.line(...values)` method so long-running steps can stream sub-lines under the same gutter rail (automatically suppressed if the parent log level was filtered out):
+Every log call returns a `LogEntry` with a chainable `.line(...values)` method so long-running steps can append sub-lines under the same gutter (suppressed automatically if the parent log level was filtered out):
 
 ```ts
 const entry = ctx.log.step("Applying migrations");
@@ -41,9 +45,9 @@ entry.line("0001_init.sql (12ms)");
 entry.line("0002_indexes.sql (8ms)");
 ```
 
-## Symmetric `log.box.*` Panels
+## Callout Panels (`log.box.*`)
 
-`ctx.log.box` exposes the exact same six methods (`step`, `info`, `success`, `warn`, `error`, `debug`), rendering a rounded panel aligned to the label gutter (with automatic ASCII `+---+` fallback when Unicode is unsupported):
+`ctx.log.box` exposes the same six methods (`step`, `info`, `success`, `warn`, `error`, `debug`), rendering a rounded panel aligned to the label gutter (with automatic ASCII `+---+` fallback when Unicode is unsupported):
 
 ```ts
 ctx.log.box.warn(
@@ -53,33 +57,6 @@ ctx.log.box.warn(
 );
 ```
 
-## Spinners, Tasks & Interactive Prompts
+## Log Level, JSON Format, and Themes
 
-- `ctx.log.task(title, fn)` starts an animated spinner on TTY, updates status messages via `s.message(...)`, and resolves to a `done` or `error` line automatically (degrading cleanly to static `step` / `done` lines in CI or non-TTY).
-- `ctx.log.spinner()` gives manual `.start()`, `.message()`, `.stop()`, `.cancel()`, and `.error()` control.
-- `prompts` re-exports `@clack/prompts` (`text`, `select`, `confirm`, `multiselect`, `autocomplete`) for interactive workflows.
-
-```ts
-import { clerc, prompts } from "clerc";
-
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
-  async run(ctx) {
-    const confirmed = await prompts.confirm({
-      message: "Deploy to production?",
-    });
-    if (!confirmed || prompts.isCancel(confirmed)) {
-      return;
-    }
-
-    await ctx.log.task("Uploading artifacts...", async (s) => {
-      s.message("Compressing 14 chunks...");
-
-      return "Uploaded 14 chunks in 420ms";
-    });
-  },
-});
-```
-
-## Runtime Level, JSON Format & Custom Theme
-
-By default, `clerc()` wires built-in `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding cleanly if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also mutate `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
+By default, `clerc()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.

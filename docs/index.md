@@ -1,7 +1,7 @@
 ---
 layout: home
 title: Clerc
-tagline: Typed CLIs for Node.js 24+
+tagline: Typed CLIs for Node.js
 markdownStyles: false
 ---
 

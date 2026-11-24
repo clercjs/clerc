@@ -1,14 +1,18 @@
 ---
-title: Middleware & State
+title: Middleware
 ---
 
-# Middleware & State
+<script setup>
+import scenario from "./middleware.playground.ts";
+</script>
 
-Clerc uses an onion middleware pipeline around command execution. Middlewares only run when an actual command is matched and validated - built-in `--help` and `--version` requests return immediately without triggering database connections or auth checks.
+# Middleware
 
-<CliPlayground preset="middleware" lang="en" />
+Clerc wraps command execution in an onion middleware pipeline. Middleware only runs after a command matches and passes validation; built-in `--help` and `--version` requests return immediately without opening connections or running auth checks.
 
-## Onion Lifecycle & Teardown
+<CliPlayground :scenario="scenario" lang="en" />
+
+## Onion Lifecycle and Teardown
 
 Call `await next()` to run downstream middlewares and the matched command handler. Wrap `await next()` in `try / finally` to guarantee cleanup even if the command throws:
 
@@ -65,13 +69,13 @@ cli.command("users", {
 });
 ```
 
-## Execution Order & `enforce`
+## Execution Order and `enforce`
 
 By default, middlewares run in registration order (`.use()` and `.middleware()` order). Because plugins encapsulate middlewares behind `.use(somePlugin())`, infrastructure plugins can pin their position in the onion using `{ enforce: "pre" | "post" }`:
 
-1. `enforce: "pre"` - outermost layer: runs **first** on entry and **last** in `finally` (used by `@clerc/plugin-update-notifier` so the registry fetch starts immediately and the update banner prints after all teardown logs).
-2. _(default)_ - normal middlewares in registration order.
-3. `enforce: "post"` - innermost layer: runs right before `command.run()`, after all normal middlewares have populated `ctx.state`.
+1. `enforce: "pre"`: outermost layer, running **first** on entry and **last** in `finally` (used by `@clerc/plugin-update-notifier` to start fetching early and print after teardown logs).
+2. _(default)_: normal middleware in registration order.
+3. `enforce: "post"`: innermost layer, running right before `command.run()` after normal middleware has populated `ctx.state`.
 
 ::: tip Compile-time safety for `enforce: "pre"`
 Because a `"pre"` middleware runs before normal middlewares at runtime, Clerc narrows its `ctx.state` parameter at compile time so it cannot accidentally read state injected by normal middlewares registered earlier in the builder chain.
