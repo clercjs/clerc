@@ -172,6 +172,20 @@ describe("@clerc/logger", () => {
       }),
     ).rejects.toThrow("Connection reset");
 
-    expect(term.stderrText()).toBe("error Connection reset");
+    expect(term.stderrText()).toBe("");
+
+    term.clear();
+
+    await expect(
+      log.task(
+        "Deploying...",
+        async () => {
+          throw new Error("Connection reset");
+        },
+        { errorMessage: "Deploy failed" },
+      ),
+    ).rejects.toThrow("Connection reset");
+
+    expect(term.stderrText()).toBe("error Deploy failed");
   });
 });

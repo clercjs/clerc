@@ -634,10 +634,11 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
         return result;
       } catch (error) {
         if (handle.active) {
-          handle.error(
-            options?.errorMessage ??
-              (Error.isError(error) ? error.message : String(error)),
-          );
+          if (options?.errorMessage === undefined) {
+            handle.clear();
+          } else {
+            handle.error(options.errorMessage);
+          }
         }
 
         throw error;

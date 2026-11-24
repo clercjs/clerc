@@ -14,7 +14,7 @@ import scenario from "../../guide/prompts.playground.ts";
 
 ## 任务进度（`ctx.log.task`）
 
-`ctx.log.task(title, fn)` 在 TTY 终端显示动画 Spinner，支持通过 `s.message(...)` 更新阶段说明，结束时自动输出 `done` 或 `error`。在 CI 或非 TTY 环境下，它会自动降级为普通文本日志。
+`ctx.log.task(title, fn)` 在 TTY 终端显示动画 Spinner，支持通过 `s.message(...)` 更新阶段说明，成功时自动输出 `done`；失败时清理 Spinner 并重新抛出错误，交给 Clerc 统一渲染一次（如需额外输出任务级失败文案，可传 `{ errorMessage }`）。在 CI 或非 TTY 环境下会自动降级为普通文本日志。
 
 ```ts
 import { clerc } from "clerc";

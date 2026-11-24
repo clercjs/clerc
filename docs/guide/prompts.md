@@ -14,7 +14,7 @@ Clerc includes task spinners on `ctx.log` and re-exports `@clack/prompts` as `pr
 
 ## Task Spinners (`ctx.log.task`)
 
-`ctx.log.task(title, fn)` runs an animated spinner on interactive TTYs, lets you update status via `s.message(...)`, and resolves to a `done` or `error` line when finished. In CI or non-TTY environments, it automatically falls back to static `step` and `done` lines.
+`ctx.log.task(title, fn)` runs an animated spinner on interactive TTYs, lets you update status via `s.message(...)`, and prints a `done` line on success. On failure it clears the spinner and rethrows so Clerc reports the error once (pass `{ errorMessage }` if you also want a task-level error line). In CI or non-TTY environments, it falls back to static `step` and `done` lines.
 
 ```ts
 import { clerc } from "clerc";
