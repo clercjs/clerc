@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ClercError,
+  Types,
   buildHelpDocument,
   createTheme,
   formatDiagnostic,
@@ -151,5 +152,43 @@ describe("clerc() integration", () => {
     const doc = await buildHelpDocument(cli.buildModel());
 
     expect(doc.commandGroups[0]?.items[0]?.name).toBe("build");
+  });
+
+  it("attaches command usage on structural argument/option errors and suggests similar enum values", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli();
+    cli.command("deploy <env>", {
+      args: { env: Types.Enum("staging", "prod") },
+      run() {},
+    });
+
+    const extraRes = await cli.run(["deploy", "pros", "s"], { terminal });
+
+    expect(extraRes.ok).toBeFalsy();
+    expect(extraRes.exitCode).toBe(2);
+    expect(terminal.stderrText()).toBe(
+      [
+        "error unexpected argument: 's'",
+        "",
+        "usage test deploy [options] <env>",
+        "",
+        "      For more information, try 'test deploy --help'.",
+      ].join("\n"),
+    );
+
+    terminal.clear();
+    const typoEnumRes = await cli.run(["deploy", "pros"], { terminal });
+
+    expect(typoEnumRes.ok).toBeFalsy();
+    expect(terminal.stderrText()).toContain("invalid value 'pros' for '<env>'");
+    expect(terminal.stderrText()).toContain(
+      "tip a similar value exists: 'prod'",
+    );
+
+    terminal.clear();
+    const farEnumRes = await cli.run(["deploy", "qa"], { terminal });
+
+    expect(farEnumRes.ok).toBeFalsy();
+    expect(terminal.stderrText()).not.toContain("a similar value exists");
   });
 });

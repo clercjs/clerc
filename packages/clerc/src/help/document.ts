@@ -245,6 +245,48 @@ function buildUsage(
   };
 }
 
+export function formatCommandUsage(
+  model: CliModel,
+  commandPath: readonly string[],
+): string | undefined {
+  const node =
+    commandPath.length > 0 ? model.tree.findNode(commandPath) : model.tree.root;
+  if (!node) {
+    return undefined;
+  }
+
+  const isRoot = node.fullPath.length === 0;
+  const visibleChildren = model.tree.listVisibleChildren(node);
+  const isStandalone =
+    Boolean(node.command?.standalone) || Boolean(node.command?.builtin);
+  const hasVisibleFlags =
+    node.localFlags.some((f) => !f.hidden) ||
+    node.builtinFlags.some((f) => !f.hidden) ||
+    (!isStandalone && model.globalFlags.some((f) => !f.hidden));
+
+  const usage = buildUsage(
+    node,
+    model.meta.name,
+    visibleChildren.length > 0,
+    hasVisibleFlags,
+    isRoot && Boolean(model.defaultCommand),
+  );
+  const parts = [usage.command];
+  if (usage.subcommand === "required") {
+    parts.push("<command>");
+  } else if (usage.subcommand === "optional") {
+    parts.push("[command]");
+  }
+  if (usage.hasOptions) {
+    parts.push("[options]");
+  }
+  for (const arg of usage.args) {
+    parts.push(arg.text);
+  }
+
+  return parts.join(" ");
+}
+
 function resolveNodeGroup(
   node: CommandNode,
   tree: CommandTree,

@@ -1,8 +1,9 @@
 import { LOG_GUTTER, formatLogLabel } from "@clerc/logger";
 import type { Theme } from "@clerc/theme";
 
+import { formatCommandUsage } from "./help/document";
 import { findClosest } from "./suggest";
-import type { CommandTree } from "./types";
+import type { CliModel } from "./types";
 import { formatFlagName, joinWithAnd } from "./utils";
 
 export type ClercErrorCode =
@@ -258,7 +259,24 @@ export class MissingRequiredMetadataError extends ClercError {
 
 const COMMAND_DISTANCE_THRESHOLD = 4;
 
-export function enrichCommandError(error: unknown, tree: CommandTree): void {
+const USAGE_ERROR_CODES = new Set<ClercErrorCode>([
+  "ERR_MISSING_ARGUMENT",
+  "ERR_MISSING_FLAG",
+  "ERR_MISSING_FLAG_VALUE",
+  "ERR_UNEXPECTED_ARGUMENT",
+]);
+
+export function enrichCommandError(
+  error: unknown,
+  model: CliModel,
+  commandPath: readonly string[] = [],
+): void {
+  if (!(error instanceof ClercError)) {
+    return;
+  }
+
+  const { tree } = model;
+
   if (error instanceof NoCommandError) {
     const visible = tree
       .listVisibleChildren(tree.root)
@@ -291,6 +309,12 @@ export function enrichCommandError(error: unknown, tree: CommandTree): void {
         `available subcommands: ${visible.map((node) => node.name).join(", ")}`,
       );
     }
+
+    return;
+  }
+
+  if (error.usage === undefined && USAGE_ERROR_CODES.has(error.code)) {
+    error.usage = formatCommandUsage(model, commandPath);
   }
 }
 

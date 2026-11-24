@@ -1,4 +1,5 @@
 import { InvalidSchemaError, ValidationError } from "./errors";
+import { findClosest } from "./suggest";
 import type { SingleType, TypeFunction } from "./types";
 
 export interface StandardSchemaV1Issue {
@@ -99,12 +100,30 @@ const convertNumber: TypeConverter = (raw, target) => {
   return num;
 };
 
+const ENUM_DISTANCE_THRESHOLD = 3;
+
 const createSchemaConverter =
   (schema: StandardSchemaV1<any, any>): TypeConverter =>
   async (raw, target) => {
     const result = await schema["~standard"].validate(raw);
     if (result.issues) {
-      throw new ValidationError(target, raw, result.issues);
+      const error = new ValidationError(target, raw, result.issues);
+      const jsonSchema = readStandardJsonSchema(schema);
+      if (Array.isArray(jsonSchema.enum)) {
+        const candidates = jsonSchema.enum.filter(
+          (val): val is string => typeof val === "string",
+        );
+        const maxDistance = Math.min(
+          ENUM_DISTANCE_THRESHOLD,
+          Math.max(1, Math.floor(raw.length / 2)),
+        );
+        const match = findClosest(raw, candidates, maxDistance);
+        if (match) {
+          error.addHint(`a similar value exists: '${match}'`);
+        }
+      }
+
+      throw error;
     }
 
     return result.value;

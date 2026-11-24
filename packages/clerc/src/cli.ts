@@ -895,7 +895,7 @@ export class Clerc<
     ctx: InternalContext<TGlobalFlags, TState>,
     throwOnError: boolean,
   ): Promise<RunResult> {
-    enrichCommandError(error, compiledCli.tree);
+    enrichCommandError(error, compiledCli.model, ctx.commandPath);
 
     const exitCode = error instanceof ClercError ? error.exitCode : 1;
     const errCtx = ctx as unknown as ErrorContext<TGlobalFlags, TState>;
