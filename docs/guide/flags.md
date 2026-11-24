@@ -3,7 +3,7 @@ title: Flags
 ---
 
 <script setup>
-import { arraysAndCounters, constraints, implicitValue } from "./flags.playground.ts";
+import { arraysAndCounters, implicitValue } from "./flags.playground.ts";
 </script>
 
 # Flags
@@ -116,45 +116,9 @@ To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I 
 
 <CliPlayground :scenario="implicitValue" lang="en" />
 
-## Constraints: `required`, `conflicts`, and `implies`
+## Cross-Flag and Argument Rules
 
-Declare relationships between flags in the schema instead of writing manual checks in handlers:
-
-```ts
-cli.command("deploy", {
-  flags: {
-    token: {
-      type: String,
-      required: true,
-      env: "ACME_TOKEN",
-    },
-    json: {
-      type: Boolean,
-      conflicts: ["yaml"],
-    },
-    yaml: {
-      type: Boolean,
-    },
-    tlsKey: {
-      type: String,
-      implies: ["tlsCert"],
-    },
-    tlsCert: {
-      type: String,
-    },
-  },
-  run(ctx) {
-    ctx.flags.token;
-    //        ^?
-  },
-});
-```
-
-- `conflicts`: throws `FlagConflictError` if both flags are provided.
-- `implies`: throws `FlagImpliesError` if `--tls-key` is passed without `--tls-cert`.
-- Unknown or self-referencing flag names inside `conflicts` or `implies` are caught upfront when building the CLI model (`InvalidSchemaError`).
-
-<CliPlayground :scenario="constraints" lang="en" />
+To declare mutual exclusion, paired flags, conditional requirements, or custom validation across flags and positional arguments, see [Rules and Constraints](/guide/rules).
 
 ## Global Flags vs Command Flags
 

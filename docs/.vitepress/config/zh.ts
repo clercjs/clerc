@@ -18,6 +18,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = [
       { text: "位置参数", link: "/zh/guide/arguments" },
       { text: "选项", link: "/zh/guide/flags" },
       { text: "类型与校验", link: "/zh/guide/types" },
+      { text: "约束规则", link: "/zh/guide/rules" },
       { text: "中间件", link: "/zh/guide/middleware" },
       { text: "插件", link: "/zh/guide/plugins" },
     ],

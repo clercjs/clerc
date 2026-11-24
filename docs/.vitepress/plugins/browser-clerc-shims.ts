@@ -6,22 +6,15 @@ const TTY_ID = "\0clerc-browser:tty";
 const UTIL_ID = "\0clerc-browser:util";
 const CLACK_ID = "\0clerc-browser:clack";
 const READLINE_ID = "\0clerc-browser:readline";
-const CLERC_SHIM_ID = "\0clerc-browser:clerc-core";
+const MODULE_ID = "\0clerc-browser:module";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
+const clercEntry = path.resolve(repoRoot, "packages/clerc/src/index.ts");
 const themeEntry = path.resolve(repoRoot, "packages/theme/src/index.ts");
 const loggerEntry = path.resolve(repoRoot, "packages/logger/src/index.ts");
 const completionsEntry = path.resolve(
   repoRoot,
   "packages/plugin-completions/src/index.ts",
-);
-const cliEntry = path.resolve(repoRoot, "packages/clerc/src/cli.ts");
-const errorsEntry = path.resolve(repoRoot, "packages/clerc/src/errors.ts");
-const schemaEntry = path.resolve(repoRoot, "packages/clerc/src/schema.ts");
-const terminalEntry = path.resolve(repoRoot, "packages/clerc/src/terminal.ts");
-const rendererEntry = path.resolve(
-  repoRoot,
-  "packages/clerc/src/help/renderer.ts",
 );
 
 function isClercPkgImporter(importer?: string): boolean {
@@ -51,7 +44,13 @@ export const BrowserClercShims = (): Plugin => ({
     if (id === "@clerc/plugin-completions") {
       return completionsEntry;
     }
+    if (importer === MODULE_ID && id === "@clack/prompts") {
+      return CLACK_ID;
+    }
     if (isClercPkgImporter(importer)) {
+      if (id === "node:module") {
+        return MODULE_ID;
+      }
       if (id === "node:tty") {
         return TTY_ID;
       }
@@ -65,7 +64,7 @@ export const BrowserClercShims = (): Plugin => ({
         return READLINE_ID;
       }
       if (id === "clerc") {
-        return CLERC_SHIM_ID;
+        return clercEntry;
       }
     }
   },
@@ -86,13 +85,14 @@ export const BrowserClercShims = (): Plugin => ({
 `;
     }
 
-    if (id === CLERC_SHIM_ID) {
-      return `export { plugin } from ${JSON.stringify(cliEntry)};
-export { ClercError } from ${JSON.stringify(errorsEntry)};
-export { Types } from ${JSON.stringify(schemaEntry)};
-export { createMemoryTerminal } from ${JSON.stringify(terminalEntry)};
-export { renderHelp } from ${JSON.stringify(rendererEntry)};
-export { createTheme } from "@clerc/theme";
+    if (id === MODULE_ID) {
+      return String.raw`import * as clack from "@clack/prompts";
+export function createRequire() {
+  return (specifier) => {
+    if (specifier === "@clack/prompts") return clack;
+    throw new Error("Dynamic require not supported in browser: " + specifier);
+  };
+}
 `;
     }
 

@@ -15,8 +15,8 @@ export { completionsPlugin, createLogger };
 export { clerc, plugin } from "../../../packages/clerc/src/cli.ts";
 export { ClercError } from "../../../packages/clerc/src/errors.ts";
 export { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
+export type { TypeFunction } from "../../../packages/clerc/src/schema.ts";
 export { Types } from "../../../packages/clerc/src/schema.ts";
-export type { TypeFunction } from "../../../packages/clerc/src/types.ts";
 
 Error.isError ??= (val: unknown): val is Error => val instanceof Error;
 
@@ -404,10 +404,20 @@ export async function resolvePlaygroundCompletions(
     resolved = await resolveCompletions(model, [...prior, "--"], { terminal });
   }
 
+  const isFileDirective =
+    (resolved.directive &
+      (ShellCompDirective.FilterFileExt | ShellCompDirective.FilterDirs)) !==
+    0;
+  if (isFileDirective) {
+    return { prefix: current, items: [] };
+  }
+
+  const eqIdx = current.startsWith("-") ? current.indexOf("=") : -1;
+  const replacePrefix = eqIdx === -1 ? current : current.slice(eqIdx + 1);
   const noSpace = (resolved.directive & ShellCompDirective.NoSpace) !== 0;
 
   return {
-    prefix: current,
+    prefix: replacePrefix,
     items: resolved.candidates.map((item) => ({
       value: item.value,
       insert: noSpace ? item.value : `${item.value} `,

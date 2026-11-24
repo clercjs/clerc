@@ -3,7 +3,7 @@ title: 选项
 ---
 
 <script setup>
-import { arraysAndCounters, constraints, implicitValue } from "../../guide/flags.playground.ts";
+import { arraysAndCounters, implicitValue } from "../../guide/flags.playground.ts";
 </script>
 
 # 选项
@@ -114,39 +114,9 @@ cli.command("dev", {
 
 <CliPlayground :scenario="implicitValue" lang="zh" />
 
-## 声明式约束：`required`、`conflicts` 与 `implies`
+## 选项与参数约束规则
 
-```ts
-cli.command("deploy", {
-  flags: {
-    token: {
-      type: String,
-      required: true,
-      env: "ACME_TOKEN",
-    },
-    json: {
-      type: Boolean,
-      conflicts: ["yaml"], // 与 --yaml 互斥
-    },
-    yaml: {
-      type: Boolean,
-    },
-    tlsKey: {
-      type: String,
-      implies: ["tlsCert"], // 传入 --tls-key 时必须同时提供 --tls-cert
-    },
-    tlsCert: {
-      type: String,
-    },
-  },
-  run(ctx) {
-    ctx.flags.token;
-    //        ^?
-  },
-});
-```
-
-<CliPlayground :scenario="constraints" lang="zh" />
+如需声明选项互斥、成对共现、单向依赖、位置参数与选项联动或自定义校验，请参阅 [约束规则](/zh/guide/rules)。
 
 ## 全局选项与局部覆盖
 

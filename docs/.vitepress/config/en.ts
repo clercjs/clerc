@@ -18,6 +18,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = [
       { text: "Arguments", link: "/guide/arguments" },
       { text: "Flags", link: "/guide/flags" },
       { text: "Types", link: "/guide/types" },
+      { text: "Rules", link: "/guide/rules" },
       { text: "Middleware", link: "/guide/middleware" },
       { text: "Plugins", link: "/guide/plugins" },
     ],

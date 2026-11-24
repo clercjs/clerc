@@ -45,24 +45,3 @@ export const implicitValue: PlaygroundScenario = {
     { cmd: "dev --inspect=9230" },
   ],
 };
-
-export const constraints: PlaygroundScenario = {
-  createCli: () =>
-    clerc({ name: "acme", version: "2.0.0" }).command("serve", {
-      description: "Validate declarative flag constraints",
-      flags: {
-        json: { type: Boolean, conflicts: ["yaml"] },
-        yaml: { type: Boolean },
-        tlsKey: { type: String, implies: ["tlsCert"] },
-        tlsCert: { type: String },
-      },
-      run({ flags, log }) {
-        log.success("Server configured", flags);
-      },
-    }),
-  presets: [
-    { cmd: "serve --tls-key key.pem" },
-    { cmd: "serve --json --yaml" },
-    { cmd: "serve --tls-key key.pem --tls-cert cert.pem" },
-  ],
-};

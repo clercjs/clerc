@@ -12,7 +12,7 @@ import {
 
 # 进度与交互
 
-`ctx.log` 内置了任务进度 Spinner，同时 `clerc` 直接重导出了 `@clack/prompts`（`prompts`），用于构建交互式命令行问答。
+`ctx.log` 内置了任务进度 Spinner，同时通过 `clerc/prompts` 子路径重导出了 `@clack/prompts`，用于构建交互式命令行问答。
 
 ## 任务进度（`ctx.log.task`）
 
@@ -49,10 +49,11 @@ s.stop("已连接");
 
 ## 交互式提问（`prompts`）
 
-`prompts` 直接重导出了 `@clack/prompts`（包含 `text`、`select`、`confirm`、`multiselect`、`autocomplete`、`isCancel` 等），无需单独安装：
+`clerc/prompts` 单独重导出了 `@clack/prompts`（包含 `text`、`select`、`confirm`、`multiselect`、`autocomplete`、`isCancel` 等），无需额外安装，且不会拖慢非交互命令的冷启动。既可在顶层引入，也可在命令 `run()` 中按需 `await import("clerc/prompts")`：
 
 ```ts
-import { clerc, prompts } from "clerc";
+import { clerc } from "clerc";
+import * as prompts from "clerc/prompts";
 
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
   async run(ctx) {

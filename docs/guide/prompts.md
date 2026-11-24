@@ -12,7 +12,7 @@ import {
 
 # Spinners and Prompts
 
-Clerc includes task spinners on `ctx.log` and re-exports `@clack/prompts` as `prompts` for interactive terminal input.
+Clerc includes task spinners on `ctx.log` and re-exports `@clack/prompts` from `clerc/prompts` for interactive terminal input.
 
 ## Task Spinners (`ctx.log.task`)
 
@@ -49,10 +49,11 @@ s.stop("Connected");
 
 ## Interactive Prompts
 
-`prompts` re-exports `@clack/prompts` (`text`, `select`, `confirm`, `multiselect`, `autocomplete`, `isCancel`) so you do not need to install it separately:
+`clerc/prompts` re-exports `@clack/prompts` (`text`, `select`, `confirm`, `multiselect`, `autocomplete`, `isCancel`) as a dedicated subpath so non-interactive commands skip loading prompt widgets at startup. You can import it at the top level or lazily inside a command's `run()` handler:
 
 ```ts
-import { clerc, prompts } from "clerc";
+import { clerc } from "clerc";
+import * as prompts from "clerc/prompts";
 
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
   async run(ctx) {

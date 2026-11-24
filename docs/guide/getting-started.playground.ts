@@ -81,11 +81,11 @@ const scenario: PlaygroundScenario = {
           },
           json: {
             type: Boolean,
-            conflicts: "yaml",
             description: "Output JSON summary",
           },
           yaml: { type: Boolean, description: "Output YAML summary" },
         },
+        rules: ({ exclusive, flag }) => [exclusive(flag("json"), flag("yaml"))],
         run({ args, flags, log, terminal }) {
           const summary = {
             env: args.env,
@@ -155,9 +155,10 @@ cli.command("deploy <env> [region]", {
       short: "t",
       delimiter: ",",
     },
-    json: { type: Boolean, conflicts: "yaml" },
+    json: Boolean,
     yaml: Boolean,
   },
+  rules: ({ exclusive, flag }) => [exclusive(flag("json"), flag("yaml"))],
   run({ args, flags, log }) {
     log.step(
       \`Deploying to \${args.env} (\${args.region})\`,
