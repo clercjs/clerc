@@ -8,7 +8,7 @@ export default defineConfig({
     include: ["packages/*"],
     exclude: ["packages/test-utils"],
   },
-  entry: ["src/index.ts"],
+  entry: ["src/{index,prompts}.ts"],
   target: "node24",
   dts: true,
   minify: true,
