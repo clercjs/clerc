@@ -3,7 +3,8 @@ import {
   MissingRequiredArgumentError,
   UnexpectedArgumentError,
 } from "./errors";
-import { convertItemList } from "./flags";
+import type { ArrayConstraintOptions } from "./flags";
+import { convertItemList, validateArraySchemaOptions } from "./flags";
 import { DOUBLE_DASH } from "./parser";
 import type {
   DefaultValue,
@@ -21,7 +22,14 @@ import { camelCase, evaluateDefault } from "./utils";
 export interface ArgCustomMeta {}
 export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
 
-export interface ArgDescriptor {
+interface ArgSharedMeta extends ArrayConstraintOptions {
+  readonly description?: string;
+  readonly env?: string;
+  readonly complete?: false | CompletionHandler;
+  readonly meta?: ArgMeta;
+}
+
+export interface ArgDescriptor extends ArgSharedMeta {
   readonly name: string;
   readonly rawName: string;
   readonly token: string;
@@ -29,21 +37,16 @@ export interface ArgDescriptor {
   readonly isVariadic: boolean;
   readonly afterDoubleDash: boolean;
   readonly display?: string;
-  readonly description?: string;
   readonly default?: unknown;
-  readonly env?: string;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: ArgMeta;
+  readonly unique: boolean;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
 
-export interface ArgOptions<T extends SingleType = SingleType> {
+export interface ArgOptions<
+  T extends SingleType = SingleType,
+> extends ArgSharedMeta {
   readonly type?: T;
-  readonly description?: string;
   readonly default?: DefaultValue;
-  readonly env?: string;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: ArgMeta;
 }
 
 export type ArgDefinitionValue = SingleType | ArgOptions;
@@ -291,6 +294,13 @@ function compileArgSlice(
         `required argument "${info.name}" cannot have a default value`,
       );
     }
+    if (norm) {
+      validateArraySchemaOptions(
+        `Argument "${info.name}"`,
+        info.isVariadic,
+        norm,
+      );
+    }
 
     const typeDesc = norm?.type ? describeType(norm.type) : undefined;
     items.push({
@@ -300,6 +310,9 @@ function compileArgSlice(
       description: norm?.description,
       default: norm?.default,
       env: norm?.env,
+      unique: Boolean(norm?.unique),
+      minItems: norm?.minItems,
+      maxItems: norm?.maxItems,
       complete: norm?.complete,
       meta: norm?.meta,
       toJsonSchema: typeDesc ? typeDesc.toJsonSchema : defaultStringJsonSchema,
@@ -342,7 +355,7 @@ async function convertArgValue(
   raw: string | readonly string[],
 ): Promise<unknown> {
   if (Array.isArray(raw)) {
-    return convertItemList(item.convert, item.token, raw);
+    return convertItemList(item.convert, item.token, raw, item);
   }
 
   return item.convert ? item.convert(raw as string, item.token) : raw;

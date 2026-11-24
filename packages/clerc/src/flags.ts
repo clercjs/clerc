@@ -25,29 +25,46 @@ import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
 import type { CompletionHandler } from "./types";
 import type { IsAny, MaybeArray, Prettify } from "./utils";
-import { evaluateDefault, formatFlagName, kebabCase, toArray } from "./utils";
+import {
+  evaluateDefault,
+  formatFlagName,
+  kebabCase,
+  plural,
+  toArray,
+} from "./utils";
 
 export interface FlagCustomMeta {}
 export type FlagMeta = FlagCustomMeta & Record<string, unknown>;
 
-export interface FlagOptions<T extends SingleType = SingleType> {
-  readonly type: T;
-  readonly multiple?: boolean;
+export interface ArrayConstraintOptions {
+  readonly unique?: boolean;
+  readonly minItems?: number;
+  readonly maxItems?: number;
+}
+
+interface FlagSharedMeta extends ArrayConstraintOptions {
   readonly short?: string;
-  readonly aliases?: MaybeArray<string>;
   readonly description?: string;
   readonly placeholder?: string;
-  readonly default?: DefaultValue;
-  readonly implicitValue?: DefaultValue;
   readonly delimiter?: string;
-  readonly required?: boolean;
   readonly env?: string;
-  readonly negatable?: boolean;
   readonly group?: string;
-  readonly hidden?: boolean;
   readonly deprecated?: boolean | string;
   readonly complete?: false | CompletionHandler;
   readonly meta?: FlagMeta;
+}
+
+export interface FlagOptions<
+  T extends SingleType = SingleType,
+> extends FlagSharedMeta {
+  readonly type: T;
+  readonly multiple?: boolean;
+  readonly aliases?: MaybeArray<string>;
+  readonly default?: DefaultValue;
+  readonly implicitValue?: DefaultValue;
+  readonly required?: boolean;
+  readonly negatable?: boolean;
+  readonly hidden?: boolean;
 }
 
 export type FlagDefinitionValue = FlagOptions | SingleType;
@@ -63,26 +80,18 @@ export type ContextualFlags<Flags extends Record<string, any>> = {
   readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
 };
 
-export interface FlagDescriptor {
+export interface FlagDescriptor extends FlagSharedMeta {
   readonly name: string;
   readonly target: string;
-  readonly short?: string;
   readonly aliases: readonly string[];
   readonly kind: FlagKind;
   readonly display: string;
-  readonly description?: string;
-  readonly placeholder?: string;
   readonly default?: unknown;
   readonly implicitValue?: unknown;
-  readonly delimiter?: string;
+  readonly unique: boolean;
   readonly required: boolean;
-  readonly env?: string;
   readonly negatable: boolean;
-  readonly group?: string;
   readonly hidden: boolean;
-  readonly deprecated?: boolean | string;
-  readonly complete?: false | CompletionHandler;
-  readonly meta?: FlagMeta;
   readonly toJsonSchema: () => Record<string, unknown>;
 }
 
@@ -142,12 +151,17 @@ export type InferFlags<T extends Record<string, any>> = Prettify<{
 
 type KnownKeys<T> = string extends keyof T ? never : keyof T;
 
+export type OverrideFlags<
+  Base extends Record<string, any>,
+  Next extends Record<string, any>,
+> = Omit<Base, KnownKeys<Next>> & Next;
+
 export type MergedFlags<
   LocalFlags extends Record<string, any>,
   GlobalFlags extends Record<string, any>,
-> = InferFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
+> = InferFlags<OverrideFlags<GlobalFlags, LocalFlags>>;
 
-interface CompiledFlagEntry extends FlagDescriptor {
+export interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
 }
 
@@ -201,6 +215,7 @@ export const createBuiltinFlagDescriptor = (
   kind,
   display: "boolean",
   description,
+  unique: false,
   required: false,
   negatable: false,
   hidden: false,
@@ -243,6 +258,7 @@ export function compileFlagEntries(
         `Flag "${name}" implicitValue can only be used with single-value flag types.`,
       );
     }
+    validateArraySchemaOptions(`Flag "${name}"`, kind === "array", norm);
 
     const aliases = norm.aliases ? toArray(norm.aliases).map(kebabCase) : [];
     const negatable = kind === "boolean" && norm.negatable !== false;
@@ -258,6 +274,9 @@ export function compileFlagEntries(
       default: norm.default,
       implicitValue: norm.implicitValue,
       delimiter: norm.delimiter,
+      unique: Boolean(norm.unique),
+      minItems: norm.minItems,
+      maxItems: norm.maxItems,
       required: Boolean(norm.required),
       env: norm.env,
       negatable,
@@ -267,7 +286,13 @@ export function compileFlagEntries(
 
       complete: norm.complete,
       meta: norm.meta,
-      toJsonSchema,
+      toJsonSchema:
+        kind === "array" &&
+        (norm.unique ||
+          norm.minItems !== undefined ||
+          norm.maxItems !== undefined)
+          ? () => withArrayJsonSchema(toJsonSchema(), norm)
+          : toJsonSchema,
       convert,
     };
 
@@ -300,17 +325,111 @@ export function buildCompiledFlags(
   return { entries, byName, specs, knownNames };
 }
 
+export function validateArraySchemaOptions(
+  label: string,
+  isArray: boolean,
+  options: ArrayConstraintOptions,
+): void {
+  const hasArrayConstraint =
+    Boolean(options.unique) ||
+    options.minItems !== undefined ||
+    options.maxItems !== undefined;
+  if (!hasArrayConstraint) {
+    return;
+  }
+  if (!isArray) {
+    throw new InvalidSchemaError(
+      `${label} array constraints (unique, minItems, maxItems) can only be used with array flags or variadic arguments.`,
+    );
+  }
+  for (const [key, val] of [
+    ["minItems", options.minItems],
+    ["maxItems", options.maxItems],
+  ] as const) {
+    if (val !== undefined && (!Number.isInteger(val) || val < 0)) {
+      throw new InvalidSchemaError(
+        `${label} ${key} must be a non-negative integer.`,
+      );
+    }
+  }
+  if (
+    options.minItems !== undefined &&
+    options.maxItems !== undefined &&
+    options.minItems > options.maxItems
+  ) {
+    throw new InvalidSchemaError(
+      `${label} minItems (${options.minItems}) must be <= maxItems (${options.maxItems}).`,
+    );
+  }
+}
+
+export function withArrayJsonSchema(
+  schema: Record<string, unknown>,
+  options: ArrayConstraintOptions,
+): Record<string, unknown> {
+  const out = { ...schema };
+  if (options.unique) {
+    out.uniqueItems = true;
+  }
+  if (options.minItems !== undefined) {
+    out.minItems = options.minItems;
+  }
+  if (options.maxItems !== undefined) {
+    out.maxItems = options.maxItems;
+  }
+
+  return out;
+}
+
+export function validateArrayConstraints(
+  target: string,
+  values: readonly unknown[],
+  options: ArrayConstraintOptions,
+): void {
+  if (options.minItems !== undefined && values.length < options.minItems) {
+    throw new ValidationError(target, values, [
+      {
+        message: `expected at least ${options.minItems} ${plural(options.minItems, "item")}`,
+      },
+    ]);
+  }
+  if (options.maxItems !== undefined && values.length > options.maxItems) {
+    throw new ValidationError(target, values, [
+      {
+        message: `expected at most ${options.maxItems} ${plural(options.maxItems, "item")}`,
+      },
+    ]);
+  }
+  if (options.unique) {
+    const seen = new Set<unknown>();
+    for (const item of values) {
+      if (seen.has(item)) {
+        throw new ValidationError(target, values, [
+          { message: `duplicate value '${String(item)}'` },
+        ]);
+      }
+      seen.add(item);
+    }
+  }
+}
+
 export async function convertItemList(
   convert: TypeConverter | undefined,
   target: string,
   items: readonly string[],
+  constraints?: ArrayConstraintOptions,
 ): Promise<unknown[]> {
-  if (!convert) {
-    return [...items];
+  let converted: unknown[];
+  if (convert) {
+    converted = [];
+    for (const item of items) {
+      converted.push(await convert(item, target));
+    }
+  } else {
+    converted = [...items];
   }
-  const converted: unknown[] = [];
-  for (const item of items) {
-    converted.push(await convert(item, target));
+  if (constraints) {
+    validateArrayConstraints(target, converted, constraints);
   }
 
   return converted;
@@ -353,6 +472,7 @@ async function resolveEnvValue(
         entry.convert,
         entry.target,
         envValue.split(delimiter).map((s) => s.trim()),
+        entry,
       );
     }
     case "single": {
@@ -386,7 +506,7 @@ export async function resolveCompiledFlags(
         const items = entry.delimiter
           ? (rawValue as string[]).flatMap((v) => v.split(entry.delimiter!))
           : (rawValue as string[]);
-        flags[name] = await convertItemList(convert, target, items);
+        flags[name] = await convertItemList(convert, target, items, entry);
       } else {
         flags[name] = convert
           ? await convert(rawValue as string, target)

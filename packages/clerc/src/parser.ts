@@ -71,6 +71,7 @@ export interface ArgvParser {
   readonly scan: (
     args: readonly string[],
     onPositional: ScanCallback,
+    startIndex?: number,
   ) => ScanResult;
 }
 
@@ -527,8 +528,9 @@ export function createArgvParser(
   function scan(
     args: readonly string[],
     onPositional: ScanCallback,
+    startIndex = 0,
   ): ScanResult {
-    let i = 0;
+    let i = startIndex;
 
     while (i < args.length) {
       const current = args[i];

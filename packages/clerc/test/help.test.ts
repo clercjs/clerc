@@ -102,9 +102,9 @@ describe("built-in v2 editorial help", () => {
       "acme v2.0.0\nBuild and deploy modern TypeScript apps",
     );
     expect(rootOut).toContain("\nCORE\n  build (b)");
-    expect(rootOut).toContain("\nCOMMANDS\n");
+    expect(rootOut).toContain("\nOTHER COMMANDS\n");
     expect(rootOut.indexOf("\nCORE\n")).toBeLessThan(
-      rootOut.indexOf("\nCOMMANDS\n"),
+      rootOut.indexOf("\nOTHER COMMANDS\n"),
     );
 
     // Commands and Options snap to the same column when within threshold

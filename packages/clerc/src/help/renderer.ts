@@ -33,62 +33,41 @@ export interface HelpRenderContext {
   ) => string | undefined;
 }
 
-export interface HelpSectionRenderers {
-  readonly header: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly usage: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly arguments: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly commands: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly options: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly globalOptions: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly constraints: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly examples: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-  readonly notes: (
-    doc: HelpDocument,
-    ctx: HelpRenderContext,
-  ) => string | undefined;
-}
+type HelpSectionName =
+  | "header"
+  | "usage"
+  | "arguments"
+  | "commands"
+  | "options"
+  | "globalOptions"
+  | "examples"
+  | "notes";
 
-export interface RenderHelpDocumentOptions {
+type HelpSectionRenderer = (
+  doc: HelpDocument,
+  ctx: HelpRenderContext,
+) => string | undefined;
+
+export type HelpSectionRenderers = Readonly<
+  Record<HelpSectionName, HelpSectionRenderer>
+>;
+
+interface BaseRenderHelpOptions {
   readonly theme: Theme;
   readonly columns?: number;
   readonly unicode?: boolean;
+  readonly sections?: Partial<HelpSectionRenderers>;
+}
+
+export interface RenderHelpDocumentOptions extends BaseRenderHelpOptions {
   readonly header?: string;
   readonly footer?: string;
-  readonly sections?: Partial<HelpSectionRenderers>;
 }
 
-export interface RenderHelpOptions {
+export interface RenderHelpOptions extends BaseRenderHelpOptions {
   readonly node?: CommandNode;
-  readonly theme: Theme;
-  readonly columns?: number;
-  readonly unicode?: boolean;
   readonly header?: MetaAsyncGetter<string | undefined | void>;
   readonly footer?: MetaAsyncGetter<string | undefined | void>;
-  readonly sections?: Partial<HelpSectionRenderers>;
 }
 
 const MAX_RULE_WIDTH = 72;
@@ -120,6 +99,9 @@ function formatArgumentRow(arg: HelpArgumentItem, theme: Theme): TwoColumnRow {
   }
   if (arg.env) {
     tags.push(theme.muted(`[env: ${arg.env}]`));
+  }
+  for (const constraint of arg.constraints ?? []) {
+    tags.push(theme.muted(`[${constraint}]`));
   }
 
   return [theme.command(arg.token), { text: arg.description, tags }];
@@ -180,6 +162,9 @@ function formatOptionRow(
   if (depTag) {
     tags.push(depTag);
   }
+  for (const constraint of opt.constraints ?? []) {
+    tags.push(theme.muted(`[${constraint}]`));
+  }
 
   return [left, { text: opt.description, tags }];
 }
@@ -189,16 +174,21 @@ function renderOptionGroups(
   ctx: HelpRenderContext,
 ): string | undefined {
   const rendered = groups
-    .map((group) =>
-      ctx.section(
-        group.title,
-        ctx.formatOptions(
-          group.items.map((opt) =>
-            formatOptionRow(opt, ctx.theme, ctx.hasAnyShort),
-          ),
+    .map((group) => {
+      const lines = ctx.formatOptions(
+        group.items.map((opt) =>
+          formatOptionRow(opt, ctx.theme, ctx.hasAnyShort),
         ),
-      ),
-    )
+      );
+      if (lines.length === 0) {
+        return undefined;
+      }
+      const badge = group.tags?.length
+        ? `  ${group.tags.map((t) => ctx.theme.muted(`[${t}]`)).join(" ")}`
+        : "";
+
+      return `${ctx.theme.heading(group.title.toUpperCase())}${badge}\n${lines.join("\n")}`;
+    })
     .filter((block): block is string => Boolean(block));
 
   return rendered.length > 0 ? rendered.join("\n\n") : undefined;
@@ -344,22 +334,6 @@ export const defaultHelpSections: HelpSectionRenderers = {
     return renderOptionGroups(doc.globalOptionGroups, ctx);
   },
 
-  constraints(doc, ctx) {
-    if (doc.constraints.length === 0) {
-      return undefined;
-    }
-
-    return ctx.section(
-      "Constraints",
-      ctx.formatOptions(
-        doc.constraints.map((item) => [
-          ctx.theme.muted(item.label),
-          { text: item.text },
-        ]),
-      ),
-    );
-  },
-
   examples(doc, ctx) {
     if (doc.examples.length === 0) {
       return undefined;
@@ -483,7 +457,6 @@ export function renderHelpDocument(
     sections.commands(doc, ctx),
     sections.options(doc, ctx),
     sections.globalOptions(doc, ctx),
-    sections.constraints(doc, ctx),
     sections.examples(doc, ctx),
     sections.notes(doc, ctx),
     options.footer,

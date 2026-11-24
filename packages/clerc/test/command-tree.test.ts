@@ -171,15 +171,15 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports clerc({ defaultCommand }) with smart positional routing and help tags", async () => {
-    // 1. defaultCommand without positional args keeps UnknownCommandError + typo hints
+  it("supports command({ default: true }) on root and subcommands with smart routing and help tags", async () => {
+    // 1. default subcommand without positional args keeps UnknownCommandError + typo hints
     const events: string[] = [];
     const noArgCli = clerc({
       name: "vite",
       version: "1.0.0",
-      defaultCommand: "dev",
     });
     noArgCli.command("dev", {
+      default: true,
       description: "Start dev server",
       flags: { port: { type: Number, short: "p", default: 5173 } },
       run(ctx) {
@@ -218,14 +218,14 @@ describe("CommandTree", () => {
     expect(term.stdoutText()).toContain("USAGE   vite [command] [options]");
     expect(term.stdoutText()).toContain("Start dev server  [default]");
 
-    // 2. defaultCommand with positional args forwards unmatched root args like Vite
+    // 2. default subcommand with positional args forwards unmatched args like Vite
     const dirEvents: string[] = [];
     const argCli = clerc({
       name: "vite",
       version: "1.0.0",
-      defaultCommand: "dev",
     });
     argCli.command("dev [dir]", {
+      default: true,
       flags: { port: { type: Number, short: "p", default: 5173 } },
       run(ctx) {
         dirEvents.push(`dev:${ctx.args.dir ?? "."}:${ctx.flags.port}`);
@@ -255,27 +255,22 @@ describe("CommandTree", () => {
       argCli.run(["db", "migrat"], { terminal: term, throwOnError: true }),
     ).rejects.toThrow(UnknownCommandError);
 
-    // 3. Compile-time validation rejects missing, namespace-only, or conflicting defaultCommand
-    const missingDefault = clerc({
-      name: "vite",
-      defaultCommand: "missing",
-    });
-    missingDefault.command("build", { run() {} });
+    // 3. Compile-time validation rejects non-runnable, conflicting, or duplicate default subcommands
+    const nonRunnableDefault = clerc({ name: "vite" });
+    nonRunnableDefault.command("db", { default: true });
 
-    expect(() => missingDefault.buildModel()).toThrow(InvalidSchemaError);
+    expect(() => nonRunnableDefault.buildModel()).toThrow(InvalidSchemaError);
 
-    const nsDefault = clerc({ name: "vite", defaultCommand: "db" });
-    nsDefault.command("db migrate", { run() {} });
-
-    expect(() => nsDefault.buildModel()).toThrow(InvalidSchemaError);
-
-    const conflictDefault = clerc({
-      name: "vite",
-      defaultCommand: "dev",
-    });
+    const conflictDefault = clerc({ name: "vite" });
     conflictDefault.command({ run() {} });
-    conflictDefault.command("dev", { run() {} });
+    conflictDefault.command("dev", { default: true, run() {} });
 
     expect(() => conflictDefault.buildModel()).toThrow(InvalidSchemaError);
+
+    const multipleDefaults = clerc({ name: "vite" });
+    multipleDefaults.command("dev", { default: true, run() {} });
+    multipleDefaults.command("build", { default: true, run() {} });
+
+    expect(() => multipleDefaults.buildModel()).toThrow(InvalidSchemaError);
   });
 });

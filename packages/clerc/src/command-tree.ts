@@ -4,7 +4,8 @@ import type { FlagDescriptor } from "./flags";
 import type { ScanCallback, ScanResult } from "./parser";
 import { DOUBLE_DASH } from "./parser";
 import type { RuleDescriptor } from "./rules";
-import type { AnyCommandDefinition } from "./types";
+import type { AnyCommandDefinition, SubcommandOptions } from "./types";
+import type { Mutable } from "./utils";
 import { toArray } from "./utils";
 
 export interface CommandNode {
@@ -15,10 +16,12 @@ export interface CommandNode {
   readonly aliasIndex: ReadonlyMap<string, CommandNode>;
   readonly aliases: readonly string[];
   readonly command?: AnyCommandDefinition;
+  readonly defaultChild?: CommandNode;
   readonly args: readonly ArgDescriptor[];
   readonly localFlags: readonly FlagDescriptor[];
   readonly builtinFlags: readonly FlagDescriptor[];
   readonly rules: readonly RuleDescriptor[];
+  readonly ruleNotes: readonly string[];
 }
 
 export interface CommandTree {
@@ -31,49 +34,39 @@ export interface CommandTree {
   })[];
 }
 
-type CommandMatch =
-  | {
-      readonly kind: "matched";
-      readonly node: CommandNode;
-      readonly command: AnyCommandDefinition;
-      readonly calledAs: string;
-      readonly remainingArgv: readonly string[];
-    }
-  | {
-      readonly kind: "namespace";
-      readonly node: CommandNode;
-      readonly remainingArgv: readonly string[];
-    }
-  | {
-      readonly kind: "empty";
-      readonly node: CommandNode;
-      readonly remainingArgv: readonly string[];
-    }
-  | {
-      readonly kind: "unknown";
-      readonly node: CommandNode;
-      readonly commandName: string;
-      readonly parentPath: readonly string[];
-      readonly remainingArgv: readonly string[];
-    };
+interface BaseCommandMatch {
+  readonly node: CommandNode;
+  readonly remainingArgv: readonly string[];
+}
+
+type CommandMatch = BaseCommandMatch &
+  (
+    | {
+        readonly kind: "matched";
+        readonly command: AnyCommandDefinition;
+        readonly calledAs: string;
+      }
+    | { readonly kind: "namespace" | "empty" }
+    | {
+        readonly kind: "unknown";
+        readonly commandName: string;
+        readonly parentPath: readonly string[];
+      }
+  );
 
 type ArgvScanFn = (
   args: readonly string[],
   onPositional: ScanCallback,
+  startIndex?: number,
 ) => ScanResult;
 
-interface MutableCommandNode {
-  readonly name: string;
-  readonly fullPath: readonly string[];
+interface MutableCommandNode extends Mutable<
+  Omit<CommandNode, "parent" | "children" | "aliasIndex" | "defaultChild">
+> {
   readonly parent?: MutableCommandNode;
   readonly children: Map<string, MutableCommandNode>;
   readonly aliasIndex: Map<string, MutableCommandNode>;
-  aliases: readonly string[];
-  command?: AnyCommandDefinition;
-  args: readonly ArgDescriptor[];
-  localFlags: readonly FlagDescriptor[];
-  builtinFlags: readonly FlagDescriptor[];
-  rules: readonly RuleDescriptor[];
+  defaultChild?: MutableCommandNode;
 }
 
 const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
@@ -93,6 +86,7 @@ const createNode = (
   localFlags: EMPTY_DESCRIPTORS,
   builtinFlags: EMPTY_DESCRIPTORS,
   rules: EMPTY_DESCRIPTORS,
+  ruleNotes: EMPTY_DESCRIPTORS,
 });
 
 const isVisibleNode = (node: CommandNode): boolean =>
@@ -100,6 +94,7 @@ const isVisibleNode = (node: CommandNode): boolean =>
 
 export class CommandTreeBuilder implements CommandTree {
   readonly #root: MutableCommandNode = createNode("", []);
+  readonly #namespaceNodes = new Set<MutableCommandNode>();
 
   public get root(): CommandNode {
     return this.#root;
@@ -128,23 +123,15 @@ export class CommandTreeBuilder implements CommandTree {
     return current;
   }
 
-  public register(cmd: AnyCommandDefinition): CommandNode {
-    const rawName = cmd.name.trim();
-    const segments = rawName === "" ? [] : rawName.split(/\s+/);
-    const current = this.#ensurePath(segments, true);
-
-    const targetLabel =
-      segments.length === 0
-        ? "root command"
-        : `command "${segments.join(" ")}"`;
-    if (current.command) {
-      throw new InvalidSchemaError(`${targetLabel} already exists`);
+  #registerAliases(
+    current: MutableCommandNode,
+    targetLabel: string,
+    rawAliases: readonly string[],
+  ): void {
+    if (rawAliases.length === 0) {
+      return;
     }
-
-    current.command = cmd;
-
-    const rawAliases = cmd.aliases ? toArray(cmd.aliases) : [];
-    const normalizedAliases: string[] = [];
+    const normalizedAliases = [...current.aliases];
     const defaultAliasHost = current.parent ?? this.#root;
     for (const rawAlias of rawAliases) {
       const alias = rawAlias.trim();
@@ -168,6 +155,78 @@ export class CommandTreeBuilder implements CommandTree {
       host.aliasIndex.set(leaf, current);
     }
     current.aliases = normalizedAliases;
+  }
+
+  public registerNamespace(
+    segments: readonly string[],
+    meta: SubcommandOptions,
+  ): CommandNode {
+    const current = this.#ensurePath(segments, true);
+    const fullName = segments.join(" ");
+    const targetLabel = `command "${fullName}"`;
+    if (current.command) {
+      throw new InvalidSchemaError(`${targetLabel} already exists`);
+    }
+
+    current.command = {
+      ...meta,
+      spec: fullName,
+      name: fullName,
+      argTokens: [],
+    };
+    this.#namespaceNodes.add(current);
+    this.#registerAliases(
+      current,
+      targetLabel,
+      meta.aliases ? toArray(meta.aliases) : [],
+    );
+
+    return current;
+  }
+
+  public register(cmd: AnyCommandDefinition): CommandNode {
+    const rawName = cmd.name.trim();
+    const segments = rawName === "" ? [] : rawName.split(/\s+/);
+    const current = this.#ensurePath(segments, true);
+
+    const targetLabel =
+      segments.length === 0
+        ? "root command"
+        : `command "${segments.join(" ")}"`;
+
+    if (current.command) {
+      if (this.#namespaceNodes.has(current)) {
+        const ns = current.command;
+        current.command = {
+          ...ns,
+          ...cmd,
+          description: cmd.description ?? ns.description,
+          group: cmd.group ?? ns.group,
+          hidden: cmd.hidden ?? ns.hidden,
+          deprecated: cmd.deprecated ?? ns.deprecated,
+          examples: cmd.examples ?? ns.examples,
+          notes: cmd.notes ?? ns.notes,
+          meta: ns.meta || cmd.meta ? { ...ns.meta, ...cmd.meta } : undefined,
+        };
+        this.#namespaceNodes.delete(current);
+        this.#registerAliases(
+          current,
+          targetLabel,
+          cmd.aliases ? toArray(cmd.aliases) : [],
+        );
+
+        return current;
+      }
+
+      throw new InvalidSchemaError(`${targetLabel} already exists`);
+    }
+
+    current.command = cmd;
+    this.#registerAliases(
+      current,
+      targetLabel,
+      cmd.aliases ? toArray(cmd.aliases) : [],
+    );
 
     return current;
   }
@@ -175,20 +234,21 @@ export class CommandTreeBuilder implements CommandTree {
   /**
    * @internal
    */
+  public setDefaultChild(parent: CommandNode, child: CommandNode): void {
+    (parent as MutableCommandNode).defaultChild = child as MutableCommandNode;
+  }
+
+  /**
+   * @internal
+   */
   public attachCompiled(
     node: CommandNode,
-    compiled: {
-      readonly args: readonly ArgDescriptor[];
-      readonly localFlags: readonly FlagDescriptor[];
-      readonly builtinFlags: readonly FlagDescriptor[];
-      readonly rules: readonly RuleDescriptor[];
-    },
+    compiled: Pick<
+      CommandNode,
+      "args" | "localFlags" | "builtinFlags" | "rules" | "ruleNotes"
+    >,
   ): void {
-    const target = node as MutableCommandNode;
-    target.args = compiled.args;
-    target.localFlags = compiled.localFlags;
-    target.builtinFlags = compiled.builtinFlags;
-    target.rules = compiled.rules;
+    Object.assign(node as MutableCommandNode, compiled);
   }
 
   public findNode(path: readonly string[]): CommandNode | undefined {
@@ -238,27 +298,46 @@ export class CommandTreeBuilder implements CommandTree {
     );
   }
 
-  public resolveArgv(argv: readonly string[], scan: ArgvScanFn): CommandMatch {
+  public resolveArgv(
+    argv: readonly string[],
+    getScan: (node: CommandNode) => ArgvScanFn,
+  ): CommandMatch {
     let current: CommandNode = this.#root;
     const calledTokens: string[] = [];
     const matchedIndices: number[] = [];
     let isContiguousPrefix = true;
+    let startIndex = 0;
+    let finalStoppedAt = argv.length;
 
-    const { stoppedAt } = scan(argv, (token, index) => {
-      const nextNode =
-        current.children.get(token) ?? current.aliasIndex.get(token);
-      if (!nextNode) {
-        return false;
-      }
-      if (index !== matchedIndices.length) {
-        isContiguousPrefix = false;
-      }
-      current = nextNode;
-      calledTokens.push(token);
-      matchedIndices.push(index);
+    while (startIndex < argv.length) {
+      let matched = false;
+      const { stoppedAt } = getScan(current)(
+        argv,
+        (token, index) => {
+          const nextNode =
+            current.children.get(token) ?? current.aliasIndex.get(token);
+          if (!nextNode) {
+            return false;
+          }
+          if (index !== matchedIndices.length) {
+            isContiguousPrefix = false;
+          }
+          current = nextNode;
+          calledTokens.push(token);
+          matchedIndices.push(index);
+          startIndex = index + 1;
+          matched = true;
 
-      return true;
-    });
+          return false;
+        },
+        startIndex,
+      );
+      if (!matched) {
+        finalStoppedAt = stoppedAt;
+
+        break;
+      }
+    }
 
     let remainingArgv: readonly string[];
     if (matchedIndices.length === 0) {
@@ -280,7 +359,7 @@ export class CommandTreeBuilder implements CommandTree {
       };
     }
 
-    const stoppedToken = argv[stoppedAt];
+    const stoppedToken = argv[finalStoppedAt];
     const leadingPositional =
       stoppedToken &&
       stoppedToken !== DOUBLE_DASH &&

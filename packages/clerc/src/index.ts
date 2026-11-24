@@ -39,6 +39,7 @@ export type {
   ClercErrorCode,
   ClercErrorOptions,
   FormatDiagnosticOptions,
+  RuleErrorOptions,
   ValidationIssue,
 } from "./errors";
 export {
@@ -69,7 +70,6 @@ export type {
   HelpArgumentItem,
   HelpCommandGroup,
   HelpCommandItem,
-  HelpConstraintItem,
   HelpDocument,
   HelpExampleItem,
   HelpHeader,
@@ -112,14 +112,23 @@ export {
 export { Plugin, plugin } from "./plugin";
 export type {
   ArgRef,
+  CustomRuleDescriptor,
+  CustomRuleFailure,
   CustomRuleFn,
+  CustomRuleResult,
+  DeclarativeRuleOptions,
   FlagRef,
+  GroupRef,
+  MultiRuleKind,
   RuleBuilder,
   RuleCheckContext,
   RuleDescriptor,
   RuleInput,
   RuleRef,
+  RuleTarget,
+  RulesEntry,
   RulesFactory,
+  RulesInput,
 } from "./rules";
 export type {
   ClercSchema,
@@ -127,11 +136,14 @@ export type {
   DefaultValue,
   DefaultValueFunction,
   FlagKind,
+  NumericSchemaOptions,
   SingleType,
   StandardSchemaV1,
+  StringSchemaOptions,
   TypeFunction,
 } from "./schema";
 export { Types, isStandardSchema } from "./schema";
+export { Scope } from "./scope";
 export type {
   MemoryTerminal,
   MemoryTerminalOptions,
@@ -172,5 +184,7 @@ export type {
   RunContext,
   RunOptions,
   RunResult,
+  ScopeOptions,
   State,
+  SubcommandOptions,
 } from "./types";

@@ -2,7 +2,8 @@ import type { ArgDescriptor } from "../args";
 import type { CommandNode, CommandTree } from "../command-tree";
 import type { FlagDescriptor } from "../flags";
 import { DOUBLE_DASH } from "../parser";
-import { formatRuleConstraint } from "../rules";
+import type { MultiRuleKind, RuleDescriptor, RuleRef } from "../rules";
+import { formatRuleRef } from "../rules";
 import type { CliModel, GroupDefinition } from "../types";
 import { formatFlagName, formatVersion, resolveAsyncValue } from "../utils";
 
@@ -36,6 +37,7 @@ export interface HelpArgumentItem {
   readonly env?: string;
   readonly required: boolean;
   readonly variadic: boolean;
+  readonly constraints?: readonly string[];
 }
 
 export interface HelpCommandItem {
@@ -64,21 +66,18 @@ export interface HelpOptionItem {
   readonly defaultText?: string;
   readonly env?: string;
   readonly deprecated?: boolean | string;
+  readonly constraints?: readonly string[];
 }
 
 export interface HelpOptionGroup {
   readonly title: string;
+  readonly tags?: readonly string[];
   readonly items: readonly HelpOptionItem[];
 }
 
 export interface HelpExampleItem {
   readonly command: string;
   readonly description?: string;
-}
-
-export interface HelpConstraintItem {
-  readonly label: string;
-  readonly text: string;
 }
 
 export interface HelpDocument {
@@ -88,7 +87,6 @@ export interface HelpDocument {
   readonly commandGroups: readonly HelpCommandGroup[];
   readonly optionGroups: readonly HelpOptionGroup[];
   readonly globalOptionGroups: readonly HelpOptionGroup[];
-  readonly constraints: readonly HelpConstraintItem[];
   readonly examples: readonly HelpExampleItem[];
   readonly notes: readonly string[];
 }
@@ -113,7 +111,10 @@ function formatDefaultValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function buildOptionItem(flag: FlagDescriptor): HelpOptionItem {
+function buildOptionItem(
+  flag: FlagDescriptor,
+  constraints?: readonly string[],
+): HelpOptionItem {
   const placeholder =
     flag.placeholder ??
     (flag.kind === "boolean" || flag.kind === "counter"
@@ -142,10 +143,14 @@ function buildOptionItem(flag: FlagDescriptor): HelpOptionItem {
     defaultText,
     env: flag.env,
     deprecated: flag.deprecated,
+    ...(constraints?.length ? { constraints } : {}),
   };
 }
 
-const buildArgumentItem = (arg: ArgDescriptor): HelpArgumentItem => ({
+const buildArgumentItem = (
+  arg: ArgDescriptor,
+  constraints?: readonly string[],
+): HelpArgumentItem => ({
   name: arg.name,
   token: arg.token,
   typeLabel: arg.display,
@@ -155,7 +160,87 @@ const buildArgumentItem = (arg: ArgDescriptor): HelpArgumentItem => ({
   env: arg.env,
   required: arg.isRequired,
   variadic: arg.isVariadic,
+  ...(constraints?.length ? { constraints } : {}),
 });
+
+const GROUP_RULE_BADGES: Readonly<Record<MultiRuleKind, string>> = {
+  exclusive: "exclusive",
+  oneOf: "one of",
+  atLeastOne: "at least one",
+  together: "together",
+};
+
+function collectRuleAnnotations(
+  rules: readonly RuleDescriptor[],
+  flagMap: ReadonlyMap<string, FlagDescriptor>,
+  argMap: ReadonlyMap<string, ArgDescriptor>,
+  visibleFlagGroups: ReadonlySet<string>,
+  flagGroupTitles: ReadonlyMap<string, string>,
+): {
+  readonly flagTags: Map<string, string[]>;
+  readonly argTags: Map<string, string[]>;
+  readonly groupTags: Map<string, string[]>;
+} {
+  const flagTags = new Map<string, string[]>();
+  const argTags = new Map<string, string[]>();
+  const groupTags = new Map<string, string[]>();
+  const fmt = (ref: RuleRef) => formatRuleRef(ref, flagMap, argMap);
+
+  function pushTag(map: Map<string, string[]>, key: string, tag: string) {
+    let list = map.get(key);
+    if (!list) {
+      list = [];
+      map.set(key, list);
+    }
+    if (!list.includes(tag)) {
+      list.push(tag);
+    }
+  }
+
+  function pushRefTag(ref: RuleRef, tag: string) {
+    pushTag(ref.kind === "flag" ? flagTags : argTags, ref.name, tag);
+  }
+
+  for (const rule of rules) {
+    if (rule.kind === "requires") {
+      const targetText =
+        rule.group && rule.targets.length > 4
+          ? `group '${flagGroupTitles.get(rule.group) ?? rule.group}'`
+          : rule.targets.map(fmt).join(", ");
+      pushRefTag(rule.source, `requires: ${targetText}`);
+
+      continue;
+    }
+
+    if (rule.group && visibleFlagGroups.has(rule.group)) {
+      pushTag(groupTags, rule.group, GROUP_RULE_BADGES[rule.kind]);
+
+      continue;
+    }
+
+    if (rule.kind === "exclusive" || rule.kind === "together") {
+      const prefix = rule.kind === "exclusive" ? "conflicts" : "with";
+      for (const ref of rule.targets) {
+        const others = rule.targets
+          .filter((other) => other.kind !== ref.kind || other.name !== ref.name)
+          .map(fmt);
+        if (others.length > 0) {
+          pushRefTag(ref, `${prefix}: ${others.join(", ")}`);
+        }
+      }
+
+      continue;
+    }
+
+    const prefix = rule.kind === "oneOf" ? "one of" : "at least one";
+    const listText = rule.targets.map(fmt).join(", ");
+    for (const ref of rule.targets) {
+      pushRefTag(ref, `${prefix}: ${listText}`);
+    }
+  }
+
+  return { flagTags, argTags, groupTags };
+}
 
 function groupItems<T, R>(
   items: readonly T[],
@@ -164,7 +249,13 @@ function groupItems<T, R>(
   groups: readonly GroupDefinition[],
   ungroupedTitle: string,
   groupsFirst: boolean,
-): { readonly title: string; readonly items: readonly R[] }[] {
+  groupTags?: ReadonlyMap<string, readonly string[]>,
+  groupedFallbackTitle?: string,
+): {
+  readonly title: string;
+  readonly tags?: readonly string[];
+  readonly items: readonly R[];
+}[] {
   if (items.length === 0) {
     return [];
   }
@@ -190,18 +281,28 @@ function groupItems<T, R>(
   const orderedKeys = new Set([...titleByKey.keys(), ...buckets.keys()]);
   const groupSections: {
     readonly title: string;
+    readonly tags?: readonly string[];
     readonly items: readonly R[];
   }[] = [];
 
   for (const key of orderedKeys) {
     const list = buckets.get(key);
     if (list && list.length > 0) {
-      groupSections.push({ title: titleByKey.get(key) ?? key, items: list });
+      const tags = groupTags?.get(key);
+      groupSections.push({
+        title: titleByKey.get(key) ?? key,
+        ...(tags?.length ? { tags } : {}),
+        items: list,
+      });
     }
   }
 
+  const fallbackTitle =
+    groupSections.length > 0 && groupedFallbackTitle
+      ? groupedFallbackTitle
+      : ungroupedTitle;
   const ungroupedSection =
-    ungrouped.length > 0 ? [{ title: ungroupedTitle, items: ungrouped }] : [];
+    ungrouped.length > 0 ? [{ title: fallbackTitle, items: ungrouped }] : [];
 
   return groupsFirst
     ? [...groupSections, ...ungroupedSection]
@@ -258,7 +359,6 @@ export function formatCommandUsage(
     return undefined;
   }
 
-  const isRoot = node.fullPath.length === 0;
   const visibleChildren = model.tree.listVisibleChildren(node);
   const isStandalone = Boolean(node.command?.standalone);
   const hasVisibleFlags =
@@ -271,7 +371,7 @@ export function formatCommandUsage(
     model.meta.name,
     visibleChildren.length > 0,
     hasVisibleFlags,
-    isRoot && Boolean(model.defaultCommand),
+    Boolean(node.defaultChild),
   );
   const parts = [usage.command];
   if (usage.subcommand === "required") {
@@ -314,7 +414,7 @@ export async function buildHelpDocument(
   model: CliModel,
   node: CommandNode = model.tree.root,
 ): Promise<HelpDocument> {
-  const { meta, tree, globalFlags, globalRules, groups } = model;
+  const { meta, tree, globalFlags, groups } = model;
   const command = node.command;
   const isRoot = node.fullPath.length === 0;
   const visibleChildren = tree.listVisibleChildren(node);
@@ -324,12 +424,12 @@ export async function buildHelpDocument(
   ];
 
   const visibleLocalFlags = node.localFlags.filter((f) => !f.hidden);
-  const localFlagNames = new Set(node.localFlags.map((f) => f.name));
+  const localNames = new Set(node.localFlags.map((f) => f.name));
   const isStandalone = Boolean(command?.standalone);
   const visibleGlobalFlags = [
     ...(isStandalone
       ? []
-      : globalFlags.filter((f) => !f.hidden && !localFlagNames.has(f.name))),
+      : globalFlags.filter((f) => !f.hidden && !localNames.has(f.name))),
     ...node.builtinFlags.filter((f) => !f.hidden),
   ];
   const hasCommandFlags = visibleLocalFlags.length > 0;
@@ -342,11 +442,16 @@ export async function buildHelpDocument(
     : [];
 
   const notesSource = command?.notes ?? (isRoot ? meta.notes : undefined);
-  const notes = notesSource ? await resolveAsyncValue(notesSource, meta) : [];
+  const rawNotes = notesSource
+    ? await resolveAsyncValue(notesSource, meta)
+    : [];
+  const notes = [...rawNotes, ...node.ruleNotes];
 
   const flagMap = new Map<string, FlagDescriptor>();
-  for (const f of globalFlags) {
-    flagMap.set(f.name, f);
+  if (!isStandalone) {
+    for (const f of globalFlags) {
+      flagMap.set(f.name, f);
+    }
   }
   for (const f of node.localFlags) {
     flagMap.set(f.name, f);
@@ -354,11 +459,20 @@ export async function buildHelpDocument(
   const argMap = new Map<string, ArgDescriptor>(
     node.args.map((a) => [a.name, a]),
   );
-  const activeRules = isStandalone
-    ? node.rules
-    : [...globalRules, ...node.rules];
-  const constraints: HelpConstraintItem[] = activeRules.map((rule) =>
-    formatRuleConstraint(rule, flagMap, argMap),
+  const visibleFlagGroups = new Set(
+    [...visibleLocalFlags, ...visibleGlobalFlags]
+      .map((f) => f.group)
+      .filter((g): g is string => Boolean(g)),
+  );
+  const flagGroupTitles = new Map(
+    [...groups.flags, ...groups.globalFlags].map((g) => [g.key, g.title]),
+  );
+  const { flagTags, argTags, groupTags } = collectRuleAnnotations(
+    node.rules,
+    flagMap,
+    argMap,
+    visibleFlagGroups,
+    flagGroupTitles,
   );
 
   return {
@@ -376,9 +490,11 @@ export async function buildHelpDocument(
       meta.name,
       visibleChildren.length > 0,
       hasCommandFlags || hasGlobalFlags,
-      isRoot && Boolean(model.defaultCommand),
+      Boolean(node.defaultChild),
     ),
-    arguments: node.args.map(buildArgumentItem),
+    arguments: node.args.map((arg) =>
+      buildArgumentItem(arg, argTags.get(arg.name)),
+    ),
     commandGroups: groupItems(
       orderedChildren,
       (child) => resolveNodeGroup(child, tree),
@@ -386,36 +502,35 @@ export async function buildHelpDocument(
         name: child.name,
         aliases: child.aliases,
         description: child.command?.description,
-        isDefault:
-          child.fullPath.length === model.defaultCommand?.length &&
-          child.fullPath.every(
-            (seg, idx) => seg === model.defaultCommand![idx],
-          ),
+        isDefault: child === node.defaultChild,
         deprecated: child.command?.deprecated,
       }),
       groups.commands,
       isRoot ? "Commands" : "Subcommands",
       true,
+      undefined,
+      isRoot ? "Other Commands" : "Other Subcommands",
     ),
     optionGroups: hasCommandFlags
       ? groupItems(
           visibleLocalFlags,
           (f) => f.group,
-          buildOptionItem,
+          (f) => buildOptionItem(f, flagTags.get(f.name)),
           groups.flags,
           "Options",
           false,
+          groupTags,
         )
       : [],
-    constraints,
     globalOptionGroups: hasGlobalFlags
       ? groupItems(
           visibleGlobalFlags,
           (f) => f.group,
-          buildOptionItem,
+          (f) => buildOptionItem(f, flagTags.get(f.name)),
           groups.globalFlags,
           hasCommandFlags ? "Global Options" : "Options",
           false,
+          groupTags,
         )
       : [],
     examples: rawExamples.map((entry) =>

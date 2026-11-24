@@ -6,6 +6,8 @@ export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
 
+export type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
 export type CamelCase<S extends string> =
   S extends `${infer Head} ${infer Tail}`
     ? `${CamelCase<Head>}${Capitalize<CamelCase<Tail>>}`
@@ -43,6 +45,12 @@ export function kebabCase(str: string): string {
 
 export const formatFlagName = (name: string): string =>
   name.length <= 1 ? `-${name}` : `--${kebabCase(name)}`;
+
+export const plural = (
+  count: number,
+  singular: string,
+  pluralForm = `${singular}s`,
+): string => (count === 1 ? singular : pluralForm);
 
 export const formatVersion = (version: string): string =>
   version.length === 0 ? "" : version.startsWith("v") ? version : `v${version}`;

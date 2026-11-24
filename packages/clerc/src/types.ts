@@ -11,7 +11,7 @@ import type {
 } from "./flags";
 import type { HelpSectionRenderers } from "./help/renderer";
 import type { RawInputType, StopParsingOption } from "./parser";
-import type { RuleDescriptor, RulesFactory } from "./rules";
+import type { RuleDescriptor, RulesInput } from "./rules";
 import type { Terminal } from "./terminal";
 import type { MaybeArray, MaybeAsyncGetter, Prettify } from "./utils";
 
@@ -102,10 +102,25 @@ export interface CliMeta {
   readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
+export interface ScopeOptions {
+  readonly group?: string;
+}
+
+export type SubcommandOptions = Pick<
+  CommandOptions,
+  | "aliases"
+  | "description"
+  | "group"
+  | "hidden"
+  | "deprecated"
+  | "examples"
+  | "notes"
+  | "meta"
+>;
+
 export interface CliModel {
   readonly meta: CliMeta;
   readonly tree: CommandTree;
-  readonly defaultCommand?: readonly string[];
   readonly globalFlags: readonly FlagDescriptor[];
   readonly globalRules: readonly RuleDescriptor[];
   readonly groups: {
@@ -199,12 +214,13 @@ export interface CommandOptions<
   readonly description?: string;
   readonly args?: ContextualArgs<Spec, Args>;
   readonly flags?: ContextualFlags<Flags>;
-  readonly rules?: RulesFactory<
+  readonly rules?: RulesInput<
     keyof MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>> & string,
     ExtractArgNames<Spec>,
     InferCommandArgs<Spec, NoInfer<Args>>,
     MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
   >;
+  readonly default?: boolean;
   readonly stopParsing?: StopParsingOption;
   readonly standalone?: boolean;
   readonly group?: string;
@@ -234,7 +250,7 @@ export type RootCommandOptions<
   TState extends Record<string, any> = {},
 > = Omit<
   CommandOptions<"", {}, Flags, GlobalFlags, TState>,
-  "args" | "aliases" | "group"
+  "args" | "aliases" | "group" | "default"
 >;
 
 export interface CommandDefinition<
@@ -291,13 +307,10 @@ export type ErrorHandler<
   ctx: ErrorContext<TGlobalFlags, TState>,
 ) => boolean | void | Promise<boolean | void>;
 
-export interface ClercOptions {
-  readonly name: string;
-  readonly description?: string;
-  readonly version?: string;
-  readonly defaultCommand?: string;
-  readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
-  readonly notes?: MetaAsyncGetter<readonly string[]>;
+export interface ClercOptions
+  extends
+    Partial<Pick<CliMeta, "description" | "version">>,
+    Pick<CliMeta, "name" | "examples" | "notes"> {
   readonly help?: boolean | HelpOptions;
   readonly verbosity?: boolean;
   readonly strictFlags?: boolean;
@@ -305,10 +318,8 @@ export interface ClercOptions {
   readonly logger?: LoggerOptions;
 }
 
-export interface RunOptions {
+export interface RunOptions extends Pick<ClercOptions, "theme" | "logger"> {
   readonly terminal?: Terminal;
-  readonly theme?: Partial<ThemeStyleMap>;
-  readonly logger?: LoggerOptions;
   /**
    * When true, rethrows unhandled errors instead of rendering diagnostics to
    * stderr. Useful in tests asserting on thrown error instances.

@@ -3,7 +3,12 @@ import { compileArgs, parseCommandSpec } from "./args";
 import type { CommandNode } from "./command-tree";
 import { CommandTreeBuilder } from "./command-tree";
 import { InvalidSchemaError, UnknownCommandError } from "./errors";
-import type { CompiledFlags, FlagDescriptor, FlagsDefinition } from "./flags";
+import type {
+  CompiledFlagEntry,
+  CompiledFlags,
+  FlagDescriptor,
+  FlagsDefinition,
+} from "./flags";
 import {
   buildCompiledFlags,
   compileFlagEntries,
@@ -11,14 +16,16 @@ import {
 } from "./flags";
 import type { ArgvFlagSpec, ArgvParser } from "./parser";
 import { DOUBLE_DASH, createArgvParser } from "./parser";
-import type { AnyMiddlewareFn, Plugin, RegisteredMiddleware } from "./plugin";
+import type { Plugin } from "./plugin";
 import {
   GROUP_SCOPES,
   collectPluginStates,
   createGroupBuckets,
 } from "./plugin";
-import type { CompiledRules, RulesFactory } from "./rules";
-import { EMPTY_RULES, compileRules } from "./rules";
+import type { CompiledRules, RulesEntry } from "./rules";
+import { EMPTY_RULES, compileRules, normalizeRulesInput } from "./rules";
+import type { AnyMiddlewareFn, RegisteredMiddleware, Scope } from "./scope";
+import { getScopeState } from "./scope";
 import type {
   CliMeta,
   CliModel,
@@ -28,13 +35,16 @@ import type {
 } from "./types";
 import { formatVersion } from "./utils";
 
-interface CompiledNodeRuntime {
+export interface CompiledNodeRuntime {
   readonly userFlags: CompiledFlags;
   readonly knownFlagNames: readonly string[];
   readonly parser: ArgvParser;
   readonly args?: CompiledArgs;
   readonly argsByName: ReadonlyMap<string, ArgDescriptor>;
   readonly rules: CompiledRules;
+  readonly middlewares: readonly AnyMiddlewareFn[];
+  readonly errorHandlers: readonly ErrorHandler<any, any>[];
+  defaultAcceptsArgs: boolean;
   readonly hasBuiltinHelp: boolean;
   readonly hasBuiltinVersion: boolean;
   readonly hasBuiltinQuiet: boolean;
@@ -44,11 +54,6 @@ interface CompiledNodeRuntime {
 export interface CompiledCli {
   readonly model: CliModel;
   readonly tree: CommandTreeBuilder;
-  readonly defaultNode?: CommandNode;
-  readonly defaultAcceptsArgs: boolean;
-  readonly globalRules: CompiledRules;
-  readonly middlewares: readonly AnyMiddlewareFn[];
-  readonly errorHandlers: readonly ErrorHandler<any, any>[];
   readonly rootRuntime: CompiledNodeRuntime;
   readonly runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>;
 }
@@ -56,16 +61,66 @@ export interface CompiledCli {
 interface CompileCliOptions {
   readonly root: Plugin<any, any>;
   readonly meta: CliMeta;
-  readonly defaultCommand?: string;
   readonly helpOptions: false | HelpOptions;
   readonly verbosity: boolean;
 }
 
+interface ResolvedScopeEnv {
+  readonly scopedFlagEntries: readonly CompiledFlagEntry[];
+  readonly scopedRuleEntries: readonly RulesEntry<any, any, any, any>[];
+  readonly middlewares: readonly RegisteredMiddleware[];
+  readonly errorHandlers: readonly ErrorHandler<any, any>[];
+}
+
 const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
+const EMPTY_STRING_SET: ReadonlySet<string> = new Set();
 const ENFORCE_RANK = { pre: 0, normal: 1, post: 2 } as const;
+
+const EMPTY_SCOPE_ENV: ResolvedScopeEnv = Object.freeze({
+  scopedFlagEntries: EMPTY_DESCRIPTORS,
+  scopedRuleEntries: EMPTY_DESCRIPTORS,
+  middlewares: EMPTY_DESCRIPTORS,
+  errorHandlers: EMPTY_DESCRIPTORS,
+});
 
 export const formatCliVersion = (meta: CliMeta): string =>
   `${meta.name} ${formatVersion(meta.version)}`.trim();
+
+const appendIfAny = <T>(
+  base: readonly T[],
+  extra: readonly T[],
+): readonly T[] => (extra.length > 0 ? [...base, ...extra] : base);
+
+function mergeFlagEntries(
+  base: readonly CompiledFlagEntry[],
+  overrides: readonly CompiledFlagEntry[],
+): readonly CompiledFlagEntry[] {
+  if (overrides.length === 0) {
+    return base;
+  }
+  if (base.length === 0) {
+    return overrides;
+  }
+  const overrideNames = new Set(overrides.map((e) => e.name));
+
+  return [...base.filter((e) => !overrideNames.has(e.name)), ...overrides];
+}
+
+function sortMiddlewares(
+  registered: readonly RegisteredMiddleware[],
+): readonly AnyMiddlewareFn[] {
+  if (registered.length === 0) {
+    return EMPTY_DESCRIPTORS;
+  }
+
+  return [...registered]
+    .sort(
+      (a, b) =>
+        ENFORCE_RANK[a.enforce ?? "normal"] -
+        ENFORCE_RANK[b.enforce ?? "normal"],
+    )
+    .map((m) => m.fn);
+}
 
 function resolveNodeBuiltins(options: {
   readonly isRoot: boolean;
@@ -216,26 +271,119 @@ function registerBuiltinCommands(
   }
 }
 
+function resolveDefaultChildren(
+  tree: CommandTreeBuilder,
+  runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>,
+): void {
+  for (const node of tree.walkNodes()) {
+    const cmd = node.command;
+    if (!cmd?.default) {
+      continue;
+    }
+    const label =
+      node.fullPath.length > 0
+        ? `command "${node.fullPath.join(" ")}"`
+        : "root command";
+    if (!node.parent) {
+      throw new InvalidSchemaError("root command cannot be marked as default");
+    }
+    if (!cmd.run) {
+      throw new InvalidSchemaError(`default ${label} must have a run handler`);
+    }
+    if (node.parent.command?.run) {
+      throw new InvalidSchemaError(
+        `cannot mark ${label} as default when its parent command already has a run handler`,
+      );
+    }
+    if (node.parent.defaultChild) {
+      const parentLabel =
+        node.parent.fullPath.length > 0
+          ? `command "${node.parent.fullPath.join(" ")}"`
+          : "CLI";
+
+      throw new InvalidSchemaError(
+        `${parentLabel} cannot have multiple default subcommands`,
+      );
+    }
+    tree.setDefaultChild(node.parent, node);
+    runtimes.get(node.parent)!.defaultAcceptsArgs =
+      node.args.length > 0 || cmd.argTokens.includes(DOUBLE_DASH);
+  }
+}
+
 export function compileCli(options: CompileCliOptions): CompiledCli {
-  const { root, meta, defaultCommand, helpOptions, verbosity } = options;
+  const { root, meta, helpOptions, verbosity } = options;
   const states = collectPluginStates(root);
   const globalFlagsInput: FlagsDefinition = {};
-  const globalRuleFactories: RulesFactory<any, any, any, any>[] = [];
+  const globalRuleEntries: RulesEntry<any, any, any, any>[] = [];
   const groups = createGroupBuckets();
-  const registeredMiddlewares: RegisteredMiddleware[] = [];
-  const errorHandlers: ErrorHandler<any, any>[] = [];
+  const globalMiddlewares: RegisteredMiddleware[] = [];
+  const globalErrorHandlers: ErrorHandler<any, any>[] = [];
   const tree = new CommandTreeBuilder();
+  const nodeScopeEnvs = new Map<CommandNode, ResolvedScopeEnv>();
+
+  function registerScopeTree(
+    scope: Scope<any, any>,
+    parentPrefix: readonly string[],
+    parentEnv: ResolvedScopeEnv,
+    parentDefaultGroup: string | undefined,
+  ): void {
+    const s = getScopeState(scope);
+    const fullPrefix = appendIfAny(parentPrefix, s.prefix);
+    const env: ResolvedScopeEnv = {
+      scopedFlagEntries: mergeFlagEntries(
+        parentEnv.scopedFlagEntries,
+        compileFlagEntries(s.flags),
+      ),
+      scopedRuleEntries: appendIfAny(parentEnv.scopedRuleEntries, s.rules),
+      middlewares: appendIfAny(parentEnv.middlewares, s.middlewares),
+      errorHandlers: appendIfAny(parentEnv.errorHandlers, s.errorHandlers),
+    };
+    const defaultGroup = s.defaultGroup ?? parentDefaultGroup;
+
+    if (s.namespaceMeta) {
+      const metaWithGroup =
+        parentPrefix.length === 0 && !s.namespaceMeta.group && defaultGroup
+          ? { ...s.namespaceMeta, group: defaultGroup }
+          : s.namespaceMeta;
+      nodeScopeEnvs.set(tree.registerNamespace(fullPrefix, metaWithGroup), env);
+    }
+
+    for (const cmd of s.commands) {
+      const cmdSegments = cmd.name ? cmd.name.split(/\s+/) : [];
+      const fullName = appendIfAny(fullPrefix, cmdSegments).join(" ");
+      const fullSpec = [fullName, ...cmd.argTokens].filter(Boolean).join(" ");
+      const effectiveGroup =
+        cmd.group ?? (fullPrefix.length === 0 ? defaultGroup : undefined);
+      nodeScopeEnvs.set(
+        tree.register({
+          ...cmd,
+          name: fullName,
+          spec: fullSpec,
+          group: effectiveGroup,
+        }),
+        env,
+      );
+    }
+
+    for (const child of s.children) {
+      registerScopeTree(child, fullPrefix, env, defaultGroup);
+    }
+  }
 
   for (const state of states) {
-    Object.assign(globalFlagsInput, state.flags);
-    globalRuleFactories.push(...state.rules);
-    registeredMiddlewares.push(...state.middlewares);
-    errorHandlers.push(...state.errorHandlers);
+    Object.assign(globalFlagsInput, state.scope.flags);
+    globalRuleEntries.push(...state.scope.rules);
+    globalMiddlewares.push(...state.scope.middlewares);
+    globalErrorHandlers.push(...state.scope.errorHandlers);
     for (const scope of GROUP_SCOPES) {
       groups[scope].push(...state.groups[scope]);
     }
-    for (const cmd of state.commands) {
+    for (const cmd of state.scope.commands) {
       tree.register(cmd);
+    }
+    for (const childScope of state.scope.children) {
+      registerScopeTree(childScope, [], EMPTY_SCOPE_ENV, undefined);
     }
   }
 
@@ -244,10 +392,11 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
   const rawGlobalEntries = compileFlagEntries(globalFlagsInput);
   const globalFlags = buildCompiledFlags(rawGlobalEntries);
   const globalRules = compileRules(
-    globalRuleFactories,
-    new Set(globalFlags.byName.keys()),
-    new Set(),
+    globalRuleEntries,
+    globalFlags.byName,
+    EMPTY_STRING_SET,
   );
+  const sortedGlobalMiddlewares = sortMiddlewares(globalMiddlewares);
   const enableVersion = Boolean(meta.version);
   const enableHelp = helpOptions !== false;
   const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
@@ -256,17 +405,32 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     const isRoot = node.fullPath.length === 0;
     const cmd = node.command;
     const isNodeStandalone = Boolean(cmd?.standalone);
-    const localEntries = cmd?.flags ? compileFlagEntries(cmd.flags) : undefined;
-    let userFlags = globalFlags;
-    let localDescriptors: readonly FlagDescriptor[] = EMPTY_DESCRIPTORS;
-    if (localEntries && localEntries.length > 0) {
-      const localNames = new Set(localEntries.map((e) => e.name));
-      userFlags = buildCompiledFlags([
-        ...rawGlobalEntries.filter((e) => !localNames.has(e.name)),
-        ...localEntries,
-      ]);
-      localDescriptors = localEntries.map((e) => userFlags.byName.get(e.name)!);
-    }
+    const scopeEnv = nodeScopeEnvs.get(node);
+    const localEntries = cmd?.flags
+      ? compileFlagEntries(cmd.flags)
+      : EMPTY_DESCRIPTORS;
+    const scopedEntries = isNodeStandalone
+      ? EMPTY_DESCRIPTORS
+      : (scopeEnv?.scopedFlagEntries ?? EMPTY_DESCRIPTORS);
+    const effectiveGlobalEntries = isNodeStandalone
+      ? EMPTY_DESCRIPTORS
+      : rawGlobalEntries;
+
+    const inheritedEntries = mergeFlagEntries(
+      effectiveGlobalEntries,
+      scopedEntries,
+    );
+    const nonGlobalEntries = mergeFlagEntries(scopedEntries, localEntries);
+    const mergedEntries = mergeFlagEntries(inheritedEntries, localEntries);
+    const userFlags =
+      !isNodeStandalone && nonGlobalEntries.length === 0
+        ? globalFlags
+        : buildCompiledFlags(mergedEntries);
+    const localDescriptors =
+      nonGlobalEntries.length > 0
+        ? nonGlobalEntries.map((e) => userFlags.byName.get(e.name)!)
+        : EMPTY_DESCRIPTORS;
+
     const builtins = resolveNodeBuiltins({
       isRoot,
       isStandalone: isNodeStandalone,
@@ -283,32 +447,71 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     const argsByName = new Map(
       (compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS).map((a) => [a.name, a]),
     );
-    const validFlagNames = new Set(
-      isNodeStandalone
-        ? localDescriptors.map((f) => f.name)
-        : userFlags.byName.keys(),
-    );
-    const compiledNodeRules = cmd?.rules
-      ? compileRules([cmd.rules], validFlagNames, new Set(argsByName.keys()))
+
+    const compiledScopedRules =
+      !isNodeStandalone && scopeEnv && scopeEnv.scopedRuleEntries.length > 0
+        ? compileRules(
+            scopeEnv.scopedRuleEntries,
+            new Map(inheritedEntries.map((e) => [e.name, e])),
+            EMPTY_STRING_SET,
+          )
+        : EMPTY_RULES;
+
+    const compiledLocalRules = cmd?.rules
+      ? compileRules(
+          normalizeRulesInput(cmd.rules),
+          userFlags.byName,
+          new Set(argsByName.keys()),
+        )
       : EMPTY_RULES;
+
+    const activeRules: CompiledRules = {
+      declarative: [
+        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.declarative),
+        ...compiledScopedRules.declarative,
+        ...compiledLocalRules.declarative,
+      ],
+      custom: [
+        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.custom),
+        ...compiledScopedRules.custom,
+        ...compiledLocalRules.custom,
+      ],
+      notes: [
+        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.notes),
+        ...compiledScopedRules.notes,
+        ...compiledLocalRules.notes,
+      ],
+    };
+
+    const nodeMiddlewares = isNodeStandalone
+      ? EMPTY_DESCRIPTORS
+      : scopeEnv && scopeEnv.middlewares.length > 0
+        ? sortMiddlewares([...globalMiddlewares, ...scopeEnv.middlewares])
+        : sortedGlobalMiddlewares;
+
+    const nodeErrorHandlers =
+      scopeEnv && scopeEnv.errorHandlers.length > 0
+        ? [...globalErrorHandlers, ...scopeEnv.errorHandlers]
+        : globalErrorHandlers;
 
     tree.attachCompiled(node, {
       args: compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS,
       localFlags: localDescriptors,
       builtinFlags: builtins.descriptors,
-      rules: compiledNodeRules.declarative,
+      rules: activeRules.declarative,
+      ruleNotes: activeRules.notes,
     });
 
     runtimes.set(node, {
       userFlags,
-      knownFlagNames:
-        builtins.names.length > 0
-          ? [...userFlags.knownNames, ...builtins.names]
-          : userFlags.knownNames,
+      knownFlagNames: appendIfAny(userFlags.knownNames, builtins.names),
       parser,
       args: compiledArgs,
       argsByName,
-      rules: compiledNodeRules,
+      rules: activeRules,
+      middlewares: nodeMiddlewares,
+      errorHandlers: nodeErrorHandlers,
+      defaultAcceptsArgs: false,
       hasBuiltinHelp: builtins.hasHelp,
       hasBuiltinVersion: builtins.hasVersion,
       hasBuiltinQuiet: builtins.hasQuiet,
@@ -316,53 +519,19 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     });
   }
 
-  let defaultNode: CommandNode | undefined;
-  let defaultAcceptsArgs = false;
-  if (defaultCommand !== undefined) {
-    const trimmedDefault = defaultCommand.trim();
-    if (trimmedDefault === "") {
-      throw new InvalidSchemaError(
-        "defaultCommand cannot be empty; register a root command with cli.command({ ... }) instead",
-      );
-    }
-    if (tree.root.command) {
-      throw new InvalidSchemaError(
-        "cannot specify defaultCommand when a root command is already registered",
-      );
-    }
-    const target = tree.findNode(trimmedDefault.split(/\s+/));
-    if (!target?.command?.run) {
-      throw new InvalidSchemaError(
-        `defaultCommand "${trimmedDefault}" does not match a runnable command`,
-      );
-    }
-    defaultNode = target;
-    defaultAcceptsArgs =
-      target.args.length > 0 || target.command.argTokens.includes(DOUBLE_DASH);
-  }
+  resolveDefaultChildren(tree, runtimes);
 
   const model: CliModel = {
     meta,
     tree,
-    defaultCommand: defaultNode?.fullPath,
     globalFlags: globalFlags.entries,
     globalRules: globalRules.declarative,
     groups,
   };
 
-  registeredMiddlewares.sort(
-    (a, b) =>
-      ENFORCE_RANK[a.enforce ?? "normal"] - ENFORCE_RANK[b.enforce ?? "normal"],
-  );
-
   return {
     model,
     tree,
-    defaultNode,
-    defaultAcceptsArgs,
-    globalRules,
-    middlewares: registeredMiddlewares.map((m) => m.fn),
-    errorHandlers,
     rootRuntime: runtimes.get(tree.root)!,
     runtimes,
   };

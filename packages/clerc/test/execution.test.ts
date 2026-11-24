@@ -196,16 +196,15 @@ describe("Clerc execution pipeline", () => {
       "usage test deploy [options] [env]",
     );
 
-    // Help renders CONSTRAINTS section and never runs rules
+    // Help renders inline constraint tags on options/args and never runs rules
     const helpTerm = createMemoryTerminal();
     const helpRes = await cli.run(["deploy", "--help"], { terminal: helpTerm });
 
     expect(helpRes.ok).toBeTruthy();
-    expect(helpTerm.stdoutText()).toContain("CONSTRAINTS");
-    expect(helpTerm.stdoutText()).toContain("exclusive");
-    expect(helpTerm.stdoutText()).toContain("--json, --yaml");
-    expect(helpTerm.stdoutText()).toContain("[env], --all");
-    expect(helpTerm.stdoutText()).toContain("--tls-key, --tls-cert");
+    expect(helpTerm.stdoutText()).not.toContain("CONSTRAINTS");
+    expect(helpTerm.stdoutText()).toContain("[conflicts: --yaml]");
+    expect(helpTerm.stdoutText()).toContain("[one of: [env], --all]");
+    expect(helpTerm.stdoutText()).toContain("[with: --tls-cert]");
 
     // Valid invocation passes all rules and reaches middleware
     const okRes = await cli.run(

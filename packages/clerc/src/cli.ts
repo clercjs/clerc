@@ -4,7 +4,8 @@ import type { ThemeStyleMap } from "@clerc/theme";
 import { createTheme } from "@clerc/theme";
 
 import { executeCompiledArgs } from "./args";
-import type { CompiledCli } from "./compile";
+import type { CommandNode } from "./command-tree";
+import type { CompiledCli, CompiledNodeRuntime } from "./compile";
 import { compileCli, formatCliVersion } from "./compile";
 import {
   ClercError,
@@ -15,7 +16,7 @@ import {
   formatDiagnostic,
   formatJsonError,
 } from "./errors";
-import type { ContextualFlags, FlagsDefinition } from "./flags";
+import type { ContextualFlags, FlagsDefinition, OverrideFlags } from "./flags";
 import {
   resolveCompiledFlags,
   validateMissingRequiredFlags,
@@ -24,9 +25,10 @@ import {
 } from "./flags";
 import { renderHelp } from "./help/renderer";
 import type { ArgvParseResult } from "./parser";
-import type { AnyMiddlewareFn } from "./plugin";
-import { Plugin, getPluginState } from "./plugin";
+import { Plugin } from "./plugin";
 import { validateCustomRules, validateDeclarativeRules } from "./rules";
+import type { AnyMiddlewareFn } from "./scope";
+import { getScopeState } from "./scope";
 import { createTerminal } from "./terminal";
 import type {
   ClercOptions,
@@ -42,8 +44,8 @@ import type {
   RunOptions,
   RunResult,
 } from "./types";
+import type { Mutable } from "./utils";
 
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
   TState extends Record<string, any>,
@@ -57,7 +59,6 @@ export class Clerc<
   TState extends Record<string, any> = {},
 > extends Plugin<TGlobalFlags, TState> {
   readonly #meta: CliMeta;
-  readonly #defaultCommand?: string;
   readonly #helpOptions: false | HelpOptions;
   readonly #verbosity: boolean;
   readonly #strictFlags: boolean;
@@ -78,7 +79,6 @@ export class Clerc<
       examples: options.examples,
       notes: options.notes,
     };
-    this.#defaultCommand = options.defaultCommand;
     this.#helpOptions =
       options.help === false
         ? false
@@ -89,14 +89,14 @@ export class Clerc<
     this.#strictFlags = options.strictFlags ?? true;
     this.#themeOverrides = options.theme;
     this.#loggerOptions = options.logger;
-    getPluginState(this).onInvalidate = () => {
+    getScopeState(this).onInvalidate = () => {
       this.#compiled = undefined;
     };
   }
 
   public override flags<const Flags extends FlagsDefinition>(
     definitions: ContextualFlags<Flags>,
-  ): Clerc<TGlobalFlags & Flags, TState> {
+  ): Clerc<OverrideFlags<TGlobalFlags, Flags>, TState> {
     super.flags(definitions);
 
     return this as any;
@@ -124,7 +124,7 @@ export class Clerc<
     PState extends Record<string, any> = {},
   >(
     other: Plugin<PFlags, PState>,
-  ): Clerc<TGlobalFlags & PFlags, TState & PState> {
+  ): Clerc<OverrideFlags<TGlobalFlags, PFlags>, TState & PState> {
     super.use(other);
 
     return this as any;
@@ -134,7 +134,6 @@ export class Clerc<
     return (this.#compiled ??= compileCli({
       root: this,
       meta: this.#meta,
-      defaultCommand: this.#defaultCommand,
       helpOptions: this.#helpOptions,
       verbosity: this.#verbosity,
     }));
@@ -207,40 +206,45 @@ export class Clerc<
   async #execute(
     compiledCli: CompiledCli,
     ctx: InternalContext<TGlobalFlags, TState>,
+    setActiveRuntime: (runtime: CompiledNodeRuntime) => void,
   ): Promise<RunResult> {
     // 1. Resolve command match (matched | namespace | empty | unknown)
+    const getRuntime = (node: CommandNode): CompiledNodeRuntime =>
+      compiledCli.runtimes.get(node) ?? compiledCli.rootRuntime;
+
     let match = compiledCli.tree.resolveArgv(
       ctx.raw.argv,
-      compiledCli.rootRuntime.parser.scan,
+      (node) => getRuntime(node).parser.scan,
     );
 
-    let rootParsed: ArgvParseResult | undefined;
-    function isRootBuiltinRequest(): boolean {
-      if (match.kind !== "empty") {
+    const matchedNodeRuntime = getRuntime(match.node);
+    let cachedPreParsed: ArgvParseResult | undefined;
+    function isBuiltinRequest(): boolean {
+      if (match.kind !== "empty" && match.kind !== "namespace") {
         return false;
       }
-      rootParsed ??= compiledCli.rootRuntime.parser.parse(match.remainingArgv);
+      cachedPreParsed ??= matchedNodeRuntime.parser.parse(match.remainingArgv);
 
       return (
-        (compiledCli.rootRuntime.hasBuiltinVersion &&
-          rootParsed.flags.version === true) ||
-        (compiledCli.rootRuntime.hasBuiltinHelp &&
-          rootParsed.flags.help === true)
+        (matchedNodeRuntime.hasBuiltinVersion &&
+          cachedPreParsed.flags.version === true) ||
+        (matchedNodeRuntime.hasBuiltinHelp &&
+          cachedPreParsed.flags.help === true)
       );
     }
 
+    const defaultChild = match.node.defaultChild;
     if (
-      compiledCli.defaultNode?.command &&
-      ((match.kind === "empty" && !isRootBuiltinRequest()) ||
-        (match.kind === "unknown" &&
-          match.parentPath.length === 0 &&
-          compiledCli.defaultAcceptsArgs))
+      defaultChild?.command &&
+      (((match.kind === "empty" || match.kind === "namespace") &&
+        !isBuiltinRequest()) ||
+        (match.kind === "unknown" && matchedNodeRuntime.defaultAcceptsArgs))
     ) {
       match = {
         kind: "matched",
-        node: compiledCli.defaultNode,
-        command: compiledCli.defaultNode.command,
-        calledAs: compiledCli.defaultNode.fullPath.join(" "),
+        node: defaultChild,
+        command: defaultChild.command,
+        calledAs: defaultChild.fullPath.join(" "),
         remainingArgv: match.remainingArgv,
       };
     }
@@ -252,11 +256,11 @@ export class Clerc<
     }
 
     // 2. Parse raw argv into flags & positionals
-    const runtime =
-      compiledCli.runtimes.get(match.node) ?? compiledCli.rootRuntime;
+    const runtime = getRuntime(match.node);
+    setActiveRuntime(runtime);
     const parsed =
-      match.node === compiledCli.tree.root && rootParsed
-        ? rootParsed
+      runtime === matchedNodeRuntime && cachedPreParsed
+        ? cachedPreParsed
         : runtime.parser.parse(match.remainingArgv);
     ctx.raw.unknown = parsed.unknown;
     ctx.raw.doubleDash = parsed.doubleDash;
@@ -321,12 +325,7 @@ export class Clerc<
     ctx.flags = flags as any;
 
     const matchedCommand = match.command;
-    const isStandalone = Boolean(matchedCommand.standalone);
-
-    validateMissingRequiredFlags(
-      runtime.userFlags,
-      isStandalone ? [] : missingRequired,
-    );
+    validateMissingRequiredFlags(runtime.userFlags, missingRequired);
 
     const { args: resolvedArgs, provided: providedArgs } =
       await executeCompiledArgs(
@@ -337,12 +336,9 @@ export class Clerc<
       );
     ctx.args = resolvedArgs;
 
-    const activeDeclarativeRules = isStandalone
-      ? runtime.rules.declarative
-      : [...compiledCli.globalRules.declarative, ...runtime.rules.declarative];
-    if (activeDeclarativeRules.length > 0) {
+    if (runtime.rules.declarative.length > 0) {
       validateDeclarativeRules(
-        activeDeclarativeRules,
+        runtime.rules.declarative,
         provided,
         providedArgs,
         runtime.userFlags.byName,
@@ -350,11 +346,8 @@ export class Clerc<
       );
     }
 
-    const activeCustomRules = isStandalone
-      ? runtime.rules.custom
-      : [...compiledCli.globalRules.custom, ...runtime.rules.custom];
-    if (activeCustomRules.length > 0) {
-      await validateCustomRules(activeCustomRules, {
+    if (runtime.rules.custom.length > 0) {
+      await validateCustomRules(runtime.rules.custom, {
         args: ctx.args,
         flags: ctx.flags,
         provided: { flags: provided, args: providedArgs },
@@ -380,7 +373,7 @@ export class Clerc<
     }
 
     // 6. Run onion middleware chain wrapping command execution
-    if (isStandalone || compiledCli.middlewares.length === 0) {
+    if (runtime.middlewares.length === 0) {
       await runCore();
     } else {
       async function dispatch(
@@ -390,7 +383,7 @@ export class Clerc<
         if (added) {
           Object.assign(ctx.state, added);
         }
-        const mw = compiledCli.middlewares[index];
+        const mw = runtime.middlewares[index];
         await (mw
           ? mw(runCtx, ((next?: Record<string, any>) =>
               dispatch(index + 1, next)) as MiddlewareNext)
@@ -405,6 +398,7 @@ export class Clerc<
   async #handleError(
     error: unknown,
     compiledCli: CompiledCli,
+    activeRuntime: CompiledNodeRuntime,
     ctx: InternalContext<TGlobalFlags, TState>,
     throwOnError: boolean,
   ): Promise<RunResult> {
@@ -413,8 +407,8 @@ export class Clerc<
     const exitCode = error instanceof ClercError ? error.exitCode : 1;
     const errCtx = ctx as unknown as ErrorContext<TGlobalFlags, TState>;
 
-    for (let i = compiledCli.errorHandlers.length - 1; i >= 0; i--) {
-      if (await compiledCli.errorHandlers[i](error, errCtx)) {
+    for (let i = activeRuntime.errorHandlers.length - 1; i >= 0; i--) {
+      if (await activeRuntime.errorHandlers[i](error, errCtx)) {
         return { ok: false, exitCode, error };
       }
     }
@@ -449,13 +443,17 @@ export class Clerc<
   ): Promise<RunResult> {
     const compiledCli = this.#ensureCompiled();
     const ctx = this.#createContext(compiledCli, argv, options);
+    let activeRuntime = compiledCli.rootRuntime;
 
     try {
-      return await this.#execute(compiledCli, ctx);
+      return await this.#execute(compiledCli, ctx, (rt) => {
+        activeRuntime = rt;
+      });
     } catch (caughtError) {
       return this.#handleError(
         caughtError,
         compiledCli,
+        activeRuntime,
         ctx,
         options.throwOnError ?? false,
       );

@@ -267,4 +267,63 @@ describe("core v2 route-signature & plugin types", () => {
         run() {},
       });
   });
+
+  it("infers inherited and overridden flags & middleware state across scope() and subcommand()", () => {
+    const cli = clerc({ name: "uptarn", version: "1.0.0" }).flags({
+      globalFlag: Boolean,
+    });
+
+    const admin = cli
+      .scope({ group: "admin" })
+      .flags({
+        server: { type: String, required: true },
+        token: Types.String({ trim: true, nonEmpty: true }),
+      })
+      .middleware((ctx, next) => {
+        expectTypeOf(ctx.flags.server).toEqualTypeOf<string>();
+        expectTypeOf(ctx.flags.globalFlag).toEqualTypeOf<boolean>();
+
+        return next({ client: { ping: (): boolean => true } });
+      });
+
+    const node = admin
+      .subcommand("node", { description: "Manage nodes" })
+      .flags({
+        server: { type: String }, // override required -> optional
+        limit: Types.Integer({ min: 0 }),
+        ratio: Types.Number({ min: 0, max: 1 }),
+      });
+
+    node.command("order <ids...>", {
+      default: true,
+      args: {
+        ids: { unique: true, minItems: 1 },
+      },
+      flags: {
+        tags: { type: String, multiple: true, unique: true, maxItems: 5 },
+      },
+      rules: [
+        (r) => [r.atLeastOne(r.group("fields"))],
+        {
+          description: "custom check",
+          check(ctx) {
+            expectTypeOf(ctx.args.ids).toEqualTypeOf<string[]>();
+            expectTypeOf(ctx.flags.server).toEqualTypeOf<string | undefined>();
+            expectTypeOf(ctx.flags.limit).toEqualTypeOf<number | undefined>();
+
+            return { message: "bad", hints: ["try again"] };
+          },
+        },
+      ],
+      run(ctx) {
+        expectTypeOf(ctx.flags.globalFlag).toEqualTypeOf<boolean>();
+        expectTypeOf(ctx.flags.server).toEqualTypeOf<string | undefined>();
+        expectTypeOf(ctx.flags.token).toEqualTypeOf<string | undefined>();
+        expectTypeOf(ctx.flags.limit).toEqualTypeOf<number | undefined>();
+        expectTypeOf(ctx.flags.ratio).toEqualTypeOf<number | undefined>();
+        expectTypeOf(ctx.flags.tags).toEqualTypeOf<string[]>();
+        expectTypeOf(ctx.state.client.ping()).toEqualTypeOf<boolean>();
+      },
+    });
+  });
 });

@@ -1,6 +1,7 @@
 import { InvalidSchemaError, ValidationError } from "./errors";
 import { findClosest } from "./suggest";
 import type { IsAny } from "./utils";
+import { plural } from "./utils";
 
 export interface DefaultValueFunction<T> {
   (): T;
@@ -345,53 +346,169 @@ function Enum<const T extends string>(...values: readonly T[]): ClercSchema<T> {
   );
 }
 
-function Range(min: number, max: number): ClercSchema<number> {
-  if (Number.isNaN(min) || Number.isNaN(max) || min > max) {
+export interface NumericSchemaOptions {
+  readonly min?: number;
+  readonly max?: number;
+  readonly display?: string;
+}
+
+export interface StringSchemaOptions {
+  readonly trim?: boolean;
+  readonly nonEmpty?: boolean;
+  readonly minLength?: number;
+  readonly maxLength?: number;
+  readonly pattern?: RegExp;
+  readonly display?: string;
+}
+
+function formatNumericDisplay(
+  fallback: string,
+  min?: number,
+  max?: number,
+  display?: string,
+): string {
+  if (display !== undefined) {
+    return display;
+  }
+  if (min !== undefined && max !== undefined) {
+    return `${min}..${max}`;
+  }
+  if (min !== undefined) {
+    return `>=${min}`;
+  }
+  if (max !== undefined) {
+    return `<=${max}`;
+  }
+
+  return fallback;
+}
+
+function createNumericSchema(
+  kind: "integer" | "number",
+  options: NumericSchemaOptions = {},
+): ClercSchema<number> {
+  const { min, max, display } = options;
+  if (
+    (min !== undefined && Number.isNaN(min)) ||
+    (max !== undefined && Number.isNaN(max)) ||
+    (min !== undefined && max !== undefined && min > max)
+  ) {
     throw new InvalidSchemaError(
-      `Types.Range invalid bounds: min (${min}) must be <= max (${max}).`,
+      `Types.${kind === "integer" ? "Integer" : "Number"} invalid bounds: min (${min}) must be <= max (${max}).`,
     );
   }
 
+  const noun = kind === "integer" ? "an integer" : "a number";
+  const jsonSchema: Record<string, unknown> = { type: kind };
+  if (min !== undefined) {
+    jsonSchema.minimum = min;
+  }
+  if (max !== undefined) {
+    jsonSchema.maximum = max;
+  }
+
   return createSchema<number>(
-    `${min}..${max}`,
-    { type: "number", minimum: min, maximum: max },
+    formatNumericDisplay(kind, min, max, display),
+    jsonSchema,
     (raw) => {
       const num = parseNumber(raw);
+      if (kind === "integer" ? !Number.isInteger(num) : Number.isNaN(num)) {
+        return fail(`expected ${noun}`);
+      }
+      if (
+        (min !== undefined && num < min) ||
+        (max !== undefined && num > max)
+      ) {
+        if (min !== undefined && max !== undefined) {
+          return fail(`expected ${noun} between ${min} and ${max}`);
+        }
+        if (min !== undefined) {
+          return fail(`expected ${noun} >= ${min}`);
+        }
 
-      return Number.isNaN(num) || num < min || num > max
-        ? fail(`expected a number between ${min} and ${max}`)
-        : { value: num };
+        return fail(`expected ${noun} <= ${max}`);
+      }
+
+      return { value: num };
     },
   );
 }
 
-const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
-  createSchema<string>(
-    display ?? pattern.toString(),
-    { type: "string", pattern: pattern.source },
-    (raw) => {
+const Integer = (options?: NumericSchemaOptions): ClercSchema<number> =>
+  createNumericSchema("integer", options);
+
+const NumberType = (options?: NumericSchemaOptions): ClercSchema<number> =>
+  createNumericSchema("number", options);
+
+function StringType(options: StringSchemaOptions = {}): ClercSchema<string> {
+  const { trim = false, nonEmpty = false, pattern, display } = options;
+  const minLength =
+    options.minLength === undefined
+      ? nonEmpty
+        ? 1
+        : undefined
+      : Math.max(options.minLength, nonEmpty ? 1 : 0);
+  const { maxLength } = options;
+
+  if (
+    (minLength !== undefined &&
+      (!Number.isInteger(minLength) || minLength < 0)) ||
+    (maxLength !== undefined &&
+      (!Number.isInteger(maxLength) || maxLength < 0)) ||
+    (minLength !== undefined &&
+      maxLength !== undefined &&
+      minLength > maxLength)
+  ) {
+    throw new InvalidSchemaError(
+      `Types.String invalid length bounds: minLength (${minLength}) must be <= maxLength (${maxLength}).`,
+    );
+  }
+
+  const jsonSchema: Record<string, unknown> = { type: "string" };
+  if (minLength !== undefined) {
+    jsonSchema.minLength = minLength;
+  }
+  if (maxLength !== undefined) {
+    jsonSchema.maxLength = maxLength;
+  }
+  if (pattern !== undefined) {
+    jsonSchema.pattern = pattern.source;
+  }
+
+  return createSchema<string>(display ?? "string", jsonSchema, (raw) => {
+    const value = trim ? raw.trim() : raw;
+    if (nonEmpty && value.length === 0) {
+      return fail("expected a non-empty string");
+    }
+    if (minLength !== undefined && value.length < minLength) {
+      return fail(
+        `expected a string with at least ${minLength} ${plural(minLength, "character")}`,
+      );
+    }
+    if (maxLength !== undefined && value.length > maxLength) {
+      return fail(
+        `expected a string with at most ${maxLength} ${plural(maxLength, "character")}`,
+      );
+    }
+    if (pattern !== undefined) {
       pattern.lastIndex = 0;
+      if (!pattern.test(value)) {
+        return fail(`expected value matching ${pattern}`);
+      }
+    }
 
-      return pattern.test(raw)
-        ? { value: raw }
-        : fail(`expected value matching ${pattern}`);
-    },
-  );
+    return { value };
+  });
+}
 
-const Integer: ClercSchema<number> = createSchema<number>(
-  "integer",
-  { type: "integer" },
-  (raw) => {
-    const num = parseNumber(raw);
-
-    return Number.isInteger(num) ? { value: num } : fail("expected an integer");
-  },
-);
+const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
+  StringType({ pattern, display: display ?? pattern.toString() });
 
 export const Types = {
   Counter,
   Enum,
-  Range,
-  Regex,
   Integer,
+  Number: NumberType,
+  String: StringType,
+  Regex,
 } as const;

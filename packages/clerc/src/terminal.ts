@@ -20,14 +20,10 @@ export interface MemoryTerminal extends Terminal {
   readonly clear: () => void;
 }
 
-export interface MemoryTerminalOptions {
-  env?: Readonly<Record<string, string | undefined>>;
-  argv?: readonly string[];
-  cwd?: string;
-  isTTY?: boolean;
-  color?: boolean;
-  unicode?: boolean;
-  columns?: number;
+export interface MemoryTerminalOptions extends Partial<
+  Omit<Terminal, "stdout" | "stderr" | "cwd">
+> {
+  readonly cwd?: string;
 }
 
 const defaultPlatformArgv = (): readonly string[] =>

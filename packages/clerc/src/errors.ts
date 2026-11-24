@@ -185,9 +185,21 @@ export class ValidationError extends ClercError {
   }
 }
 
+export interface RuleErrorOptions extends ErrorOptions {
+  readonly detail?: string;
+  readonly hints?: readonly string[];
+  readonly exitCode?: number;
+}
+
 export class RuleError extends ClercError {
-  constructor(message: string) {
-    super(message, { code: "ERR_RULE_VIOLATION", exitCode: 2 });
+  constructor(message: string, options?: RuleErrorOptions) {
+    super(message, {
+      code: "ERR_RULE_VIOLATION",
+      exitCode: options?.exitCode ?? 2,
+      detail: options?.detail,
+      hints: options?.hints,
+      cause: options?.cause,
+    });
   }
 }
 
