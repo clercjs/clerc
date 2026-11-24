@@ -24,7 +24,7 @@ export {
 export interface CompletionsPluginOptions {
   /**
    * Executable command invoked by the generated shell completion script.
-   * Defaults to `ctx.meta.name`.
+   * Defaults to `ctx.model.meta.name`.
    */
   readonly executable?: string;
 }
@@ -58,7 +58,7 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
               code: "ERR_MISSING_ARGUMENT",
               exitCode: 2,
               hints: [
-                `run '${ctx.meta.name} completions zsh' or pass '--shell zsh'`,
+                `run '${ctx.model.meta.name} completions zsh' or pass '--shell zsh'`,
               ],
             },
           );
@@ -67,8 +67,8 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
         ctx.terminal.stdout(
           renderCompletionScript(
             shell,
-            ctx.meta.name,
-            options.executable ?? ctx.meta.name,
+            ctx.model.meta.name,
+            options.executable ?? ctx.model.meta.name,
           ),
         );
       },

@@ -80,5 +80,5 @@ cli.command("deploy <token> [region]", {
 根据命令签名中是否包含 `--`，Clerc 对 `--` 之后的参数有三种处理方式：
 
 1. **签名中在 `--` 后声明了参数**（如 `"test [filter] -- [vitest-args...]"`）：`--` 前绑定到 `filter`，`--` 后绑定到 `ctx.args.vitestArgs` 并参与类型转换与帮助文档生成。
-2. **签名以裸 `--` 结尾**（如 `"run <script> --"`）：`--` 后的内容仅保留在 `ctx.doubleDash` 中，不触发多余参数报错。
+2. **签名以裸 `--` 结尾**（如 `"run <script> --"`）：`--` 后的内容仅保留在 `ctx.raw.doubleDash` 中，不触发多余参数报错。
 3. **签名不含 `--`**（如 `"rm <file>"`）：遵循 POSIX 惯例，`acme rm -- -weird-name.txt` 会将 `-weird-name.txt` 作为普通位置参数传给 `<file>`。

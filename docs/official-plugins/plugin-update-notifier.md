@@ -31,7 +31,7 @@ const cli = clerc({
   version: "2.0.0",
 }).use(
   updateNotifierPlugin({
-    // All options are optional; defaults to ctx.meta.name and ctx.meta.version
+    // All options are optional; defaults to ctx.model.meta.name and ctx.model.meta.version
     checkIntervalMs: 1000 * 60 * 60 * 24, // 24h
     postRunGraceMs: 250,
   }),

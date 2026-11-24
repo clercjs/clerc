@@ -57,7 +57,7 @@ export interface McpPluginOptions {
   readonly command?: string;
   /**
    * Custom MCP server name reported in `initialize`. Defaults to
-   * `ctx.meta.name`.
+   * `ctx.model.meta.name`.
    */
   readonly serverName?: string;
   /**

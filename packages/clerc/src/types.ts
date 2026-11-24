@@ -1,5 +1,5 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
-import type { Theme, ThemeStyleMap } from "@clerc/theme";
+import type { ThemeStyleMap } from "@clerc/theme";
 
 import type { ClercError } from "./errors";
 import type { HelpSectionRenderers } from "./help/renderer";
@@ -447,29 +447,31 @@ export interface HelpOptions {
   ) => string | Promise<string>;
 }
 
+export interface RawParseContext {
+  readonly argv: readonly string[];
+  readonly unknown: Record<string, RawInputType>;
+  readonly doubleDash: readonly string[];
+}
+
 export interface ErrorContext<
   TGlobalFlags extends Record<string, any> = {},
   TState extends Record<string, any> = {},
 > {
-  readonly meta: CliMeta;
   readonly model: CliModel;
   readonly terminal: Terminal;
-  readonly theme: Theme;
   readonly log: Logger;
   readonly help: HelpHelper;
   readonly run: (
     argv: readonly string[],
     options?: RunOptions,
   ) => Promise<RunResult>;
-  readonly argv: readonly string[];
   readonly command?: AnyCommandDefinition;
   readonly commandPath: readonly string[];
   readonly calledAs?: string;
   readonly args: Record<string, any>;
   readonly flags: InferFlags<TGlobalFlags> & Record<string, any>;
   readonly state: Partial<State<TState>>;
-  readonly unknown: Record<string, RawInputType>;
-  readonly doubleDash: readonly string[];
+  readonly raw: RawParseContext;
 }
 
 export interface RunContext<

@@ -31,7 +31,7 @@ const cli = clerc({
   version: "2.0.0",
 }).use(
   updateNotifierPlugin({
-    // 所有参数均可选，默认直接读取 ctx.meta.name 与 ctx.meta.version
+    // 所有参数均可选，默认直接读取 ctx.model.meta.name 与 ctx.model.meta.version
     checkIntervalMs: 1000 * 60 * 60 * 24, // 24 小时检查一次
     postRunGraceMs: 250,
   }),

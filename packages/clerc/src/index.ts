@@ -134,6 +134,7 @@ export type {
   MiddlewareNext,
   MiddlewareOptions,
   MiddlewareResult,
+  RawParseContext,
   RootCommandOptions,
   RunContext,
   RunOptions,

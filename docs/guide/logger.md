@@ -53,7 +53,7 @@ entry.line("0002_indexes.sql (8ms)");
 ctx.log.box.warn(
   "Dry run mode",
   "No remote changes were written.",
-  `Pass ${ctx.theme.accent("--confirm")} to execute.`,
+  `Pass ${ctx.log.theme.accent("--confirm")} to execute.`,
 );
 ```
 

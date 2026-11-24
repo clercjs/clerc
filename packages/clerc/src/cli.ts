@@ -52,6 +52,7 @@ import type {
   MiddlewareNext,
   MiddlewareOptions,
   NonEmptySpec,
+  RawParseContext,
   RootCommandOptions,
   RunContext,
   RunOptions,
@@ -65,8 +66,9 @@ type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
   TState extends Record<string, any>,
-> = Mutable<Omit<ErrorContext<TGlobalFlags, TState>, "state">> & {
+> = Mutable<Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw">> & {
   state: Record<string, any>;
+  raw: Mutable<RawParseContext>;
 };
 type AnyMiddlewareFn = (
   ctx: RunContext<any, any>,
@@ -471,7 +473,7 @@ export class Clerc<
         builtin: true,
         standalone: true,
         run(ctx) {
-          ctx.terminal.stdout(formatCliVersion(ctx.meta));
+          ctx.terminal.stdout(formatCliVersion(ctx.model.meta));
         },
       });
     }
@@ -691,10 +693,8 @@ export class Clerc<
     };
 
     return {
-      meta: compiledCli.model.meta,
       model: compiledCli.model,
       terminal,
-      theme,
       log,
       help: {
         render,
@@ -703,13 +703,15 @@ export class Clerc<
         },
       },
       run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
-      argv: argv ?? terminal.argv,
       commandPath: [],
       args: {},
       flags: {} as any,
       state: {},
-      unknown: {},
-      doubleDash: [],
+      raw: {
+        argv: argv ?? terminal.argv,
+        unknown: {},
+        doubleDash: [],
+      },
     };
   }
 
@@ -719,7 +721,7 @@ export class Clerc<
   ): Promise<RunResult> {
     // 1. Resolve command match (matched | namespace | empty | unknown)
     let match = compiledCli.tree.resolveArgv(
-      ctx.argv,
+      ctx.raw.argv,
       compiledCli.rootRuntime.parser.scan,
     );
 
@@ -767,8 +769,8 @@ export class Clerc<
       match.node === compiledCli.tree.root && rootParsed
         ? rootParsed
         : runtime.parser.parse(match.remainingArgv);
-    ctx.unknown = parsed.unknown;
-    ctx.doubleDash = parsed.doubleDash;
+    ctx.raw.unknown = parsed.unknown;
+    ctx.raw.doubleDash = parsed.doubleDash;
 
     if (runtime.hasBuiltinQuiet && parsed.flags.quiet === true) {
       ctx.log.level = "error";
@@ -786,7 +788,7 @@ export class Clerc<
     }
 
     if (runtime.hasBuiltinVersion && parsed.flags.version === true) {
-      ctx.terminal.stdout(formatCliVersion(ctx.meta));
+      ctx.terminal.stdout(formatCliVersion(ctx.model.meta));
 
       return { ok: true, exitCode: 0 };
     }
@@ -855,7 +857,7 @@ export class Clerc<
           typeof matchedCommand.deprecated === "string"
             ? `: ${matchedCommand.deprecated}`
             : "";
-        const commandLabel = ctx.commandPath.join(" ") || ctx.meta.name;
+        const commandLabel = ctx.commandPath.join(" ") || ctx.model.meta.name;
         ctx.log.warn(`Command '${commandLabel}' is deprecated${reason}`);
       }
       warnFlagDeprecations(runtime.userFlags, provided, ctx.log.warn);
@@ -916,8 +918,8 @@ export class Clerc<
         Boolean(ctx.terminal.env.DEBUG && ctx.terminal.env.DEBUG !== "0");
       ctx.terminal.stderr(
         formatDiagnostic(error, {
-          theme: ctx.theme,
-          name: ctx.meta.name,
+          theme: ctx.log.theme,
+          name: ctx.model.meta.name,
           commandPath: ctx.commandPath,
           verbose,
           showHelpHint: this.#helpOptions !== false,

@@ -239,6 +239,8 @@ describe("core v2 route-signature & plugin types", () => {
         expectTypeOf(ctx.help.render).toBeFunction();
         expectTypeOf(ctx.help.print).toBeFunction();
         expectTypeOf(ctx.log).toEqualTypeOf<Logger>();
+        expectTypeOf(ctx.raw.argv).toEqualTypeOf<readonly string[]>();
+        expectTypeOf(ctx.raw.doubleDash).toEqualTypeOf<readonly string[]>();
         expectTypeOf<
           ExtractArgNames<"exec <cmd> -- [args...]">
         >().toEqualTypeOf<"cmd" | "args">();

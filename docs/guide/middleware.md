@@ -34,7 +34,7 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).middleware(
 
 ## Injecting Typed `ctx.state`
 
-All user- and plugin-injected runtime data lives in a dedicated `ctx.state` namespace, keeping Clerc's built-in context properties (`ctx.args`, `ctx.flags`, `ctx.log`, `ctx.terminal`, `ctx.help`, `ctx.meta`, `ctx.model`) isolated from naming collisions.
+All user- and plugin-injected runtime data lives in a dedicated `ctx.state` namespace, keeping Clerc's built-in context properties (`ctx.args`, `ctx.flags`, `ctx.log`, `ctx.terminal`, `ctx.help`, `ctx.model`) isolated from naming collisions.
 
 Pass an object to `next({ ... })` and return its result to merge new properties into `ctx.state` with full TypeScript inference for all subsequent middlewares and commands:
 

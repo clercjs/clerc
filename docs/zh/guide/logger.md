@@ -48,7 +48,7 @@ step.line("0002_indexes.sql (8ms)");
 ctx.log.box.info(
   "Dry run 完成",
   "未修改任何远程资源。",
-  `传入 ${ctx.theme.accent("--confirm")} 执行真实发布。`,
+  `传入 ${ctx.log.theme.accent("--confirm")} 执行真实发布。`,
 );
 ```
 

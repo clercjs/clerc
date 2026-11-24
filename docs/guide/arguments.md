@@ -82,7 +82,7 @@ When a required argument with `env` is missing from both `argv` and `process.env
 POSIX `--` stops flag parsing. Clerc handles `--` in three ways depending on your signature:
 
 1. **Named arguments after `--`** (`"test [filter] -- [vitest-args...]"`): tokens before `--` bind to `filter`, and tokens after `--` bind to `ctx.args.vitestArgs` (with full schema conversion and `--help` documentation).
-2. **Bare `--` in signature** (`"run <script> --"`): tokens before `--` bind to `<script>`, and tokens after `--` are left untouched in `ctx.doubleDash`.
+2. **Bare `--` in signature** (`"run <script> --"`): tokens before `--` bind to `<script>`, and tokens after `--` are left untouched in `ctx.raw.doubleDash`.
 3. **No `--` in signature** (`"rm <file>"`): passing `acme rm -- -weird-name.txt` treats `-weird-name.txt` as the positional `<file>` argument per POSIX convention.
 
 ```ts
@@ -91,7 +91,7 @@ cli.command("run <script> -- [pass-through...]", {
     // $ acme run build -- --watch --port 4000
     ctx.args.script; // "build"
     ctx.args.passThrough; // ["--watch", "--port", "4000"]
-    ctx.doubleDash; // ["--watch", "--port", "4000"]
+    ctx.raw.doubleDash; // ["--watch", "--port", "4000"]
   },
 });
 ```

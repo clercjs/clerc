@@ -12,11 +12,11 @@ export interface UpdateInfo {
 
 export interface UpdateNotifierPluginOptions {
   /**
-   * Package name on npm. Defaults to `ctx.meta.name`.
+   * Package name on npm. Defaults to `ctx.model.meta.name`.
    */
   readonly packageName?: string;
   /**
-   * Current CLI version. Defaults to `ctx.meta.version`.
+   * Current CLI version. Defaults to `ctx.model.meta.version`.
    */
   readonly version?: string;
   readonly distTag?: string;
@@ -201,8 +201,8 @@ export function updateNotifierPlugin(
 
   return plugin("clerc:update-notifier").middleware(
     async (ctx, next) => {
-      const pkgName = packageName ?? ctx.meta.name;
-      const currentVersion = version ?? ctx.meta.version;
+      const pkgName = packageName ?? ctx.model.meta.name;
+      const currentVersion = version ?? ctx.model.meta.version;
       const checkPromise = checkForUpdate(
         pkgName,
         currentVersion,
@@ -218,8 +218,8 @@ export function updateNotifierPlugin(
         if (info) {
           const updateCmd = installCommand ?? `npm i -g ${info.name}`;
           ctx.log.box.warn(
-            `Update available: ${ctx.theme.muted(info.current)} → ${ctx.theme.success(info.latest)}`,
-            `Run ${ctx.theme.accent(updateCmd)} to update`,
+            `Update available: ${ctx.log.theme.muted(info.current)} → ${ctx.log.theme.success(info.latest)}`,
+            `Run ${ctx.log.theme.accent(updateCmd)} to update`,
           );
         }
       }

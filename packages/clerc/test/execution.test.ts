@@ -605,5 +605,36 @@ describe("Clerc execution pipeline", () => {
 
     expect(hostTerm.stdoutText()).toContain("-h, --host <string>");
     expect(hostTerm.stdoutText()).toContain("    --help");
+
+    // 5. Raw parse artifacts live under ctx.raw (argv, unknown, doubleDash)
+    let rawSnapshot:
+      | {
+          readonly argv: readonly string[];
+          readonly unknown: Record<string, unknown>;
+          readonly doubleDash: readonly string[];
+        }
+      | undefined;
+    const rawCli = createTestBaseCli({ strictFlags: false });
+    rawCli.command("run <script> --", {
+      run(ctx) {
+        rawSnapshot = {
+          argv: ctx.raw.argv,
+          unknown: ctx.raw.unknown,
+          doubleDash: ctx.raw.doubleDash,
+        };
+      },
+    });
+
+    const rawRes = await rawCli.run(
+      ["run", "test", "--extra=1", "--", "--watch", "--bail"],
+      { terminal: createMemoryTerminal() },
+    );
+
+    expect(rawRes.ok).toBeTruthy();
+    expect(rawSnapshot).toEqual({
+      argv: ["run", "test", "--extra=1", "--", "--watch", "--bail"],
+      unknown: { extra: "1" },
+      doubleDash: ["--watch", "--bail"],
+    });
   });
 });
