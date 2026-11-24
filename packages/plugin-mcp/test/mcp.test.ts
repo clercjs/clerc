@@ -332,6 +332,34 @@ describe("@clerc/plugin-mcp", () => {
     dupCli.command("db migrate", { run() {} });
     dupCli.command("db_migrate", { run() {} });
 
+    // Rules export JSON Schema dependentRequired & allOf constraints
+    const rulesCli = createTestCli().command("serve [env]", {
+      flags: {
+        all: Boolean,
+        json: Boolean,
+        yaml: Boolean,
+        tlsKey: String,
+        tlsCert: String,
+      },
+      rules: ({ exclusive, together, oneOf, flag, arg }) => [
+        exclusive(flag("json"), flag("yaml")),
+        together(flag("tlsKey"), flag("tlsCert")),
+        oneOf(arg("env"), flag("all")),
+      ],
+      run() {},
+    });
+    const [serveTool] = listMcpTools(rulesCli.buildModel());
+
+    expect(serveTool.inputSchema.dependentRequired).toEqual({
+      tlsKey: ["tlsCert"],
+      tlsCert: ["tlsKey"],
+    });
+    expect(serveTool.inputSchema.allOf).toEqual([
+      { not: { required: ["json", "yaml"] } },
+      { anyOf: [{ required: ["env"] }, { required: ["all"] }] },
+      { not: { required: ["env", "all"] } },
+    ]);
+
     expect(() => listMcpTools(dupCli.buildModel())).toThrow(
       "Duplicate MCP tool name: 'db_migrate'",
     );

@@ -3,6 +3,8 @@ import type {
   CliModel,
   CommandNode,
   FlagKind,
+  RuleDescriptor,
+  RuleRef,
 } from "clerc";
 
 const DOUBLE_DASH = "--";
@@ -29,6 +31,8 @@ export interface McpToolDefinition {
     readonly type: "object";
     readonly properties: Record<string, Record<string, unknown>>;
     readonly required?: readonly string[];
+    readonly dependentRequired?: Readonly<Record<string, readonly string[]>>;
+    readonly allOf?: readonly Record<string, unknown>[];
     readonly additionalProperties: false;
   };
   readonly annotations?: McpToolAnnotations;
@@ -121,7 +125,7 @@ export function listExposedCommands(
       node.fullPath.length === 1 && node.fullPath[0] === mcpCommandName;
     if (
       mcpMeta?.enabled !== true &&
-      (cmd.hidden || cmd.builtin || cmd.standalone || isMcpCommand)
+      (cmd.hidden || cmd.standalone || isMcpCommand)
     ) {
       continue;
     }
@@ -200,6 +204,82 @@ function buildToolEntry(
     });
   }
 
+  const isStandalone = Boolean(cmd.standalone);
+  const activeRules: readonly RuleDescriptor[] = isStandalone
+    ? node.rules
+    : [...model.globalRules, ...node.rules];
+  const argNames = new Set(node.args.map((a) => a.name));
+
+  function resolveMcpProp(ref: RuleRef): string | undefined {
+    if (ref.kind === "arg") {
+      return ref.name in properties ? ref.name : undefined;
+    }
+    // Skip flags shadowed by a same-named positional arg in MCP's flat properties
+    if (argNames.has(ref.name)) {
+      return undefined;
+    }
+
+    return flags.has(ref.name) ? ref.name : undefined;
+  }
+
+  const dependentRequired: Record<string, string[]> = {};
+  const allOf: Record<string, unknown>[] = [];
+
+  function addDep(src: string, dep: string): void {
+    if (src === dep) {
+      return;
+    }
+    const list = (dependentRequired[src] ??= []);
+    if (!list.includes(dep)) {
+      list.push(dep);
+    }
+  }
+
+  for (const rule of activeRules) {
+    if (rule.kind === "requires") {
+      const src = resolveMcpProp(rule.source);
+      if (!src) {
+        continue;
+      }
+      for (const target of rule.targets) {
+        const dep = resolveMcpProp(target);
+        if (dep) {
+          addDep(src, dep);
+        }
+      }
+
+      continue;
+    }
+
+    const props = rule.targets
+      .map(resolveMcpProp)
+      .filter((p): p is string => Boolean(p));
+    if (props.length < 2) {
+      continue;
+    }
+
+    if (rule.kind === "together") {
+      for (const a of props) {
+        for (const b of props) {
+          addDep(a, b);
+        }
+      }
+    } else if (rule.kind === "atLeastOne") {
+      allOf.push({ anyOf: props.map((p) => ({ required: [p] })) });
+    } else if (rule.kind === "exclusive" || rule.kind === "oneOf") {
+      if (rule.kind === "oneOf") {
+        allOf.push({ anyOf: props.map((p) => ({ required: [p] })) });
+      }
+      for (let i = 0; i < props.length; i++) {
+        for (let j = i + 1; j < props.length; j++) {
+          allOf.push({ not: { required: [props[i], props[j]] } });
+        }
+      }
+    }
+  }
+
+  const hasDepReq = Object.keys(dependentRequired).length > 0;
+
   const baseName =
     mcpMeta?.name ??
     (node.fullPath.length > 0 ? node.fullPath.join("_") : model.meta.name);
@@ -217,6 +297,8 @@ function buildToolEntry(
         type: "object",
         properties,
         ...(required.length > 0 ? { required } : {}),
+        ...(hasDepReq ? { dependentRequired } : {}),
+        ...(allOf.length > 0 ? { allOf } : {}),
         additionalProperties: false,
       },
       ...(annotations ? { annotations } : {}),
