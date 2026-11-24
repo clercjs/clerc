@@ -156,12 +156,12 @@ const defaultStringJsonSchema = (): Record<string, unknown> => ({
   type: "string",
 });
 
-export interface ParsedCommandSpec {
+interface ParsedCommandSpec {
   readonly name: string;
   readonly argTokens: readonly string[];
 }
 
-export interface CompiledArgItem extends ArgDescriptor {
+interface CompiledArgItem extends ArgDescriptor {
   readonly convert?: TypeConverter;
 }
 

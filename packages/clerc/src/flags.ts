@@ -147,7 +147,7 @@ export type MergedFlags<
   GlobalFlags extends Record<string, any>,
 > = InferFlags<LocalFlags & Omit<GlobalFlags, KnownKeys<LocalFlags>>>;
 
-export interface CompiledFlagEntry extends FlagDescriptor {
+interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
 }
 

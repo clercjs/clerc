@@ -3,7 +3,6 @@ import type { ThemeStyleMap } from "@clerc/theme";
 
 import type { ContextualArgs, ExtractArgNames, InferCommandArgs } from "./args";
 import type { CommandNode, CommandTree } from "./command-tree";
-import type { ClercError } from "./errors";
 import type {
   ContextualFlags,
   FlagDescriptor,
@@ -324,5 +323,3 @@ export interface RunResult {
   readonly exitCode: number;
   readonly error?: unknown;
 }
-
-export type { ClercError };

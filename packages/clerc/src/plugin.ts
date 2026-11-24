@@ -15,8 +15,8 @@ import type {
   RunContext,
 } from "./types";
 
-export type GroupScope = keyof GroupsInput;
-export type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
+type GroupScope = keyof GroupsInput;
+type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
 
 export type AnyMiddlewareFn = (
   ctx: RunContext<any, any>,
@@ -28,7 +28,7 @@ export interface RegisteredMiddleware {
   readonly enforce?: "pre" | "post";
 }
 
-export interface PluginState {
+interface PluginState {
   readonly flags: FlagsDefinition;
   readonly rules: RulesFactory<any, any, any, any>[];
   readonly commands: AnyCommandDefinition[];

@@ -61,9 +61,6 @@ export function joinList(
   return `${values.slice(0, -1).join(", ")}, ${conjunction} ${values.at(-1)}`;
 }
 
-export const joinWithAnd = (values: readonly string[]): string =>
-  joinList(values, "and");
-
 export function evaluateDefault(value: unknown): unknown {
   if (typeof value === "function") {
     return (value as () => unknown)();

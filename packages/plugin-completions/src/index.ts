@@ -1,10 +1,7 @@
 import { Types, plugin } from "clerc";
 
-import type {
-  ResolveCompletionsOptions,
-  ResolvedCompletions,
-} from "./complete";
 import { formatCompletionOutput, resolveCompletions } from "./complete";
+import type { ResolveCompletionsOptions, ResolvedCompletions } from "./helpers";
 import type { SupportedShell } from "./shells";
 import {
   SUPPORTED_SHELLS,

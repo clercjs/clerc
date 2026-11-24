@@ -4,7 +4,7 @@ import type { Theme } from "@clerc/theme";
 import { formatCommandUsage } from "./help/document";
 import { findClosest } from "./suggest";
 import type { CliModel } from "./types";
-import { formatFlagName, joinWithAnd } from "./utils";
+import { formatFlagName, joinList } from "./utils";
 
 export type ClercErrorCode =
   | "ERR_UNKNOWN_COMMAND"
@@ -105,7 +105,7 @@ export class MissingFlagValueError extends ClercError {
     const plural = flags.length > 1;
     super(
       plural
-        ? `options ${joinWithAnd(formatted)} require a value`
+        ? `options ${joinList(formatted)} require a value`
         : `option ${formatted[0]} requires a value`,
       {
         code: "ERR_MISSING_FLAG_VALUE",
@@ -122,7 +122,7 @@ export class UnexpectedArgumentError extends ClercError {
   constructor(args: readonly string[]) {
     const formatted = args.map((a) => `'${a}'`);
     const plural = args.length > 1 ? "s" : "";
-    super(`unexpected argument${plural}: ${joinWithAnd(formatted)}`, {
+    super(`unexpected argument${plural}: ${joinList(formatted)}`, {
       code: "ERR_UNEXPECTED_ARGUMENT",
     });
     this.args = args;
@@ -152,7 +152,7 @@ export class UnknownFlagError extends ClercError {
   constructor(flags: readonly string[], hints?: readonly string[]) {
     const formatted = flags.map((f) => `'${formatFlagName(f)}'`);
     const plural = flags.length > 1 ? "s" : "";
-    super(`unexpected option${plural}: ${joinWithAnd(formatted)}`, {
+    super(`unexpected option${plural}: ${joinList(formatted)}`, {
       code: "ERR_UNKNOWN_FLAG",
       hints,
     });

@@ -31,7 +31,7 @@ export interface CommandTree {
   })[];
 }
 
-export type CommandMatch =
+type CommandMatch =
   | {
       readonly kind: "matched";
       readonly node: CommandNode;
@@ -57,7 +57,7 @@ export type CommandMatch =
       readonly remainingArgv: readonly string[];
     };
 
-export type ArgvScanFn = (
+type ArgvScanFn = (
   args: readonly string[],
   onPositional: ScanCallback,
 ) => ScanResult;

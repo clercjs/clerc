@@ -1,13 +1,13 @@
 import stringWidth from "fast-string-width";
 
-export interface StructuredCell {
+interface StructuredCell {
   readonly text?: string;
   readonly tags?: readonly string[];
 }
 
 export type TwoColumnRow = readonly [left: string, right: StructuredCell];
 
-export interface TwoColumnOptions {
+interface TwoColumnOptions {
   readonly indent?: number;
   readonly gap?: number;
   readonly maxWidth?: number;

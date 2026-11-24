@@ -26,8 +26,6 @@ import {
 } from "./helpers";
 import { ShellCompDirective } from "./shells";
 
-export type { ResolveCompletionsOptions, ResolvedCompletions };
-
 const DOUBLE_DASH = "--";
 
 export async function resolveCompletions(

@@ -12,9 +12,10 @@ import type { TerminalBlock } from "./terminal-render.ts";
 import { parseAnsiLines } from "./terminal-render.ts";
 
 export { completionsPlugin, createLogger };
-export { clerc, plugin } from "../../../packages/clerc/src/cli.ts";
+export { clerc } from "../../../packages/clerc/src/cli.ts";
 export { ClercError } from "../../../packages/clerc/src/errors.ts";
 export { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
+export { plugin } from "../../../packages/clerc/src/plugin.ts";
 export type { TypeFunction } from "../../../packages/clerc/src/schema.ts";
 export { Types } from "../../../packages/clerc/src/schema.ts";
 

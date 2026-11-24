@@ -105,7 +105,7 @@ export type TypeConverter = (
   target: string,
 ) => unknown | Promise<unknown>;
 
-export interface TypeDescriptor {
+interface TypeDescriptor {
   readonly kind: FlagKind;
   readonly display: string;
   readonly convert?: TypeConverter;
@@ -319,7 +319,7 @@ const createSchema = <T>(
   },
 });
 
-export const Counter: CounterSchema = {
+const Counter: CounterSchema = {
   ...createSchema<number>("count", { type: "integer", minimum: 0 }, (raw) => {
     const num = parseNumber(raw);
 
@@ -330,9 +330,7 @@ export const Counter: CounterSchema = {
   "~kind": "counter",
 };
 
-export function Enum<const T extends string>(
-  ...values: readonly T[]
-): ClercSchema<T> {
+function Enum<const T extends string>(...values: readonly T[]): ClercSchema<T> {
   if (values.length === 0) {
     throw new InvalidSchemaError("Types.Enum requires at least one value.");
   }
@@ -347,7 +345,7 @@ export function Enum<const T extends string>(
   );
 }
 
-export function Range(min: number, max: number): ClercSchema<number> {
+function Range(min: number, max: number): ClercSchema<number> {
   if (Number.isNaN(min) || Number.isNaN(max) || min > max) {
     throw new InvalidSchemaError(
       `Types.Range invalid bounds: min (${min}) must be <= max (${max}).`,
@@ -367,7 +365,7 @@ export function Range(min: number, max: number): ClercSchema<number> {
   );
 }
 
-export const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
+const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
   createSchema<string>(
     display ?? pattern.toString(),
     { type: "string", pattern: pattern.source },
@@ -380,7 +378,7 @@ export const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
     },
   );
 
-export const Integer: ClercSchema<number> = createSchema<number>(
+const Integer: ClercSchema<number> = createSchema<number>(
   "integer",
   { type: "integer" },
   (raw) => {

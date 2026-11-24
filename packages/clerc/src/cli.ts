@@ -25,7 +25,7 @@ import {
 import { renderHelp } from "./help/renderer";
 import type { ArgvParseResult } from "./parser";
 import type { AnyMiddlewareFn } from "./plugin";
-import { Plugin, getPluginState, plugin } from "./plugin";
+import { Plugin, getPluginState } from "./plugin";
 import { validateCustomRules, validateDeclarativeRules } from "./rules";
 import { createTerminal } from "./terminal";
 import type {
@@ -42,8 +42,6 @@ import type {
   RunOptions,
   RunResult,
 } from "./types";
-
-export { Plugin, plugin };
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type InternalContext<

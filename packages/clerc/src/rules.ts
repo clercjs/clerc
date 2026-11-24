@@ -120,7 +120,7 @@ const isRuleRef = (value: unknown): value is RuleRef =>
   (value.kind === "flag" || value.kind === "arg") &&
   typeof value.name === "string";
 
-export const createRuleBuilder = <
+const createRuleBuilder = <
   FlagName extends string = string,
   ArgName extends string = never,
 >(): RuleBuilder<FlagName, ArgName> => ({
@@ -255,7 +255,7 @@ export function compileRules(
   return { declarative, custom };
 }
 
-export function formatRuleRef(
+function formatRuleRef(
   ref: RuleRef,
   flagMap: ReadonlyMap<string, FlagDescriptor>,
   argMap: ReadonlyMap<string, ArgDescriptor>,

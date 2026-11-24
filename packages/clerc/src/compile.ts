@@ -28,7 +28,7 @@ import type {
 } from "./types";
 import { formatVersion } from "./utils";
 
-export interface CompiledNodeRuntime {
+interface CompiledNodeRuntime {
   readonly userFlags: CompiledFlags;
   readonly knownFlagNames: readonly string[];
   readonly parser: ArgvParser;
@@ -53,7 +53,7 @@ export interface CompiledCli {
   readonly runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>;
 }
 
-export interface CompileCliOptions {
+interface CompileCliOptions {
   readonly root: Plugin<any, any>;
   readonly meta: CliMeta;
   readonly defaultCommand?: string;
