@@ -369,4 +369,80 @@ describe("Unified Plugin & Clerc composition", () => {
       cli.run(["ping", "--global-opt", "x"], { terminal, throwOnError: true }),
     ).rejects.toThrow(UnknownFlagError);
   });
+
+  it("supports Scope.groups() and Scope.use() with scoped plugins and deduplication", async () => {
+    const events: string[] = [];
+    const terminal = createMemoryTerminal();
+
+    const makeShared = (tag: string) =>
+      plugin("acme:shared").middleware((_ctx, next) =>
+        next({ sharedTag: tag }),
+      );
+
+    const authPlugin = plugin("acme:auth")
+      .use(makeShared("v1"))
+      .groups({ flags: { auth: "Auth Options" } })
+      .flags({
+        token: { type: String, required: true, group: "auth" },
+      })
+      .middleware((ctx, next) => {
+        events.push(`auth:${ctx.flags.token}`);
+
+        return next({ actor: `user:${ctx.flags.token}` });
+      })
+      .command("whoami", {
+        run(ctx) {
+          ctx.terminal.stdout(`${ctx.state.actor}:${ctx.state.sharedTag}`);
+        },
+      });
+
+    const cli = clerc({ name: "app", version: "1.0.0" });
+    const admin = cli
+      .subcommand("admin", { description: "Admin commands" })
+      .groups({ flags: { fields: "Admin Fields" } })
+      .use(authPlugin)
+      .use(makeShared("v2"));
+
+    admin.command("edit", {
+      flags: { name: { type: String, group: "fields" } },
+      run(ctx) {
+        ctx.terminal.stdout(
+          `edit:${ctx.flags.name ?? "-"}:${ctx.state.actor}:${ctx.state.sharedTag}`,
+        );
+      },
+    });
+    cli.command("public", {
+      run(ctx) {
+        ctx.terminal.stdout("public");
+      },
+    });
+
+    await cli.run(["admin", "whoami", "--token", "sec"], { terminal });
+
+    expect(terminal.stdoutText()).toBe("user:sec:v2");
+
+    terminal.clear();
+    await cli.run(["admin", "edit", "--token", "sec", "--name", "web"], {
+      terminal,
+    });
+
+    expect(terminal.stdoutText()).toBe("edit:web:user:sec:v2");
+
+    // Sibling root command is isolated from admin's mounted plugin
+    terminal.clear();
+    await cli.run(["public"], { terminal });
+
+    expect(terminal.stdoutText()).toBe("public");
+    await expect(
+      cli.run(["public", "--token", "sec"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(UnknownFlagError);
+
+    // Help renders both Scope.groups() and mounted plugin groups
+    terminal.clear();
+    await cli.run(["admin", "edit", "--help"], { terminal });
+    const editHelp = terminal.stdoutText();
+
+    expect(editHelp).toContain("ADMIN FIELDS");
+    expect(editHelp).toContain("AUTH OPTIONS");
+  });
 });

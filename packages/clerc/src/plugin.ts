@@ -3,42 +3,15 @@ import type { AnyMiddlewareFn, ScopeState } from "./scope";
 import { Scope, getScopeState } from "./scope";
 import type {
   ExtractMiddlewareState,
-  GroupDefinition,
-  GroupsInput,
   MiddlewareNext,
   MiddlewareOptions,
   RunContext,
 } from "./types";
 
-type GroupScope = keyof GroupsInput;
-type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
-
-export interface PluginState {
-  readonly scope: ScopeState;
-  readonly groups: GroupBuckets;
-  readonly plugins: Map<string, Plugin<any, any>>;
-}
-
-export const GROUP_SCOPES: readonly GroupScope[] = [
-  "commands",
-  "flags",
-  "globalFlags",
-];
-
-export const createGroupBuckets = (): GroupBuckets => ({
-  commands: [],
-  flags: [],
-  globalFlags: [],
-});
-
-let readPluginExtra: (target: Plugin<any, any>) => {
-  readonly groups: GroupBuckets;
-  readonly plugins: Map<string, Plugin<any, any>>;
-};
-
 export function collectPluginStates(
-  root: Plugin<any, any>,
-): readonly PluginState[] {
+  roots: Plugin<any, any> | Iterable<Plugin<any, any>>,
+): readonly ScopeState[] {
+  const rootList = roots instanceof Plugin ? [roots] : [...roots];
   const winners = new Map<string, Plugin<any, any>>();
   const seen = new Set<Plugin<any, any>>();
   function scan(target: Plugin<any, any>): void {
@@ -46,14 +19,16 @@ export function collectPluginStates(
       return;
     }
     seen.add(target);
-    for (const child of readPluginExtra(target).plugins.values()) {
+    for (const child of getScopeState(target).plugins.values()) {
       scan(child);
     }
     winners.set(target.pluginName, target);
   }
-  scan(root);
+  for (const root of rootList) {
+    scan(root);
+  }
 
-  const states: PluginState[] = [];
+  const states: ScopeState[] = [];
   const visited = new Set<string>();
   function visit(target: Plugin<any, any>): void {
     if (visited.has(target.pluginName)) {
@@ -61,16 +36,15 @@ export function collectPluginStates(
     }
     visited.add(target.pluginName);
     const winner = winners.get(target.pluginName)!;
-    const extra = readPluginExtra(winner);
-    for (const child of extra.plugins.values()) {
+    const state = getScopeState(winner);
+    for (const child of state.plugins.values()) {
       visit(child);
     }
-    states.push({
-      scope: getScopeState(winner),
-      ...extra,
-    });
+    states.push(state);
   }
-  visit(root);
+  for (const root of rootList) {
+    visit(root);
+  }
 
   return states;
 }
@@ -80,14 +54,6 @@ export class Plugin<
   TState extends Record<string, any> = {},
 > extends Scope<TGlobalFlags, TState> {
   public readonly pluginName: string;
-  readonly #extra = {
-    groups: createGroupBuckets(),
-    plugins: new Map<string, Plugin<any, any>>(),
-  };
-
-  static {
-    readPluginExtra = (target) => target.#extra;
-  }
 
   constructor(name: string) {
     super();
@@ -100,21 +66,6 @@ export class Plugin<
     super.flags(definitions);
 
     return this as any;
-  }
-
-  public groups(definitions: GroupsInput): this {
-    for (const scope of GROUP_SCOPES) {
-      const entries = definitions[scope];
-      if (!entries) {
-        continue;
-      }
-      for (const [key, title] of Object.entries(entries)) {
-        this.#extra.groups[scope].push({ key, title });
-      }
-    }
-    this.invalidate();
-
-    return this;
   }
 
   public override middleware<R = void>(
@@ -134,14 +85,13 @@ export class Plugin<
     return this;
   }
 
-  public use<
+  public override use<
     PFlags extends Record<string, any> = {},
     PState extends Record<string, any> = {},
   >(
     other: Plugin<PFlags, PState>,
   ): Plugin<OverrideFlags<TGlobalFlags, PFlags>, TState & PState> {
-    this.#extra.plugins.set(other.pluginName, other);
-    this.invalidate();
+    super.use(other);
 
     return this as any;
   }

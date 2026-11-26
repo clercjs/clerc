@@ -4,7 +4,11 @@ import type { FlagDescriptor } from "./flags";
 import type { ScanCallback, ScanResult } from "./parser";
 import { DOUBLE_DASH } from "./parser";
 import type { RuleDescriptor } from "./rules";
-import type { AnyCommandDefinition, SubcommandOptions } from "./types";
+import type {
+  AnyCommandDefinition,
+  CliModel,
+  SubcommandOptions,
+} from "./types";
 import type { Mutable } from "./utils";
 import { toArray } from "./utils";
 
@@ -32,6 +36,27 @@ export interface CommandTree {
   walkCommands: () => readonly (CommandNode & {
     readonly command: AnyCommandDefinition;
   })[];
+}
+
+export interface GetCommandFlagsOptions {
+  readonly includeBuiltins?: boolean;
+}
+
+export function getCommandFlags(
+  model: CliModel,
+  node: CommandNode,
+  options: GetCommandFlagsOptions = {},
+): readonly FlagDescriptor[] {
+  const isStandalone = Boolean(node.command?.standalone);
+  const localNames = new Set(node.localFlags.map((f) => f.name));
+
+  return [
+    ...(isStandalone
+      ? []
+      : model.globalFlags.filter((f) => !localNames.has(f.name))),
+    ...node.localFlags,
+    ...(options.includeBuiltins ? node.builtinFlags : []),
+  ];
 }
 
 interface BaseCommandMatch {

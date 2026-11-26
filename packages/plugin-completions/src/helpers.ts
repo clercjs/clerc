@@ -2,8 +2,6 @@ import type {
   ArgDescriptor,
   ArgvFlagSpec,
   ArgvParser,
-  CliModel,
-  CommandNode,
   CompletionCandidate,
   CompletionContext,
   CompletionItem,
@@ -46,23 +44,6 @@ export function extractEnumCandidates(
   }
 
   return rawEnum.map((val) => ({ value: String(val) }));
-}
-
-export function getScopeFlags(
-  node: CommandNode,
-  model: CliModel,
-  includeBuiltins: boolean,
-): readonly FlagDescriptor[] {
-  const isStandalone = Boolean(node.command?.standalone);
-  const localNames = new Set(node.localFlags.map((f) => f.name));
-
-  return [
-    ...(isStandalone
-      ? []
-      : model.globalFlags.filter((f) => !localNames.has(f.name))),
-    ...node.localFlags,
-    ...(includeBuiltins ? node.builtinFlags : []),
-  ];
 }
 
 export const flagsToSpecs = (

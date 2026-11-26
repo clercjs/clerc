@@ -1,5 +1,6 @@
 import type { ArgDescriptor } from "../args";
 import type { CommandNode, CommandTree } from "../command-tree";
+import { getCommandFlags } from "../command-tree";
 import type { FlagDescriptor } from "../flags";
 import { DOUBLE_DASH } from "../parser";
 import type { MultiRuleKind, RuleDescriptor, RuleRef } from "../rules";
@@ -360,11 +361,9 @@ export function formatCommandUsage(
   }
 
   const visibleChildren = model.tree.listVisibleChildren(node);
-  const isStandalone = Boolean(node.command?.standalone);
-  const hasVisibleFlags =
-    node.localFlags.some((f) => !f.hidden) ||
-    node.builtinFlags.some((f) => !f.hidden) ||
-    (!isStandalone && model.globalFlags.some((f) => !f.hidden));
+  const hasVisibleFlags = getCommandFlags(model, node, {
+    includeBuiltins: true,
+  }).some((f) => !f.hidden);
 
   const usage = buildUsage(
     node,
@@ -447,15 +446,9 @@ export async function buildHelpDocument(
     : [];
   const notes = [...rawNotes, ...node.ruleNotes];
 
-  const flagMap = new Map<string, FlagDescriptor>();
-  if (!isStandalone) {
-    for (const f of globalFlags) {
-      flagMap.set(f.name, f);
-    }
-  }
-  for (const f of node.localFlags) {
-    flagMap.set(f.name, f);
-  }
+  const flagMap = new Map<string, FlagDescriptor>(
+    getCommandFlags(model, node).map((f) => [f.name, f]),
+  );
   const argMap = new Map<string, ArgDescriptor>(
     node.args.map((a) => [a.name, a]),
   );

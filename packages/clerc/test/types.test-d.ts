@@ -358,6 +358,21 @@ describe("core v2 route-signature & plugin types", () => {
       },
     });
 
+    const scopedAuth = plugin("scoped:auth")
+      .flags({ apiKey: { type: String, required: true } })
+      .middleware((_ctx, next) => next({ orgId: "org_1" }));
+
+    cli
+      .subcommand("cloud")
+      .groups({ flags: { cloud: "Cloud Options" } })
+      .use(scopedAuth)
+      .command("deploy", {
+        run(ctx) {
+          expectTypeOf(ctx.flags.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(ctx.state.orgId).toEqualTypeOf<string>();
+        },
+      });
+
     void new ClercError("domain failure");
     void new ClercError("auth failure", { code: "ERR_AUTH" });
   });

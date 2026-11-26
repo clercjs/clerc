@@ -34,7 +34,12 @@ export type {
   InferCommandArgs,
 } from "./args";
 export { Clerc, clerc } from "./cli";
-export type { CommandNode, CommandTree } from "./command-tree";
+export type {
+  CommandNode,
+  CommandTree,
+  GetCommandFlagsOptions,
+} from "./command-tree";
+export { getCommandFlags } from "./command-tree";
 export { Complete } from "./complete";
 export type {
   BuiltinErrorCode,

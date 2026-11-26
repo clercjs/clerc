@@ -8,6 +8,7 @@ import {
   IMPLICIT_FLAG_VALUE,
   createArgvParser,
   createMemoryTerminal,
+  getCommandFlags,
 } from "clerc";
 
 import { ShellCompDirective } from "./directives";
@@ -21,7 +22,6 @@ import {
   extractEnumCandidates,
   filterAndDedupe,
   flagsToSpecs,
-  getScopeFlags,
   matchInlineFlagValue,
   normalizeResult,
 } from "./helpers";
@@ -46,7 +46,7 @@ export async function resolveCompletions(
     const scanNode =
       !node.command?.run && node.defaultChild ? node.defaultChild : node;
     const scanner = createArgvParser(
-      flagsToSpecs(getScopeFlags(scanNode, model, true)),
+      flagsToSpecs(getCommandFlags(model, scanNode, { includeBuiltins: true })),
     );
     let matched = false;
     scanner.scan(
@@ -83,7 +83,9 @@ export async function resolveCompletions(
   const targetNode =
     !node.command?.run && node.defaultChild ? node.defaultChild : node;
 
-  const activeFlags = getScopeFlags(targetNode, model, true);
+  const activeFlags = getCommandFlags(model, targetNode, {
+    includeBuiltins: true,
+  });
   const flagByName = new Map(activeFlags.map((flag) => [flag.name, flag]));
   const targetParser = createArgvParser(flagsToSpecs(activeFlags), {
     stopParsing: targetNode.command?.stopParsing,

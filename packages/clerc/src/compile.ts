@@ -17,15 +17,11 @@ import {
 import type { ArgvFlagSpec, ArgvParser } from "./parser";
 import { DOUBLE_DASH, createArgvParser } from "./parser";
 import type { Plugin } from "./plugin";
-import {
-  GROUP_SCOPES,
-  collectPluginStates,
-  createGroupBuckets,
-} from "./plugin";
+import { collectPluginStates } from "./plugin";
 import type { CompiledRules, RulesEntry } from "./rules";
 import { EMPTY_RULES, compileRules, normalizeRulesInput } from "./rules";
 import type { AnyMiddlewareFn, RegisteredMiddleware, Scope } from "./scope";
-import { getScopeState } from "./scope";
+import { GROUP_SCOPES, createGroupBuckets, getScopeState } from "./scope";
 import type {
   CliMeta,
   CliModel,
@@ -329,15 +325,34 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     parentDefaultGroup: string | undefined,
   ): void {
     const s = getScopeState(scope);
+    const mountedStates =
+      s.plugins.size > 0 ? collectPluginStates(s.plugins.values()) : [];
+    const scopeStates = [...mountedStates, s];
     const fullPrefix = appendIfAny(parentPrefix, s.prefix);
+
+    let scopedFlagEntries = parentEnv.scopedFlagEntries;
+    let scopedRuleEntries = parentEnv.scopedRuleEntries;
+    let middlewares = parentEnv.middlewares;
+    let errorHandlers = parentEnv.errorHandlers;
+
+    for (const state of scopeStates) {
+      scopedFlagEntries = mergeFlagEntries(
+        scopedFlagEntries,
+        compileFlagEntries(state.flags),
+      );
+      scopedRuleEntries = appendIfAny(scopedRuleEntries, state.rules);
+      middlewares = appendIfAny(middlewares, state.middlewares);
+      errorHandlers = appendIfAny(errorHandlers, state.errorHandlers);
+      for (const groupScope of GROUP_SCOPES) {
+        groups[groupScope].push(...state.groups[groupScope]);
+      }
+    }
+
     const env: ResolvedScopeEnv = {
-      scopedFlagEntries: mergeFlagEntries(
-        parentEnv.scopedFlagEntries,
-        compileFlagEntries(s.flags),
-      ),
-      scopedRuleEntries: appendIfAny(parentEnv.scopedRuleEntries, s.rules),
-      middlewares: appendIfAny(parentEnv.middlewares, s.middlewares),
-      errorHandlers: appendIfAny(parentEnv.errorHandlers, s.errorHandlers),
+      scopedFlagEntries,
+      scopedRuleEntries,
+      middlewares,
+      errorHandlers,
     };
     const defaultGroup = s.defaultGroup ?? parentDefaultGroup;
 
@@ -349,40 +364,42 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
       nodeScopeEnvs.set(tree.registerNamespace(fullPrefix, metaWithGroup), env);
     }
 
-    for (const cmd of s.commands) {
-      const cmdSegments = cmd.name ? cmd.name.split(/\s+/) : [];
-      const fullName = appendIfAny(fullPrefix, cmdSegments).join(" ");
-      const fullSpec = [fullName, ...cmd.argTokens].filter(Boolean).join(" ");
-      const effectiveGroup =
-        cmd.group ?? (fullPrefix.length === 0 ? defaultGroup : undefined);
-      nodeScopeEnvs.set(
-        tree.register({
-          ...cmd,
-          name: fullName,
-          spec: fullSpec,
-          group: effectiveGroup,
-        }),
-        env,
-      );
-    }
+    for (const state of scopeStates) {
+      for (const cmd of state.commands) {
+        const cmdSegments = cmd.name ? cmd.name.split(/\s+/) : [];
+        const fullName = appendIfAny(fullPrefix, cmdSegments).join(" ");
+        const fullSpec = [fullName, ...cmd.argTokens].filter(Boolean).join(" ");
+        const effectiveGroup =
+          cmd.group ?? (fullPrefix.length === 0 ? defaultGroup : undefined);
+        nodeScopeEnvs.set(
+          tree.register({
+            ...cmd,
+            name: fullName,
+            spec: fullSpec,
+            group: effectiveGroup,
+          }),
+          env,
+        );
+      }
 
-    for (const child of s.children) {
-      registerScopeTree(child, fullPrefix, env, defaultGroup);
+      for (const child of state.children) {
+        registerScopeTree(child, fullPrefix, env, defaultGroup);
+      }
     }
   }
 
   for (const state of states) {
-    Object.assign(globalFlagsInput, state.scope.flags);
-    globalRuleEntries.push(...state.scope.rules);
-    globalMiddlewares.push(...state.scope.middlewares);
-    globalErrorHandlers.push(...state.scope.errorHandlers);
-    for (const scope of GROUP_SCOPES) {
-      groups[scope].push(...state.groups[scope]);
+    Object.assign(globalFlagsInput, state.flags);
+    globalRuleEntries.push(...state.rules);
+    globalMiddlewares.push(...state.middlewares);
+    globalErrorHandlers.push(...state.errorHandlers);
+    for (const groupScope of GROUP_SCOPES) {
+      groups[groupScope].push(...state.groups[groupScope]);
     }
-    for (const cmd of state.scope.commands) {
+    for (const cmd of state.commands) {
       tree.register(cmd);
     }
-    for (const childScope of state.scope.children) {
+    for (const childScope of state.children) {
       registerScopeTree(childScope, [], EMPTY_SCOPE_ENV, undefined);
     }
   }

@@ -118,7 +118,6 @@ const cli = clerc({
       tls: "TLS Options",
       output: "Output Options",
       auth: "Authentication",
-      fields: "Monitor Fields",
     },
   })
   .use(configPlugin)
@@ -359,10 +358,14 @@ const cloud = cli
     }),
   );
 
-const monitor = cloud.subcommand("monitor", {
-  aliases: ["mon"],
-  description: "Manage HTTP monitors",
-});
+const monitor = cloud
+  .subcommand("monitor", {
+    aliases: ["mon"],
+    description: "Manage HTTP monitors",
+  })
+  .groups({
+    flags: { fields: "Monitor Fields" },
+  });
 
 monitor.command("ls", {
   default: true,

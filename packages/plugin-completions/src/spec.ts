@@ -6,13 +6,10 @@ import type {
   CompletionResult,
   FlagDescriptor,
 } from "clerc";
+import { getCommandFlags } from "clerc";
 
 import { ShellCompDirective } from "./directives";
-import {
-  extractEnumCandidates,
-  getScopeFlags,
-  normalizeResult,
-} from "./helpers";
+import { extractEnumCandidates, normalizeResult } from "./helpers";
 
 export interface StaticCandidate {
   readonly value: string;
@@ -283,7 +280,9 @@ export function buildCompletionSpec(
       });
     }
 
-    const activeFlags = getScopeFlags(targetNode, model, true);
+    const activeFlags = getCommandFlags(model, targetNode, {
+      includeBuiltins: true,
+    });
     const flags: StaticFlagSpec[] = activeFlags.map((flag) => ({
       name: flag.name,
       target: flag.target,

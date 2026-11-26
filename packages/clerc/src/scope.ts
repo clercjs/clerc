@@ -7,6 +7,7 @@ import type {
   InferFlags,
   OverrideFlags,
 } from "./flags";
+import type { Plugin } from "./plugin";
 import type { RulesEntry, RulesInput } from "./rules";
 import { normalizeRulesInput } from "./rules";
 import type {
@@ -14,6 +15,8 @@ import type {
   CommandOptions,
   ErrorHandler,
   ExtractMiddlewareState,
+  GroupDefinition,
+  GroupsInput,
   MiddlewareNext,
   MiddlewareOptions,
   RootCommandOptions,
@@ -21,6 +24,21 @@ import type {
   ScopeOptions,
   SubcommandOptions,
 } from "./types";
+
+export type GroupScope = keyof GroupsInput;
+export type GroupBuckets = Record<GroupScope, GroupDefinition[]>;
+
+export const GROUP_SCOPES: readonly GroupScope[] = [
+  "commands",
+  "flags",
+  "globalFlags",
+];
+
+export const createGroupBuckets = (): GroupBuckets => ({
+  commands: [],
+  flags: [],
+  globalFlags: [],
+});
 
 export type AnyMiddlewareFn = (
   ctx: RunContext<any, any>,
@@ -37,6 +55,8 @@ export interface ScopeState {
   readonly namespaceMeta?: SubcommandOptions;
   readonly defaultGroup?: string;
   readonly flags: FlagsDefinition;
+  readonly groups: GroupBuckets;
+  readonly plugins: Map<string, Plugin<any, any>>;
   readonly rules: RulesEntry<any, any, any, any>[];
   readonly commands: AnyCommandDefinition[];
   readonly middlewares: RegisteredMiddleware[];
@@ -70,6 +90,8 @@ export class Scope<
       namespaceMeta,
       defaultGroup,
       flags: {},
+      groups: createGroupBuckets(),
+      plugins: new Map(),
       rules: [],
       commands: [],
       middlewares: [],
@@ -89,6 +111,21 @@ export class Scope<
     this.invalidate();
 
     return this as any;
+  }
+
+  public groups(definitions: GroupsInput): this {
+    for (const scope of GROUP_SCOPES) {
+      const entries = definitions[scope];
+      if (!entries) {
+        continue;
+      }
+      for (const [key, title] of Object.entries(entries)) {
+        this.#state.groups[scope].push({ key, title });
+      }
+    }
+    this.invalidate();
+
+    return this;
   }
 
   public rules(
@@ -164,6 +201,18 @@ export class Scope<
     this.invalidate();
 
     return this;
+  }
+
+  public use<
+    PFlags extends Record<string, any> = {},
+    PState extends Record<string, any> = {},
+  >(
+    other: Plugin<PFlags, PState>,
+  ): Scope<OverrideFlags<TFlags, PFlags>, TState & PState> {
+    this.#state.plugins.set(other.pluginName, other);
+    this.invalidate();
+
+    return this as any;
   }
 
   public scope(options?: ScopeOptions): Scope<TFlags, TState> {
