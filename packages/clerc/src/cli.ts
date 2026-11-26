@@ -46,10 +46,22 @@ import type {
 } from "./types";
 import type { Mutable } from "./utils";
 
+const NEVER_ABORTED_SIGNAL = new AbortController().signal;
+
+const SIGNAL_EXIT_CODES = {
+  SIGINT: 130,
+  SIGTERM: 143,
+} as const;
+
+type ManagedSignal = keyof typeof SIGNAL_EXIT_CODES;
+
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
   TState extends Record<string, any>,
-> = Mutable<Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw">> & {
+> = Mutable<
+  Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw" | "signal">
+> & {
+  readonly signal: AbortSignal;
   state: Record<string, any>;
   raw: Mutable<RawParseContext>;
 };
@@ -147,6 +159,7 @@ export class Clerc<
     compiledCli: CompiledCli,
     argv: readonly string[] | undefined,
     options: RunOptions,
+    getSignal: () => AbortSignal,
   ): InternalContext<TGlobalFlags, TState> {
     const terminal = options.terminal ?? createTerminal();
     const themeOverrides =
@@ -190,9 +203,17 @@ export class Clerc<
           terminal.stdout(await render(commandPath));
         },
       },
-      run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
+      run: (nextArgv, nextOptions) =>
+        this.#run(
+          nextArgv,
+          nextOptions ?? {},
+          nextOptions?.signal ? () => nextOptions.signal! : getSignal,
+        ),
       exit(code = 1): never {
         throw new ExitSignal(code);
+      },
+      get signal() {
+        return getSignal();
       },
       commandPath: [],
       args: {},
@@ -436,12 +457,14 @@ export class Clerc<
     return { ok: false, exitCode, error };
   }
 
-  public async run(
-    argv?: readonly string[],
-    options: RunOptions = {},
+  async #run(
+    argv: readonly string[] | undefined,
+    options: RunOptions,
+    getSignal: () => AbortSignal,
+    isProcessAbort?: (error: unknown) => number | undefined,
   ): Promise<RunResult> {
     const compiledCli = this.#ensureCompiled();
-    const ctx = this.#createContext(compiledCli, argv, options);
+    const ctx = this.#createContext(compiledCli, argv, options, getSignal);
     let activeRuntime = compiledCli.rootRuntime;
 
     try {
@@ -454,6 +477,10 @@ export class Clerc<
           ok: caughtError.exitCode === 0,
           exitCode: caughtError.exitCode,
         };
+      }
+      const abortExitCode = isProcessAbort?.(caughtError);
+      if (abortExitCode !== undefined) {
+        return { ok: false, exitCode: abortExitCode };
       }
 
       try {
@@ -477,16 +504,105 @@ export class Clerc<
     }
   }
 
+  public async run(
+    argv?: readonly string[],
+    options: RunOptions = {},
+  ): Promise<RunResult> {
+    const signal = options.signal ?? NEVER_ABORTED_SIGNAL;
+
+    return this.#run(argv, options, () => signal);
+  }
+
   public async runMain(
     argv?: readonly string[],
     options?: RunOptions,
   ): Promise<RunResult> {
-    const result = await this.run(argv, options);
-    if (!result.ok) {
-      process.exitCode = result.exitCode;
+    let controller: AbortController | undefined;
+    let resolvedSignal: AbortSignal | undefined;
+    let attached = false;
+    let receivedSignal: ManagedSignal | undefined;
+    let onSigInt: (() => void) | undefined;
+    let onSigTerm: (() => void) | undefined;
+
+    function detach(): void {
+      if (!attached) {
+        return;
+      }
+      attached = false;
+      if (onSigInt) {
+        process.off("SIGINT", onSigInt);
+      }
+      if (onSigTerm) {
+        process.off("SIGTERM", onSigTerm);
+      }
     }
 
-    return result;
+    function handleSignal(sig: ManagedSignal): void {
+      if (receivedSignal) {
+        detach();
+        if (process.platform === "win32") {
+          process.exit(SIGNAL_EXIT_CODES[sig]);
+        }
+        process.kill(process.pid, sig);
+
+        return;
+      }
+      receivedSignal = sig;
+      controller?.abort(new Error(`Process interrupted by ${sig}`));
+    }
+
+    function getSignal(): AbortSignal {
+      if (!resolvedSignal) {
+        if (
+          typeof process !== "undefined" &&
+          typeof process.on === "function"
+        ) {
+          controller = new AbortController();
+          attached = true;
+          onSigInt = () => handleSignal("SIGINT");
+          onSigTerm = () => handleSignal("SIGTERM");
+          process.on("SIGINT", onSigInt);
+          process.on("SIGTERM", onSigTerm);
+          resolvedSignal = options?.signal
+            ? AbortSignal.any([controller.signal, options.signal])
+            : controller.signal;
+        } else {
+          resolvedSignal = options?.signal ?? NEVER_ABORTED_SIGNAL;
+        }
+      }
+
+      return resolvedSignal;
+    }
+
+    function isProcessAbort(error: unknown): number | undefined {
+      if (!receivedSignal || !controller?.signal.aborted) {
+        return undefined;
+      }
+      if (
+        error === controller.signal.reason ||
+        (Error.isError(error) && error.name === "AbortError")
+      ) {
+        return SIGNAL_EXIT_CODES[receivedSignal];
+      }
+
+      return undefined;
+    }
+
+    try {
+      const result = await this.#run(
+        argv,
+        options ?? {},
+        getSignal,
+        isProcessAbort,
+      );
+      if (!result.ok) {
+        process.exitCode = result.exitCode;
+      }
+
+      return result;
+    } finally {
+      detach();
+    }
   }
 }
 

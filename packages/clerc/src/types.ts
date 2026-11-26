@@ -190,6 +190,7 @@ export interface ErrorContext<
     options?: RunOptions,
   ) => Promise<RunResult>;
   readonly exit: (code?: number) => never;
+  readonly signal: AbortSignal;
   readonly command?: AnyCommandDefinition;
   readonly commandPath: readonly string[];
   readonly calledAs?: string;
@@ -344,6 +345,7 @@ export interface ClercOptions
 
 export interface RunOptions extends Pick<ClercOptions, "theme" | "logger"> {
   readonly terminal?: Terminal;
+  readonly signal?: AbortSignal;
   /**
    * When true, rethrows unhandled errors instead of rendering diagnostics to
    * stderr. Useful in tests asserting on thrown error instances.

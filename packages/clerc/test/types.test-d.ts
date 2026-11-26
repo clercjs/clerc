@@ -351,6 +351,7 @@ describe("core v2 route-signature & plugin types", () => {
         expectTypeOf(ctx.flags.tags).toEqualTypeOf<string[]>();
         expectTypeOf(ctx.state.client.ping()).toEqualTypeOf<boolean>();
         expectTypeOf(ctx.exit).toEqualTypeOf<(code?: number) => never>();
+        expectTypeOf(ctx.signal).toEqualTypeOf<AbortSignal>();
         expectTypeOf(ctx.terminal.isInputTTY).toEqualTypeOf<boolean>();
         expectTypeOf(ctx.terminal.readStdin).toEqualTypeOf<
           () => Promise<string>

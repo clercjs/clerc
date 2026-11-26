@@ -879,4 +879,100 @@ describe("Clerc execution pipeline", () => {
     expect(ttyTerm.isInputTTY).toBeTruthy();
     await expect(ttyTerm.readStdin()).resolves.toBe("");
   });
+
+  it("propagates RunOptions.signal and lazily attaches SIGINT/SIGTERM only when ctx.signal is read in runMain()", async () => {
+    const terminal = createMemoryTerminal();
+    const events: string[] = [];
+    let notifyWaiting: (() => void) | undefined;
+
+    const cli = createTestBaseCli().middleware(async (ctx, next) => {
+      try {
+        await next();
+      } finally {
+        events.push(`finally:${ctx.calledAs}`);
+      }
+    });
+
+    cli.command("quick", {
+      run() {
+        events.push(`listeners:${process.listenerCount("SIGINT")}`);
+      },
+    });
+
+    cli.command("nested", {
+      async run(ctx) {
+        await ctx.run(["wait"], { terminal: ctx.terminal, throwOnError: true });
+      },
+    });
+
+    cli.command("wait", {
+      async run(ctx) {
+        const firstSignal = ctx.signal;
+        const sameRef = firstSignal === ctx.signal;
+        events.push(`sameRef:${String(sameRef)}`);
+        await new Promise<void>((_resolve, reject) => {
+          if (ctx.signal.aborted) {
+            reject(ctx.signal.reason);
+
+            return;
+          }
+          ctx.signal.addEventListener(
+            "abort",
+            () => reject(ctx.signal.reason),
+            { once: true },
+          );
+          notifyWaiting?.();
+        });
+      },
+    });
+
+    // 1. cli.run() propagates options.signal into nested ctx.run()
+    const controller = new AbortController();
+    const waitReady = new Promise<void>((resolve) => {
+      notifyWaiting = resolve;
+    });
+    const runPromise = cli.run(["nested"], {
+      terminal,
+      signal: controller.signal,
+    });
+    await waitReady;
+    controller.abort(new Error("timed out"));
+    const runRes = await runPromise;
+
+    expect(runRes.ok).toBeFalsy();
+    expect(runRes.exitCode).toBe(1);
+    expect(events).toEqual(["sameRef:true", "finally:wait", "finally:nested"]);
+
+    // 2. runMain() does NOT attach SIGINT listeners when command never accesses ctx.signal
+    events.length = 0;
+    const baselineSigInt = process.listenerCount("SIGINT");
+    const savedExitCode = process.exitCode;
+    try {
+      await cli.runMain(["quick"], { terminal });
+
+      expect(events).toEqual([`listeners:${baselineSigInt}`, "finally:quick"]);
+
+      // 3. runMain() lazily attaches SIGINT when ctx.signal is read, aborts with 130, and detaches afterward
+      events.length = 0;
+      terminal.clear();
+      const mainReady = new Promise<void>((resolve) => {
+        notifyWaiting = resolve;
+      });
+      const mainPromise = cli.runMain(["wait"], { terminal });
+      await mainReady;
+
+      expect(process.listenerCount("SIGINT")).toBe(baselineSigInt + 1);
+
+      process.emit("SIGINT");
+      const mainRes = await mainPromise;
+
+      expect(mainRes).toEqual({ ok: false, exitCode: 130 });
+      expect(process.exitCode).toBe(130);
+      expect(terminal.stderrText()).toBe("");
+      expect(events).toEqual(["sameRef:true", "finally:wait"]);
+      expect(process.listenerCount("SIGINT")).toBe(baselineSigInt);
+    } finally {
+      process.exitCode = savedExitCode;
+    }
+  });
 });
