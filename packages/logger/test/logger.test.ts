@@ -1,7 +1,10 @@
+import { PassThrough } from "node:stream";
+
 import { createMemoryTerminal } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import { createLogger } from "../src";
+import { confirm, select, text } from "../src/prompts";
 
 describe("@clerc/logger", () => {
   it("renders right-aligned word labels, variadic details, child scopes, and isomorphic log.box.* panels", () => {
@@ -187,5 +190,57 @@ describe("@clerc/logger", () => {
     ).rejects.toThrow("Connection reset");
 
     expect(term.stderrText()).toBe("error Deploy failed");
+  });
+
+  it("guards interactive prompts in non-TTY terminals unless custom streams are provided", async () => {
+    const stdinDesc = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
+    const stdoutDesc = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: false,
+      configurable: true,
+    });
+    Object.defineProperty(process.stdout, "isTTY", {
+      value: false,
+      configurable: true,
+    });
+
+    try {
+      await expect(text({ message: "Name?" })).rejects.toThrow(
+        "Interactive prompts require a TTY terminal",
+      );
+      await expect(confirm({ message: "Continue?" })).rejects.toThrow(
+        "Interactive prompts require a TTY terminal",
+      );
+      await expect(
+        select({
+          message: "Pick one",
+          options: [{ value: "a", label: "A" }],
+        }),
+      ).rejects.toThrow("Interactive prompts require a TTY terminal");
+
+      const input = new PassThrough();
+      const output = new PassThrough();
+      const promptPromise = confirm({
+        message: "Proceed?",
+        initialValue: true,
+        input,
+        output,
+      });
+      input.write("\r");
+      const answer = await promptPromise;
+
+      expect(answer).toBeTruthy();
+    } finally {
+      if (stdinDesc) {
+        Object.defineProperty(process.stdin, "isTTY", stdinDesc);
+      } else {
+        delete (process.stdin as { isTTY?: boolean }).isTTY;
+      }
+      if (stdoutDesc) {
+        Object.defineProperty(process.stdout, "isTTY", stdoutDesc);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
   });
 });

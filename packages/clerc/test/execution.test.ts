@@ -759,9 +759,9 @@ describe("Clerc execution pipeline", () => {
     });
   });
 
-  it("supports domain ClercError defaults and controlled ctx.exit()", async () => {
+  it("supports domain ClercError defaults, controlled ctx.exit(), and terminal stdin", async () => {
     const events: string[] = [];
-    const terminal = createMemoryTerminal();
+    const terminal = createMemoryTerminal({ stdin: "hello from pipe\n" });
 
     const cli = createTestBaseCli({ help: true })
       .middleware(async (ctx, next) => {
@@ -806,7 +806,16 @@ describe("Clerc execution pipeline", () => {
         throw new Error("override-exit");
       },
     });
+    cli.command("pipe", {
+      async run(ctx) {
+        const input = await ctx.terminal.readStdin();
+        ctx.terminal.stdout(
+          `tty=${String(ctx.terminal.isInputTTY)}:${input.trim()}`,
+        );
+      },
+    });
 
+    // Domain ClercError defaults to exitCode 1 and omits --help hint
     const authRes = await cli.run(["auth"], { terminal });
 
     expect(authRes.ok).toBeFalsy();
@@ -815,6 +824,7 @@ describe("Clerc execution pipeline", () => {
     expect(terminal.stderrText()).toContain("error not logged in");
     expect(terminal.stderrText()).not.toContain("--help");
 
+    // ClercError without options defaults to ERR_CLI and exitCode 1
     terminal.clear();
     const simpleRes = await cli.run(["simple-fail"], {
       terminal,
@@ -831,6 +841,7 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
+    // ctx.exit(3) skips onError & throwOnError, still runs middleware finally
     events.length = 0;
     terminal.clear();
     const exitRes = await cli.run(["check"], {
@@ -842,6 +853,7 @@ describe("Clerc execution pipeline", () => {
     expect(events).toEqual(["finally:check"]);
     expect(terminal.stderrText()).toBe(" warn formatting differs");
 
+    // ctx.exit(0) exits cleanly as ok: true
     events.length = 0;
     const zeroRes = await cli.run(["check", "--ok"], {
       terminal,
@@ -851,6 +863,7 @@ describe("Clerc execution pipeline", () => {
     expect(zeroRes).toEqual({ ok: true, exitCode: 0 });
     expect(events).toEqual(["finally:check"]);
 
+    // ctx.exit() inside onError overrides exitCode cleanly
     events.length = 0;
     terminal.clear();
     const overrideRes = await cli.run(["override"], {
@@ -861,5 +874,17 @@ describe("Clerc execution pipeline", () => {
     expect(overrideRes).toEqual({ ok: false, exitCode: 4 });
     expect(events).toEqual(["finally:override", "onError:override-exit"]);
     expect(terminal.stderrText()).toBe("");
+
+    // terminal.readStdin() & isInputTTY
+    terminal.clear();
+    const pipeRes = await cli.run(["pipe"], { terminal });
+
+    expect(pipeRes.ok).toBeTruthy();
+    expect(terminal.stdoutText()).toBe("tty=false:hello from pipe");
+
+    const ttyTerm = createMemoryTerminal();
+
+    expect(ttyTerm.isInputTTY).toBeTruthy();
+    await expect(ttyTerm.readStdin()).resolves.toBe("");
   });
 });
