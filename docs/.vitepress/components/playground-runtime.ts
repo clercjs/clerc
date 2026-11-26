@@ -13,6 +13,7 @@ import { parseAnsiLines } from "./terminal-render.ts";
 
 export { completionsPlugin, createLogger };
 export { clerc } from "../../../packages/clerc/src/cli.ts";
+export { Complete } from "../../../packages/clerc/src/complete.ts";
 export { ClercError } from "../../../packages/clerc/src/errors.ts";
 export { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
 export { plugin } from "../../../packages/clerc/src/plugin.ts";

@@ -15,7 +15,7 @@ import type {
   UnwrapDefault,
 } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
-import type { CompletionHandler } from "./types";
+import type { CompletionOption } from "./types";
 import type { CamelCase, Prettify } from "./utils";
 import { camelCase, evaluateDefault } from "./utils";
 
@@ -25,7 +25,7 @@ export type ArgMeta = ArgCustomMeta & Record<string, unknown>;
 interface ArgSharedMeta extends ArrayConstraintOptions {
   readonly description?: string;
   readonly env?: string;
-  readonly complete?: false | CompletionHandler;
+  readonly complete?: CompletionOption;
   readonly meta?: ArgMeta;
 }
 

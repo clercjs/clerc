@@ -31,18 +31,11 @@ export interface CompletionCandidate {
 
 export type CompletionItem = string | CompletionCandidate;
 
-export interface CompletionDirectiveResult {
-  readonly items?: readonly CompletionItem[];
+export interface CompleteListOptions {
   /**
-   * Native shell path completion behavior:
-   *
-   * - `true`: allow shell file path completion
-   * - `false` (default): disable shell file path fallback
-   * - `"dirs"`: complete directories only
-   * - `readonly string[]`: complete files matching extensions (e.g. `["json",
-   *   "ts"]`)
+   * Allow shell file path completion alongside the provided items.
    */
-  readonly files?: boolean | "dirs" | readonly string[];
+  readonly allowFiles?: boolean;
   /**
    * Suppress trailing space after accepting a completion.
    */
@@ -53,8 +46,31 @@ export interface CompletionDirectiveResult {
   readonly keepOrder?: boolean;
 }
 
+export interface CompleteFileOptions {
+  /**
+   * Restrict file completions to matching extensions (e.g. `["ts", "json"]`).
+   */
+  readonly extensions?: readonly string[];
+}
+
+export type CompletionSpec =
+  | {
+      readonly kind: "list";
+      readonly items: readonly CompletionItem[];
+      readonly allowFiles?: boolean;
+      readonly noSpace?: boolean;
+      readonly keepOrder?: boolean;
+    }
+  | {
+      readonly kind: "file";
+      readonly extensions?: readonly string[];
+    }
+  | {
+      readonly kind: "dir";
+    };
+
 export type CompletionResult =
-  readonly CompletionItem[] | CompletionDirectiveResult | void;
+  readonly CompletionItem[] | CompletionSpec | false | void;
 
 export interface CompletionContext<
   Args extends Record<string, any> = Record<string, any>,
@@ -77,6 +93,15 @@ export type CompletionHandler<
 > = (
   ctx: CompletionContext<Args, Flags>,
 ) => CompletionResult | Promise<CompletionResult>;
+
+export type CompletionOption<
+  Args extends Record<string, any> = Record<string, any>,
+  Flags extends Record<string, any> = Record<string, any>,
+> =
+  | false
+  | readonly CompletionItem[]
+  | CompletionSpec
+  | CompletionHandler<Args, Flags>;
 
 export interface GroupDefinition {
   readonly key: string;
@@ -228,12 +253,10 @@ export interface CommandOptions<
   readonly deprecated?: boolean | string;
   readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
   readonly notes?: MetaAsyncGetter<readonly string[]>;
-  readonly complete?:
-    | false
-    | CompletionHandler<
-        InferCommandArgs<Spec, NoInfer<Args>>,
-        MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
-      >;
+  readonly complete?: CompletionOption<
+    InferCommandArgs<Spec, NoInfer<Args>>,
+    MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
+  >;
   readonly run?: CommandHandler<
     Spec,
     NoInfer<Args>,

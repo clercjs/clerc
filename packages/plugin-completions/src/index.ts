@@ -1,4 +1,4 @@
-import { Types, plugin } from "clerc";
+import { Complete, Types, plugin } from "clerc";
 
 import { formatCompletionOutput, resolveCompletions } from "./complete";
 import type { ResolveCompletionsOptions, ResolvedCompletions } from "./helpers";
@@ -11,6 +11,7 @@ import {
 
 export type { ResolveCompletionsOptions, ResolvedCompletions, SupportedShell };
 export {
+  Complete,
   SUPPORTED_SHELLS,
   ShellCompDirective,
   formatCompletionOutput,
@@ -20,8 +21,9 @@ export {
 
 export interface CompletionsPluginOptions {
   /**
-   * Executable command invoked by the generated shell completion script.
-   * Defaults to `ctx.model.meta.name`.
+   * Executable command invoked by the generated shell completion script when
+   * resolving dynamic `complete(ctx)` handlers. Defaults to
+   * `ctx.model.meta.name`.
    */
   readonly executable?: string;
 }
@@ -41,11 +43,7 @@ export const completionsPlugin = (options: CompletionsPluginOptions = {}) =>
       },
       run(ctx) {
         ctx.terminal.stdout(
-          renderCompletionScript(
-            ctx.args.shell,
-            ctx.model.meta.name,
-            options.executable ?? ctx.model.meta.name,
-          ),
+          renderCompletionScript(ctx.args.shell, ctx.model, options.executable),
         );
       },
     })

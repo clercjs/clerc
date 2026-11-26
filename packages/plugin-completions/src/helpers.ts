@@ -8,13 +8,14 @@ import type {
   CompletionContext,
   CompletionItem,
   CompletionResult,
+  CompletionSpec,
   FlagDescriptor,
   RuleDescriptor,
   Terminal,
 } from "clerc";
 import { parseBooleanLiteral } from "clerc";
 
-import { ShellCompDirective } from "./shells";
+import { ShellCompDirective } from "./directives";
 
 export interface ResolvedCompletions {
   readonly candidates: readonly CompletionCandidate[];
@@ -178,38 +179,40 @@ export function normalizeResult(
     };
   }
 
-  const obj = result as Exclude<
-    CompletionResult,
-    readonly CompletionItem[] | void
-  >;
-  let directive: number = ShellCompDirective.NoFileComp;
-  let skipPrefixFilter = false;
-  let candidates = (obj.items ?? []).map(toCandidate);
+  const spec = result as CompletionSpec;
+  switch (spec.kind) {
+    case "file": {
+      if (spec.extensions && spec.extensions.length > 0) {
+        return {
+          candidates: spec.extensions.map((ext) => ({
+            value: ext.replace(/^\./, ""),
+          })),
+          directive: ShellCompDirective.FilterFileExt,
+        };
+      }
 
-  if (Array.isArray(obj.files)) {
-    directive = ShellCompDirective.FilterFileExt;
-    skipPrefixFilter = true;
-    candidates = obj.files.map((ext) => ({ value: ext.replace(/^\./, "") }));
-  } else if (obj.files === "dirs") {
-    directive = ShellCompDirective.FilterDirs;
-    skipPrefixFilter = true;
-  } else if (obj.files === true) {
-    directive = ShellCompDirective.Default;
-  }
+      return { candidates: [], directive: ShellCompDirective.Default };
+    }
+    case "dir": {
+      return { candidates: [], directive: ShellCompDirective.FilterDirs };
+    }
+    case "list": {
+      let directive: number = spec.allowFiles
+        ? ShellCompDirective.Default
+        : ShellCompDirective.NoFileComp;
+      if (spec.noSpace) {
+        directive |= ShellCompDirective.NoSpace;
+      }
+      if (spec.keepOrder) {
+        directive |= ShellCompDirective.KeepOrder;
+      }
 
-  if (obj.noSpace) {
-    directive |= ShellCompDirective.NoSpace;
+      return {
+        candidates: filterAndDedupe(spec.items.map(toCandidate), current),
+        directive,
+      };
+    }
   }
-  if (obj.keepOrder) {
-    directive |= ShellCompDirective.KeepOrder;
-  }
-
-  return {
-    candidates: skipPrefixFilter
-      ? candidates
-      : filterAndDedupe(candidates, current),
-    directive,
-  };
 }
 
 export async function completeFlagValue(
@@ -245,7 +248,7 @@ export async function completeFlagValue(
   let resolved: ResolvedCompletions;
   if (typeof flag.complete === "function") {
     resolved = normalizeResult(await flag.complete(itemCtx), itemCurrent);
-  } else {
+  } else if (flag.complete === undefined) {
     const enums = extractEnumCandidates(flag.toJsonSchema);
     resolved = enums
       ? {
@@ -253,6 +256,8 @@ export async function completeFlagValue(
           directive: ShellCompDirective.NoFileComp,
         }
       : { candidates: [], directive: ShellCompDirective.NoFileComp };
+  } else {
+    resolved = normalizeResult(flag.complete, itemCurrent);
   }
 
   if (!headPrefix) {

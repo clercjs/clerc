@@ -26,11 +26,11 @@ npm install @clerc/plugin-completions
 
 ## 用法与自定义异步 `complete()`
 
-多级子命令、命令别名、长短选项、`Types.Enum(...)` 枚举值以及内置 `help [command...]` 均会自动补全。任意命令、参数或选项还可以直接声明同步或 `async` 的 `complete(ctx)` 钩子：
+多级子命令、命令别名、长短选项、`Types.Enum(...)` 枚举值、静态声明式 `complete` 以及内置 `help [command...]` 会直接编译进生成的 Shell 脚本中，在 Shell 内原生秒回（无需启动 Node.js 进程）。任意命令、参数或选项也可以声明同步或 `async` 的 `complete(ctx)` 钩子，仅在光标落到该动态槽位时回调 `<cli> complete -- ...`：
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
-import { Types, clerc } from "clerc";
+import { Complete, Types, clerc } from "clerc";
 
 const cli = clerc({
   name: "acme",
@@ -62,15 +62,16 @@ cli.command("deploy <env> [service]", {
     region: {
       type: String,
       short: "r",
-      complete: () => [
+      // 静态候选直接编译进 Shell 脚本（零进程启动）
+      complete: [
         { value: "us-east-1", description: "美东 (弗吉尼亚)" },
         { value: "eu-west-1", description: "欧洲 (爱尔兰)" },
       ],
     },
     config: {
       type: String,
-      // 交由 Shell 原生按扩展名补全本地文件
-      complete: () => ({ files: ["ts", "json"] }),
+      // 交由 Shell 原生按扩展名补全本地文件（零进程启动）
+      complete: Complete.file("ts", "json"),
     },
   },
   run() {},
@@ -113,4 +114,4 @@ acme completions powershell | Out-String | Invoke-Expression
 - 内置 `help [command...]` 任意层级可用命令补全（如 `acme help <TAB>`、`acme help db <TAB>`）
 - 短横线长选项（`--dry-run`）、`--no-*` 取反选项、短选项（`-r`）、`--flag=value` 以及带分隔符的数组选项
 - `Types.Enum(...)` 及 Standard JSON Schema 中的 `enum` 候选值
-- 同步 / `async` 的 `complete(ctx)` 自定义补全，以及原生路径补全指令（`files: true | "dirs" | ["ext"]`、`noSpace`、`keepOrder`）
+- `Complete` 构造器（`Complete.file(...extensions)`、`Complete.dir()`、`Complete.list(items, { keepOrder, noSpace, allowFiles })`、`Complete.none`）以及同步 / `async` 的 `complete(ctx)` 动态补全

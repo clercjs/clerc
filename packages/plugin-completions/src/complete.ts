@@ -10,6 +10,7 @@ import {
   createMemoryTerminal,
 } from "clerc";
 
+import { ShellCompDirective } from "./directives";
 import type { ResolveCompletionsOptions, ResolvedCompletions } from "./helpers";
 import {
   applyFlagDefaults,
@@ -24,7 +25,6 @@ import {
   matchInlineFlagValue,
   normalizeResult,
 } from "./helpers";
-import { ShellCompDirective } from "./shells";
 
 const DOUBLE_DASH = "--";
 
@@ -253,11 +253,15 @@ export async function resolveCompletions(
       await targetArg.complete(positionalCtx),
       rawCurrent,
     );
+  } else if (targetArg?.complete !== undefined) {
+    positionalResolved = normalizeResult(targetArg.complete, rawCurrent);
   } else if (typeof cmd.complete === "function") {
     const rawCmdRes = await cmd.complete(positionalCtx);
     if (rawCmdRes !== undefined) {
       positionalResolved = normalizeResult(rawCmdRes, rawCurrent);
     }
+  } else if (cmd.complete !== undefined) {
+    positionalResolved = normalizeResult(cmd.complete, rawCurrent);
   }
 
   if (!positionalResolved && targetArg) {

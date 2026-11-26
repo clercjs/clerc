@@ -1,11 +1,26 @@
+import { execFileSync, spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
-import { Types } from "clerc";
+import { Complete, Types } from "clerc";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { ShellCompDirective, completionsPlugin } from "../src";
 
+const hasShell = (shell: string): boolean =>
+  spawnSync(shell, ["--version"], { stdio: "ignore" }).status === 0;
+
 describe("plugin-completions v2", () => {
-  it("generates zsh, bash, fish, and powershell scripts via ctx.terminal and completes enums & flags", async () => {
+  it("generates pure-static zsh, bash, fish, and powershell scripts when no dynamic handlers exist", async () => {
     const terminal = createMemoryTerminal();
     const cli = createTestCli()
       .flags({
@@ -38,9 +53,16 @@ describe("plugin-completions v2", () => {
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
       const res = await cli.run(["completions", shell], { terminal });
+      const script = terminal.stdoutText();
 
       expect(res.ok).toBeTruthy();
-      expect(terminal.stdoutText()).toMatch(/complete (?:'--'|--)/);
+      // Static-only CLI must not emit any dynamic binary fallback
+      expect(script).not.toMatch(/\bcomplete (?:'--'|-- )/);
+      expect(script).toContain("build");
+      expect(script).toContain("--dry-run");
+      expect(script).toContain("--no-cache");
+      expect(script).toContain("dev");
+      expect(script).toContain("prod");
     }
 
     terminal.clear();
@@ -69,6 +91,83 @@ describe("plugin-completions v2", () => {
     await cli.run(["complete", "--", "b", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe("dev\nprod\n:4");
+  });
+
+  it("supports static declarative complete values on flags, args, and commands without dynamic fallback", async () => {
+    const terminal = createMemoryTerminal();
+    const cli = createTestCli()
+      .use(completionsPlugin())
+      .command("deploy [region]", {
+        args: {
+          region: {
+            complete: [
+              { value: "us-east-1", description: "US East" },
+              { value: "eu-west-1", description: "Europe" },
+            ],
+          },
+        },
+        flags: {
+          config: {
+            type: String,
+            complete: Complete.file("ts", "json"),
+          },
+          outDir: {
+            type: String,
+            complete: Complete.dir(),
+          },
+          anyFile: {
+            type: String,
+            complete: Complete.file(),
+          },
+          hidden: {
+            type: String,
+            complete: Complete.none,
+          },
+        },
+        run() {},
+      })
+      .command("open [target]", {
+        complete: Complete.list(["alpha", "beta"], {
+          keepOrder: true,
+          noSpace: true,
+        }),
+        run() {},
+      });
+
+    await cli.run(["complete", "--", "deploy", "eu"], { terminal });
+
+    expect(terminal.stdoutText()).toBe("eu-west-1\tEurope\n:4");
+
+    terminal.clear();
+    await cli.run(["complete", "--", "deploy", "--config", ""], { terminal });
+
+    expect(terminal.stdoutText()).toBe(
+      `ts\njson\n:${ShellCompDirective.FilterFileExt}`,
+    );
+
+    terminal.clear();
+    await cli.run(["complete", "--", "deploy", "--out-dir", ""], { terminal });
+
+    expect(terminal.stdoutText()).toBe(`:${ShellCompDirective.FilterDirs}`);
+
+    terminal.clear();
+    await cli.run(["complete", "--", "open", ""], { terminal });
+
+    expect(terminal.stdoutText()).toBe(
+      `alpha\nbeta\n:${ShellCompDirective.NoFileComp | ShellCompDirective.KeepOrder | ShellCompDirective.NoSpace}`,
+    );
+
+    // Every shell script compiles these statically without emitting dynamic fallback
+    for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
+      terminal.clear();
+      await cli.run(["completions", shell], { terminal });
+      const script = terminal.stdoutText();
+
+      expect(script).not.toMatch(/\bcomplete (?:'--'|-- )/);
+      expect(script).toContain("us-east-1");
+      expect(script).toContain("eu-west-1");
+      expect(script).toContain("alpha");
+    }
   });
 
   it("completes multi-level subcommand paths for built-in help [command...]", async () => {
@@ -165,7 +264,7 @@ describe("plugin-completions v2", () => {
         },
         config: {
           type: String,
-          complete: () => ({ files: ["ts", "json"] }),
+          complete: () => Complete.file("ts", "json"),
         },
         tags: {
           type: Types.Enum("v1", "v2", "latest"),
@@ -207,18 +306,28 @@ describe("plugin-completions v2", () => {
       async complete() {
         await Promise.resolve();
 
-        return {
-          items: [
+        return Complete.list(
+          [
             { value: "main", description: "Default branch" },
             { value: "release/v2", description: "Release branch" },
           ],
-          keepOrder: true,
-        };
+          { keepOrder: true },
+        );
       },
       run() {},
     });
 
+    // Hybrid CLI emits dynamic fallback in all 4 shells alongside static tables
+    for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
+      terminal.clear();
+      const res = await cli.run(["completions", shell], { terminal });
+
+      expect(res.ok).toBeTruthy();
+      expect(terminal.stdoutText()).toMatch(/\bcomplete (?:'--'|-- )/);
+    }
+
     // 1. Async flag completion (--region <TAB> and --region=eu<TAB>)
+    terminal.clear();
     await cli.run(["complete", "--", "deploy", "--region", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
@@ -423,7 +532,316 @@ describe("plugin-completions v2", () => {
     });
     const out = terminal.stdoutText();
 
-    expect(out).toContain("ls	List PRs");
-    expect(out).toContain("merge	Merge PR");
+    expect(out).toContain("ls\tList PRs");
+    expect(out).toContain("merge\tMerge PR");
   });
+
+  it.skipIf(!hasShell("fish"))(
+    "executes hybrid Fish completions with 0 binary invocations on static slots and 1 on dynamic slots",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "clerc-fish-comp-"));
+      try {
+        const logFile = join(dir, "calls.log");
+        const stubBin = join(dir, "stub.sh");
+        writeFileSync(
+          stubBin,
+          `#!/usr/bin/env bash\necho "$*" >> ${JSON.stringify(logFile)}\nprintf "dyn-item\\tDynamic item\\n:4\\n"\n`,
+          "utf8",
+        );
+        chmodSync(stubBin, 0o755);
+
+        const cli = createTestCli({ name: "mycli", version: "1.0.0" })
+          .use(completionsPlugin({ executable: stubBin }))
+          .command("deploy [env] [service]", {
+            aliases: ["d"],
+            description: "Deploy app",
+            args: {
+              env: Types.Enum("staging", "prod"),
+              service: {
+                complete: () => ["api-svc"],
+              },
+            },
+            flags: {
+              all: { type: Boolean, description: "Deploy all" },
+              json: { type: Boolean, description: "JSON" },
+              yaml: { type: Boolean, description: "YAML" },
+              cache: { type: Boolean, default: true, description: "Use cache" },
+              tags: {
+                type: Types.Enum("v1", "v2", "latest"),
+                multiple: true,
+                delimiter: ",",
+                description: "Tags",
+              },
+              config: {
+                type: String,
+                complete: Complete.file("ts", "json"),
+              },
+              outDir: {
+                type: String,
+                complete: Complete.dir(),
+              },
+              region: {
+                type: String,
+                short: "r",
+                complete: () => ["us-east-1"],
+              },
+            },
+            rules: ({ exclusive, oneOf, flag, arg }) => [
+              exclusive(flag("json"), flag("yaml")),
+              oneOf(arg("env"), flag("all")),
+            ],
+            run() {},
+          })
+          .command("exec <cmd> [args...]", {
+            stopParsing: "first-positional",
+            flags: { quiet: Boolean },
+            run() {},
+          })
+          .command("run <env> [args...]", {
+            stopParsing: (token) => token.kind === "positional",
+            flags: { verbose: Boolean },
+            run() {},
+          });
+
+        const db = cli.subcommand("db", { description: "Database" });
+        db.command("migrate", {
+          default: true,
+          description: "Migrate",
+          run() {},
+        });
+        db.command("seed", { description: "Seed", run() {} });
+
+        const terminal = createMemoryTerminal();
+        await cli.run(["completions", "fish"], { terminal });
+        const scriptFile = join(dir, "mycli.fish");
+        writeFileSync(scriptFile, terminal.stdoutText(), "utf8");
+
+        const workDir = join(dir, "work");
+        mkdirSync(join(workDir, "sub"), { recursive: true });
+        writeFileSync(join(workDir, "a.ts"), "");
+        writeFileSync(join(workDir, "b.json"), "");
+        writeFileSync(join(workDir, "c.txt"), "");
+        writeFileSync(join(workDir, "sub", "d.ts"), "");
+        writeFileSync(join(workDir, "sub", "e.txt"), "");
+
+        const runFish = (line: string): string =>
+          execFileSync(
+            "fish",
+            [
+              "-c",
+              `source ${JSON.stringify(scriptFile)}; complete -C ${JSON.stringify(line)}`,
+            ],
+            { encoding: "utf8", cwd: workDir },
+          ).trim();
+
+        // Static slots: subcommands, alias, enum, flags, rules, delimiter, help, stopParsing
+        expect(runFish("mycli ")).toContain("deploy\tDeploy app");
+        expect(runFish("mycli ")).not.toContain("\nd\t");
+        expect(runFish("mycli d")).toContain("d\tDeploy app");
+        expect(runFish("mycli deploy ")).toBe("prod\nstaging");
+        expect(runFish("mycli d ")).toBe("prod\nstaging");
+        expect(runFish("mycli deploy --tags=v1,l")).toBe("--tags=v1,latest");
+
+        const flagOut = runFish("mycli deploy --json --");
+
+        expect(flagOut).not.toContain("--json");
+        expect(flagOut).not.toContain("--yaml");
+        expect(flagOut).toContain("--no-cache");
+
+        expect(runFish("mycli deploy prod --")).not.toContain("--all");
+        expect(runFish("mycli deploy --all ")).toBe("");
+        expect(runFish("mycli help db ")).toBe("migrate\tMigrate\nseed\tSeed");
+        expect(runFish("mycli exec git --")).toBe("");
+
+        // Native static file extension & directory filtering in Fish (0 binary calls)
+        const fishConfigFiles = runFish("mycli deploy --config ").split("\n");
+
+        expect(fishConfigFiles).toEqual(["a.ts", "b.json", "sub/"]);
+        expect(runFish("mycli deploy --config=sub/")).toBe("--config=sub/d.ts");
+        expect(runFish("mycli deploy --out-dir ")).toBe("sub/");
+        expect(runFish("mycli deploy --out-dir=")).toBe("--out-dir=sub/");
+
+        // Zero binary invocations for all static completions above!
+        let callLog = "";
+        try {
+          callLog = readFileSync(logFile, "utf8");
+        } catch {
+          callLog = "";
+        }
+
+        expect(callLog).toBe("");
+
+        // Dynamic slots: --region flag, service arg, custom stopParsing predicate
+        expect(runFish("mycli deploy --region ")).toBe(
+          "dyn-item\tDynamic item",
+        );
+        expect(runFish("mycli deploy --region=")).toBe(
+          "--region=dyn-item\tDynamic item",
+        );
+        expect(runFish("mycli deploy prod ")).toBe("dyn-item\tDynamic item");
+        expect(runFish("mycli run prod ")).toBe("dyn-item\tDynamic item");
+
+        const dynamicCalls = readFileSync(logFile, "utf8")
+          .trim()
+          .split("\n")
+          .filter(Boolean);
+
+        expect(dynamicCalls).toHaveLength(4);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.skipIf(!hasShell("bash"))(
+    "executes hybrid Bash completions with 0 binary invocations on static slots and 1 on dynamic slots",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "clerc-bash-comp-"));
+      try {
+        const logFile = join(dir, "calls.log");
+        const stubBin = join(dir, "stub.sh");
+        writeFileSync(
+          stubBin,
+          `#!/usr/bin/env bash\necho "$*" >> ${JSON.stringify(logFile)}\nprintf "dyn-item\\tDynamic item\\n:4\\n"\n`,
+          "utf8",
+        );
+        chmodSync(stubBin, 0o755);
+
+        const cli = createTestCli({ name: "mycli", version: "1.0.0" })
+          .use(completionsPlugin({ executable: stubBin }))
+          .command("deploy [env] [service]", {
+            aliases: ["d"],
+            args: {
+              env: Types.Enum("staging", "prod"),
+              service: { complete: () => ["api-svc"] },
+            },
+            flags: {
+              all: Boolean,
+              json: Boolean,
+              yaml: Boolean,
+              tags: {
+                type: Types.Enum("v1", "v2", "latest"),
+                multiple: true,
+                delimiter: ",",
+              },
+              config: {
+                type: String,
+                complete: Complete.file("ts", "json"),
+              },
+              outDir: {
+                type: String,
+                complete: Complete.dir(),
+              },
+              region: {
+                type: String,
+                short: "r",
+                complete: () => ["us-east-1"],
+              },
+            },
+            rules: ({ exclusive, oneOf, flag, arg }) => [
+              exclusive(flag("json"), flag("yaml")),
+              oneOf(arg("env"), flag("all")),
+            ],
+            run() {},
+          });
+
+        const db = cli.subcommand("db", { description: "Database" });
+        db.command("migrate", { default: true, run() {} });
+        db.command("seed", { run() {} });
+
+        const terminal = createMemoryTerminal();
+        await cli.run(["completions", "bash"], { terminal });
+        const scriptFile = join(dir, "mycli.bash");
+        writeFileSync(scriptFile, terminal.stdoutText(), "utf8");
+
+        // Syntax check
+        execFileSync("bash", ["-n", scriptFile]);
+
+        const workDir = join(dir, "work");
+        mkdirSync(join(workDir, "sub"), { recursive: true });
+        writeFileSync(join(workDir, "a.ts"), "");
+        writeFileSync(join(workDir, "b.json"), "");
+        writeFileSync(join(workDir, "c.txt"), "");
+        writeFileSync(join(workDir, "sub", "d.ts"), "");
+        writeFileSync(join(workDir, "sub", "e.txt"), "");
+
+        function runBash(words: string[]): string[] {
+          const quoted = words
+            .map((w) => `'${w.replace(/'/g, "'\\''")}'`)
+            .join(" ");
+          const out = execFileSync(
+            "bash",
+            [
+              "-c",
+              `source ${JSON.stringify(scriptFile)}; COMP_WORDS=(${quoted}); COMP_CWORD=${words.length - 1}; __mycli_complete; printf '%s\\n' "\${COMPREPLY[@]}"`,
+            ],
+            { encoding: "utf8", cwd: workDir },
+          );
+
+          return out.split("\n").filter(Boolean);
+        }
+
+        expect(runBash(["mycli", ""])).toContain("deploy");
+        expect(runBash(["mycli", ""])).not.toContain("d");
+        expect(runBash(["mycli", "d"])).toContain("d");
+        expect(runBash(["mycli", "deploy", ""])).toEqual(["staging", "prod"]);
+        expect(runBash(["mycli", "deploy", "--tags=v1,l"])).toEqual([
+          "--tags=v1,latest",
+        ]);
+        expect(runBash(["mycli", "deploy", "--json", "--"])).not.toContain(
+          "--yaml",
+        );
+        expect(runBash(["mycli", "deploy", "prod", "--"])).not.toContain(
+          "--all",
+        );
+        expect(runBash(["mycli", "deploy", "--all", ""])).toEqual([]);
+        expect(runBash(["mycli", "help", "db", ""])).toEqual([
+          "migrate",
+          "seed",
+        ]);
+
+        // Native static file extension & directory filtering in Bash (0 binary calls)
+        expect(runBash(["mycli", "deploy", "--config", ""]).sort()).toEqual([
+          "a.ts",
+          "b.json",
+          "sub",
+        ]);
+        expect(runBash(["mycli", "deploy", "--config=sub/"])).toEqual([
+          "--config=sub/d.ts",
+        ]);
+        expect(runBash(["mycli", "deploy", "--out-dir", ""])).toEqual(["sub"]);
+        expect(runBash(["mycli", "deploy", "--out-dir="])).toEqual([
+          "--out-dir=sub",
+        ]);
+
+        // Zero binary invocations for static slots!
+        let callLog = "";
+        try {
+          callLog = readFileSync(logFile, "utf8");
+        } catch {
+          callLog = "";
+        }
+
+        expect(callLog).toBe("");
+
+        // Dynamic slots
+        expect(runBash(["mycli", "deploy", "--region", ""])).toEqual([
+          "dyn-item",
+        ]);
+        expect(runBash(["mycli", "deploy", "--region="])).toEqual([
+          "--region=dyn-item",
+        ]);
+        expect(runBash(["mycli", "deploy", "prod", ""])).toEqual(["dyn-item"]);
+
+        const dynamicCalls = readFileSync(logFile, "utf8")
+          .trim()
+          .split("\n")
+          .filter(Boolean);
+
+        expect(dynamicCalls).toHaveLength(3);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
 });

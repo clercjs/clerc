@@ -1,49 +1,34 @@
-import bashTemplate from "./bash.bash?raw";
-import fishTemplate from "./fish.fish?raw";
-import powershellTemplate from "./powershell.ps1?raw";
-import zshTemplate from "./zsh.zsh?raw";
+import type { CliModel } from "clerc";
 
-export const SUPPORTED_SHELLS = ["zsh", "bash", "fish", "powershell"] as const;
+import type { SupportedShell } from "../directives";
+import { SUPPORTED_SHELLS, ShellCompDirective } from "../directives";
+import { buildCompletionSpec } from "../spec";
+import { renderBashScript } from "./bash";
+import { renderFishScript } from "./fish";
+import { renderPowerShellScript } from "./powershell";
+import { renderZshScript } from "./zsh";
 
-export type SupportedShell = (typeof SUPPORTED_SHELLS)[number];
-
-export const ShellCompDirective = {
-  Default: 0,
-  Error: 1,
-  NoSpace: 2,
-  NoFileComp: 4,
-  FilterFileExt: 8,
-  FilterDirs: 16,
-  KeepOrder: 32,
-} as const;
-
-const sanitizeIdentifier = (name: string): string =>
-  name.replace(/[-:./\s]/g, "_");
-
-const applyVars = (template: string, name: string, bin: string): string =>
-  template
-    .trimEnd()
-    .replaceAll("__NAME__", name)
-    .replaceAll("__FN__", sanitizeIdentifier(name))
-    .replaceAll("__BIN__", bin);
+export type { SupportedShell };
+export { SUPPORTED_SHELLS, ShellCompDirective };
 
 export function renderCompletionScript(
   shell: SupportedShell,
-  name: string,
-  executable = name,
+  model: CliModel,
+  executable?: string,
 ): string {
+  const spec = buildCompletionSpec(model, executable);
   switch (shell) {
     case "zsh": {
-      return applyVars(zshTemplate, name, executable);
+      return renderZshScript(spec);
     }
     case "bash": {
-      return applyVars(bashTemplate, name, executable);
+      return renderBashScript(spec);
     }
     case "fish": {
-      return applyVars(fishTemplate, name, executable);
+      return renderFishScript(spec);
     }
     case "powershell": {
-      return applyVars(powershellTemplate, name, executable);
+      return renderPowerShellScript(spec);
     }
   }
 }

@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
@@ -19,19 +16,4 @@ export default defineConfig({
     neverBundle: [/^@clerc\//, "clerc"],
     onlyBundle: false,
   },
-  plugins: [
-    {
-      name: "raw-text",
-      resolveId(source, importer) {
-        if (source.endsWith("?raw") && importer) {
-          return `${path.resolve(path.dirname(importer), source.slice(0, -4))}?raw`;
-        }
-      },
-      load(id) {
-        if (id.endsWith("?raw")) {
-          return `export default ${JSON.stringify(readFileSync(id.slice(0, -4), "utf8"))};`;
-        }
-      },
-    },
-  ],
 });

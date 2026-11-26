@@ -26,11 +26,11 @@ npm install @clerc/plugin-completions
 
 ## Usage and Custom `complete()`
 
-Subcommands, aliases, flags, `Types.Enum(...)` values, and built-in `help [command...]` paths complete automatically. Any command, argument, or flag can also provide a synchronous or `async` `complete(ctx)` function:
+Subcommands, aliases, flags, `Types.Enum(...)` values, static `complete` declarations, and built-in `help [command...]` paths are compiled directly into the generated shell script so they complete natively in ~1ms without spawning Node.js. Any command, argument, or flag can also provide a synchronous or `async` `complete(ctx)` function, which falls back to `<cli> complete -- ...` only at that slot:
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
-import { Types, clerc } from "clerc";
+import { Complete, Types, clerc } from "clerc";
 
 const cli = clerc({
   name: "acme",
@@ -62,15 +62,16 @@ cli.command("deploy <env> [service]", {
     region: {
       type: String,
       short: "r",
-      complete: () => [
+      // Static candidates are compiled directly into the shell script (0ms)
+      complete: [
         { value: "us-east-1", description: "US East (N. Virginia)" },
         { value: "eu-west-1", description: "Europe (Ireland)" },
       ],
     },
     config: {
       type: String,
-      // Delegate to native shell file completion filtered by extension
-      complete: () => ({ files: ["ts", "json"] }),
+      // Delegate to native shell file completion filtered by extension (0ms)
+      complete: Complete.file("ts", "json"),
     },
   },
   run() {},
@@ -113,4 +114,4 @@ acme completions powershell | Out-String | Invoke-Expression
 - Built-in `help [command...]` at arbitrary subcommand depth (`acme help <TAB>`, `acme help db <TAB>`)
 - Kebab-case long flags (`--dry-run`), `--no-*` negations, short flags (`-r`), `--flag=value`, and comma-delimited array flags
 - `Types.Enum(...)` and Standard JSON Schema `enum` values on flags and arguments
-- Custom sync/async `complete(ctx)` handlers and shell path directives (`files: true | "dirs" | ["ext"]`, `noSpace`, `keepOrder`)
+- `Complete` helpers (`Complete.file(...extensions)`, `Complete.dir()`, `Complete.list(items, { keepOrder, noSpace, allowFiles })`, `Complete.none`) and sync/async `complete(ctx)` handlers

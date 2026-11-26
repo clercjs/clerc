@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { FlagsDefinition, Logger, StandardSchemaV1 } from "../src";
-import { Types, clerc, plugin } from "../src";
+import { Complete, Types, clerc, plugin } from "../src";
 import type { ExtractArgNames } from "../src/args";
 
 import "@clerc/plugin-completions";
@@ -80,6 +80,33 @@ describe("core v2 route-signature & plugin types", () => {
 
             return [{ value: "prod", description: "Production" }];
           },
+        },
+        config: {
+          type: String,
+          complete: Complete.file("ts", "json"),
+        },
+        outDir: {
+          type: String,
+          complete: Complete.dir(),
+        },
+        target: {
+          type: String,
+          complete: Complete.list(["alpha", "beta"], {
+            keepOrder: true,
+            noSpace: true,
+            allowFiles: true,
+          }),
+        },
+        secret: {
+          type: String,
+          complete: Complete.none,
+        },
+        region: {
+          type: String,
+          complete: [
+            "us-east-1",
+            { value: "eu-west-1", description: "Europe" },
+          ],
         },
       },
     });

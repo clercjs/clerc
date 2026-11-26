@@ -35,6 +35,7 @@ export type {
 } from "./args";
 export { Clerc, clerc } from "./cli";
 export type { CommandNode, CommandTree } from "./command-tree";
+export { Complete } from "./complete";
 export type {
   ClercErrorCode,
   ClercErrorOptions,
@@ -161,12 +162,15 @@ export type {
   CommandHandler,
   CommandMeta,
   CommandOptions,
+  CompleteFileOptions,
+  CompleteListOptions,
   CompletionCandidate,
   CompletionContext,
-  CompletionDirectiveResult,
   CompletionHandler,
   CompletionItem,
+  CompletionOption,
   CompletionResult,
+  CompletionSpec,
   CustomState,
   ErrorContext,
   ErrorHandler,

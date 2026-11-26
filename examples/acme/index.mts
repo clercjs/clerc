@@ -1,6 +1,6 @@
 import { completionsPlugin } from "@clerc/plugin-completions";
 import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc, plugin } from "clerc";
+import { Complete, Types, clerc, plugin } from "clerc";
 
 // 1. Custom plugin with global flag + async context derivation
 const configPlugin = plugin("acme:config")
@@ -11,7 +11,7 @@ const configPlugin = plugin("acme:config")
       default: "acme.config.ts",
       env: "ACME_CONFIG",
       description: "Path to config file",
-      complete: () => ({ files: ["ts", "json"] }),
+      complete: Complete.file("ts", "json"),
     },
   })
   .middleware(async (ctx, next) =>
@@ -140,7 +140,7 @@ cli.command("deploy <env> [region]", {
     region: {
       default: "us-east-1",
       description: "Cloud region",
-      complete: () => [
+      complete: [
         { value: "us-east-1", description: "US East (N. Virginia)" },
         { value: "eu-west-1", description: "Europe (Ireland)" },
       ],

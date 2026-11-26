@@ -40,7 +40,7 @@ export const dynamicCompletions: PlaygroundScenario = {
             short: "r",
             default: "us-east-1",
             description: "Target cloud region",
-            complete: () => [
+            complete: [
               { value: "us-east-1", description: "US East (N. Virginia)" },
               { value: "eu-west-1", description: "Europe (Ireland)" },
             ],

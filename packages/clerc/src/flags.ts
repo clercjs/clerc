@@ -23,7 +23,7 @@ import type {
 } from "./schema";
 import { describeType, isStandardSchema } from "./schema";
 import { findClosest } from "./suggest";
-import type { CompletionHandler } from "./types";
+import type { CompletionOption } from "./types";
 import type { IsAny, MaybeArray, Prettify } from "./utils";
 import {
   evaluateDefault,
@@ -50,7 +50,7 @@ interface FlagSharedMeta extends ArrayConstraintOptions {
   readonly env?: string;
   readonly group?: string;
   readonly deprecated?: boolean | string;
-  readonly complete?: false | CompletionHandler;
+  readonly complete?: CompletionOption;
   readonly meta?: FlagMeta;
 }
 
