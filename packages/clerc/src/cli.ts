@@ -29,7 +29,6 @@ import { Plugin } from "./plugin";
 import { validateCustomRules, validateDeclarativeRules } from "./rules";
 import type { AnyMiddlewareFn } from "./scope";
 import { getScopeState } from "./scope";
-import { createProcessSignal } from "./signals";
 import { createTerminal } from "./terminal";
 import type {
   ClercOptions,
@@ -50,10 +49,7 @@ import type { Mutable } from "./utils";
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
   TState extends Record<string, any>,
-> = Mutable<
-  Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw" | "signal">
-> & {
-  readonly signal?: AbortSignal;
+> = Mutable<Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw">> & {
   state: Record<string, any>;
   raw: Mutable<RawParseContext>;
 };
@@ -151,7 +147,6 @@ export class Clerc<
     compiledCli: CompiledCli,
     argv: readonly string[] | undefined,
     options: RunOptions,
-    getSignal: () => AbortSignal | undefined,
   ): InternalContext<TGlobalFlags, TState> {
     const terminal = options.terminal ?? createTerminal();
     const themeOverrides =
@@ -195,17 +190,9 @@ export class Clerc<
           terminal.stdout(await render(commandPath));
         },
       },
-      run: (nextArgv, nextOptions) =>
-        this.#run(
-          nextArgv,
-          nextOptions ?? {},
-          nextOptions?.signal ? () => nextOptions.signal : getSignal,
-        ),
+      run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
       exit(code = 1): never {
         throw new ExitSignal(code);
-      },
-      get signal() {
-        return getSignal();
       },
       commandPath: [],
       args: {},
@@ -449,14 +436,12 @@ export class Clerc<
     return { ok: false, exitCode, error };
   }
 
-  async #run(
-    argv: readonly string[] | undefined,
-    options: RunOptions,
-    getSignal: () => AbortSignal | undefined,
-    isProcessAbort?: (error: unknown) => number | undefined,
+  public async run(
+    argv?: readonly string[],
+    options: RunOptions = {},
   ): Promise<RunResult> {
     const compiledCli = this.#ensureCompiled();
-    const ctx = this.#createContext(compiledCli, argv, options, getSignal);
+    const ctx = this.#createContext(compiledCli, argv, options);
     let activeRuntime = compiledCli.rootRuntime;
 
     const toExitResult = (err: ExitSignal): RunResult => ({
@@ -471,10 +456,6 @@ export class Clerc<
     } catch (caughtError) {
       if (caughtError instanceof ExitSignal) {
         return toExitResult(caughtError);
-      }
-      const abortExitCode = isProcessAbort?.(caughtError);
-      if (abortExitCode !== undefined) {
-        return { ok: false, exitCode: abortExitCode };
       }
 
       try {
@@ -495,33 +476,16 @@ export class Clerc<
     }
   }
 
-  public async run(
-    argv?: readonly string[],
-    options: RunOptions = {},
-  ): Promise<RunResult> {
-    return this.#run(argv, options, () => options.signal);
-  }
-
   public async runMain(
     argv?: readonly string[],
     options?: RunOptions,
   ): Promise<RunResult> {
-    const procSignal = createProcessSignal(options?.signal);
-    try {
-      const result = await this.#run(
-        argv,
-        options ?? {},
-        procSignal.getSignal,
-        procSignal.getAbortExitCode,
-      );
-      if (!result.ok) {
-        process.exitCode = result.exitCode;
-      }
-
-      return result;
-    } finally {
-      procSignal.dispose();
+    const result = await this.run(argv, options);
+    if (!result.ok) {
+      process.exitCode = result.exitCode;
     }
+
+    return result;
   }
 }
 
