@@ -227,7 +227,6 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
       options,
       theme,
       unicode,
-      noopEntry: NOOP_ENTRY,
       shouldLogInfo: () => shouldLog("info"),
       canAnimate: () =>
         shouldLog("info") &&

@@ -55,7 +55,6 @@ export function createLoggerSpinner(params: {
   readonly options?: SpinnerOptions;
   readonly theme: Theme;
   readonly unicode: boolean;
-  readonly noopEntry: LogEntry;
   readonly shouldLogInfo: () => boolean;
   readonly canAnimate: () => boolean;
   readonly formatScope: () => string;
@@ -65,7 +64,6 @@ export function createLoggerSpinner(params: {
     options,
     theme,
     unicode,
-    noopEntry,
     shouldLogInfo,
     canAnimate,
     formatScope,
@@ -73,7 +71,7 @@ export function createLoggerSpinner(params: {
   } = params;
   let active = false;
   let cancelled = false;
-  let activeEntry: LogEntry = noopEntry;
+  let activeEntry: LogEntry | undefined;
   let rawSpinner: ReturnType<ClackPrompts["spinner"]> | undefined;
 
   function finish(): void {
@@ -81,7 +79,7 @@ export function createLoggerSpinner(params: {
       rawSpinner.clear();
     }
     active = false;
-    activeEntry = noopEntry;
+    activeEntry = undefined;
   }
 
   return {
@@ -89,9 +87,6 @@ export function createLoggerSpinner(params: {
       finish();
       cancelled = false;
       if (!shouldLogInfo()) {
-        active = false;
-        activeEntry = noopEntry;
-
         return;
       }
       active = true;
@@ -112,7 +107,7 @@ export function createLoggerSpinner(params: {
         );
       } else {
         rawSpinner = undefined;
-        activeEntry = msg.length > 0 ? emit("step", msg) : noopEntry;
+        activeEntry = msg.length > 0 ? emit("step", msg) : undefined;
       }
     },
     message(msg) {
@@ -122,7 +117,7 @@ export function createLoggerSpinner(params: {
       if (rawSpinner) {
         rawSpinner.message(`${formatScope()}${msg}`);
       } else if (msg.length > 0) {
-        activeEntry.line(msg);
+        activeEntry?.line(msg);
       }
     },
     stop(msg) {
