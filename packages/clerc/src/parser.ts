@@ -94,11 +94,6 @@ const CHAR_EQ = 61; // '='
 const CHAR_N = 110; // 'n'
 const CHAR_O = 111; // 'o'
 
-const EMPTY_STRINGS: readonly string[] = Object.freeze([]);
-const EMPTY_INVALID: readonly InvalidFlagValue[] = Object.freeze([]);
-const EMPTY_UNKNOWN: Readonly<Record<string, RawInputType>> = Object.freeze({});
-const EMPTY_CANDIDATES: Readonly<Record<string, string>> = Object.freeze({});
-
 const isLetter = (c: number): boolean =>
   (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 
@@ -301,10 +296,15 @@ export function createArgvParser(
   function parse(args: readonly string[]): ArgvParseResult {
     const flags: FlagValues = {};
     const provided: string[] = [];
-    let positionals: string[] | undefined;
-    let doubleDash: readonly string[] = EMPTY_STRINGS;
+    const positionals: string[] = [];
+    const unknown: Record<string, RawInputType> = {};
+    const missingValueFlags: string[] = [];
+    const missingValueCandidates: Record<string, string> = {};
+    const invalidValues: InvalidFlagValue[] = [];
+    let doubleDash: readonly string[] = [];
     let hasDoubleDash = false;
     let stoppedEarly = false;
+    let trailingMissingValueFlag: string | undefined;
 
     function shouldStop(
       kind: StopParsingTokenKind,
@@ -319,21 +319,14 @@ export function createArgvParser(
         kind,
         raw,
         index,
-        positionalCount: positionals?.length ?? 0,
+        positionalCount: positionals.length,
       });
     }
 
     function stopAt(index: number): void {
       stoppedEarly = true;
-      positionals = positionals
-        ? [...positionals, ...args.slice(index)]
-        : args.slice(index);
+      positionals.push(...args.slice(index));
     }
-    let unknown: Record<string, RawInputType> | undefined;
-    let missingValueFlags: string[] | undefined;
-    let missingValueCandidates: Record<string, string> | undefined;
-    let trailingMissingValueFlag: string | undefined;
-    let invalidValues: InvalidFlagValue[] | undefined;
 
     function setFlag(key: string, val: FlagValues[string]): void {
       if (flags[key] === undefined) {
@@ -349,14 +342,13 @@ export function createArgvParser(
       nextIndex: number,
     ): void {
       if (val === undefined) {
-        missingValueFlags ??= [];
         if (!missingValueFlags.includes(key)) {
           missingValueFlags.push(key);
         }
         if (nextIndex >= args.length) {
           trailingMissingValueFlag = key;
         } else if (args[nextIndex] !== DOUBLE_DASH) {
-          (missingValueCandidates ??= {})[key] ??= args[nextIndex];
+          missingValueCandidates[key] ??= args[nextIndex];
         }
       } else if (kind === "array") {
         const prev = flags[key] as string[] | undefined;
@@ -397,8 +389,7 @@ export function createArgvParser(
 
               break;
             }
-            (unknown ??= {})[camelCase(name)] =
-              eq === -1 ? true : current.slice(eq + 1);
+            unknown[camelCase(name)] = eq === -1 ? true : current.slice(eq + 1);
 
             continue;
           }
@@ -418,7 +409,7 @@ export function createArgvParser(
             const parsed =
               eq === -1 ? true : parseBooleanLiteral(current.slice(eq + 1));
             if (parsed === undefined) {
-              (invalidValues ??= []).push({
+              invalidValues.push({
                 flag: key,
                 value: current.slice(eq + 1),
                 message: INVALID_BOOL_MSG,
@@ -467,7 +458,7 @@ export function createArgvParser(
             const flag =
               code < 128 ? byShortCode?.[code] : byShortExtra?.[current[j]];
             if (flag === undefined) {
-              (unknown ??= {})[current[j]] = true;
+              unknown[current[j]] = true;
 
               continue;
             }
@@ -507,21 +498,21 @@ export function createArgvParser(
 
         break;
       }
-      (positionals ??= []).push(current);
+      positionals.push(current);
     }
 
     return {
-      positionals: positionals ?? EMPTY_STRINGS,
+      positionals,
       doubleDash,
       hasDoubleDash,
       stoppedEarly,
       flags,
-      unknown: unknown ?? EMPTY_UNKNOWN,
+      unknown,
       provided,
-      missingValueFlags: missingValueFlags ?? EMPTY_STRINGS,
-      missingValueCandidates: missingValueCandidates ?? EMPTY_CANDIDATES,
+      missingValueFlags,
+      missingValueCandidates,
       trailingMissingValueFlag,
-      invalidValues: invalidValues ?? EMPTY_INVALID,
+      invalidValues,
     };
   }
 

@@ -10,7 +10,7 @@ import type {
   SubcommandOptions,
 } from "./types";
 import type { Mutable } from "./utils";
-import { toArray } from "./utils";
+import { EMPTY_ARRAY, toArray } from "./utils";
 
 export interface CommandNode {
   readonly name: string;
@@ -94,8 +94,6 @@ interface MutableCommandNode extends Mutable<
   defaultChild?: MutableCommandNode;
 }
 
-const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
-
 const createNode = (
   name: string,
   fullPath: readonly string[],
@@ -106,12 +104,12 @@ const createNode = (
   parent,
   children: new Map(),
   aliasIndex: new Map(),
-  aliases: EMPTY_DESCRIPTORS,
-  args: EMPTY_DESCRIPTORS,
-  localFlags: EMPTY_DESCRIPTORS,
-  builtinFlags: EMPTY_DESCRIPTORS,
-  rules: EMPTY_DESCRIPTORS,
-  ruleNotes: EMPTY_DESCRIPTORS,
+  aliases: EMPTY_ARRAY,
+  args: EMPTY_ARRAY,
+  localFlags: EMPTY_ARRAY,
+  builtinFlags: EMPTY_ARRAY,
+  rules: EMPTY_ARRAY,
+  ruleNotes: EMPTY_ARRAY,
 });
 
 const isVisibleNode = (node: CommandNode): boolean =>

@@ -29,6 +29,7 @@ import { Plugin } from "./plugin";
 import { validateCustomRules, validateDeclarativeRules } from "./rules";
 import type { AnyMiddlewareFn } from "./scope";
 import { getScopeState } from "./scope";
+import { createProcessSignal } from "./signals";
 import { createTerminal } from "./terminal";
 import type {
   ClercOptions,
@@ -46,22 +47,13 @@ import type {
 } from "./types";
 import type { Mutable } from "./utils";
 
-const NEVER_ABORTED_SIGNAL = new AbortController().signal;
-
-const SIGNAL_EXIT_CODES = {
-  SIGINT: 130,
-  SIGTERM: 143,
-} as const;
-
-type ManagedSignal = keyof typeof SIGNAL_EXIT_CODES;
-
 type InternalContext<
   TGlobalFlags extends Record<string, any>,
   TState extends Record<string, any>,
 > = Mutable<
   Omit<ErrorContext<TGlobalFlags, TState>, "state" | "raw" | "signal">
 > & {
-  readonly signal: AbortSignal;
+  readonly signal?: AbortSignal;
   state: Record<string, any>;
   raw: Mutable<RawParseContext>;
 };
@@ -159,7 +151,7 @@ export class Clerc<
     compiledCli: CompiledCli,
     argv: readonly string[] | undefined,
     options: RunOptions,
-    getSignal: () => AbortSignal,
+    getSignal: () => AbortSignal | undefined,
   ): InternalContext<TGlobalFlags, TState> {
     const terminal = options.terminal ?? createTerminal();
     const themeOverrides =
@@ -207,7 +199,7 @@ export class Clerc<
         this.#run(
           nextArgv,
           nextOptions ?? {},
-          nextOptions?.signal ? () => nextOptions.signal! : getSignal,
+          nextOptions?.signal ? () => nextOptions.signal : getSignal,
         ),
       exit(code = 1): never {
         throw new ExitSignal(code);
@@ -234,7 +226,7 @@ export class Clerc<
   ): Promise<RunResult> {
     // 1. Resolve command match (matched | namespace | empty | unknown)
     const getRuntime = (node: CommandNode): CompiledNodeRuntime =>
-      compiledCli.runtimes.get(node) ?? compiledCli.rootRuntime;
+      compiledCli.runtimes.get(node)!;
 
     let match = compiledCli.tree.resolveArgv(
       ctx.raw.argv,
@@ -460,12 +452,17 @@ export class Clerc<
   async #run(
     argv: readonly string[] | undefined,
     options: RunOptions,
-    getSignal: () => AbortSignal,
+    getSignal: () => AbortSignal | undefined,
     isProcessAbort?: (error: unknown) => number | undefined,
   ): Promise<RunResult> {
     const compiledCli = this.#ensureCompiled();
     const ctx = this.#createContext(compiledCli, argv, options, getSignal);
     let activeRuntime = compiledCli.rootRuntime;
+
+    const toExitResult = (err: ExitSignal): RunResult => ({
+      ok: err.exitCode === 0,
+      exitCode: err.exitCode,
+    });
 
     try {
       return await this.#execute(compiledCli, ctx, (rt) => {
@@ -473,10 +470,7 @@ export class Clerc<
       });
     } catch (caughtError) {
       if (caughtError instanceof ExitSignal) {
-        return {
-          ok: caughtError.exitCode === 0,
-          exitCode: caughtError.exitCode,
-        };
+        return toExitResult(caughtError);
       }
       const abortExitCode = isProcessAbort?.(caughtError);
       if (abortExitCode !== undefined) {
@@ -493,10 +487,7 @@ export class Clerc<
         );
       } catch (handlerError) {
         if (handlerError instanceof ExitSignal) {
-          return {
-            ok: handlerError.exitCode === 0,
-            exitCode: handlerError.exitCode,
-          };
+          return toExitResult(handlerError);
         }
 
         throw handlerError;
@@ -508,92 +499,20 @@ export class Clerc<
     argv?: readonly string[],
     options: RunOptions = {},
   ): Promise<RunResult> {
-    const signal = options.signal ?? NEVER_ABORTED_SIGNAL;
-
-    return this.#run(argv, options, () => signal);
+    return this.#run(argv, options, () => options.signal);
   }
 
   public async runMain(
     argv?: readonly string[],
     options?: RunOptions,
   ): Promise<RunResult> {
-    let controller: AbortController | undefined;
-    let resolvedSignal: AbortSignal | undefined;
-    let attached = false;
-    let receivedSignal: ManagedSignal | undefined;
-    let onSigInt: (() => void) | undefined;
-    let onSigTerm: (() => void) | undefined;
-
-    function detach(): void {
-      if (!attached) {
-        return;
-      }
-      attached = false;
-      if (onSigInt) {
-        process.off("SIGINT", onSigInt);
-      }
-      if (onSigTerm) {
-        process.off("SIGTERM", onSigTerm);
-      }
-    }
-
-    function handleSignal(sig: ManagedSignal): void {
-      if (receivedSignal) {
-        detach();
-        if (process.platform === "win32") {
-          process.exit(SIGNAL_EXIT_CODES[sig]);
-        }
-        process.kill(process.pid, sig);
-
-        return;
-      }
-      receivedSignal = sig;
-      controller?.abort(new Error(`Process interrupted by ${sig}`));
-    }
-
-    function getSignal(): AbortSignal {
-      if (!resolvedSignal) {
-        if (
-          typeof process !== "undefined" &&
-          typeof process.on === "function"
-        ) {
-          controller = new AbortController();
-          attached = true;
-          onSigInt = () => handleSignal("SIGINT");
-          onSigTerm = () => handleSignal("SIGTERM");
-          process.on("SIGINT", onSigInt);
-          process.on("SIGTERM", onSigTerm);
-          resolvedSignal = options?.signal
-            ? AbortSignal.any([controller.signal, options.signal])
-            : controller.signal;
-        } else {
-          resolvedSignal = options?.signal ?? NEVER_ABORTED_SIGNAL;
-        }
-      }
-
-      return resolvedSignal;
-    }
-
-    function isProcessAbort(error: unknown): number | undefined {
-      if (!receivedSignal || !controller?.signal.aborted) {
-        return undefined;
-      }
-      if (
-        error === controller.signal.reason ||
-        (Error.isError(error) && error.name === "AbortError")
-      ) {
-        return SIGNAL_EXIT_CODES[receivedSignal];
-      }
-
-      return undefined;
-    }
-
+    const procSignal = createProcessSignal(options?.signal);
     try {
       const result = await this.#run(
         argv,
         options ?? {},
-        getSignal,
-        isProcessAbort,
+        procSignal.getSignal,
+        procSignal.getAbortExitCode,
       );
       if (!result.ok) {
         process.exitCode = result.exitCode;
@@ -601,7 +520,7 @@ export class Clerc<
 
       return result;
     } finally {
-      detach();
+      procSignal.dispose();
     }
   }
 }

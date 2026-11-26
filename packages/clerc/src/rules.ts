@@ -3,7 +3,7 @@ import { InvalidSchemaError, RuleError } from "./errors";
 import type { FlagDescriptor } from "./flags";
 import type { Terminal } from "./terminal";
 import type { MaybeArray } from "./utils";
-import { formatFlagName, joinList, toArray } from "./utils";
+import { EMPTY_ARRAY, joinList, toArray } from "./utils";
 
 interface NamedRef<Kind extends string, Name extends string = string> {
   readonly kind: Kind;
@@ -156,9 +156,9 @@ export interface CompiledRules {
 }
 
 export const EMPTY_RULES: CompiledRules = Object.freeze({
-  declarative: Object.freeze([]),
-  custom: Object.freeze([]),
-  notes: Object.freeze([]),
+  declarative: EMPTY_ARRAY,
+  custom: EMPTY_ARRAY,
+  notes: EMPTY_ARRAY,
 });
 
 const refKey = (ref: RuleRef): string => `${ref.kind}:${ref.name}`;
@@ -386,8 +386,8 @@ export const formatRuleRef = (
   argMap: ReadonlyMap<string, ArgDescriptor>,
 ): string =>
   ref.kind === "flag"
-    ? (flagMap.get(ref.name)?.target ?? formatFlagName(ref.name))
-    : (argMap.get(ref.name)?.token ?? `<${ref.name}>`);
+    ? flagMap.get(ref.name)!.target
+    : argMap.get(ref.name)!.token;
 
 const formatRefList = (
   refs: readonly RuleRef[],

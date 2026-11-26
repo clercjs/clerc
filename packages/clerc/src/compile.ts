@@ -29,7 +29,7 @@ import type {
   ErrorHandler,
   HelpOptions,
 } from "./types";
-import { formatVersion } from "./utils";
+import { EMPTY_ARRAY, formatVersion } from "./utils";
 
 export interface CompiledNodeRuntime {
   readonly userFlags: CompiledFlags;
@@ -68,15 +68,13 @@ interface ResolvedScopeEnv {
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
 }
 
-const EMPTY_DESCRIPTORS: readonly never[] = Object.freeze([]);
-const EMPTY_STRING_SET: ReadonlySet<string> = new Set();
 const ENFORCE_RANK = { pre: 0, normal: 1, post: 2 } as const;
 
 const EMPTY_SCOPE_ENV: ResolvedScopeEnv = Object.freeze({
-  scopedFlagEntries: EMPTY_DESCRIPTORS,
-  scopedRuleEntries: EMPTY_DESCRIPTORS,
-  middlewares: EMPTY_DESCRIPTORS,
-  errorHandlers: EMPTY_DESCRIPTORS,
+  scopedFlagEntries: EMPTY_ARRAY,
+  scopedRuleEntries: EMPTY_ARRAY,
+  middlewares: EMPTY_ARRAY,
+  errorHandlers: EMPTY_ARRAY,
 });
 
 export const formatCliVersion = (meta: CliMeta): string =>
@@ -106,7 +104,7 @@ function sortMiddlewares(
   registered: readonly RegisteredMiddleware[],
 ): readonly AnyMiddlewareFn[] {
   if (registered.length === 0) {
-    return EMPTY_DESCRIPTORS;
+    return EMPTY_ARRAY;
   }
 
   return [...registered]
@@ -307,6 +305,129 @@ function resolveDefaultChildren(
   }
 }
 
+interface NodeCompileShared {
+  readonly tree: CommandTreeBuilder;
+  readonly rawGlobalEntries: readonly CompiledFlagEntry[];
+  readonly globalFlags: CompiledFlags;
+  readonly globalRules: CompiledRules;
+  readonly globalMiddlewares: readonly RegisteredMiddleware[];
+  readonly sortedGlobalMiddlewares: readonly AnyMiddlewareFn[];
+  readonly globalErrorHandlers: readonly ErrorHandler<any, any>[];
+  readonly enableVerbosity: boolean;
+  readonly enableVersion: boolean;
+  readonly enableHelp: boolean;
+}
+
+function compileNodeRuntime(
+  node: CommandNode,
+  scopeEnv: ResolvedScopeEnv | undefined,
+  shared: NodeCompileShared,
+): CompiledNodeRuntime {
+  const cmd = node.command;
+  const isStandalone = Boolean(cmd?.standalone);
+  const localEntries = cmd?.flags ? compileFlagEntries(cmd.flags) : EMPTY_ARRAY;
+  const scopedEntries = isStandalone
+    ? EMPTY_ARRAY
+    : (scopeEnv?.scopedFlagEntries ?? EMPTY_ARRAY);
+  const inheritedEntries = mergeFlagEntries(
+    isStandalone ? EMPTY_ARRAY : shared.rawGlobalEntries,
+    scopedEntries,
+  );
+  const nonGlobalEntries = mergeFlagEntries(scopedEntries, localEntries);
+  const userFlags =
+    !isStandalone && nonGlobalEntries.length === 0
+      ? shared.globalFlags
+      : buildCompiledFlags(mergeFlagEntries(inheritedEntries, localEntries));
+  const localDescriptors = nonGlobalEntries.map((e) =>
+    userFlags.byName.get(e.name)!,
+  );
+
+  const builtins = resolveNodeBuiltins({
+    isRoot: node.fullPath.length === 0,
+    isStandalone,
+    enableVerbosity: shared.enableVerbosity,
+    enableVersion: shared.enableVersion,
+    enableHelp: shared.enableHelp,
+    userFlags,
+  });
+
+  const compiledArgs = cmd ? compileArgs(cmd.argTokens, cmd.args) : undefined;
+  const argsByName = new Map(
+    (compiledArgs?.descriptors ?? EMPTY_ARRAY).map((a) => [a.name, a]),
+  );
+
+  const compiledScopedRules =
+    !isStandalone && scopeEnv && scopeEnv.scopedRuleEntries.length > 0
+      ? compileRules(
+          scopeEnv.scopedRuleEntries,
+          new Map(inheritedEntries.map((e) => [e.name, e])),
+          new Set(),
+        )
+      : EMPTY_RULES;
+
+  const compiledLocalRules = cmd?.rules
+    ? compileRules(
+        normalizeRulesInput(cmd.rules),
+        userFlags.byName,
+        new Set(argsByName.keys()),
+      )
+    : EMPTY_RULES;
+
+  const activeRules: CompiledRules = {
+    declarative: [
+      ...(isStandalone ? EMPTY_ARRAY : shared.globalRules.declarative),
+      ...compiledScopedRules.declarative,
+      ...compiledLocalRules.declarative,
+    ],
+    custom: [
+      ...(isStandalone ? EMPTY_ARRAY : shared.globalRules.custom),
+      ...compiledScopedRules.custom,
+      ...compiledLocalRules.custom,
+    ],
+    notes: [
+      ...(isStandalone ? EMPTY_ARRAY : shared.globalRules.notes),
+      ...compiledScopedRules.notes,
+      ...compiledLocalRules.notes,
+    ],
+  };
+
+  shared.tree.attachCompiled(node, {
+    args: compiledArgs?.descriptors ?? EMPTY_ARRAY,
+    localFlags: localDescriptors,
+    builtinFlags: builtins.descriptors,
+    rules: activeRules.declarative,
+    ruleNotes: activeRules.notes,
+  });
+
+  return {
+    userFlags,
+    knownFlagNames: appendIfAny(userFlags.knownNames, builtins.names),
+    parser: createArgvParser([...userFlags.specs, ...builtins.specs], {
+      stopParsing: cmd?.stopParsing,
+    }),
+    args: compiledArgs,
+    argsByName,
+    rules: activeRules,
+    middlewares: isStandalone
+      ? EMPTY_ARRAY
+      : scopeEnv && scopeEnv.middlewares.length > 0
+        ? sortMiddlewares([
+            ...shared.globalMiddlewares,
+            ...scopeEnv.middlewares,
+          ])
+        : shared.sortedGlobalMiddlewares,
+    errorHandlers:
+      scopeEnv && scopeEnv.errorHandlers.length > 0
+        ? [...shared.globalErrorHandlers, ...scopeEnv.errorHandlers]
+        : shared.globalErrorHandlers,
+    defaultAcceptsArgs: false,
+    hasBuiltinHelp: builtins.hasHelp,
+    hasBuiltinVersion: builtins.hasVersion,
+    hasBuiltinQuiet: builtins.hasQuiet,
+    hasBuiltinVerbose: builtins.hasVerbose,
+  };
+}
+
 export function compileCli(options: CompileCliOptions): CompiledCli {
   const { root, meta, helpOptions, verbosity } = options;
   const states = collectPluginStates(root);
@@ -411,129 +532,28 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
   const globalRules = compileRules(
     globalRuleEntries,
     globalFlags.byName,
-    EMPTY_STRING_SET,
+    new Set(),
   );
   const sortedGlobalMiddlewares = sortMiddlewares(globalMiddlewares);
-  const enableVersion = Boolean(meta.version);
-  const enableHelp = helpOptions !== false;
+  const nodeCompileShared: NodeCompileShared = {
+    tree,
+    rawGlobalEntries,
+    globalFlags,
+    globalRules,
+    globalMiddlewares,
+    sortedGlobalMiddlewares,
+    globalErrorHandlers,
+    enableVerbosity: verbosity,
+    enableVersion: Boolean(meta.version),
+    enableHelp: helpOptions !== false,
+  };
   const runtimes = new Map<CommandNode, CompiledNodeRuntime>();
 
   for (const node of tree.walkNodes()) {
-    const isRoot = node.fullPath.length === 0;
-    const cmd = node.command;
-    const isNodeStandalone = Boolean(cmd?.standalone);
-    const scopeEnv = nodeScopeEnvs.get(node);
-    const localEntries = cmd?.flags
-      ? compileFlagEntries(cmd.flags)
-      : EMPTY_DESCRIPTORS;
-    const scopedEntries = isNodeStandalone
-      ? EMPTY_DESCRIPTORS
-      : (scopeEnv?.scopedFlagEntries ?? EMPTY_DESCRIPTORS);
-    const effectiveGlobalEntries = isNodeStandalone
-      ? EMPTY_DESCRIPTORS
-      : rawGlobalEntries;
-
-    const inheritedEntries = mergeFlagEntries(
-      effectiveGlobalEntries,
-      scopedEntries,
+    runtimes.set(
+      node,
+      compileNodeRuntime(node, nodeScopeEnvs.get(node), nodeCompileShared),
     );
-    const nonGlobalEntries = mergeFlagEntries(scopedEntries, localEntries);
-    const mergedEntries = mergeFlagEntries(inheritedEntries, localEntries);
-    const userFlags =
-      !isNodeStandalone && nonGlobalEntries.length === 0
-        ? globalFlags
-        : buildCompiledFlags(mergedEntries);
-    const localDescriptors =
-      nonGlobalEntries.length > 0
-        ? nonGlobalEntries.map((e) => userFlags.byName.get(e.name)!)
-        : EMPTY_DESCRIPTORS;
-
-    const builtins = resolveNodeBuiltins({
-      isRoot,
-      isStandalone: isNodeStandalone,
-      enableVerbosity: verbosity,
-      enableVersion,
-      enableHelp,
-      userFlags,
-    });
-
-    const parser = createArgvParser([...userFlags.specs, ...builtins.specs], {
-      stopParsing: cmd?.stopParsing,
-    });
-    const compiledArgs = cmd ? compileArgs(cmd.argTokens, cmd.args) : undefined;
-    const argsByName = new Map(
-      (compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS).map((a) => [a.name, a]),
-    );
-
-    const compiledScopedRules =
-      !isNodeStandalone && scopeEnv && scopeEnv.scopedRuleEntries.length > 0
-        ? compileRules(
-            scopeEnv.scopedRuleEntries,
-            new Map(inheritedEntries.map((e) => [e.name, e])),
-            EMPTY_STRING_SET,
-          )
-        : EMPTY_RULES;
-
-    const compiledLocalRules = cmd?.rules
-      ? compileRules(
-          normalizeRulesInput(cmd.rules),
-          userFlags.byName,
-          new Set(argsByName.keys()),
-        )
-      : EMPTY_RULES;
-
-    const activeRules: CompiledRules = {
-      declarative: [
-        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.declarative),
-        ...compiledScopedRules.declarative,
-        ...compiledLocalRules.declarative,
-      ],
-      custom: [
-        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.custom),
-        ...compiledScopedRules.custom,
-        ...compiledLocalRules.custom,
-      ],
-      notes: [
-        ...(isNodeStandalone ? EMPTY_DESCRIPTORS : globalRules.notes),
-        ...compiledScopedRules.notes,
-        ...compiledLocalRules.notes,
-      ],
-    };
-
-    const nodeMiddlewares = isNodeStandalone
-      ? EMPTY_DESCRIPTORS
-      : scopeEnv && scopeEnv.middlewares.length > 0
-        ? sortMiddlewares([...globalMiddlewares, ...scopeEnv.middlewares])
-        : sortedGlobalMiddlewares;
-
-    const nodeErrorHandlers =
-      scopeEnv && scopeEnv.errorHandlers.length > 0
-        ? [...globalErrorHandlers, ...scopeEnv.errorHandlers]
-        : globalErrorHandlers;
-
-    tree.attachCompiled(node, {
-      args: compiledArgs?.descriptors ?? EMPTY_DESCRIPTORS,
-      localFlags: localDescriptors,
-      builtinFlags: builtins.descriptors,
-      rules: activeRules.declarative,
-      ruleNotes: activeRules.notes,
-    });
-
-    runtimes.set(node, {
-      userFlags,
-      knownFlagNames: appendIfAny(userFlags.knownNames, builtins.names),
-      parser,
-      args: compiledArgs,
-      argsByName,
-      rules: activeRules,
-      middlewares: nodeMiddlewares,
-      errorHandlers: nodeErrorHandlers,
-      defaultAcceptsArgs: false,
-      hasBuiltinHelp: builtins.hasHelp,
-      hasBuiltinVersion: builtins.hasVersion,
-      hasBuiltinQuiet: builtins.hasQuiet,
-      hasBuiltinVerbose: builtins.hasVerbose,
-    });
   }
 
   resolveDefaultChildren(tree, runtimes);

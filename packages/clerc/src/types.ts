@@ -190,7 +190,7 @@ export interface ErrorContext<
     options?: RunOptions,
   ) => Promise<RunResult>;
   readonly exit: (code?: number) => never;
-  readonly signal: AbortSignal;
+  readonly signal?: AbortSignal;
   readonly command?: AnyCommandDefinition;
   readonly commandPath: readonly string[];
   readonly calledAs?: string;

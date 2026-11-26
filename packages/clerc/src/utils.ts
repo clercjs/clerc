@@ -17,6 +17,8 @@ export type CamelCase<S extends string> =
 
 export type IsAny<T> = 0 extends 1 & T ? true : false;
 
+export const EMPTY_ARRAY: readonly never[] = Object.freeze([]);
+
 export const toArray = <T>(value: MaybeArray<T>): T[] =>
   Array.isArray(value) ? [...value] : [value as T];
 

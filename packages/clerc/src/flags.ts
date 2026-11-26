@@ -574,8 +574,7 @@ export function validateParsedFlags(
     for (const flag of parsed.missingValueFlags) {
       const candidate = parsed.missingValueCandidates?.[flag];
       if (candidate) {
-        const target =
-          compiled.byName.get(flag)?.target ?? formatFlagName(flag);
+        const target = compiled.byName.get(flag)!.target;
         hints.push(
           `if '${candidate}' is intended as the value, pass it as '${target}=${candidate}'`,
         );
@@ -610,9 +609,7 @@ export function validateParsedFlags(
 
   const firstInvalid = parsed.invalidValues[0];
   if (firstInvalid) {
-    const target =
-      compiled.byName.get(firstInvalid.flag)?.target ??
-      formatFlagName(firstInvalid.flag);
+    const target = compiled.byName.get(firstInvalid.flag)!.target;
 
     throw new ValidationError(target, firstInvalid.value, [
       { message: firstInvalid.message },

@@ -899,6 +899,12 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
+    cli.command("check-signal", {
+      run(ctx) {
+        events.push(`hasSignal:${String(ctx.signal !== undefined)}`);
+      },
+    });
+
     cli.command("nested", {
       async run(ctx) {
         await ctx.run(["wait"], { terminal: ctx.terminal, throwOnError: true });
@@ -911,14 +917,14 @@ describe("Clerc execution pipeline", () => {
         const sameRef = firstSignal === ctx.signal;
         events.push(`sameRef:${String(sameRef)}`);
         await new Promise<void>((_resolve, reject) => {
-          if (ctx.signal.aborted) {
-            reject(ctx.signal.reason);
+          if (firstSignal?.aborted) {
+            reject(firstSignal.reason);
 
             return;
           }
-          ctx.signal.addEventListener(
+          firstSignal?.addEventListener(
             "abort",
-            () => reject(ctx.signal.reason),
+            () => reject(firstSignal.reason),
             { once: true },
           );
           notifyWaiting?.();
@@ -926,7 +932,13 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
+    // 0. cli.run() without options.signal leaves ctx.signal undefined
+    await cli.run(["check-signal"], { terminal });
+
+    expect(events).toEqual(["hasSignal:false", "finally:check-signal"]);
+
     // 1. cli.run() propagates options.signal into nested ctx.run()
+    events.length = 0;
     const controller = new AbortController();
     const waitReady = new Promise<void>((resolve) => {
       notifyWaiting = resolve;
