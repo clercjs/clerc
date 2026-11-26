@@ -6,6 +6,7 @@ import type {
   RuleDescriptor,
   RuleRef,
 } from "clerc";
+import { getCommandFlags } from "clerc";
 
 const DOUBLE_DASH = "--";
 
@@ -47,6 +48,7 @@ interface FlagSlot {
   readonly target: string;
   readonly kind: FlagKind;
   readonly negatable: boolean;
+  readonly hasImplicitValue: boolean;
 }
 
 export interface McpToolEntry {
@@ -75,6 +77,23 @@ const isJsonPrimitive = (value: unknown): boolean =>
 
 const sanitizeToolName = (raw: string): string =>
   raw.replace(/[^\w-]/g, "_").replace(/^_+|_+$/g, "") || "run";
+
+function allocateFlagPropName(
+  flagName: string,
+  properties: Record<string, unknown>,
+): string {
+  if (!(flagName in properties)) {
+    return flagName;
+  }
+  let candidate = `flag_${flagName}`;
+  let suffix = 2;
+  while (candidate in properties) {
+    candidate = `flag_${flagName}_${suffix}`;
+    suffix++;
+  }
+
+  return candidate;
+}
 
 function buildAnnotations(
   mcpMeta?: McpCommandMeta,
@@ -174,22 +193,21 @@ function buildToolEntry(
     }
   }
 
-  const isStandalone = Boolean(cmd.standalone);
-  const localNames = new Set(node.localFlags.map((f) => f.name));
-  const mergedFlags = [
-    ...(isStandalone
-      ? []
-      : model.globalFlags.filter((f) => !localNames.has(f.name))),
-    ...node.localFlags,
-  ];
+  const mergedFlags = getCommandFlags(model, node);
   const flags = new Map<string, FlagSlot>();
+  const flagPropByName = new Map<string, string>();
 
   for (const flag of mergedFlags) {
-    if (flag.hidden || flag.name in properties) {
+    if (flag.hidden) {
       continue;
     }
 
-    const schema = { ...flag.toJsonSchema() };
+    const propName = allocateFlagPropName(flag.name, properties);
+    const hasImplicitValue = flag.implicitValue !== undefined;
+    const baseSchema = { ...flag.toJsonSchema() };
+    const schema: Record<string, unknown> = hasImplicitValue
+      ? { anyOf: [{ type: "boolean" }, baseSchema] }
+      : baseSchema;
     if (flag.description) {
       schema.description = flag.description;
     }
@@ -197,30 +215,27 @@ function buildToolEntry(
       schema.default = flag.default;
     }
 
-    properties[flag.name] = schema;
+    properties[propName] = schema;
     if (flag.required && !flag.env) {
-      required.push(flag.name);
+      required.push(propName);
     }
-    flags.set(flag.name, {
+    flagPropByName.set(flag.name, propName);
+    flags.set(propName, {
       target: flag.target,
       kind: flag.kind,
       negatable: flag.negatable,
+      hasImplicitValue,
     });
   }
 
   const activeRules: readonly RuleDescriptor[] = node.rules;
-  const argNames = new Set(node.args.map((a) => a.name));
 
   function resolveMcpProp(ref: RuleRef): string | undefined {
     if (ref.kind === "arg") {
       return ref.name in properties ? ref.name : undefined;
     }
-    // Skip flags shadowed by a same-named positional arg in MCP's flat properties
-    if (argNames.has(ref.name)) {
-      return undefined;
-    }
 
-    return flags.has(ref.name) ? ref.name : undefined;
+    return flagPropByName.get(ref.name);
   }
 
   const dependentRequired: Record<string, string[]> = {};
@@ -233,6 +248,17 @@ function buildToolEntry(
     const list = (dependentRequired[src] ??= []);
     if (!list.includes(dep)) {
       list.push(dep);
+    }
+  }
+
+  const requiredSet = new Set(required);
+  for (const slice of [mainArgs, doubleDashArgs]) {
+    for (let i = 1; i < slice.length; i++) {
+      for (let j = 0; j < i; j++) {
+        if (!requiredSet.has(slice[j].name)) {
+          addDep(slice[i].name, slice[j].name);
+        }
+      }
     }
   }
 
@@ -342,16 +368,34 @@ function appendPositionals(
   slots: readonly ArgSlot[],
   input: Readonly<Record<string, unknown>>,
 ): void {
+  let firstOmitted: string | undefined;
   for (const arg of slots) {
     const value = input[arg.name];
     if (value === undefined) {
+      firstOmitted ??= arg.name;
+
       continue;
     }
     if (arg.isVariadic && Array.isArray(value)) {
+      if (value.length === 0) {
+        firstOmitted ??= arg.name;
+
+        continue;
+      }
+      if (firstOmitted !== undefined) {
+        throw new Error(
+          `Cannot provide positional argument '${arg.name}' without preceding argument '${firstOmitted}'`,
+        );
+      }
       for (const item of value) {
         target.push(String(item));
       }
     } else {
+      if (firstOmitted !== undefined) {
+        throw new Error(
+          `Cannot provide positional argument '${arg.name}' without preceding argument '${firstOmitted}'`,
+        );
+      }
       target.push(String(value));
     }
   }
@@ -401,7 +445,13 @@ export function serializeToolArgsToArgv(
         break;
       }
       case "single": {
-        argv.push(`${info.target}=${String(value)}`);
+        if (info.hasImplicitValue && typeof value === "boolean") {
+          if (value) {
+            argv.push(info.target);
+          }
+        } else {
+          argv.push(`${info.target}=${String(value)}`);
+        }
 
         break;
       }

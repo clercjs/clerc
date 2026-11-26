@@ -172,7 +172,16 @@ async function handleToolsCall(
     cwd: cwd?.(),
   });
 
-  const result = await run(serializeToolArgsToArgv(entry, args), { terminal });
+  let argv: string[];
+  try {
+    argv = serializeToolArgsToArgv(entry, args);
+  } catch (error) {
+    const message = Error.isError(error) ? error.message : String(error);
+
+    return errorResponse(id, -32_602, message);
+  }
+
+  const result = await run(argv, { terminal });
   const text =
     [terminal.stdoutText(), terminal.stderrText()].filter(Boolean).join("\n") ||
     (result.ok ? "OK" : `Command failed with exit code ${result.exitCode}`);

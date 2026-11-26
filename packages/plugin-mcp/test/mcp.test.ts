@@ -423,4 +423,136 @@ describe("@clerc/plugin-mcp", () => {
     expect(serveTool.inputSchema.properties.token).toBeUndefined();
     expect(serveTool.inputSchema.allOf).toBeUndefined();
   });
+
+  it("handles optional positional dependencies, arg/flag collisions, implicitValue flags, and ctx.exit()", async () => {
+    const cli = createTestCli().use(mcpPlugin());
+
+    cli.command("deploy [env] [region] [zone]", {
+      run(ctx) {
+        ctx.terminal.stdout(
+          `env=${ctx.args.env ?? "-"} region=${ctx.args.region ?? "-"} zone=${ctx.args.zone ?? "-"}`,
+        );
+      },
+    });
+
+    cli.command("copy [target]", {
+      flags: {
+        target: { type: String, description: "Target flag" },
+        inspect: {
+          type: Number,
+          implicitValue: 9229,
+          description: "Enable inspector",
+        },
+      },
+      rules: (r) => [r.exclusive(r.arg("target"), r.flag("target"))],
+      run(ctx) {
+        ctx.terminal.stdout(
+          `arg=${ctx.args.target ?? "-"} flag=${ctx.flags.target ?? "-"} inspect=${ctx.flags.inspect ?? "-"}`,
+        );
+      },
+    });
+
+    cli.command("check", {
+      run(ctx) {
+        ctx.log.warn("needs formatting");
+        ctx.exit(1);
+      },
+    });
+
+    const tools = listMcpTools(cli.buildModel());
+    const deployTool = tools.find((t) => t.name === "deploy")!;
+    const copyTool = tools.find((t) => t.name === "copy")!;
+
+    expect(deployTool.inputSchema.dependentRequired).toEqual({
+      region: ["env"],
+      zone: ["env", "region"],
+    });
+    expect(copyTool.inputSchema.properties.target).toEqual({ type: "string" });
+    expect(copyTool.inputSchema.properties.flag_target).toEqual({
+      type: "string",
+      description: "Target flag",
+    });
+    expect(copyTool.inputSchema.properties.inspect).toEqual({
+      anyOf: [{ type: "boolean" }, { type: "number" }],
+      description: "Enable inspector",
+    });
+    expect(copyTool.inputSchema.allOf).toEqual([
+      { not: { required: ["target", "flag_target"] } },
+    ]);
+
+    const handler = createMcpHandler({
+      model: cli.buildModel(),
+      run: (argv, opts) => cli.run(argv, opts),
+    });
+
+    // Skipping preceding optional positional arg returns -32602 invalid params
+    const skippedRes = await handler({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "deploy", arguments: { region: "eu-west-1" } },
+    });
+
+    expect(skippedRes?.error).toEqual({
+      code: -32_602,
+      message:
+        "Cannot provide positional argument 'region' without preceding argument 'env'",
+    });
+
+    // Colliding flag property + implicitValue boolean true/false/number
+    const implicitTrueRes = await handler({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: {
+        name: "copy",
+        arguments: { flag_target: "dist", inspect: true },
+      },
+    });
+
+    expect((implicitTrueRes?.result as any).content[0].text).toBe(
+      "arg=- flag=dist inspect=9229",
+    );
+
+    const implicitFalseRes = await handler({
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: {
+        name: "copy",
+        arguments: { target: "src", inspect: false },
+      },
+    });
+
+    expect((implicitFalseRes?.result as any).content[0].text).toBe(
+      "arg=src flag=- inspect=-",
+    );
+
+    const implicitNumRes = await handler({
+      jsonrpc: "2.0",
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "copy",
+        arguments: { inspect: 9230 },
+      },
+    });
+
+    expect((implicitNumRes?.result as any).content[0].text).toBe(
+      "arg=- flag=- inspect=9230",
+    );
+
+    // ctx.exit(1) returns MCP isError: true without crashing the handler
+    const exitRes = await handler({
+      jsonrpc: "2.0",
+      id: 5,
+      method: "tools/call",
+      params: { name: "check", arguments: {} },
+    });
+
+    expect(exitRes?.result).toEqual({
+      content: [{ type: "text", text: " warn needs formatting" }],
+      isError: true,
+    });
+  });
 });
