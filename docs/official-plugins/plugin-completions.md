@@ -84,6 +84,16 @@ You can also attach `complete(ctx)` directly on the command options (`cli.comman
 
 ## Activating in Your Shell
 
+Install completions for your current shell (or pass `zsh`, `bash`, `fish`, or `powershell` explicitly):
+
+```sh
+acme completions install
+acme completions install zsh --dry-run
+acme completions uninstall
+```
+
+Or load the generated script directly:
+
 ::: code-group
 
 ```sh [Zsh]

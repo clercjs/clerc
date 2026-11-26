@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -14,7 +15,12 @@ import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { Complete, Types } from "clerc";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { ShellCompDirective, completionsPlugin } from "../src";
+import {
+  ShellCompDirective,
+  completionsPlugin,
+  detectShell,
+  resolveInstallPlan,
+} from "../src";
 
 const hasShell = (shell: string): boolean =>
   spawnSync(shell, ["--version"], { stdio: "ignore" }).status === 0;
@@ -833,4 +839,194 @@ describe("plugin-completions v2", () => {
       }
     },
   );
+
+  it("installs and uninstalls shell completions idempotently across shells with auto-detection and --dry-run", async () => {
+    expect(detectShell({ SHELL: "/usr/bin/fish" })).toBe("fish");
+    expect(detectShell({ SHELL: "/bin/zsh" })).toBe("zsh");
+    expect(detectShell({ SHELL: "/bin/bash" })).toBe("bash");
+    expect(
+      detectShell({ SHELL: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" }),
+    ).toBe("powershell");
+    expect(detectShell({ PSModulePath: "C:\\Modules" })).toBe("powershell");
+    expect(detectShell({})).toBeUndefined();
+
+    const dir = mkdtempSync(join(tmpdir(), "clerc-install-comp-"));
+    try {
+      const cli = createTestCli({ name: "acme", version: "1.0.0" })
+        .flags({ token: { type: String, required: true } })
+        .use(completionsPlugin())
+        .command("deploy", { description: "Deploy app", run() {} });
+
+      // Completing 'acme completions ' suggests both install/uninstall subcommands and shell names
+      const compTerm = createMemoryTerminal();
+      await cli.run(["complete", "--", "completions", ""], {
+        terminal: compTerm,
+      });
+
+      expect(compTerm.stdoutText()).toContain(
+        "install	Install shell completions",
+      );
+      expect(compTerm.stdoutText()).toContain(
+        "uninstall	Remove installed shell completions",
+      );
+      expect(compTerm.stdoutText()).toContain("fish");
+      expect(compTerm.stdoutText()).toContain("zsh");
+
+      // Unknown shell environment fails with ClercError (exitCode 1)
+      const noShellTerm = createMemoryTerminal({ env: {} });
+      const noShellRes = await cli.run(["completions", "install"], {
+        terminal: noShellTerm,
+      });
+
+      expect(noShellRes.ok).toBeFalsy();
+      expect(noShellRes.exitCode).toBe(1);
+      expect(noShellTerm.stderrText()).toContain(
+        "could not detect shell from environment",
+      );
+
+      // 1. Fish: auto-detected from SHELL, writes drop-in file without touching config.fish
+      const fishEnv = {
+        HOME: dir,
+        XDG_CONFIG_HOME: join(dir, "xdg-config"),
+        SHELL: "/usr/bin/fish",
+      };
+      const fishTerm = createMemoryTerminal({ env: fishEnv });
+      const dryRes = await cli.run(["completions", "install", "--dry-run"], {
+        terminal: fishTerm,
+      });
+      const fishScript = join(
+        dir,
+        "xdg-config",
+        "fish",
+        "completions",
+        "acme.fish",
+      );
+
+      expect(dryRes.ok).toBeTruthy();
+      expect(existsSync(fishScript)).toBeFalsy();
+      expect(fishTerm.stdoutText()).toContain(fishScript);
+
+      fishTerm.clear();
+      const fishInstallRes = await cli.run(["completions", "install"], {
+        terminal: fishTerm,
+      });
+
+      expect(fishInstallRes.ok).toBeTruthy();
+      expect(readFileSync(fishScript, "utf8")).toContain(
+        "# fish completion for acme",
+      );
+      expect(
+        existsSync(join(dir, "xdg-config", "fish", "config.fish")),
+      ).toBeFalsy();
+
+      fishTerm.clear();
+      const fishUninstallRes = await cli.run(["completions", "uninstall"], {
+        terminal: fishTerm,
+      });
+
+      expect(fishUninstallRes.ok).toBeTruthy();
+      expect(existsSync(fishScript)).toBeFalsy();
+
+      // Second uninstall is a clean no-op
+      fishTerm.clear();
+      const fishUninstallAgain = await cli.run(["completions", "uninstall"], {
+        terminal: fishTerm,
+      });
+
+      expect(fishUninstallAgain.ok).toBeTruthy();
+      expect(fishTerm.stdoutText()).toContain("No fish completions found");
+
+      // 2. Zsh: writes _acme and idempotently upserts/removes marker block in .zshrc
+      const zshDir = join(dir, "zdot");
+      const zshRc = join(zshDir, ".zshrc");
+      mkdirSync(zshDir, { recursive: true });
+      writeFileSync(zshRc, "export EDITOR=nvim\n", "utf8");
+      const zshEnv = {
+        HOME: dir,
+        XDG_DATA_HOME: join(dir, "xdg-data"),
+        ZDOTDIR: zshDir,
+      };
+      const zshTerm = createMemoryTerminal({ env: zshEnv });
+
+      await cli.run(["completions", "install", "zsh"], { terminal: zshTerm });
+      await cli.run(["completions", "install", "zsh"], { terminal: zshTerm });
+
+      const zshScript = join(dir, "xdg-data", "zsh", "site-functions", "_acme");
+      const zshRcAfterInstall = readFileSync(zshRc, "utf8");
+
+      expect(readFileSync(zshScript, "utf8")).toContain("#compdef acme");
+      expect(
+        zshRcAfterInstall.match(/# >>> acme completions >>>/g),
+      ).toHaveLength(1);
+      expect(zshRcAfterInstall).toContain("export EDITOR=nvim");
+
+      await cli.run(["completions", "uninstall", "zsh"], { terminal: zshTerm });
+
+      expect(existsSync(zshScript)).toBeFalsy();
+      expect(readFileSync(zshRc, "utf8")).toBe("export EDITOR=nvim\n");
+
+      // 3. Bash: writes script and valid marker block in .bashrc
+      const bashHome = join(dir, "bash-home");
+      const bashRc = join(bashHome, ".bashrc");
+      mkdirSync(bashHome, { recursive: true });
+      writeFileSync(bashRc, "alias ll='ls -la'\n", "utf8");
+      const bashEnv = {
+        HOME: bashHome,
+        XDG_DATA_HOME: join(bashHome, ".local", "share"),
+      };
+      const bashTerm = createMemoryTerminal({ env: bashEnv });
+
+      await cli.run(["completions", "install", "bash"], { terminal: bashTerm });
+      const bashPlan = resolveInstallPlan("bash", "acme", {
+        env: bashEnv,
+        homeDir: bashHome,
+      });
+
+      expect(readFileSync(bashPlan.scriptPath, "utf8")).toContain(
+        "# bash completion for acme",
+      );
+      expect(readFileSync(bashPlan.rcPath!, "utf8")).toContain(
+        "# >>> acme completions >>>",
+      );
+
+      if (hasShell("bash")) {
+        execFileSync("bash", ["-n", bashPlan.rcPath!]);
+        execFileSync("bash", ["-n", bashPlan.scriptPath]);
+      }
+
+      await cli.run(["completions", "uninstall", "bash"], {
+        terminal: bashTerm,
+      });
+
+      expect(existsSync(bashPlan.scriptPath)).toBeFalsy();
+      expect(readFileSync(bashPlan.rcPath!, "utf8")).toBe(
+        "alias ll='ls -la'\n",
+      );
+
+      // 4. PowerShell: respects PROFILE env var
+      const psProfile = join(dir, "ps", "Microsoft.PowerShell_profile.ps1");
+      const psEnv = { HOME: dir, PROFILE: psProfile };
+      const psTerm = createMemoryTerminal({ env: psEnv });
+
+      await cli.run(["completions", "install", "powershell"], {
+        terminal: psTerm,
+      });
+
+      const psScript = join(dir, "ps", "completions", "acme.ps1");
+
+      expect(readFileSync(psScript, "utf8")).toContain(
+        "Register-ArgumentCompleter",
+      );
+      expect(readFileSync(psProfile, "utf8")).toContain("Test-Path");
+
+      await cli.run(["completions", "uninstall", "powershell"], {
+        terminal: psTerm,
+      });
+
+      expect(existsSync(psScript)).toBeFalsy();
+      expect(readFileSync(psProfile, "utf8")).toBe("");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

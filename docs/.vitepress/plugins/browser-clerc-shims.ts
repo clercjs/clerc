@@ -7,6 +7,9 @@ const UTIL_ID = "\0clerc-browser:util";
 const CLACK_ID = "\0clerc-browser:clack";
 const READLINE_ID = "\0clerc-browser:readline";
 const MODULE_ID = "\0clerc-browser:module";
+const FS_PROMISES_ID = "\0clerc-browser:fs-promises";
+const OS_ID = "\0clerc-browser:os";
+const PATH_ID = "\0clerc-browser:path";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const clercEntry = path.resolve(repoRoot, "packages/clerc/src/index.ts");
@@ -63,6 +66,15 @@ export const BrowserClercShims = (): Plugin => ({
       if (id === "node:readline") {
         return READLINE_ID;
       }
+      if (id === "node:fs/promises") {
+        return FS_PROMISES_ID;
+      }
+      if (id === "node:os") {
+        return OS_ID;
+      }
+      if (id === "node:path") {
+        return PATH_ID;
+      }
       if (id === "clerc") {
         return clercEntry;
       }
@@ -81,6 +93,35 @@ export const BrowserClercShims = (): Plugin => ({
     if (id === READLINE_ID) {
       return String.raw`export function createInterface() {
   throw new Error("stdio readline is not supported in browser preview");
+}
+`;
+    }
+
+    if (id === FS_PROMISES_ID) {
+      return String.raw`const unsupported = () => {
+  throw new Error("Filesystem operations are not supported in browser preview");
+};
+export const mkdir = unsupported;
+export const readFile = unsupported;
+export const rm = unsupported;
+export const writeFile = unsupported;
+`;
+    }
+
+    if (id === OS_ID) {
+      return String.raw`export function homedir() {
+  return "/home/demo";
+}
+`;
+    }
+
+    if (id === PATH_ID) {
+      return String.raw`export function join(...parts) {
+  return parts.filter(Boolean).join("/").replace(/\/{2,}/g, "/");
+}
+export function dirname(p) {
+  const idx = p.lastIndexOf("/");
+  return idx <= 0 ? "/" : p.slice(0, idx);
 }
 `;
     }

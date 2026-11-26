@@ -84,6 +84,16 @@ await cli.runMain();
 
 ## 在 Shell 中启用
 
+自动检测当前 Shell 并安装补全脚本（也可以显式传入 `zsh`、`bash`、`fish` 或 `powershell`）：
+
+```sh
+acme completions install
+acme completions install zsh --dry-run
+acme completions uninstall
+```
+
+或者直接按需加载生成的脚本：
+
 ::: code-group
 
 ```sh [Zsh]
