@@ -67,6 +67,14 @@ export type McpRequestHandler = (
 
 const PLAIN_THEME = createTheme(false);
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isJsonRpcRequest = (value: unknown): value is McpJsonRpcRequest =>
+  isObjectRecord(value) &&
+  value.jsonrpc === "2.0" &&
+  typeof value.method === "string";
+
 function buildResourceEntries(
   model: CliModel,
   options?: McpFilterOptions,
@@ -157,11 +165,7 @@ async function handleToolsCall(
     return errorResponse(id, -32_602, `Unknown tool: '${toolName}'`);
   }
 
-  const rawArgs = params?.arguments;
-  const args =
-    rawArgs && typeof rawArgs === "object" && !Array.isArray(rawArgs)
-      ? (rawArgs as Record<string, unknown>)
-      : {};
+  const args = isObjectRecord(params?.arguments) ? params.arguments : {};
 
   const terminal = createMemoryTerminal({
     color: false,
@@ -354,17 +358,8 @@ export async function serveMcpStdio(
       continue;
     }
 
-    if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      Array.isArray(parsed) ||
-      (parsed as { jsonrpc?: unknown }).jsonrpc !== "2.0" ||
-      typeof (parsed as { method?: unknown }).method !== "string"
-    ) {
-      const rawId =
-        parsed && typeof parsed === "object" && !Array.isArray(parsed)
-          ? (parsed as { id?: unknown }).id
-          : undefined;
+    if (!isJsonRpcRequest(parsed)) {
+      const rawId = isObjectRecord(parsed) ? parsed.id : undefined;
       const id =
         typeof rawId === "string" || typeof rawId === "number" ? rawId : null;
       output.write(
@@ -374,7 +369,7 @@ export async function serveMcpStdio(
       continue;
     }
 
-    const response = await handler(parsed as McpJsonRpcRequest);
+    const response = await handler(parsed);
     if (response !== null) {
       output.write(`${JSON.stringify(response)}\n`);
     }

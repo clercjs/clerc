@@ -1,7 +1,9 @@
 import type {
   AnyCommandDefinition,
+  ArgDescriptor,
   CliModel,
   CommandNode,
+  FlagDescriptor,
   FlagKind,
   RuleDescriptor,
   RuleRef,
@@ -129,7 +131,6 @@ export function listExposedCommands(
 
   for (const node of model.tree.walkCommands()) {
     const cmd = node.command;
-
     const mcpMeta = getMcpMeta(cmd.meta);
     if (mcpMeta?.enabled === false) {
       continue;
@@ -143,7 +144,6 @@ export function listExposedCommands(
     ) {
       continue;
     }
-
     if (filter && !filter(node.fullPath)) {
       continue;
     }
@@ -154,20 +154,19 @@ export function listExposedCommands(
   return exposed;
 }
 
-function buildToolEntry(
-  node: CommandNode,
-  cmd: AnyCommandDefinition,
-  model: CliModel,
-): McpToolEntry {
-  const mcpMeta = getMcpMeta(cmd.meta);
-  const properties: Record<string, Record<string, unknown>> = {};
-  const required: string[] = [];
+function collectArgSchemas(
+  args: readonly ArgDescriptor[],
+  properties: Record<string, Record<string, unknown>>,
+  required: string[],
+): { readonly mainArgs: ArgSlot[]; readonly doubleDashArgs: ArgSlot[] } {
   const mainArgs: ArgSlot[] = [];
   const doubleDashArgs: ArgSlot[] = [];
 
-  for (const arg of node.args) {
-    const slot: ArgSlot = { name: arg.name, isVariadic: arg.isVariadic };
-    (arg.afterDoubleDash ? doubleDashArgs : mainArgs).push(slot);
+  for (const arg of args) {
+    (arg.afterDoubleDash ? doubleDashArgs : mainArgs).push({
+      name: arg.name,
+      isVariadic: arg.isVariadic,
+    });
 
     const itemSchema = { ...arg.toJsonSchema() };
     const prop: Record<string, unknown> = arg.isVariadic
@@ -193,7 +192,17 @@ function buildToolEntry(
     }
   }
 
-  const mergedFlags = getCommandFlags(model, node);
+  return { mainArgs, doubleDashArgs };
+}
+
+function collectFlagSchemas(
+  mergedFlags: readonly FlagDescriptor[],
+  properties: Record<string, Record<string, unknown>>,
+  required: string[],
+): {
+  readonly flags: Map<string, FlagSlot>;
+  readonly flagPropByName: Map<string, string>;
+} {
   const flags = new Map<string, FlagSlot>();
   const flagPropByName = new Map<string, string>();
 
@@ -228,16 +237,19 @@ function buildToolEntry(
     });
   }
 
-  const activeRules: readonly RuleDescriptor[] = node.rules;
+  return { flags, flagPropByName };
+}
 
-  function resolveMcpProp(ref: RuleRef): string | undefined {
-    if (ref.kind === "arg") {
-      return ref.name in properties ? ref.name : undefined;
-    }
-
-    return flagPropByName.get(ref.name);
-  }
-
+function buildSchemaConstraints(
+  rules: readonly RuleDescriptor[],
+  slices: readonly (readonly ArgSlot[])[],
+  required: readonly string[],
+  properties: Readonly<Record<string, unknown>>,
+  flagPropByName: ReadonlyMap<string, string>,
+): {
+  readonly dependentRequired?: Record<string, string[]>;
+  readonly allOf?: Record<string, unknown>[];
+} {
   const dependentRequired: Record<string, string[]> = {};
   const allOf: Record<string, unknown>[] = [];
 
@@ -252,7 +264,7 @@ function buildToolEntry(
   }
 
   const requiredSet = new Set(required);
-  for (const slice of [mainArgs, doubleDashArgs]) {
+  for (const slice of slices) {
     for (let i = 1; i < slice.length; i++) {
       for (let j = 0; j < i; j++) {
         if (!requiredSet.has(slice[j].name)) {
@@ -262,14 +274,21 @@ function buildToolEntry(
     }
   }
 
-  for (const rule of activeRules) {
+  const resolveProp = (ref: RuleRef): string | undefined =>
+    ref.kind === "arg"
+      ? ref.name in properties
+        ? ref.name
+        : undefined
+      : flagPropByName.get(ref.name);
+
+  for (const rule of rules) {
     if (rule.kind === "requires") {
-      const src = resolveMcpProp(rule.source);
+      const src = resolveProp(rule.source);
       if (!src) {
         continue;
       }
       for (const target of rule.targets) {
-        const dep = resolveMcpProp(target);
+        const dep = resolveProp(target);
         if (dep) {
           addDep(src, dep);
         }
@@ -279,7 +298,7 @@ function buildToolEntry(
     }
 
     const props = rule.targets
-      .map(resolveMcpProp)
+      .map(resolveProp)
       .filter((p): p is string => Boolean(p));
     if (props.length < 2) {
       continue;
@@ -305,7 +324,39 @@ function buildToolEntry(
     }
   }
 
-  const hasDepReq = Object.keys(dependentRequired).length > 0;
+  return {
+    dependentRequired:
+      Object.keys(dependentRequired).length > 0 ? dependentRequired : undefined,
+    allOf: allOf.length > 0 ? allOf : undefined,
+  };
+}
+
+function buildToolEntry(
+  node: CommandNode,
+  cmd: AnyCommandDefinition,
+  model: CliModel,
+): McpToolEntry {
+  const mcpMeta = getMcpMeta(cmd.meta);
+  const properties: Record<string, Record<string, unknown>> = {};
+  const required: string[] = [];
+
+  const { mainArgs, doubleDashArgs } = collectArgSchemas(
+    node.args,
+    properties,
+    required,
+  );
+  const { flags, flagPropByName } = collectFlagSchemas(
+    getCommandFlags(model, node),
+    properties,
+    required,
+  );
+  const { dependentRequired, allOf } = buildSchemaConstraints(
+    node.rules,
+    [mainArgs, doubleDashArgs],
+    required,
+    properties,
+    flagPropByName,
+  );
 
   const baseName =
     mcpMeta?.name ??
@@ -324,8 +375,8 @@ function buildToolEntry(
         type: "object",
         properties,
         ...(required.length > 0 ? { required } : {}),
-        ...(hasDepReq ? { dependentRequired } : {}),
-        ...(allOf.length > 0 ? { allOf } : {}),
+        ...(dependentRequired ? { dependentRequired } : {}),
+        ...(allOf ? { allOf } : {}),
         additionalProperties: false,
       },
       ...(annotations ? { annotations } : {}),
@@ -371,33 +422,24 @@ function appendPositionals(
   let firstOmitted: string | undefined;
   for (const arg of slots) {
     const value = input[arg.name];
-    if (value === undefined) {
+    const items =
+      value === undefined
+        ? []
+        : arg.isVariadic && Array.isArray(value)
+          ? value.map(String)
+          : [String(value)];
+
+    if (items.length === 0) {
       firstOmitted ??= arg.name;
 
       continue;
     }
-    if (arg.isVariadic && Array.isArray(value)) {
-      if (value.length === 0) {
-        firstOmitted ??= arg.name;
-
-        continue;
-      }
-      if (firstOmitted !== undefined) {
-        throw new Error(
-          `Cannot provide positional argument '${arg.name}' without preceding argument '${firstOmitted}'`,
-        );
-      }
-      for (const item of value) {
-        target.push(String(item));
-      }
-    } else {
-      if (firstOmitted !== undefined) {
-        throw new Error(
-          `Cannot provide positional argument '${arg.name}' without preceding argument '${firstOmitted}'`,
-        );
-      }
-      target.push(String(value));
+    if (firstOmitted !== undefined) {
+      throw new Error(
+        `Cannot provide positional argument '${arg.name}' without preceding argument '${firstOmitted}'`,
+      );
     }
+    target.push(...items);
   }
 }
 
