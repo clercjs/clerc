@@ -3,7 +3,7 @@ title: Error Handling
 ---
 
 <script setup>
-import { clercError, jsonError, typoSuggestions } from "./errors.playground.ts";
+import { clercError, typoSuggestions } from "./errors.playground.ts";
 </script>
 
 # Error Handling
@@ -45,20 +45,3 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).onError((err, ctx) => {
   return true;
 });
 ```
-
-## JSON Error Output
-
-When `ctx.log.format === "json"` (or `logger: { format: "json" }`), unhandled errors serialize as single-line JSON to `stderr`:
-
-```json
-{
-  "error": {
-    "code": "ERR_UNKNOWN_COMMAND",
-    "message": "unknown command 'buid'",
-    "hints": ["a similar command exists: 'build'"],
-    "exitCode": 2
-  }
-}
-```
-
-<CliPlayground :scenario="jsonError" lang="en" />

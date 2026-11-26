@@ -3,7 +3,7 @@ title: 错误处理
 ---
 
 <script setup>
-import { clercError, jsonError, typoSuggestions } from "../../guide/errors.playground.ts";
+import { clercError, typoSuggestions } from "../../guide/errors.playground.ts";
 </script>
 
 # 错误处理
@@ -24,7 +24,7 @@ import { ClercError, clerc } from "clerc";
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
   run() {
     throw new ClercError("尚未登录制品仓库", {
-      code: "ERR_VALIDATION",
+      code: "ERR_AUTH",
       detail: "未在 ~/.acmerc 或 ACME_TOKEN 中找到凭证",
       usage: "acme login --registry https://registry.example.com",
     }).addHint("请先运行 'acme login' 或设置环境变量 ACME_TOKEN");
@@ -45,20 +45,3 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).onError((err, ctx) => {
   return true;
 });
 ```
-
-## JSON 错误输出
-
-当 `ctx.log.format === "json"`（或配置 `logger: { format: "json" }`）时，未捕获错误会自动以单行 JSON 输出到 `stderr`，方便脚本和 CI 解析：
-
-```json
-{
-  "error": {
-    "code": "ERR_UNKNOWN_COMMAND",
-    "message": "unknown command 'buid'",
-    "hints": ["a similar command exists: 'build'"],
-    "exitCode": 2
-  }
-}
-```
-
-<CliPlayground :scenario="jsonError" lang="zh" />

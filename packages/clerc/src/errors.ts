@@ -299,28 +299,6 @@ export function enrichCommandError(
   }
 }
 
-export function formatJsonError(error: unknown): string {
-  const payload =
-    error instanceof ClercError
-      ? {
-          error: {
-            code: error.code,
-            message: error.message,
-            detail: error.detail,
-            hints: error.hints,
-            exitCode: error.exitCode,
-          },
-        }
-      : {
-          error: {
-            message: Error.isError(error) ? error.message : String(error),
-            exitCode: 1,
-          },
-        };
-
-  return JSON.stringify(payload);
-}
-
 export interface FormatDiagnosticOptions {
   readonly theme: Theme;
   readonly name?: string;

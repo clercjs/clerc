@@ -3,7 +3,7 @@ title: 日志
 ---
 
 <script setup>
-import { alignedOutput, calloutBox, levelsAndJson } from "../../guide/logger.playground.ts";
+import { alignedOutput, calloutBox, logLevels } from "../../guide/logger.playground.ts";
 </script>
 
 # 日志
@@ -52,8 +52,8 @@ ctx.log.box.info(
 
 <CliPlayground :scenario="calloutBox" lang="zh" />
 
-## 运行期级别、JSON 格式与主题
+## 运行期级别与主题
 
-可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`）或 `ctx.log.format`（`"pretty" | "json"`），也可以在 `clerc({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。
+可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`），使用 `ctx.log.raw()` 输出无格式原始文本，也可以在 `clerc({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。
 
-<CliPlayground :scenario="levelsAndJson" lang="zh" />
+<CliPlayground :scenario="logLevels" lang="zh" />

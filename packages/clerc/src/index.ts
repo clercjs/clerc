@@ -1,7 +1,6 @@
 export type {
   CreateLoggerOptions,
   LogEntry,
-  LogFormat,
   LogLevel,
   LogMethod,
   LogMethods,
@@ -62,7 +61,6 @@ export {
   UnknownFlagError,
   ValidationError,
   formatDiagnostic,
-  formatJsonError,
 } from "./errors";
 export type {
   FlagCustomMeta,

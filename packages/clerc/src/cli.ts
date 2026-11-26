@@ -15,7 +15,6 @@ import {
   UnknownCommandError,
   enrichCommandError,
   formatDiagnostic,
-  formatJsonError,
 } from "./errors";
 import type { ContextualFlags, FlagsDefinition, OverrideFlags } from "./flags";
 import {
@@ -421,22 +420,18 @@ export class Clerc<
       throw error;
     }
 
-    if (ctx.log.format === "json") {
-      ctx.terminal.stderr(formatJsonError(error));
-    } else {
-      const verbose =
-        ctx.log.level === "debug" ||
-        Boolean(ctx.terminal.env.DEBUG && ctx.terminal.env.DEBUG !== "0");
-      ctx.terminal.stderr(
-        formatDiagnostic(error, {
-          theme: ctx.log.theme,
-          name: ctx.model.meta.name,
-          commandPath: ctx.commandPath,
-          verbose,
-          showHelpHint: this.#helpOptions !== false,
-        }),
-      );
-    }
+    const verbose =
+      ctx.log.level === "debug" ||
+      Boolean(ctx.terminal.env.DEBUG && ctx.terminal.env.DEBUG !== "0");
+    ctx.terminal.stderr(
+      formatDiagnostic(error, {
+        theme: ctx.log.theme,
+        name: ctx.model.meta.name,
+        commandPath: ctx.commandPath,
+        verbose,
+        showHelpHint: this.#helpOptions !== false,
+      }),
+    );
 
     return { ok: false, exitCode, error };
   }

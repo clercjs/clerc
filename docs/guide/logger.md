@@ -3,7 +3,7 @@ title: Logger
 ---
 
 <script setup>
-import { alignedOutput, calloutBox, levelsAndJson } from "./logger.playground.ts";
+import { alignedOutput, calloutBox, logLevels } from "./logger.playground.ts";
 </script>
 
 # Logger
@@ -57,8 +57,8 @@ ctx.log.box.warn(
 
 <CliPlayground :scenario="calloutBox" lang="en" />
 
-## Log Level, JSON Format, and Themes
+## Log Levels and Themes
 
-By default, `clerc()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) or `ctx.log.format` (`"pretty" | "json"`) at runtime, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
+By default, `clerc()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) at runtime, write unformatted output with `ctx.log.raw()`, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
 
-<CliPlayground :scenario="levelsAndJson" lang="en" />
+<CliPlayground :scenario="logLevels" lang="en" />

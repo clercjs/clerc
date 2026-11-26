@@ -283,9 +283,7 @@ export async function runScenarioLive(
     sleep,
     setSpinner,
     async task(log, title, fn, taskOptions) {
-      const canShow =
-        (log.level === "info" || log.level === "debug") &&
-        log.format === "pretty";
+      const canShow = log.level === "info" || log.level === "debug";
       if (canShow) {
         setSpinner(title);
       }

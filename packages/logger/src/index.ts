@@ -9,12 +9,10 @@ import {
   formatLabel,
   formatLogLabel,
   resolvePayload,
-  stringifyJson,
 } from "./format";
 import type {
   CreateLoggerOptions,
   LogEntry,
-  LogFormat,
   LogKind,
   LogLevel,
   LogMethods,
@@ -27,7 +25,6 @@ export { LOG_GUTTER, LOG_LABEL_WIDTH, formatLogLabel };
 export type {
   CreateLoggerOptions,
   LogEntry,
-  LogFormat,
   LogLevel,
   LogMethod,
   LogMethods,
@@ -49,7 +46,6 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 
 interface SharedLoggerState {
   level: LogLevel;
-  format: LogFormat;
 }
 
 interface LoggerConfig {
@@ -105,24 +101,10 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
     targetLevel: Exclude<LogLevel, "silent">,
     write: (text: string) => void,
     isDebug: boolean,
-    jsonBase: Readonly<Record<string, unknown>>,
   ): LogEntry {
     const entry: LogEntry = {
       line(...values) {
         if (!shouldLog(targetLevel) || values.length === 0) {
-          return entry;
-        }
-        if (state.format === "json") {
-          for (const value of values) {
-            write(
-              stringifyJson({
-                ...jsonBase,
-                ...(scope ? { scope } : {}),
-                line: value,
-              }),
-            );
-          }
-
           return entry;
         }
         for (const value of values) {
@@ -144,27 +126,6 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
     return entry;
   }
 
-  function writeJsonRecord(
-    write: (text: string) => void,
-    kind: LogKind,
-    jsonMessage: unknown,
-    rawDetails: readonly unknown[],
-  ): void {
-    const payload: Record<string, unknown> = {
-      level: kind,
-      message: jsonMessage,
-    };
-    if (scope) {
-      payload.scope = scope;
-    }
-    if (rawDetails.length === 1) {
-      payload.detail = rawDetails[0];
-    } else if (rawDetails.length > 1) {
-      payload.details = rawDetails;
-    }
-    write(stringifyJson(payload));
-  }
-
   function emit(
     kind: LogKind,
     rawMessage: unknown,
@@ -176,7 +137,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
     }
 
     const isDebug = kind === "debug";
-    const { headline, extraLines, jsonMessage } = resolvePayload(
+    const { headline, extraLines } = resolvePayload(
       isDebug,
       rawMessage,
       rawDetails,
@@ -185,16 +146,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
       faint,
     );
     const write = meta.stderr ? terminal.stderr : terminal.stdout;
-    const entry = createEntry(meta.level, write, isDebug, {
-      level: kind,
-      message: jsonMessage,
-    });
-
-    if (state.format === "json") {
-      writeJsonRecord(write, kind, jsonMessage, rawDetails);
-
-      return entry;
-    }
+    const entry = createEntry(meta.level, write, isDebug);
 
     const label = formatLabel(meta.label, theme, meta.token, !isDebug);
     const scopePrefix = formatScope(isDebug);
@@ -223,7 +175,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
     }
 
     const isDebug = kind === "debug";
-    const { headline, extraLines, jsonMessage } = resolvePayload(
+    const { headline, extraLines } = resolvePayload(
       isDebug,
       rawMessage,
       rawDetails,
@@ -232,12 +184,6 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
       faint,
     );
     const write = meta.stderr ? terminal.stderr : terminal.stdout;
-
-    if (state.format === "json") {
-      writeJsonRecord(write, kind, jsonMessage, rawDetails);
-
-      return;
-    }
 
     const hasDetailLines = extraLines.length > 0;
     const styledBody = hasDetailLines
@@ -286,8 +232,7 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
       canAnimate: () =>
         shouldLog("info") &&
         terminal === DEFAULT_TERMINAL &&
-        Boolean(process.stdout.isTTY) &&
-        state.format === "pretty",
+        Boolean(process.stdout.isTTY),
       formatScope: () => formatScope(false),
       emit,
     });
@@ -298,12 +243,6 @@ function createLoggerFromConfig(config: LoggerConfig, scope?: string): Logger {
     },
     set level(level) {
       state.level = level;
-    },
-    get format() {
-      return state.format;
-    },
-    set format(format) {
-      state.format = format;
     },
     scope,
     theme,
@@ -361,7 +300,6 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
       unicode: options.unicode ?? terminal.unicode ?? detectUnicode(),
       state: {
         level: options.level ?? "info",
-        format: options.format ?? "pretty",
       },
     },
     options.scope,

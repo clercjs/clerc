@@ -67,7 +67,7 @@ describe("@clerc/logger", () => {
     expect(asciiTerm.stdoutText()).toContain("\n      |  ASCII body");
   });
 
-  it("formats Error chains cleanly, inspects objects via node:util, and serializes JSON", () => {
+  it("formats Error chains cleanly and inspects objects via node:util", () => {
     const term = createMemoryTerminal({ color: false });
     const log = createLogger({ terminal: term, level: "debug" });
 
@@ -87,30 +87,6 @@ describe("@clerc/logger", () => {
       "│ Caused by: Error: PORT env malformed",
     );
     expect(term.stderrText()).not.toContain("[cause]");
-
-    const jsonTerm = createMemoryTerminal({ color: false });
-    const jsonLog = createLogger({ terminal: jsonTerm, format: "json" });
-    jsonLog.child("api").error("Boom", {
-      err: new Error("ECONNREFUSED", { cause: new Error("offline") }),
-    });
-
-    const parsed = JSON.parse(jsonTerm.stderrText());
-
-    expect(parsed).toMatchObject({
-      level: "error",
-      scope: "api",
-      message: "Boom",
-      detail: {
-        err: {
-          name: "Error",
-          message: "ECONNREFUSED",
-          cause: {
-            name: "Error",
-            message: "offline",
-          },
-        },
-      },
-    });
   });
 
   it("supports mutable properties, streaming .line(), reusable explicit spinner(), and auto task()", async () => {

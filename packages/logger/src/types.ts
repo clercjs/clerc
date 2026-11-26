@@ -2,7 +2,6 @@ import type { SpinnerOptions as ClackSpinnerOptions } from "@clack/prompts";
 import type { Theme } from "@clerc/theme";
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
-export type LogFormat = "pretty" | "json";
 
 export interface LogEntry {
   readonly line: (...values: unknown[]) => LogEntry;
@@ -56,7 +55,6 @@ export interface LoggerTerminal {
 
 export interface LoggerOptions {
   level?: LogLevel;
-  format?: LogFormat;
   scope?: string;
 }
 
@@ -69,7 +67,6 @@ export interface CreateLoggerOptions extends LoggerOptions {
 
 export interface Logger extends LogMethods {
   level: LogLevel;
-  format: LogFormat;
   readonly scope?: string;
   readonly theme: Theme;
   readonly box: LogMethods<void>;

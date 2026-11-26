@@ -50,25 +50,28 @@ export const calloutBox: PlaygroundScenario = {
   presets: [{ cmd: "deploy" }, { cmd: "deploy --confirm" }],
 };
 
-export const levelsAndJson: PlaygroundScenario = {
+export const logLevels: PlaygroundScenario = {
   createCli: () =>
     clerc({ name: "acme", version: "2.0.0" }).command("inspect", {
-      description: "Switch verbosity and JSON log output",
+      description: "Preview verbosity levels and raw JSON output",
       flags: {
-        json: { type: Boolean, description: "Switch log.format to json" },
+        json: { type: Boolean, description: "Print raw JSON payload" },
       },
       run({ flags, log }) {
+        const config = { port: 3000, cache: true };
         if (flags.json) {
-          log.format = "json";
+          log.raw(JSON.stringify(config, null, 2));
+
+          return;
         }
         log.debug("Loaded acme.config.ts");
-        log.info("Resolved config", { port: 3000, cache: true });
+        log.info("Resolved config", config);
         log.success("Ready");
       },
     }),
   presets: [
-    { cmd: "inspect --json" },
     { cmd: "inspect -v" },
     { cmd: "inspect -q" },
+    { cmd: "inspect --json" },
   ],
 };

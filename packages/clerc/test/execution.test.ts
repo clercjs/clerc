@@ -826,20 +826,12 @@ describe("Clerc execution pipeline", () => {
 
     // ClercError without options defaults to ERR_CLI and exitCode 1
     terminal.clear();
-    const simpleRes = await cli.run(["simple-fail"], {
-      terminal,
-      logger: { format: "json" },
-    });
+    const simpleRes = await cli.run(["simple-fail"], { terminal });
 
+    expect(simpleRes.ok).toBeFalsy();
     expect(simpleRes.exitCode).toBe(1);
-    expect(JSON.parse(terminal.stderrText())).toEqual({
-      error: {
-        code: "ERR_CLI",
-        message: "deployment aborted",
-        hints: [],
-        exitCode: 1,
-      },
-    });
+    expect((simpleRes.error as ClercError).code).toBe("ERR_CLI");
+    expect(terminal.stderrText()).toBe("error deployment aborted");
 
     // ctx.exit(3) skips onError & throwOnError, still runs middleware finally
     events.length = 0;

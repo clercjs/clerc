@@ -109,26 +109,9 @@ describe("clerc() integration", () => {
     );
   });
 
-  it("renders structured JSON errors when logger format is json", async () => {
-    const terminal = createMemoryTerminal();
+  it("renders custom ClercError diagnostics and builds help documents", async () => {
     const cli = createTestCli();
     cli.command("build", { description: "Build project", run() {} });
-
-    const res = await cli.run(["buid"], {
-      terminal,
-      logger: { format: "json" },
-    });
-
-    expect(res.ok).toBeFalsy();
-    expect(res.exitCode).toBe(2);
-    expect(JSON.parse(terminal.stderrText())).toEqual({
-      error: {
-        code: "ERR_UNKNOWN_COMMAND",
-        message: "unknown command 'buid'",
-        hints: ["a similar command exists: 'build'"],
-        exitCode: 2,
-      },
-    });
 
     const customErr = new ClercError("missing target", {
       code: "ERR_MISSING_ARGUMENT",

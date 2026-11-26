@@ -35,21 +35,3 @@ export const clercError: PlaygroundScenario = {
     }),
   presets: [{ cmd: "publish" }],
 };
-
-export const jsonError: PlaygroundScenario = {
-  createCli: () =>
-    clerc({
-      name: "acme",
-      version: "2.0.0",
-      logger: { format: "json" },
-    }).command("publish", {
-      description: "Publish package to registry",
-      run() {
-        throw new ClercError("not logged in to registry", {
-          code: "ERR_AUTH",
-          detail: "No token found in ~/.acmerc or ACME_TOKEN",
-        }).addHint("run 'acme login' first or set ACME_TOKEN");
-      },
-    }),
-  presets: [{ cmd: "publish" }, { cmd: "pubish" }],
-};

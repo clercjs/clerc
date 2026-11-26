@@ -76,11 +76,8 @@ log.box.warn(
   `Run ${log.theme.accent("pnpm up clerc")} to update`,
 );
 
-// 5. 纯 ASCII 降级 & 直接属性切换 JSON 模式
-divider("5. ASCII Fallback & JSON Mode");
+// 5. 纯 ASCII 降级
+divider("5. ASCII Fallback");
 const asciiLog = createLogger({ unicode: false });
 asciiLog.child("ci").step("ASCII fallback", "Uses '>' and '|'");
 asciiLog.box.info("CI notice", "ASCII border fallback when unicode is off.");
-
-log.format = "json";
-log.error("JSON error serialization", new RangeError("Port out of bounds"));

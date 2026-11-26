@@ -42,18 +42,6 @@ export const formatLabel = (
     bold ? theme.bold(theme[token](text)) : theme[token](text),
   );
 
-export const stringifyJson = (payload: Record<string, unknown>): string =>
-  JSON.stringify(payload, (_key, value: unknown) =>
-    Error.isError(value)
-      ? {
-          name: value.name,
-          message: value.message,
-          stack: value.stack,
-          ...(value.cause === undefined ? {} : { cause: value.cause }),
-        }
-      : value,
-  );
-
 const errorHeader = (err: Error): string =>
   err.message.length > 0 ? `${err.name}: ${err.message}` : err.name;
 
@@ -137,7 +125,6 @@ export function resolvePayload(
 ): {
   readonly headline: string;
   readonly extraLines: readonly string[];
-  readonly jsonMessage: unknown;
 } {
   const detailLines = rawDetails.flatMap((value) =>
     formatDetailLines(value, isDebug, theme, color, faint),
@@ -147,7 +134,6 @@ export function resolvePayload(
     return {
       headline: rawMessage,
       extraLines: detailLines,
-      jsonMessage: rawMessage,
     };
   }
 
@@ -161,7 +147,6 @@ export function resolvePayload(
         faint,
         rawMessage.name !== "Error",
       ),
-      jsonMessage: rawMessage,
     };
   }
 
@@ -178,6 +163,5 @@ export function resolvePayload(
         .map((part) => (isDebug ? faint(part) : theme.muted(part))),
       ...detailLines,
     ],
-    jsonMessage: rawMessage,
   };
 }
