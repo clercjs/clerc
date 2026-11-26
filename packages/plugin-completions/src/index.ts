@@ -58,7 +58,22 @@ export interface CompletionsPluginOptions {
 
 const supportedShellEnum = Types.Enum(...SUPPORTED_SHELLS);
 
-function requireTargetShell(
+const optionalShellArgs = {
+  shell: {
+    description: "Shell type (auto-detected if omitted)",
+    type: supportedShellEnum,
+  },
+} as const;
+
+const dryRunFlags = {
+  dryRun: {
+    type: Boolean,
+    short: "n",
+    description: "Show target files without modifying disk",
+  },
+} as const;
+
+function resolveTargetShell(
   explicitShell: SupportedShell | undefined,
   env: Readonly<Record<string, string | undefined>>,
   cliName: string,
@@ -87,10 +102,7 @@ export function completionsPlugin(options: CompletionsPluginOptions = {}) {
       description: "Generate shell completion scripts",
       standalone: true,
       args: {
-        shell: {
-          description: "Shell type",
-          type: supportedShellEnum,
-        },
+        shell: { description: "Shell type", type: supportedShellEnum },
       },
       run(ctx) {
         ctx.terminal.stdout(
@@ -101,44 +113,34 @@ export function completionsPlugin(options: CompletionsPluginOptions = {}) {
     .command("install [shell]", {
       description: "Install shell completions",
       standalone: true,
-      args: {
-        shell: {
-          description: "Shell type (auto-detected if omitted)",
-          type: supportedShellEnum,
-        },
-      },
-      flags: {
-        dryRun: {
-          type: Boolean,
-          short: "n",
-          description: "Show target files without modifying disk",
-        },
-      },
+      args: optionalShellArgs,
+      flags: dryRunFlags,
       async run(ctx) {
-        const shell = requireTargetShell(
+        const shell = resolveTargetShell(
           ctx.args.shell,
           ctx.terminal.env,
           ctx.model.meta.name,
           "install",
         );
-        const result = await installCompletions({
-          shell,
-          model: ctx.model,
-          executable: options.executable,
-          env: ctx.terminal.env,
-          dryRun: ctx.flags.dryRun,
-        });
-
         if (ctx.flags.dryRun) {
+          const plan = resolveInstallPlan(shell, ctx.model.meta.name, {
+            env: ctx.terminal.env,
+          });
           ctx.log.info(
             `Dry run: would install ${shell} completions`,
-            `script: ${result.scriptPath}`,
-            ...(result.rcPath ? [`rc: ${result.rcPath}`] : []),
+            `script: ${plan.scriptPath}`,
+            ...(plan.rcPath ? [`rc: ${plan.rcPath}`] : []),
           );
 
           return;
         }
 
+        const result = await installCompletions({
+          shell,
+          model: ctx.model,
+          executable: options.executable,
+          env: ctx.terminal.env,
+        });
         ctx.log.success(
           `Installed ${shell} completions`,
           `script: ${result.scriptPath}`,
@@ -152,43 +154,33 @@ export function completionsPlugin(options: CompletionsPluginOptions = {}) {
     .command("uninstall [shell]", {
       description: "Remove installed shell completions",
       standalone: true,
-      args: {
-        shell: {
-          description: "Shell type (auto-detected if omitted)",
-          type: supportedShellEnum,
-        },
-      },
-      flags: {
-        dryRun: {
-          type: Boolean,
-          short: "n",
-          description: "Show target files without modifying disk",
-        },
-      },
+      args: optionalShellArgs,
+      flags: dryRunFlags,
       async run(ctx) {
-        const shell = requireTargetShell(
+        const shell = resolveTargetShell(
           ctx.args.shell,
           ctx.terminal.env,
           ctx.model.meta.name,
           "uninstall",
         );
-        const result = await uninstallCompletions({
-          shell,
-          name: ctx.model.meta.name,
-          env: ctx.terminal.env,
-          dryRun: ctx.flags.dryRun,
-        });
-
         if (ctx.flags.dryRun) {
+          const plan = resolveInstallPlan(shell, ctx.model.meta.name, {
+            env: ctx.terminal.env,
+          });
           ctx.log.info(
             `Dry run: would remove ${shell} completions`,
-            `script: ${result.scriptPath}`,
-            ...(result.rcPath ? [`rc: ${result.rcPath}`] : []),
+            `script: ${plan.scriptPath}`,
+            ...(plan.rcPath ? [`rc: ${plan.rcPath}`] : []),
           );
 
           return;
         }
 
+        const result = await uninstallCompletions({
+          shell,
+          name: ctx.model.meta.name,
+          env: ctx.terminal.env,
+        });
         if (!result.scriptRemoved && !result.rcUpdated) {
           ctx.log.info(`No ${shell} completions found to remove`);
 

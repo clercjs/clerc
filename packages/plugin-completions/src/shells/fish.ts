@@ -5,21 +5,12 @@ import type {
   StaticNodeSpec,
   StaticValueSpec,
 } from "../spec";
-import { fishQuote } from "./utils";
+import { fishQuote, shortStartPattern } from "./utils";
 
 const fishCandidateExpr = (item: StaticCandidate): string =>
   item.description
     ? `${fishQuote(item.value)}$_tab${fishQuote(item.description)}`
     : fishQuote(item.value);
-
-function fishShortStartRegex(node: StaticNodeSpec): string {
-  const digits = node.flags
-    .map((f) => f.short)
-    .filter((s): s is string => s !== undefined && s >= "0" && s <= "9")
-    .join("");
-
-  return digits ? `^(--|-[A-Za-z${digits}])` : "^(--|-[A-Za-z])";
-}
 
 function emitValueBody(spec: StaticValueSpec, indent: string): string[] {
   if (spec.kind === "dynamic") {
@@ -383,7 +374,7 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     for (const node of digitNodes) {
       lines.push(
         `        case ${node.id}`,
-        `            set _re ${fishQuote(fishShortStartRegex(node))}`,
+        `            set _re ${fishQuote(shortStartPattern(node))}`,
       );
     }
     lines.push("    end");

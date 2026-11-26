@@ -17,6 +17,8 @@ import {
   applyFlagDefaults,
   buildPartialArgs,
   collectConflictedTargets,
+  collectVisibleAliases,
+  collectVisibleSubcommands,
   completeFlagNames,
   completeFlagValue,
   extractEnumCandidates,
@@ -24,6 +26,8 @@ import {
   flagsToSpecs,
   matchInlineFlagValue,
   normalizeResult,
+  resolveTargetNode,
+  sanitizeDescription,
 } from "./helpers";
 
 const DOUBLE_DASH = "--";
@@ -43,8 +47,7 @@ export async function resolveCompletions(
   let startIndex = 0;
 
   while (startIndex < priorTokens.length) {
-    const scanNode =
-      !node.command?.run && node.defaultChild ? node.defaultChild : node;
+    const scanNode = resolveTargetNode(node);
     const scanner = createArgvParser(
       flagsToSpecs(getCommandFlags(model, scanNode, { includeBuiltins: true })),
     );
@@ -80,8 +83,7 @@ export async function resolveCompletions(
         ? priorTokens.slice(matchedIndices.length)
         : priorTokens.filter((_, idx) => !new Set(matchedIndices).has(idx));
 
-  const targetNode =
-    !node.command?.run && node.defaultChild ? node.defaultChild : node;
+  const targetNode = resolveTargetNode(node);
 
   const activeFlags = getCommandFlags(model, targetNode, {
     includeBuiltins: true,
@@ -178,32 +180,12 @@ export async function resolveCompletions(
     }
   }
 
-  const subcommandCandidates: CompletionCandidate[] = [];
-  if (inSubcommandSearch) {
-    for (const child of model.tree.listVisibleChildren(node)) {
-      if (child.command?.complete === false) {
-        continue;
-      }
-      subcommandCandidates.push({
-        value: child.name,
-        description: child.command?.description ?? "",
-      });
-    }
-    if (rawCurrent.length > 0) {
-      for (const [alias, aliasNode] of node.aliasIndex) {
-        if (
-          aliasNode.command?.hidden ||
-          aliasNode.command?.complete === false
-        ) {
-          continue;
-        }
-        subcommandCandidates.push({
-          value: alias,
-          description: aliasNode.command?.description ?? "",
-        });
-      }
-    }
-  }
+  const subcommandCandidates: CompletionCandidate[] = inSubcommandSearch
+    ? [
+        ...collectVisibleSubcommands(model, node),
+        ...(rawCurrent.length > 0 ? collectVisibleAliases(node) : []),
+      ]
+    : [];
 
   const cmd = targetNode.command;
   if (!cmd || cmd.hidden || cmd.complete === false) {
@@ -298,7 +280,7 @@ export async function resolveCompletions(
 
 export function formatCompletionOutput(resolved: ResolvedCompletions): string {
   const lines = resolved.candidates.map((item) => {
-    const desc = item.description?.replace(/[\r\n\t]+/g, " ").trim();
+    const desc = sanitizeDescription(item.description);
 
     return desc ? `${item.value}\t${desc}` : item.value;
   });

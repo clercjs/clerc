@@ -9,7 +9,14 @@ import type {
 import { getCommandFlags } from "clerc";
 
 import { ShellCompDirective } from "./directives";
-import { extractEnumCandidates, normalizeResult } from "./helpers";
+import {
+  collectVisibleAliases,
+  collectVisibleSubcommands,
+  extractEnumCandidates,
+  normalizeResult,
+  resolveTargetNode,
+  sanitizeDescription,
+} from "./helpers";
 
 export interface StaticCandidate {
   readonly value: string;
@@ -83,9 +90,6 @@ const DOUBLE_DASH = "--";
 
 export const sanitizeIdentifier = (name: string): string =>
   name.replace(/[-:./\s]/g, "_");
-
-export const sanitizeDescription = (description?: string): string =>
-  description ? description.replace(/[\r\n\t]+/g, " ").trim() : "";
 
 const camelCase = (str: string): string =>
   str.includes("-") || str.includes(" ")
@@ -238,8 +242,7 @@ export function buildCompletionSpec(
 
   const nodes: StaticNodeSpec[] = orderedNodes.map((node) => {
     const id = nodeIds.get(node)!;
-    const targetNode =
-      !node.command?.run && node.defaultChild ? node.defaultChild : node;
+    const targetNode = resolveTargetNode(node);
 
     const transitions: StaticTransition[] = [];
     for (const [childName, child] of node.children) {
@@ -258,27 +261,10 @@ export function buildCompletionSpec(
       }
     }
 
-    const visibleSubcommands: StaticCandidate[] = [];
-    for (const child of model.tree.listVisibleChildren(node)) {
-      if (child.command?.complete === false) {
-        continue;
-      }
-      visibleSubcommands.push({
-        value: child.name,
-        description: sanitizeDescription(child.command?.description),
-      });
-    }
-
-    const visibleAliases: StaticCandidate[] = [];
-    for (const [alias, aliasNode] of node.aliasIndex) {
-      if (aliasNode.command?.hidden || aliasNode.command?.complete === false) {
-        continue;
-      }
-      visibleAliases.push({
-        value: alias,
-        description: sanitizeDescription(aliasNode.command?.description),
-      });
-    }
+    const visibleSubcommands = toStaticCandidates(
+      collectVisibleSubcommands(model, node),
+    );
+    const visibleAliases = toStaticCandidates(collectVisibleAliases(node));
 
     const activeFlags = getCommandFlags(model, targetNode, {
       includeBuiltins: true,

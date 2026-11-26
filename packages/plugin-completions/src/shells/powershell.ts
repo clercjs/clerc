@@ -5,19 +5,10 @@ import type {
   StaticNodeSpec,
   StaticValueSpec,
 } from "../spec";
-import { psQuote } from "./utils";
+import { psQuote, shortStartPattern } from "./utils";
 
 const psCandidateExpr = (item: StaticCandidate): string =>
   `@{ V = ${psQuote(item.value)}; D = ${psQuote(item.description)} }`;
-
-function psShortStartRegex(node: StaticNodeSpec): string {
-  const digits = node.flags
-    .map((f) => f.short)
-    .filter((s): s is string => s !== undefined && s >= "0" && s <= "9")
-    .join("");
-
-  return digits ? `^(--|-[A-Za-z${digits}])` : "^(--|-[A-Za-z])";
-}
 
 function emitValueExpr(spec: StaticValueSpec): string {
   if (spec.kind === "dynamic") {
@@ -378,7 +369,7 @@ export function renderPowerShellScript(spec: StaticCompletionSpec): string {
     lines.push("        $re = switch ($nid) {");
     for (const node of digitNodes) {
       lines.push(
-        `            ${node.id} { ${psQuote(psShortStartRegex(node))} }`,
+        `            ${node.id} { ${psQuote(shortStartPattern(node))} }`,
       );
     }
     lines.push(`            default { '^(--|-[A-Za-z])' }`);

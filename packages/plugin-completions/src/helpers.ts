@@ -2,6 +2,8 @@ import type {
   ArgDescriptor,
   ArgvFlagSpec,
   ArgvParser,
+  CliModel,
+  CommandNode,
   CompletionCandidate,
   CompletionContext,
   CompletionItem,
@@ -22,6 +24,47 @@ export interface ResolvedCompletions {
 
 export interface ResolveCompletionsOptions {
   readonly terminal?: Terminal;
+}
+
+export const sanitizeDescription = (description?: string): string =>
+  description ? description.replace(/[\r\n\t]+/g, " ").trim() : "";
+
+export const resolveTargetNode = (node: CommandNode): CommandNode =>
+  !node.command?.run && node.defaultChild ? node.defaultChild : node;
+
+export function collectVisibleSubcommands(
+  model: CliModel,
+  node: CommandNode,
+): CompletionCandidate[] {
+  const out: CompletionCandidate[] = [];
+  for (const child of model.tree.listVisibleChildren(node)) {
+    if (child.command?.complete === false) {
+      continue;
+    }
+    out.push({
+      value: child.name,
+      description: sanitizeDescription(child.command?.description),
+    });
+  }
+
+  return out;
+}
+
+export function collectVisibleAliases(
+  node: CommandNode,
+): CompletionCandidate[] {
+  const out: CompletionCandidate[] = [];
+  for (const [alias, aliasNode] of node.aliasIndex) {
+    if (aliasNode.command?.hidden || aliasNode.command?.complete === false) {
+      continue;
+    }
+    out.push({
+      value: alias,
+      description: sanitizeDescription(aliasNode.command?.description),
+    });
+  }
+
+  return out;
 }
 
 const toCandidate = (item: CompletionItem): CompletionCandidate =>
