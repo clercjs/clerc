@@ -37,6 +37,7 @@ export { Clerc, clerc } from "./cli";
 export type { CommandNode, CommandTree } from "./command-tree";
 export { Complete } from "./complete";
 export type {
+  BuiltinErrorCode,
   ClercErrorCode,
   ClercErrorOptions,
   FormatDiagnosticOptions,

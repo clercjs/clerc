@@ -26,7 +26,7 @@ const rbacPlugin = plugin("acme:rbac").middleware(
       .user;
     if (perms?.includes("admin") && user?.role !== "admin") {
       throw new ClercError("admin permission required", {
-        code: "ERR_VALIDATION",
+        code: "ERR_FORBIDDEN",
         detail: `Current role is '${user?.role ?? "guest"}'`,
       }).addHint("pass '--token <secret>' to authenticate as admin");
     }

@@ -6,7 +6,7 @@ import { findClosest } from "./suggest";
 import type { CliModel } from "./types";
 import { formatFlagName, joinList } from "./utils";
 
-export type ClercErrorCode =
+export type BuiltinErrorCode =
   | "ERR_UNKNOWN_COMMAND"
   | "ERR_NO_COMMAND"
   | "ERR_MISSING_FLAG"
@@ -18,13 +18,27 @@ export type ClercErrorCode =
   | "ERR_RULE_VIOLATION"
   | "ERR_INVALID_SCHEMA";
 
+export type ClercErrorCode = BuiltinErrorCode | (string & {});
+
+const BUILTIN_USAGE_EXIT_CODES = new Set<string>([
+  "ERR_MISSING_ARGUMENT",
+  "ERR_MISSING_FLAG",
+  "ERR_MISSING_FLAG_VALUE",
+  "ERR_NO_COMMAND",
+  "ERR_RULE_VIOLATION",
+  "ERR_UNEXPECTED_ARGUMENT",
+  "ERR_UNKNOWN_COMMAND",
+  "ERR_UNKNOWN_FLAG",
+  "ERR_VALIDATION",
+]);
+
 export interface ValidationIssue {
   readonly message: string;
   readonly path?: readonly unknown[];
 }
 
 export interface ClercErrorOptions extends ErrorOptions {
-  readonly code: ClercErrorCode;
+  readonly code?: ClercErrorCode;
   readonly exitCode?: number;
   readonly detail?: string;
   readonly hints?: readonly string[];
@@ -38,11 +52,12 @@ export class ClercError extends Error {
   public readonly hints: string[];
   public usage?: string;
 
-  constructor(message: string, options: ClercErrorOptions) {
+  constructor(message: string, options: ClercErrorOptions = {}) {
     super(message, { cause: options.cause });
     this.name = new.target.name;
-    this.code = options.code;
-    this.exitCode = options.exitCode ?? 2;
+    this.code = options.code ?? "ERR_CLI";
+    this.exitCode =
+      options.exitCode ?? (BUILTIN_USAGE_EXIT_CODES.has(this.code) ? 2 : 1);
     this.detail = options.detail;
     this.hints = options.hints ? [...options.hints] : [];
     this.usage = options.usage;
@@ -52,6 +67,16 @@ export class ClercError extends Error {
     this.hints.push(hint);
 
     return this;
+  }
+}
+
+export class ExitSignal extends Error {
+  public readonly exitCode: number;
+
+  constructor(exitCode = 1) {
+    super(`Process exited with code ${exitCode}`);
+    this.name = "ExitSignal";
+    this.exitCode = exitCode;
   }
 }
 

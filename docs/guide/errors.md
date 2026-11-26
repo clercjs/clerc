@@ -24,7 +24,7 @@ import { ClercError, clerc } from "clerc";
 const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
   run() {
     throw new ClercError("not logged in to registry", {
-      code: "ERR_VALIDATION",
+      code: "ERR_AUTH",
       detail: "No token found in ~/.acmerc or ACME_TOKEN",
       usage: "acme login --registry https://registry.example.com",
     }).addHint("run 'acme login' first or set ACME_TOKEN");

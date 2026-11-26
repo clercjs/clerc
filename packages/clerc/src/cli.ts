@@ -9,6 +9,7 @@ import type { CompiledCli, CompiledNodeRuntime } from "./compile";
 import { compileCli, formatCliVersion } from "./compile";
 import {
   ClercError,
+  ExitSignal,
   InvalidSchemaError,
   NoCommandError,
   UnknownCommandError,
@@ -191,6 +192,9 @@ export class Clerc<
         },
       },
       run: (nextArgv, nextOptions) => this.run(nextArgv, nextOptions),
+      exit(code = 1): never {
+        throw new ExitSignal(code);
+      },
       commandPath: [],
       args: {},
       flags: {} as any,
@@ -450,13 +454,31 @@ export class Clerc<
         activeRuntime = rt;
       });
     } catch (caughtError) {
-      return this.#handleError(
-        caughtError,
-        compiledCli,
-        activeRuntime,
-        ctx,
-        options.throwOnError ?? false,
-      );
+      if (caughtError instanceof ExitSignal) {
+        return {
+          ok: caughtError.exitCode === 0,
+          exitCode: caughtError.exitCode,
+        };
+      }
+
+      try {
+        return await this.#handleError(
+          caughtError,
+          compiledCli,
+          activeRuntime,
+          ctx,
+          options.throwOnError ?? false,
+        );
+      } catch (handlerError) {
+        if (handlerError instanceof ExitSignal) {
+          return {
+            ok: handlerError.exitCode === 0,
+            exitCode: handlerError.exitCode,
+          };
+        }
+
+        throw handlerError;
+      }
     }
   }
 

@@ -189,6 +189,7 @@ export interface ErrorContext<
     argv: readonly string[],
     options?: RunOptions,
   ) => Promise<RunResult>;
+  readonly exit: (code?: number) => never;
   readonly command?: AnyCommandDefinition;
   readonly commandPath: readonly string[];
   readonly calledAs?: string;

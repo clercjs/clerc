@@ -27,7 +27,7 @@ export const clercError: PlaygroundScenario = {
       description: "Publish package to registry",
       run() {
         throw new ClercError("not logged in to registry", {
-          code: "ERR_VALIDATION",
+          code: "ERR_AUTH",
           detail: "No token found in ~/.acmerc or ACME_TOKEN",
           usage: "acme login --registry https://registry.acme.dev",
         }).addHint("run 'acme login' first or set ACME_TOKEN");
@@ -46,7 +46,7 @@ export const jsonError: PlaygroundScenario = {
       description: "Publish package to registry",
       run() {
         throw new ClercError("not logged in to registry", {
-          code: "ERR_VALIDATION",
+          code: "ERR_AUTH",
           detail: "No token found in ~/.acmerc or ACME_TOKEN",
         }).addHint("run 'acme login' first or set ACME_TOKEN");
       },

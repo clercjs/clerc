@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type { FlagsDefinition, Logger, StandardSchemaV1 } from "../src";
-import { Complete, Types, clerc, plugin } from "../src";
+import { ClercError, Complete, Types, clerc, plugin } from "../src";
 import type { ExtractArgNames } from "../src/args";
 
 import "@clerc/plugin-completions";
@@ -350,7 +350,11 @@ describe("core v2 route-signature & plugin types", () => {
         expectTypeOf(ctx.flags.ratio).toEqualTypeOf<number | undefined>();
         expectTypeOf(ctx.flags.tags).toEqualTypeOf<string[]>();
         expectTypeOf(ctx.state.client.ping()).toEqualTypeOf<boolean>();
+        expectTypeOf(ctx.exit).toEqualTypeOf<(code?: number) => never>();
       },
     });
+
+    void new ClercError("domain failure");
+    void new ClercError("auth failure", { code: "ERR_AUTH" });
   });
 });

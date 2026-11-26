@@ -2,6 +2,7 @@ import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import {
+  ClercError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredArgumentError,
@@ -756,5 +757,109 @@ describe("Clerc execution pipeline", () => {
       unknown: { extra: "1" },
       doubleDash: ["--watch", "--bail"],
     });
+  });
+
+  it("supports domain ClercError defaults and controlled ctx.exit()", async () => {
+    const events: string[] = [];
+    const terminal = createMemoryTerminal();
+
+    const cli = createTestBaseCli({ help: true })
+      .middleware(async (ctx, next) => {
+        try {
+          await next();
+        } finally {
+          events.push(`finally:${ctx.calledAs}`);
+        }
+      })
+      .onError((err, ctx) => {
+        events.push(`onError:${(err as Error).message}`);
+        if (err instanceof Error && err.message === "override-exit") {
+          ctx.exit(4);
+        }
+      });
+
+    cli.command("auth", {
+      run() {
+        throw new ClercError("not logged in", {
+          code: "ERR_AUTH",
+          detail: "Run login first",
+        });
+      },
+    });
+    cli.command("simple-fail", {
+      run() {
+        throw new ClercError("deployment aborted");
+      },
+    });
+    cli.command("check", {
+      flags: { ok: Boolean },
+      run(ctx) {
+        if (ctx.flags.ok) {
+          ctx.exit(0);
+        }
+        ctx.log.warn("formatting differs");
+        ctx.exit(3);
+      },
+    });
+    cli.command("override", {
+      run() {
+        throw new Error("override-exit");
+      },
+    });
+
+    const authRes = await cli.run(["auth"], { terminal });
+
+    expect(authRes.ok).toBeFalsy();
+    expect(authRes.exitCode).toBe(1);
+    expect((authRes.error as ClercError).code).toBe("ERR_AUTH");
+    expect(terminal.stderrText()).toContain("error not logged in");
+    expect(terminal.stderrText()).not.toContain("--help");
+
+    terminal.clear();
+    const simpleRes = await cli.run(["simple-fail"], {
+      terminal,
+      logger: { format: "json" },
+    });
+
+    expect(simpleRes.exitCode).toBe(1);
+    expect(JSON.parse(terminal.stderrText())).toEqual({
+      error: {
+        code: "ERR_CLI",
+        message: "deployment aborted",
+        hints: [],
+        exitCode: 1,
+      },
+    });
+
+    events.length = 0;
+    terminal.clear();
+    const exitRes = await cli.run(["check"], {
+      terminal,
+      throwOnError: true,
+    });
+
+    expect(exitRes).toEqual({ ok: false, exitCode: 3 });
+    expect(events).toEqual(["finally:check"]);
+    expect(terminal.stderrText()).toBe(" warn formatting differs");
+
+    events.length = 0;
+    const zeroRes = await cli.run(["check", "--ok"], {
+      terminal,
+      throwOnError: true,
+    });
+
+    expect(zeroRes).toEqual({ ok: true, exitCode: 0 });
+    expect(events).toEqual(["finally:check"]);
+
+    events.length = 0;
+    terminal.clear();
+    const overrideRes = await cli.run(["override"], {
+      terminal,
+      throwOnError: true,
+    });
+
+    expect(overrideRes).toEqual({ ok: false, exitCode: 4 });
+    expect(events).toEqual(["finally:override", "onError:override-exit"]);
+    expect(terminal.stderrText()).toBe("");
   });
 });
