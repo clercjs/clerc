@@ -26,7 +26,7 @@ npm install @clerc/plugin-completions
 
 ## 用法与自定义异步 `complete()`
 
-多级子命令、命令别名、长短选项、`Types.Enum(...)` 枚举值、静态声明式 `complete` 以及内置 `help [command...]` 会直接编译进生成的 Shell 脚本中，在 Shell 内原生秒回（无需启动 Node.js 进程）。任意命令、参数或选项也可以声明同步或 `async` 的 `complete(ctx)` 钩子，仅在光标落到该动态槽位时回调 `<cli> complete -- ...`：
+子命令、别名、选项、`Types.Enum(...)`、静态 `complete` 声明以及内置 `help [command...]` 会直接编译进生成的 Shell 脚本；命令、参数或选项也可以提供同步或 `async` 的 `complete(ctx)` 函数，仅在补全该位置时回调 `<cli> complete -- ...`：
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
@@ -62,7 +62,6 @@ cli.command("deploy <env> [service]", {
     region: {
       type: String,
       short: "r",
-      // 静态候选直接编译进 Shell 脚本（零进程启动）
       complete: [
         { value: "us-east-1", description: "美东 (弗吉尼亚)" },
         { value: "eu-west-1", description: "欧洲 (爱尔兰)" },
@@ -70,7 +69,6 @@ cli.command("deploy <env> [service]", {
     },
     config: {
       type: String,
-      // 交由 Shell 原生按扩展名补全本地文件（零进程启动）
       complete: Complete.file("ts", "json"),
     },
   },

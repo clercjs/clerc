@@ -91,7 +91,6 @@ export function renderPowerShellScript(spec: StaticCompletionSpec): string {
   lines.push("    }");
   lines.push("");
 
-  // Static lookup helpers inside scriptblock
   lines.push("    function Get-Transition([int]$nid, [string]$tok) {");
   lines.push(`        switch -Exact -CaseSensitive ("$nid:$tok") {`);
   for (const node of nodes) {
@@ -469,7 +468,6 @@ export function renderPowerShellScript(spec: StaticCompletionSpec): string {
   lines.push("    }");
   lines.push("");
 
-  // Pass A: command tree resolution
   lines.push("    $node = 0");
   lines.push("    $matched = [System.Collections.Generic.HashSet[int]]::new()");
   lines.push("    $i = 0");

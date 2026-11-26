@@ -51,7 +51,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push(`# fish completion for ${name} -*- shell-script -*-`);
   lines.push("");
 
-  // 1. Subcommand transitions
   lines.push(`function ${p}_transition --no-scope-shadowing`);
   lines.push(`    set _next_node ""`);
   lines.push(`    switch "$argv[1]:$argv[2]"`);
@@ -69,7 +68,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 2. Long flag lookup
   lines.push(`function ${p}_flag_long --no-scope-shadowing`);
   lines.push(`    switch "$argv[1]:$argv[2]"`);
   for (const node of nodes) {
@@ -91,7 +89,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 3. Short flag lookup
   lines.push(`function ${p}_flag_short --no-scope-shadowing`);
   lines.push(`    switch "$argv[1]:$argv[2]"`);
   for (const node of nodes) {
@@ -113,7 +110,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 4. Flag value completion spec
   lines.push(`function ${p}_flag_val --no-scope-shadowing`);
   lines.push("    set _val_kind none");
   lines.push(`    set _val_delim ""`);
@@ -136,7 +132,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 5. Visible subcommands & aliases
   lines.push(`function ${p}_subcmds --no-scope-shadowing`);
   lines.push("    set _sub_items");
   lines.push(`    switch "$argv[1]"`);
@@ -165,7 +160,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 6. Flag name candidates for a node
   lines.push(`function ${p}_emit_flags --no-scope-shadowing`);
   lines.push(`    set -l _nid "$argv[1]"`);
   lines.push(`    set -l _cur "$argv[2]"`);
@@ -242,7 +236,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 7. Rule conflicts (exclusive / oneOf)
   const nodesWithConflicts = nodes.filter((n) => n.conflictGroups.length > 0);
   if (nodesWithConflicts.length > 0) {
     lines.push(`function ${p}_conflicts --no-scope-shadowing`);
@@ -286,7 +279,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     lines.push("");
   }
 
-  // 8. Positional value spec
   lines.push(`function ${p}_pos_val --no-scope-shadowing`);
   lines.push("    set _val_kind none");
   lines.push(`    set _val_dir ${ShellCompDirective.NoFileComp}`);
@@ -379,7 +371,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 9. Node metadata helpers
   const digitNodes = nodes.filter((n) => n.hasDigitShort);
   const stopNodes = nodes.filter((n) => n.stopParsing !== "none");
   const helpNode = nodes.find((n) => n.isBuiltinHelp);
@@ -425,7 +416,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // Dynamic fallback helper (only emitted if CLI has any dynamic completion)
   if (hasDynamic) {
     lines.push(`function ${p}_dynamic`);
     lines.push("    set -l args (commandline -opc)");
@@ -451,7 +441,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     lines.push("");
   }
 
-  // Helper: filter, dedupe and print candidates with flagPrefix + directive
   lines.push(`function ${p}_emit_filtered --no-scope-shadowing`);
   lines.push(`    set -l _prefix "$argv[1]"`);
   lines.push(`    set -l _cur "$argv[2]"`);
@@ -478,7 +467,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // Helper: complete a flag value (handles delimiter + static/dynamic/none)
   lines.push(`function ${p}_emit_flag_val --no-scope-shadowing`);
   lines.push(`    set -l _fprefix "$argv[1]"`);
   lines.push(`    set -l _vcur "$argv[2]"`);
@@ -534,7 +522,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // 10. Main completion engine
   lines.push(`function ${p}_perform_completion`);
   lines.push(`    set -l _tab (printf '\\t')`);
   lines.push("    set -l args (commandline -opc)");
@@ -615,7 +602,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("        break");
   lines.push("    end");
 
-  // Build remaining prior tokens
   lines.push("    set -l _rem");
   lines.push("    if test (count $_matched_idx) -eq 0");
   lines.push("        set _rem $prior");
@@ -627,7 +613,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("        end");
   lines.push("    end");
 
-  // Determine stopParsing mode for _node
   lines.push("    set -l _stop none");
   if (stopNodes.length > 0) {
     lines.push("    switch $_node");
@@ -646,7 +631,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     lines.push("    end");
   }
 
-  // Pass B: parse _rem with _node flags
   lines.push("    set -l _used");
   lines.push("    set -l _words");
   lines.push("    set -l _dd_words");
@@ -761,7 +745,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("        set _i (math $_i + 1)");
   lines.push("    end");
 
-  // Case 1: pending flag value
   lines.push("    set -l _val_kind none");
   lines.push(`    set -l _val_delim ""`);
   lines.push(`    set -l _val_dir ${ShellCompDirective.NoFileComp}`);
@@ -772,7 +755,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("        return");
   lines.push("    end");
 
-  // Compute conflicts
   lines.push("    set -l _main_cnt (count $_words)");
   lines.push("    set -l _dd_cnt (count $_dd_words)");
   lines.push("    set -l _conf");
@@ -780,7 +762,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     lines.push(`    ${p}_conflicts $_node`);
   }
 
-  // Case 2: inline flag value or flag name
   lines.push("    if test $_after_dd -eq 0; and test $_stopped -eq 0");
   lines.push(`        if string match -q -- "-*=*" "$lastArg"`);
   lines.push(
@@ -829,7 +810,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("        end");
   lines.push("    end");
 
-  // Case 3: built-in help
   if (helpNode) {
     lines.push(`    if test $_node -eq ${helpNode.id}`);
     lines.push("        set -l _hnode 0");
@@ -850,7 +830,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
     lines.push("    end");
   }
 
-  // Case 4: subcommands + positional args
   lines.push("    set -l _sub_items");
   lines.push("    if test $_after_dd -eq 0; and test $_main_cnt -eq 0");
   lines.push("        set -l _inc_alias 0");
@@ -902,7 +881,6 @@ export function renderFishScript(spec: StaticCompletionSpec): string {
   lines.push("end");
   lines.push("");
 
-  // Fish wrapper functions & registration (preserves native directive handling & autoload guard)
   lines.push(`function ${p}_perform_completion_once`);
   lines.push(`    if test -n "$${p}_perform_completion_once_result"`);
   lines.push("        return 0");

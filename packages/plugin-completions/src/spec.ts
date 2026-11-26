@@ -216,7 +216,6 @@ export function buildCompletionSpec(
   const bin = executable ?? name;
   const fn = sanitizeIdentifier(name);
 
-  // Pass 1: assign stable integer IDs to every node in the tree
   const orderedNodes: CommandNode[] = [];
   const nodeIds = new Map<CommandNode, number>();
   function visit(node: CommandNode): void {
@@ -240,7 +239,6 @@ export function buildCompletionSpec(
     return spec;
   }
 
-  // Pass 2: compile each node into a flat StaticNodeSpec
   const nodes: StaticNodeSpec[] = orderedNodes.map((node) => {
     const id = nodeIds.get(node)!;
     const targetNode =

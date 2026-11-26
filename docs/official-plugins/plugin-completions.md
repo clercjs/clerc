@@ -26,7 +26,7 @@ npm install @clerc/plugin-completions
 
 ## Usage and Custom `complete()`
 
-Subcommands, aliases, flags, `Types.Enum(...)` values, static `complete` declarations, and built-in `help [command...]` paths are compiled directly into the generated shell script so they complete natively in ~1ms without spawning Node.js. Any command, argument, or flag can also provide a synchronous or `async` `complete(ctx)` function, which falls back to `<cli> complete -- ...` only at that slot:
+Subcommands, aliases, flags, `Types.Enum(...)` values, static `complete` declarations, and built-in `help [command...]` paths are compiled into the generated shell script. Any command, argument, or flag can also provide a sync or `async` `complete(ctx)` function that calls `<cli> complete -- ...` when completing that slot:
 
 ```ts
 import { completionsPlugin } from "@clerc/plugin-completions";
@@ -62,7 +62,6 @@ cli.command("deploy <env> [service]", {
     region: {
       type: String,
       short: "r",
-      // Static candidates are compiled directly into the shell script (0ms)
       complete: [
         { value: "us-east-1", description: "US East (N. Virginia)" },
         { value: "eu-west-1", description: "Europe (Ireland)" },
@@ -70,7 +69,6 @@ cli.command("deploy <env> [service]", {
     },
     config: {
       type: String,
-      // Delegate to native shell file completion filtered by extension (0ms)
       complete: Complete.file("ts", "json"),
     },
   },

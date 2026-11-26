@@ -44,10 +44,6 @@ function emitValueBody(spec: StaticValueSpec, indent: string): string[] {
   return lines;
 }
 
-/**
- * Emits shared POSIX/Korn-compatible helper functions used by both the Bash and
- * Zsh hybrid completion scripts.
- */
 export function emitPosixHelpers(
   spec: StaticCompletionSpec,
   keepDescriptions: boolean,
@@ -56,7 +52,6 @@ export function emitPosixHelpers(
   const p = `__${fn}`;
   const lines: string[] = [];
 
-  // 1. Subcommand transitions
   lines.push(`${p}_transition() {`);
   lines.push(`    _next_node=""`);
   lines.push(`    case "$1:$2" in`);
@@ -72,7 +67,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 2. Long flag lookup
   lines.push(`${p}_flag_long() {`);
   lines.push(`    case "$1:$2" in`);
   for (const node of nodes) {
@@ -90,7 +84,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 3. Short flag lookup
   lines.push(`${p}_flag_short() {`);
   lines.push(`    case "$1:$2" in`);
   for (const node of nodes) {
@@ -108,7 +101,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 4. Flag value spec
   lines.push(`${p}_flag_val() {`);
   lines.push("    _val_kind=none");
   lines.push(`    _val_delim=""`);
@@ -132,7 +124,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 5. Visible subcommands & aliases
   lines.push(`${p}_subcmds() {`);
   lines.push("    _sub_items=()");
   lines.push(`    case "$1" in`);
@@ -162,7 +153,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 6. Flag name candidates
   lines.push(`${p}_emit_flags() {`);
   lines.push(
     `    local _nid="$1" _cur="$2" _is_dd=0 _is_short_only=0 _show_neg=0`,
@@ -234,7 +224,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 7. Rule conflicts
   const nodesWithConflicts = nodes.filter((n) => n.conflictGroups.length > 0);
   if (nodesWithConflicts.length > 0) {
     lines.push(`${p}_conflicts() {`);
@@ -269,7 +258,6 @@ export function emitPosixHelpers(
     lines.push("");
   }
 
-  // 8. Positional value spec
   lines.push(`${p}_pos_val() {`);
   lines.push("    _val_kind=none");
   lines.push(`    _val_dir=${ShellCompDirective.NoFileComp}`);
@@ -350,7 +338,6 @@ export function emitPosixHelpers(
   lines.push("}");
   lines.push("");
 
-  // 9. Parsing & filtering helpers
   const digitNodes = nodes.filter((n) => n.hasDigitShort);
 
   lines.push(`${p}_can_consume() {`);

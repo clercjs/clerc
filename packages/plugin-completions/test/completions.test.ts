@@ -56,7 +56,6 @@ describe("plugin-completions v2", () => {
       const script = terminal.stdoutText();
 
       expect(res.ok).toBeTruthy();
-      // Static-only CLI must not emit any dynamic binary fallback
       expect(script).not.toMatch(/\bcomplete (?:'--'|-- )/);
       expect(script).toContain("build");
       expect(script).toContain("--dry-run");
@@ -157,7 +156,6 @@ describe("plugin-completions v2", () => {
       `alpha\nbeta\n:${ShellCompDirective.NoFileComp | ShellCompDirective.KeepOrder | ShellCompDirective.NoSpace}`,
     );
 
-    // Every shell script compiles these statically without emitting dynamic fallback
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
       await cli.run(["completions", shell], { terminal });
@@ -317,7 +315,6 @@ describe("plugin-completions v2", () => {
       run() {},
     });
 
-    // Hybrid CLI emits dynamic fallback in all 4 shells alongside static tables
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
       const res = await cli.run(["completions", shell], { terminal });
@@ -634,7 +631,6 @@ describe("plugin-completions v2", () => {
             { encoding: "utf8", cwd: workDir },
           ).trim();
 
-        // Static slots: subcommands, alias, enum, flags, rules, delimiter, help, stopParsing
         expect(runFish("mycli ")).toContain("deploy\tDeploy app");
         expect(runFish("mycli ")).not.toContain("\nd\t");
         expect(runFish("mycli d")).toContain("d\tDeploy app");
@@ -653,7 +649,6 @@ describe("plugin-completions v2", () => {
         expect(runFish("mycli help db ")).toBe("migrate\tMigrate\nseed\tSeed");
         expect(runFish("mycli exec git --")).toBe("");
 
-        // Native static file extension & directory filtering in Fish (0 binary calls)
         const fishConfigFiles = runFish("mycli deploy --config ").split("\n");
 
         expect(fishConfigFiles).toEqual(["a.ts", "b.json", "sub/"]);
@@ -661,7 +656,6 @@ describe("plugin-completions v2", () => {
         expect(runFish("mycli deploy --out-dir ")).toBe("sub/");
         expect(runFish("mycli deploy --out-dir=")).toBe("--out-dir=sub/");
 
-        // Zero binary invocations for all static completions above!
         let callLog = "";
         try {
           callLog = readFileSync(logFile, "utf8");
@@ -671,7 +665,6 @@ describe("plugin-completions v2", () => {
 
         expect(callLog).toBe("");
 
-        // Dynamic slots: --region flag, service arg, custom stopParsing predicate
         expect(runFish("mycli deploy --region ")).toBe(
           "dyn-item\tDynamic item",
         );
@@ -754,7 +747,6 @@ describe("plugin-completions v2", () => {
         const scriptFile = join(dir, "mycli.bash");
         writeFileSync(scriptFile, terminal.stdoutText(), "utf8");
 
-        // Syntax check
         execFileSync("bash", ["-n", scriptFile]);
 
         const workDir = join(dir, "work");
@@ -800,7 +792,6 @@ describe("plugin-completions v2", () => {
           "seed",
         ]);
 
-        // Native static file extension & directory filtering in Bash (0 binary calls)
         expect(runBash(["mycli", "deploy", "--config", ""]).sort()).toEqual([
           "a.ts",
           "b.json",
@@ -814,7 +805,6 @@ describe("plugin-completions v2", () => {
           "--out-dir=sub",
         ]);
 
-        // Zero binary invocations for static slots!
         let callLog = "";
         try {
           callLog = readFileSync(logFile, "utf8");
@@ -824,7 +814,6 @@ describe("plugin-completions v2", () => {
 
         expect(callLog).toBe("");
 
-        // Dynamic slots
         expect(runBash(["mycli", "deploy", "--region", ""])).toEqual([
           "dyn-item",
         ]);
