@@ -167,6 +167,7 @@ describe("Unified Plugin & Clerc composition", () => {
       "cleanup:loaded:prod.json",
     ]);
     expect(Object.keys(configPlugin)).toEqual(["pluginName"]);
+    expect(Object.keys(cli)).toEqual([]);
   });
 
   it("supports flat cli.scope() and subcommand() with isolated flags, rules, middleware, onError, and help", async () => {

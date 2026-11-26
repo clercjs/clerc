@@ -1,5 +1,6 @@
 import type { ArgDefinitionValue, ExtractArgNames, NonEmptySpec } from "./args";
 import { parseCommandSpec } from "./args";
+import type { Clerc } from "./cli";
 import { InvalidSchemaError } from "./errors";
 import type {
   ContextualFlags,
@@ -65,14 +66,27 @@ export interface ScopeState {
   onInvalidate?: () => void;
 }
 
-let readScopeState: (target: Scope<any, any>) => ScopeState;
+export type ScopeKind = "scope" | "plugin" | "clerc";
 
-export const getScopeState = (target: Scope<any, any>): ScopeState =>
+export type RebindScope<
+  TKind extends ScopeKind,
+  TFlags extends Record<string, any>,
+  TState extends Record<string, any>,
+> = TKind extends "clerc"
+  ? Clerc<TFlags, TState>
+  : TKind extends "plugin"
+    ? Plugin<TFlags, TState>
+    : Scope<TFlags, TState>;
+
+let readScopeState: (target: Scope<any, any, any>) => ScopeState;
+
+export const getScopeState = (target: Scope<any, any, any>): ScopeState =>
   readScopeState(target);
 
 export class Scope<
   TFlags extends Record<string, any> = {},
   TState extends Record<string, any> = {},
+  TKind extends ScopeKind = "scope",
 > {
   readonly #state: ScopeState;
 
@@ -106,7 +120,7 @@ export class Scope<
 
   public flags<const Flags extends FlagsDefinition>(
     definitions: ContextualFlags<Flags>,
-  ): Scope<OverrideFlags<TFlags, Flags>, TState> {
+  ): RebindScope<TKind, OverrideFlags<TFlags, Flags>, TState> {
     Object.assign(this.#state.flags, definitions);
     this.invalidate();
 
@@ -184,12 +198,12 @@ export class Scope<
   public middleware<R = void>(
     fn: (ctx: RunContext<TFlags>, next: MiddlewareNext) => R,
     options: { readonly enforce: "pre" },
-  ): Scope<TFlags, TState & ExtractMiddlewareState<R>>;
+  ): RebindScope<TKind, TFlags, TState & ExtractMiddlewareState<R>>;
   public middleware<R = void>(
     fn: (ctx: RunContext<TFlags, TState>, next: MiddlewareNext) => R,
     options?: MiddlewareOptions,
-  ): Scope<TFlags, TState & ExtractMiddlewareState<R>>;
-  public middleware(fn: AnyMiddlewareFn, options?: MiddlewareOptions): this {
+  ): RebindScope<TKind, TFlags, TState & ExtractMiddlewareState<R>>;
+  public middleware(fn: AnyMiddlewareFn, options?: MiddlewareOptions): any {
     this.#state.middlewares.push({ fn, enforce: options?.enforce });
     this.invalidate();
 
@@ -208,7 +222,7 @@ export class Scope<
     PState extends Record<string, any> = {},
   >(
     other: Plugin<PFlags, PState>,
-  ): Scope<OverrideFlags<TFlags, PFlags>, TState & PState> {
+  ): RebindScope<TKind, OverrideFlags<TFlags, PFlags>, TState & PState> {
     this.#state.plugins.set(other.pluginName, other);
     this.invalidate();
 

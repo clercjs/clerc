@@ -16,7 +16,6 @@ import {
   enrichCommandError,
   formatDiagnostic,
 } from "./errors";
-import type { ContextualFlags, FlagsDefinition, OverrideFlags } from "./flags";
 import {
   resolveCompiledFlags,
   validateMissingRequiredFlags,
@@ -25,20 +24,16 @@ import {
 } from "./flags";
 import { renderHelp } from "./help/renderer";
 import type { ArgvParseResult } from "./parser";
-import { Plugin } from "./plugin";
 import { validateCustomRules, validateDeclarativeRules } from "./rules";
-import type { AnyMiddlewareFn } from "./scope";
-import { getScopeState } from "./scope";
+import { Scope, getScopeState } from "./scope";
 import { createTerminal } from "./terminal";
 import type {
   ClercOptions,
   CliMeta,
   CliModel,
   ErrorContext,
-  ExtractMiddlewareState,
   HelpOptions,
   MiddlewareNext,
-  MiddlewareOptions,
   RawParseContext,
   RunContext,
   RunOptions,
@@ -57,7 +52,7 @@ type InternalContext<
 export class Clerc<
   TGlobalFlags extends Record<string, any> = {},
   TState extends Record<string, any> = {},
-> extends Plugin<TGlobalFlags, TState> {
+> extends Scope<TGlobalFlags, TState, "clerc"> {
   readonly #meta: CliMeta;
   readonly #helpOptions: false | HelpOptions;
   readonly #verbosity: boolean;
@@ -67,7 +62,7 @@ export class Clerc<
   #compiled?: CompiledCli;
 
   constructor(options: ClercOptions) {
-    super("clerc:root");
+    super();
     const name = options.name.trim();
     if (!name) {
       throw new InvalidSchemaError("CLI name is required");
@@ -92,42 +87,6 @@ export class Clerc<
     getScopeState(this).onInvalidate = () => {
       this.#compiled = undefined;
     };
-  }
-
-  public override flags<const Flags extends FlagsDefinition>(
-    definitions: ContextualFlags<Flags>,
-  ): Clerc<OverrideFlags<TGlobalFlags, Flags>, TState> {
-    super.flags(definitions);
-
-    return this as any;
-  }
-
-  public override middleware<R = void>(
-    fn: (ctx: RunContext<TGlobalFlags>, next: MiddlewareNext) => R,
-    options: { readonly enforce: "pre" },
-  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
-  public override middleware<R = void>(
-    fn: (ctx: RunContext<TGlobalFlags, TState>, next: MiddlewareNext) => R,
-    options?: MiddlewareOptions,
-  ): Clerc<TGlobalFlags, TState & ExtractMiddlewareState<R>>;
-  public override middleware(
-    fn: AnyMiddlewareFn,
-    options?: MiddlewareOptions,
-  ): Clerc<any, any> {
-    super.middleware(fn as any, options);
-
-    return this;
-  }
-
-  public override use<
-    PFlags extends Record<string, any> = {},
-    PState extends Record<string, any> = {},
-  >(
-    other: Plugin<PFlags, PState>,
-  ): Clerc<OverrideFlags<TGlobalFlags, PFlags>, TState & PState> {
-    super.use(other);
-
-    return this as any;
   }
 
   #ensureCompiled(): CompiledCli {

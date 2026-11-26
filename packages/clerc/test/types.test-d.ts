@@ -373,6 +373,27 @@ describe("core v2 route-signature & plugin types", () => {
         },
       });
 
+    // Chaining flags/middleware/use preserves Clerc and Plugin concrete types
+    const chainedCli = clerc({ name: "chained", version: "1.0.0" })
+      .flags({ env: String })
+      .middleware((_ctx, next) => next({ traceId: "t1" }))
+      .use(scopedAuth);
+    expectTypeOf(chainedCli.run).toBeFunction();
+    expectTypeOf(chainedCli.runMain).toBeFunction();
+    expectTypeOf(chainedCli.buildModel).toBeFunction();
+
+    const chainedPlugin = plugin("chained:p")
+      .flags({ region: String })
+      .middleware((_ctx, next) => next({ regionLoaded: true }))
+      .use(scopedAuth);
+    expectTypeOf(chainedPlugin.pluginName).toEqualTypeOf<string>();
+
+    // Clerc and plain Scope cannot be passed to .use()
+    // @ts-expect-error Clerc is not a Plugin
+    chainedCli.use(cli);
+    // @ts-expect-error Scope is not a Plugin
+    chainedCli.use(cli.scope());
+
     void new ClercError("domain failure");
     void new ClercError("auth failure", { code: "ERR_AUTH" });
   });

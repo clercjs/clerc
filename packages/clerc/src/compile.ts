@@ -16,11 +16,15 @@ import {
 } from "./flags";
 import type { ArgvFlagSpec, ArgvParser } from "./parser";
 import { DOUBLE_DASH, createArgvParser } from "./parser";
-import type { Plugin } from "./plugin";
 import { collectPluginStates } from "./plugin";
 import type { CompiledRules, RulesEntry } from "./rules";
 import { EMPTY_RULES, compileRules, normalizeRulesInput } from "./rules";
-import type { AnyMiddlewareFn, RegisteredMiddleware, Scope } from "./scope";
+import type {
+  AnyMiddlewareFn,
+  RegisteredMiddleware,
+  Scope,
+  ScopeState,
+} from "./scope";
 import { GROUP_SCOPES, createGroupBuckets, getScopeState } from "./scope";
 import type {
   CliMeta,
@@ -55,7 +59,7 @@ export interface CompiledCli {
 }
 
 interface CompileCliOptions {
-  readonly root: Plugin<any, any>;
+  readonly root: Scope<any, any, any>;
   readonly meta: CliMeta;
   readonly helpOptions: false | HelpOptions;
   readonly verbosity: boolean;
@@ -428,9 +432,14 @@ function compileNodeRuntime(
   };
 }
 
+const collectScopeStates = (state: ScopeState): readonly ScopeState[] =>
+  state.plugins.size > 0
+    ? [...collectPluginStates(state.plugins.values()), state]
+    : [state];
+
 export function compileCli(options: CompileCliOptions): CompiledCli {
   const { root, meta, helpOptions, verbosity } = options;
-  const states = collectPluginStates(root);
+  const states = collectScopeStates(getScopeState(root));
   const globalFlagsInput: FlagsDefinition = {};
   const globalRuleEntries: RulesEntry<any, any, any, any>[] = [];
   const groups = createGroupBuckets();
@@ -446,9 +455,7 @@ export function compileCli(options: CompileCliOptions): CompiledCli {
     parentDefaultGroup: string | undefined,
   ): void {
     const s = getScopeState(scope);
-    const mountedStates =
-      s.plugins.size > 0 ? collectPluginStates(s.plugins.values()) : [];
-    const scopeStates = [...mountedStates, s];
+    const scopeStates = collectScopeStates(s);
     const fullPrefix = appendIfAny(parentPrefix, s.prefix);
 
     let scopedFlagEntries = parentEnv.scopedFlagEntries;
