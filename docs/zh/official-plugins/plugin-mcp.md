@@ -26,17 +26,13 @@ npm install @clerc/plugin-mcp
 
 ## 用法
 
+将 `mcp()` 直接加入 `commands: [...]`：
+
 ```ts
-import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc } from "clerc";
+import { mcp } from "@clerc/plugin-mcp";
+import { Types, cli, command } from "clerc";
 
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-  description: "管理部署与数据库",
-}).use(mcpPlugin());
-
-cli.command("deploy <env>", {
+const deploy = command("deploy <env>", {
   description: "部署服务到指定环境",
   args: {
     env: {
@@ -55,7 +51,7 @@ cli.command("deploy <env>", {
   },
 });
 
-cli.command("status", {
+const status = command("status", {
   description: "查看集群健康状态",
   meta: {
     mcp: { readOnly: true, idempotent: true },
@@ -65,7 +61,14 @@ cli.command("status", {
   },
 });
 
-await cli.runMain();
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  description: "管理部署与数据库",
+  commands: [deploy, status, mcp()],
+});
+
+await app.runMain();
 ```
 
 在 MCP 客户端中配置启动命令 `acme mcp`：

@@ -23,15 +23,13 @@ import { doubleDash, envFallback, signature } from "../../guide/arguments.playgr
 签名中的连字符命名会自动转为 `ctx.args` 上的驼峰属性名（例如 `<out-dir>` 对应 `ctx.args.outDir`）。
 
 ```ts
-import { clerc } from "clerc";
+import { command } from "clerc";
 
-const cli = clerc({ name: "cp-lite", version: "1.0.0" });
-
-cli.command("copy <source-path> [dest-path] [extra-files...]", {
+const copy = command("copy <source-path> [dest-path] [extra-files...]", {
   args: {
     sourcePath: { description: "源文件路径" },
     destPath: { default: "./dist", description: "目标目录" },
-    extraFiles: { description: "附加文件列表" },
+    extraFiles: { unique: true, description: "附加文件列表" },
   },
   run(ctx) {
     ctx.args;
@@ -41,7 +39,7 @@ cli.command("copy <source-path> [dest-path] [extra-files...]", {
 ```
 
 ::: tip 编译期键名校验
-`args: { ... }` 中的属性名严格受命令签名约束，拼错成 `sourcePth` 会在编译期直接报错。
+`args: { ... }` 中的属性名严格受命令签名约束，拼错成 `sourcePth` 会在编译期直接报错。可变参数还支持 `unique`、`minItems` 与 `maxItems` 约束。
 :::
 
 <CliPlayground :scenario="signature" lang="zh" />
@@ -51,7 +49,7 @@ cli.command("copy <source-path> [dest-path] [extra-files...]", {
 可选参数支持 `default`（值或工厂函数），必填与可选参数均支持 `env` 环境变量回退：
 
 ```ts
-cli.command("deploy <token> [region]", {
+const deploy = command("deploy <token> [region]", {
   args: {
     token: {
       env: "DEPLOY_TOKEN",

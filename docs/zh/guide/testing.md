@@ -13,10 +13,10 @@ Clerc 核心执行管线完全不依赖全局 `process.argv`、`process.env` 或
 ## 使用 `createMemoryTerminal()` 编写测试
 
 ```ts
-import { Types, clerc, createMemoryTerminal } from "clerc";
+import { Types, cli, command, createMemoryTerminal } from "clerc";
 import { expect, test } from "vitest";
 
-const cli = clerc({ name: "acme", version: "2.0.0" }).command("deploy <env>", {
+const deploy = command("deploy <env>", {
   args: { env: Types.Enum("staging", "prod") },
   flags: {
     token: { type: String, required: true, env: "ACME_TOKEN" },
@@ -26,18 +26,24 @@ const cli = clerc({ name: "acme", version: "2.0.0" }).command("deploy <env>", {
   },
 });
 
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [deploy],
+});
+
 test("读取模拟环境变量并校验枚举参数", async () => {
   const terminal = createMemoryTerminal({
     env: { ACME_TOKEN: "secret_123" },
   });
 
-  const ok = await cli.run(["deploy", "staging"], { terminal });
+  const ok = await app.run(["deploy", "staging"], { terminal });
   expect(ok.ok).toBe(true);
   expect(ok.exitCode).toBe(0);
   expect(terminal.stdoutText()).toContain("Deployed to staging");
 
   terminal.clear();
-  const bad = await cli.run(["deploy", "qa"], { terminal });
+  const bad = await app.run(["deploy", "qa"], { terminal });
   expect(bad.ok).toBe(false);
   expect(bad.exitCode).toBe(2);
   expect(terminal.stderrText()).toContain("expected one of: 'staging', 'prod'");
@@ -54,7 +60,7 @@ test("读取模拟环境变量并校验枚举参数", async () => {
 import { MissingRequiredFlagError } from "clerc";
 
 await expect(
-  cli.run(["deploy", "prod"], {
+  app.run(["deploy", "prod"], {
     terminal: createMemoryTerminal(),
     throwOnError: true,
   }),
@@ -63,6 +69,6 @@ await expect(
 
 ## 读取编译后的 `CliModel`
 
-调用 `cli.buildModel()` 可以拿到只读的完整命令树与选项元数据模型，适合用于自动生成文档、自定义帮助页或静态检查命令配置。
+调用 `app.buildModel()` 可以拿到只读的完整命令树与选项元数据模型，适合用于自动生成文档、自定义帮助页或静态检查命令配置。
 
 <CliPlayground :scenario="inspectModel" lang="zh" />

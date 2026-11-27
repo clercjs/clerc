@@ -1,13 +1,9 @@
-import { clerc } from "clerc";
+import { cli } from "clerc";
 
-const cli = clerc({
+const app = cli("[files...]", {
   name: "bumpp",
   version: "9.2.0",
   description: "Interactive CLI that bumps your version numbers and more",
-});
-
-cli.command("[files...]", {
-  description: "Bump your version numbers",
   flags: {
     preid: { type: String, description: "ID for prerelease" },
     all: { type: Boolean, description: "Include all files" },
@@ -54,4 +50,4 @@ cli.command("[files...]", {
   },
 });
 
-await cli.runMain();
+await app.runMain();

@@ -23,15 +23,16 @@ Positional arguments are declared directly in the command signature string using
 Kebab-case argument names are automatically converted to camelCase keys on `ctx.args` (for example, `<out-dir>` becomes `ctx.args.outDir`).
 
 ```ts
-import { Types, clerc } from "clerc";
+import { command } from "clerc";
 
-const cli = clerc({ name: "cp-lite", version: "1.0.0" });
-
-cli.command("copy <source-path> [dest-path] [extra-files...]", {
+const copy = command("copy <source-path> [dest-path] [extra-files...]", {
   args: {
     sourcePath: { description: "Source file" },
     destPath: { default: "./dist", description: "Destination directory" },
-    extraFiles: { description: "Additional files to copy" },
+    extraFiles: {
+      unique: true,
+      description: "Additional files to copy",
+    },
   },
   run(ctx) {
     ctx.args;
@@ -41,7 +42,7 @@ cli.command("copy <source-path> [dest-path] [extra-files...]", {
 ```
 
 ::: tip Compile-time key checking
-The keys inside `args: { ... }` are constrained to the exact argument names extracted from your command signature. Mistyping `sourcePth` produces an immediate TypeScript error.
+The keys inside `args: { ... }` are constrained to the exact argument names extracted from your command signature. Mistyping `sourcePth` produces an immediate TypeScript error. Variadic arguments also support `unique`, `minItems`, and `maxItems`.
 :::
 
 <CliPlayground :scenario="signature" lang="en" />
@@ -51,7 +52,7 @@ The keys inside `args: { ... }` are constrained to the exact argument names extr
 Optional arguments support `default` values (or factory functions). Both required and optional arguments support `env` fallbacks:
 
 ```ts
-cli.command("deploy <token> [region]", {
+const deploy = command("deploy <token> [region]", {
   args: {
     token: {
       env: "DEPLOY_TOKEN",
@@ -86,7 +87,7 @@ POSIX `--` stops flag parsing. Clerc handles `--` in three ways depending on you
 3. **No `--` in signature** (`"rm <file>"`): passing `acme rm -- -weird-name.txt` treats `-weird-name.txt` as the positional `<file>` argument per POSIX convention.
 
 ```ts
-cli.command("run <script> -- [pass-through...]", {
+const runScript = command("run <script> -- [pass-through...]", {
   run(ctx) {
     // $ acme run build -- --watch --port 4000
     ctx.args.script; // "build"

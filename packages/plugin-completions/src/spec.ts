@@ -18,6 +18,17 @@ import {
   sanitizeDescription,
 } from "./helpers";
 
+const DOUBLE_DASH = "--";
+
+const toCamelCase = (str: string): string =>
+  str.replace(/-([a-z\d])/g, (_, ch: string) => ch.toUpperCase());
+
+const toKebabCase = (str: string): string =>
+  str
+    .replace(/([a-z\d])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+
 export interface StaticCandidate {
   readonly value: string;
   readonly description: string;
@@ -86,40 +97,15 @@ export interface StaticCompletionSpec {
   readonly nodes: readonly StaticNodeSpec[];
 }
 
-const DOUBLE_DASH = "--";
-
 export const sanitizeIdentifier = (name: string): string =>
   name.replace(/[-:./\s]/g, "_");
-
-const camelCase = (str: string): string =>
-  str.includes("-") || str.includes(" ")
-    ? str.replace(/[- ](.?)/g, (_, c: string) => c.toUpperCase())
-    : str;
-
-function kebabCase(str: string): string {
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    if (code >= 65 && code <= 90) {
-      let out = str.slice(0, i);
-      for (let j = i; j < str.length; j++) {
-        const ch = str.charCodeAt(j);
-        out +=
-          ch >= 65 && ch <= 90 ? `-${String.fromCharCode(ch + 32)}` : str[j];
-      }
-
-      return out;
-    }
-  }
-
-  return str;
-}
 
 function collectLongParseNames(flag: FlagDescriptor): readonly string[] {
   const base = new Set<string>();
   function addVariants(raw: string): void {
     base.add(raw);
-    base.add(camelCase(raw));
-    base.add(kebabCase(raw));
+    base.add(toCamelCase(raw));
+    base.add(toKebabCase(raw));
   }
   addVariants(flag.name);
   for (const alias of flag.aliases) {
@@ -344,33 +330,26 @@ export function buildCompletionSpec(
       overflowValue = markIfDynamic(cmdValueSpec ?? { kind: "none" });
     }
 
-    const mainArgIndexByName = new Map(
-      mainArgDescs.map((a, idx) => [a.name, idx]),
-    );
-    const ddArgIndexByName = new Map(ddArgDescs.map((a, idx) => [a.name, idx]));
     const conflictGroups: string[][] = [];
-    for (const rule of targetNode.rules) {
-      if (rule.kind !== "exclusive" && rule.kind !== "oneOf") {
+    for (const constraint of targetNode.constraints) {
+      if (constraint.kind !== "exclusive" && constraint.kind !== "oneOf") {
         continue;
       }
-      const group: string[] = [];
-      for (const ref of rule.targets) {
-        if (ref.kind === "flag") {
-          group.push(`f:${ref.name}`);
-        } else {
-          const mIdx = mainArgIndexByName.get(ref.name);
-          if (mIdx === undefined) {
-            const dIdx = ddArgIndexByName.get(ref.name);
-            if (dIdx !== undefined) {
-              group.push(`d:${dIdx}`);
+      if (constraint.branches.every((b) => b.flags.length === 1)) {
+        const group = constraint.branches.map((b) => `f:${b.flags[0]}`);
+        if (group.length >= 2) {
+          conflictGroups.push(group);
+        }
+      } else {
+        for (let i = 0; i < constraint.branches.length; i++) {
+          for (let j = i + 1; j < constraint.branches.length; j++) {
+            for (const fi of constraint.branches[i].flags) {
+              for (const fj of constraint.branches[j].flags) {
+                conflictGroups.push([`f:${fi}`, `f:${fj}`]);
+              }
             }
-          } else {
-            group.push(`m:${mIdx}`);
           }
         }
-      }
-      if (group.length >= 2) {
-        conflictGroups.push(group);
       }
     }
 

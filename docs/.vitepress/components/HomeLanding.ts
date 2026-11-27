@@ -14,7 +14,7 @@ const EN_ITEMS: readonly SpecItem[] = [
   {
     title: "Commands and Routing",
     summary:
-      "Subcommands, aliases, namespaces, and typed <required>, [optional], and [variadic...] arguments.",
+      "Subcommands, aliases, namespaces, default subcommands, and typed <required>, [optional], and [variadic...] arguments.",
     href: "/guide/commands",
   },
   {
@@ -36,9 +36,9 @@ const EN_ITEMS: readonly SpecItem[] = [
     href: "/guide/logger",
   },
   {
-    title: "Plugins and Middleware",
+    title: "Combinators and Middleware",
     summary:
-      "Shared plugin() API and onion middleware that injects typed ctx.state.",
+      "Pure combinators (group, use, middleware) with typed ctx.state and narrowed flag constraints.",
     href: "/guide/middleware",
   },
   {
@@ -53,7 +53,7 @@ const ZH_ITEMS: readonly SpecItem[] = [
   {
     title: "命令与路由",
     summary:
-      "支持子命令、别名、命名空间，以及带类型推导的 <必填>、[可选] 和 [可变...] 参数。",
+      "支持子命令、别名、命名空间、默认子命令，以及带类型推导的 <必填>、[可选] 和 [可变...] 参数。",
     href: "/zh/guide/commands",
   },
   {
@@ -72,9 +72,9 @@ const ZH_ITEMS: readonly SpecItem[] = [
     href: "/zh/guide/logger",
   },
   {
-    title: "插件与中间件",
+    title: "组合子与中间件",
     summary:
-      "应用和插件共用同一套链式 API，通过洋葱中间件向 ctx.state 注入类型化状态。",
+      "纯函数式组合（group、use、middleware），支持强类型 ctx.state 与可辨识联合类型收窄。",
     href: "/zh/guide/middleware",
   },
   {

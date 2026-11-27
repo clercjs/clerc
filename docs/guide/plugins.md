@@ -1,49 +1,49 @@
 ---
-title: Plugins
+title: Composition & Plugins
 ---
 
 <script setup>
 import { authPluginDemo, rbacMetaDemo } from "./plugins.playground.ts";
 </script>
 
-# Plugins
+# Composition & Plugins
 
-In Clerc v2, `Clerc` extends `Plugin`. Both share the exact same methods:
+Clerc does not have a separate `Plugin` class. Reusable capabilities—both within your own codebase and published as npm packages—are plain functions returning **`Middleware`**, **`Command`**, or **`Command[]`**:
 
-- `.flags()`: register global flags
-- `.groups()`: register help groups (`commands`, `flags`, `globalFlags`)
-- `.command()`: register commands or subcommand namespaces
-- `.middleware()`: wrap execution and inject typed `ctx.state`
-- `.onError()`: register LIFO error handlers
-- `.use()`: compose child plugins
+| Pattern            | Returns                | Examples                                          | Mounted via                               |
+| ------------------ | ---------------------- | ------------------------------------------------- | ----------------------------------------- |
+| Middleware factory | `Middleware<F, S>`     | `withAuth()`, `updateNotifier()`                  | `cli({ use: [...] })` or `use(mw, cmds)`  |
+| Command / bundle   | `Command \| Command[]` | `mcp()`, `completions()`, feature command modules | `commands: [...]` or `group(title, cmds)` |
 
-## Writing a Plugin
+## Scoped Reusable Middlewares
 
-Create a plugin with `plugin("scope:name")` and chain what it provides. Always omit an explicit `: Plugin` return type annotation on factory functions so TypeScript preserves the inferred flag and `ctx.state` types:
+Write a factory function returning `middleware({ ... })` (omit an explicit return type annotation so TypeScript preserves the inferred flag and `ctx.state` types). Attach it globally on `cli({ use })` or scope it lexically to specific commands with `use(mw, commands)`:
 
 ```ts
-import { clerc, plugin } from "clerc";
+import { cli, command, group, middleware, use } from "clerc";
 
-export const authPlugin = (defaultRole = "viewer") =>
-  plugin("acme:auth")
-    .flags({
+export const withAuth = (defaultRole = "viewer") =>
+  middleware({
+    flags: {
       token: {
         type: String,
         env: "ACME_TOKEN",
         description: "API authentication token",
       },
-    })
-    .middleware(async (ctx, next) => {
+    },
+    setup(ctx) {
       const user = ctx.flags.token
         ? { name: "ray", role: "admin" as const }
         : { name: "guest", role: defaultRole };
 
-      return next({ user });
-    });
+      return { user };
+    },
+  });
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).use(authPlugin());
+const auth = withAuth();
 
-cli.command("whoami", {
+const whoami = command("whoami", {
+  use: [auth],
   run(ctx) {
     ctx.flags.token;
     //        ^?
@@ -52,22 +52,32 @@ cli.command("whoami", {
     ctx.log.info(`${ctx.state.user.name} (${ctx.state.user.role})`);
   },
 });
+
+const ping = command("ping", {
+  run(ctx) {
+    ctx.log.success("pong");
+  },
+});
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  commands: [group("Account", use(auth, [whoami])), ping],
+});
 ```
+
+Because `auth` is passed via `use(auth, [whoami])` rather than root `cli`, `ping` stays completely untouched—it neither accepts nor displays `--token`. Meanwhile, referencing the same `auth` instance in both `whoami`'s `use: [auth]` and `use(auth, [whoami])` is automatically deduplicated.
 
 <CliPlayground :scenario="authPluginDemo" lang="en" />
 
-## Deduplication and Overrides
-
-Every plugin has a `pluginName` (such as `"acme:auth"` or `"clerc:update-notifier"`). If multiple plugins `.use()` a shared dependency, Clerc runs it once. If the root CLI calls `.use(authPlugin("editor"))` after a preset bundle already registered `"acme:auth"`, the later instance replaces the earlier one in its original slot.
-
 ## Typed `meta` Augmentation
 
-Commands, flags, and arguments each accept an open `meta` object for user-written, plugin-read configuration (such as `meta.mcp` in `@clerc/plugin-mcp`).
+Commands, flags, and arguments each accept an open `meta` object for declarative per-command metadata read by middlewares or tools (such as `meta.mcp` in `@clerc/plugin-mcp`).
 
-Augment `CommandCustomMeta`, `FlagCustomMeta`, or `ArgCustomMeta` so users get autocomplete and type checking inside `meta`:
+Augment `CommandCustomMeta`, `FlagCustomMeta`, or `ArgCustomMeta` so callers get autocomplete and type checking inside `meta`:
 
 ```ts
-import { clerc, plugin } from "clerc";
+import { ClercError, cli, command, middleware } from "clerc";
 
 declare module "clerc" {
   interface CommandCustomMeta {
@@ -75,23 +85,25 @@ declare module "clerc" {
   }
 }
 
-const rbacPlugin = plugin("acme:rbac").middleware(
-  async (ctx, next) => {
-    const required = ctx.command.meta?.permissions;
-    if (required?.includes("admin")) {
-      ctx.log.debug("Checking admin permission...");
-    }
-    await next();
-  },
-  { enforce: "post" },
-);
+const withRbac = middleware(async (ctx, next) => {
+  const required = ctx.command.meta?.permissions;
+  if (required?.includes("admin")) {
+    ctx.log.debug("Checking admin permission...");
+  }
+  await next();
+});
 
-const cli = clerc({ name: "acme", version: "1.0.0" })
-  .use(rbacPlugin)
-  .command("nuke", {
-    meta: { permissions: ["admin"] },
-    run() {},
-  });
+const nuke = command("nuke", {
+  meta: { permissions: ["admin"] },
+  run() {},
+});
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  use: [withRbac],
+  commands: [nuke],
+});
 ```
 
 <CliPlayground :scenario="rbacMetaDemo" lang="en" />

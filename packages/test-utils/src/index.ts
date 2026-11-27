@@ -1,15 +1,27 @@
 import type {
-  ClercOptions,
+  Cli,
+  CliOptions,
+  CliWithDefaultOptions,
+  FlagsInput,
   MemoryTerminal,
   MemoryTerminalOptions,
+  Middleware,
 } from "clerc";
-import { clerc, createMemoryTerminal } from "clerc";
+import { cli, createMemoryTerminal } from "clerc";
 
 export { createMemoryTerminal };
 export type { MemoryTerminal, MemoryTerminalOptions };
 
-export const createTestBaseCli = (options?: Partial<ClercOptions>) =>
-  clerc({
+export function createTestBaseCli<
+  const Use extends readonly Middleware<any, any>[] = readonly [],
+  const F extends FlagsInput = {},
+>(options: CliWithDefaultOptions<Use, F>): Cli;
+export function createTestBaseCli<
+  const Use extends readonly Middleware<any, any>[] = readonly [],
+  const F extends FlagsInput = {},
+>(options?: CliOptions<Use, F>): Cli;
+export function createTestBaseCli(options?: Record<string, any>): Cli {
+  return cli({
     name: "test",
     description: "Test CLI",
     version: "1.0.0",
@@ -17,11 +29,21 @@ export const createTestBaseCli = (options?: Partial<ClercOptions>) =>
     verbosity: false,
     ...options,
   });
+}
 
-export const createTestCli = (options?: Partial<ClercOptions>) =>
-  clerc({
+export function createTestCli<
+  const Use extends readonly Middleware<any, any>[] = readonly [],
+  const F extends FlagsInput = {},
+>(options: CliWithDefaultOptions<Use, F>): Cli;
+export function createTestCli<
+  const Use extends readonly Middleware<any, any>[] = readonly [],
+  const F extends FlagsInput = {},
+>(options?: CliOptions<Use, F>): Cli;
+export function createTestCli(options?: Record<string, any>): Cli {
+  return cli({
     name: "test",
     description: "Test CLI",
     version: "1.0.0",
     ...options,
   });
+}

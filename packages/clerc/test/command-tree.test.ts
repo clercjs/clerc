@@ -5,14 +5,14 @@ import {
 } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import type { AnyCommandDefinition } from "../src";
-import { InvalidSchemaError, UnknownCommandError, clerc, plugin } from "../src";
+import type { Command } from "../src";
+import { InvalidSchemaError, UnknownCommandError, cli, command } from "../src";
+import { COMMAND_ID, COMMAND_NODE } from "../src/command";
 import { CommandTreeBuilder } from "../src/command-tree";
 
-const makeDef = (
-  name: string,
-  aliases?: string | string[],
-): AnyCommandDefinition => ({
+const makeDef = (name: string, aliases?: string | string[]): Command => ({
+  [COMMAND_NODE]: true,
+  [COMMAND_ID]: Symbol(name),
   spec: name,
   name,
   argTokens: [],
@@ -20,31 +20,34 @@ const makeDef = (
 });
 
 describe("CommandTree", () => {
-  it("resolves space-delimited subcommands and plugin-composed namespaces", async () => {
+  it("resolves nested subcommands and space-delimited command specs", async () => {
     const called: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const dbPlugin = plugin("db")
-      .command("db", { description: "Database commands" })
-      .command("db migrate", {
-        aliases: "m",
-        description: "Run migrations",
-        run(ctx) {
-          called.push(`migrate:${ctx.calledAs}`);
-        },
-      });
-
-    const cli = createTestCli().use(dbPlugin);
-    cli.command("db seed", {
-      description: "Seed database",
-      run(ctx) {
-        called.push(`seed:${ctx.calledAs}`);
-      },
+    const db = command("db", {
+      description: "Database commands",
+      commands: [
+        command("migrate", {
+          aliases: "m",
+          description: "Run migrations",
+          run(ctx) {
+            called.push(`migrate:${ctx.calledAs}`);
+          },
+        }),
+        command("seed", {
+          description: "Seed database",
+          run(ctx) {
+            called.push(`seed:${ctx.calledAs}`);
+          },
+        }),
+      ],
     });
 
-    await cli.run(["db", "migrate"], { terminal });
-    await cli.run(["db", "m"], { terminal });
-    await cli.run(["db", "seed"], { terminal });
+    const app = createTestCli({ commands: [db] });
+
+    await app.run(["db", "migrate"], { terminal });
+    await app.run(["db", "m"], { terminal });
+    await app.run(["db", "seed"], { terminal });
 
     expect(called).toEqual([
       "migrate:db migrate",
@@ -52,9 +55,8 @@ describe("CommandTree", () => {
       "seed:db seed",
     ]);
 
-    // A metadata-only parent command (no run) behaves as a namespace
     const helpTerm = createMemoryTerminal();
-    const nsRes = await cli.run(["db"], { terminal: helpTerm });
+    const nsRes = await app.run(["db"], { terminal: helpTerm });
 
     expect(nsRes.ok).toBeTruthy();
     expect(helpTerm.stdoutText()).toContain("Database commands");
@@ -62,7 +64,7 @@ describe("CommandTree", () => {
     expect(helpTerm.stdoutText()).toContain("migrate");
 
     const typoTerm = createMemoryTerminal();
-    const typoRes = await cli.run(["db", "migrat"], { terminal: typoTerm });
+    const typoRes = await app.run(["db", "migrat"], { terminal: typoTerm });
 
     expect(typoRes.ok).toBeFalsy();
     expect(typoTerm.stderrText()).toContain("db migrate");
@@ -73,22 +75,26 @@ describe("CommandTree", () => {
       { verbose: boolean; config?: string; target: string } | undefined;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().flags({
-      verbose: { type: Boolean, short: "v" },
-      config: { type: String, short: "c" },
-    });
-
-    cli.command("deploy <target>", {
-      run(ctx) {
-        observed = {
-          verbose: ctx.flags.verbose,
-          config: ctx.flags.config,
-          target: ctx.args.target,
-        };
+    const app = createTestBaseCli({
+      flags: {
+        verbose: { type: Boolean, short: "v" },
+        config: { type: String, short: "c" },
       },
+      commands: [
+        command("deploy <target>", {
+          run(ctx) {
+            const flags = ctx.flags as { verbose: boolean; config?: string };
+            observed = {
+              verbose: flags.verbose,
+              config: flags.config,
+              target: ctx.args.target,
+            };
+          },
+        }),
+      ],
     });
 
-    await cli.run(["-v", "--config", "app.json", "deploy", "prod"], {
+    await app.run(["-v", "--config", "app.json", "deploy", "prod"], {
       terminal,
     });
 
@@ -98,7 +104,7 @@ describe("CommandTree", () => {
       target: "prod",
     });
 
-    await cli.run(["--config=other.json", "deploy", "staging"], { terminal });
+    await app.run(["--config=other.json", "deploy", "staging"], { terminal });
 
     expect(observed).toEqual({
       verbose: false,
@@ -134,35 +140,50 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports spec-less command(options) root command and rejects empty string specs or aliases", async () => {
+  it("supports single-command cli(spec, options), root cli({ run }), and rejects empty specs or aliases", async () => {
     const seen: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command({
+    const app = createTestBaseCli({
       flags: { port: { type: Number, default: 3000 } },
+      commands: [
+        command("build", {
+          run(ctx) {
+            seen.push(`sub:${ctx.calledAs}`);
+          },
+        }),
+      ],
       run(ctx) {
         seen.push(`root:${ctx.calledAs}:${ctx.flags.port}`);
       },
     });
-    cli.command("build", {
-      run(ctx) {
-        seen.push(`sub:${ctx.calledAs}`);
-      },
-    });
 
-    await cli.run([], { terminal });
-    await cli.run(["--port", "8080"], { terminal });
-    await cli.run(["build"], { terminal });
+    await app.run([], { terminal });
+    await app.run(["--port", "8080"], { terminal });
+    await app.run(["build"], { terminal });
 
     expect(seen).toEqual(["root::3000", "root::8080", "sub:build"]);
 
-    expect(() => (cli.command as any)("", { run() {} })).toThrow(
+    const singleCli = cli("[files...]", {
+      name: "bumpp",
+      help: false,
+      verbosity: false,
+      flags: { yes: { type: Boolean, short: "y" } },
+      run(ctx) {
+        seen.push(`bumpp:${ctx.args.files.join(",")}:${String(ctx.flags.yes)}`);
+      },
+    });
+    await singleCli.run(["a.json", "b.json", "-y"], { terminal });
+
+    expect(seen.at(-1)).toBe("bumpp:a.json,b.json:true");
+
+    expect(() => (command as any)("", { run() {} })).toThrow(
       InvalidSchemaError,
     );
-    expect(() => (cli.command as any)("   ", { run() {} })).toThrow(
+    expect(() => (command as any)("   ", { run() {} })).toThrow(
       InvalidSchemaError,
     );
+    expect(() => cli("deploy <env>", { run() {} })).toThrow(InvalidSchemaError);
 
     const tree = new CommandTreeBuilder();
 
@@ -171,26 +192,28 @@ describe("CommandTree", () => {
     );
   });
 
-  it("supports command({ default: true }) on root and subcommands with smart routing and help tags", async () => {
-    // 1. default subcommand without positional args keeps UnknownCommandError + typo hints
+  it("supports default: commandObject on root cli and subcommand namespaces with auto-dedup and smart routing", async () => {
     const events: string[] = [];
-    const noArgCli = clerc({
-      name: "vite",
-      version: "1.0.0",
-    });
-    noArgCli.command("dev", {
-      default: true,
+    const devNoArgs = command("dev", {
       description: "Start dev server",
       flags: { port: { type: Number, short: "p", default: 5173 } },
       run(ctx) {
         events.push(`dev:${ctx.flags.port}`);
       },
     });
-    noArgCli.command("build", {
+    const buildCmd = command("build", {
       description: "Build app",
       run() {
         events.push("build");
       },
+    });
+
+    // Notice devNoArgs is passed to default AND omitted from commands (auto-included!)
+    const noArgCli = cli({
+      name: "vite",
+      version: "1.0.0",
+      commands: [buildCmd],
+      default: devNoArgs,
     });
 
     const term = createMemoryTerminal();
@@ -199,14 +222,12 @@ describe("CommandTree", () => {
 
     expect(events).toEqual(["dev:5173", "dev:8080"]);
 
-    // Typo 'biuld' still reports UnknownCommandError with 'build' suggestion
     const typoRes = await noArgCli.run(["biuld"], { terminal: term });
 
     expect(typoRes.ok).toBeFalsy();
     expect(typoRes.error).toBeInstanceOf(UnknownCommandError);
     expect(term.stderrText()).toContain("a similar command exists: 'build'");
 
-    // Root --help and --version still work at root and mark [default]
     term.clear();
     await noArgCli.run(["--version"], { terminal: term });
 
@@ -218,25 +239,27 @@ describe("CommandTree", () => {
     expect(term.stdoutText()).toContain("USAGE\n  vite [command] [options]");
     expect(term.stdoutText()).toContain("Start dev server  [default]");
 
-    // 2. default subcommand with positional args forwards unmatched args like Vite
     const dirEvents: string[] = [];
-    const argCli = clerc({
-      name: "vite",
-      version: "1.0.0",
-    });
-    argCli.command("dev [dir]", {
-      default: true,
+    const devWithArgs = command("dev [dir]", {
       flags: { port: { type: Number, short: "p", default: 5173 } },
       run(ctx) {
         dirEvents.push(`dev:${ctx.args.dir ?? "."}:${ctx.flags.port}`);
       },
     });
-    argCli.command("build", {
-      run() {
-        dirEvents.push("build");
-      },
+    const argCli = cli({
+      name: "vite",
+      version: "1.0.0",
+      commands: [
+        devWithArgs,
+        command("build", {
+          run() {
+            dirEvents.push("build");
+          },
+        }),
+        command("db migrate", { run() {} }),
+      ],
+      default: devWithArgs,
     });
-    argCli.command("db migrate", { run() {} });
 
     await argCli.run([], { terminal: term });
     await argCli.run(["./my-app", "-p", "3000"], { terminal: term });
@@ -250,27 +273,23 @@ describe("CommandTree", () => {
       "build",
     ]);
 
-    // Subcommand namespace typos ('vite db migrat') still report UnknownCommandError
     await expect(
       argCli.run(["db", "migrat"], { terminal: term, throwOnError: true }),
     ).rejects.toThrow(UnknownCommandError);
 
-    // 3. Compile-time validation rejects non-runnable, conflicting, or duplicate default subcommands
-    const nonRunnableDefault = clerc({ name: "vite" });
-    nonRunnableDefault.command("db", { default: true });
+    // Schema validation for default commands
+    const nonRunnable = command("db", {});
 
-    expect(() => nonRunnableDefault.buildModel()).toThrow(InvalidSchemaError);
+    expect(() =>
+      cli({ name: "vite", default: nonRunnable }).buildModel(),
+    ).toThrow(InvalidSchemaError);
 
-    const conflictDefault = clerc({ name: "vite" });
-    conflictDefault.command({ run() {} });
-    conflictDefault.command("dev", { default: true, run() {} });
+    expect(() =>
+      (command as any)("node", { default: devNoArgs, run() {} }),
+    ).toThrow(InvalidSchemaError);
 
-    expect(() => conflictDefault.buildModel()).toThrow(InvalidSchemaError);
-
-    const multipleDefaults = clerc({ name: "vite" });
-    multipleDefaults.command("dev", { default: true, run() {} });
-    multipleDefaults.command("build", { default: true, run() {} });
-
-    expect(() => multipleDefaults.buildModel()).toThrow(InvalidSchemaError);
+    expect(() =>
+      (cli as any)({ name: "vite", default: devNoArgs, run() {} }),
+    ).toThrow(InvalidSchemaError);
   });
 });

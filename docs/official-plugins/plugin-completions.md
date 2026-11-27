@@ -26,18 +26,13 @@ npm install @clerc/plugin-completions
 
 ## Usage and Custom `complete()`
 
-Subcommands, aliases, flags, `Types.Enum(...)` values, static `complete` declarations, and built-in `help [command...]` paths are compiled into the generated shell script. Any command, argument, or flag can also provide a sync or `async` `complete(ctx)` function that calls `<cli> complete -- ...` when completing that slot:
+Pass `completions()` directly inside `commands: [...]` (`commands` flattens nested arrays automatically, so no `...` spread is needed). Subcommands, aliases, flags, `Types.Enum(...)` values, static `complete` declarations, and built-in `help [command...]` paths compile directly into the generated shell script. Any command, argument, or flag can also provide a sync or `async` `complete(ctx)` function that invokes `<cli> complete -- ...` only when completing that slot:
 
 ```ts
-import { completionsPlugin } from "@clerc/plugin-completions";
-import { Complete, Types, clerc } from "clerc";
+import { completions } from "@clerc/plugin-completions";
+import { Complete, Types, cli, command } from "clerc";
 
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-}).use(completionsPlugin());
-
-cli.command("deploy <env> [service]", {
+const deploy = command("deploy <env> [service]", {
   aliases: ["d"],
   description: "Deploy application",
   args: {
@@ -75,10 +70,16 @@ cli.command("deploy <env> [service]", {
   run() {},
 });
 
-await cli.runMain();
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [deploy, completions()],
+});
+
+await app.runMain();
 ```
 
-You can also attach `complete(ctx)` directly on the command options (`cli.command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`), or set `complete: false` on any command, argument, or flag to exclude it from completions.
+You can also attach `complete(ctx)` directly on command options (`command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`), or set `complete: false` on any command, argument, or flag to exclude it from completions.
 
 <CliPlayground :scenario="dynamicCompletions" lang="en" />
 

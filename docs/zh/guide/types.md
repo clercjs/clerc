@@ -25,12 +25,10 @@ Clerc 的选项和位置参数共用同一套类型系统。你可以使用原�
 ::: code-group
 
 ```ts [Zod v4] no-twoslash
-import { clerc } from "clerc";
+import { command } from "clerc";
 import { z } from "zod";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: z.email(),
   },
@@ -53,12 +51,10 @@ cli.command("invite <email>", {
 ```
 
 ```ts [Valibot] no-twoslash
-import { clerc } from "clerc";
+import { command } from "clerc";
 import * as v from "valibot";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: v.pipe(v.string(), v.email()),
   },
@@ -74,11 +70,9 @@ cli.command("invite <email>", {
 
 ```ts [ArkType] no-twoslash
 import { type } from "arktype";
-import { clerc } from "clerc";
+import { command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: type("string.email"),
   },
@@ -99,11 +93,9 @@ cli.command("invite <email>", {
 不想引入外部校验库时，`clerc` 内置了常用 Standard Schema 构造器：
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("release <channel>", {
+const release = command("release <channel>", {
   args: {
     channel: Types.Enum("alpha", "beta", "rc", "stable"),
   },
@@ -134,7 +126,7 @@ cli.command("release <channel>", {
 
 ```ts
 import type { TypeFunction } from "clerc";
-import { clerc } from "clerc";
+import { command } from "clerc";
 
 const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
   const eq = raw.indexOf("=");
@@ -146,7 +138,7 @@ const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
 };
 parseKeyValue.display = "KEY=VALUE";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
+const envCmd = command("env", {
   flags: {
     define: { type: parseKeyValue, multiple: true, short: "D" },
   },

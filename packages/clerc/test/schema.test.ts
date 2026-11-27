@@ -2,7 +2,16 @@ import { createMemoryTerminal, createTestBaseCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
 import type { StandardSchemaV1 } from "../src";
-import { InvalidSchemaError, RuleError, Types, ValidationError } from "../src";
+import {
+  ConstraintError,
+  InvalidSchemaError,
+  Types,
+  ValidationError,
+  atLeastOne,
+  command,
+  group,
+  oneOf,
+} from "../src";
 
 const createSyncSchema = <T>(
   validate: (
@@ -33,23 +42,26 @@ describe("Types and Standard Schema v1", () => {
     let captured: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command("run <env>", {
-      args: { env: Types.Enum("dev", "prod") },
-      flags: {
-        port: { type: Types.Integer({ min: 1, max: 65_535 }) },
-        ratio: { type: Types.Number({ min: 0, max: 1 }) },
-        token: { type: Types.String({ trim: true, nonEmpty: true }) },
-        tag: { type: Types.Regex(/^v\d+$/g, "v<n>"), multiple: true },
-        verbose: { type: Types.Counter, short: "v" },
-        workers: { type: Types.Integer() },
-      },
-      run(ctx) {
-        captured = { args: ctx.args, flags: ctx.flags };
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("run <env>", {
+          args: { env: Types.Enum("dev", "prod") },
+          flags: {
+            port: { type: Types.Integer({ min: 1, max: 65_535 }) },
+            ratio: { type: Types.Number({ min: 0, max: 1 }) },
+            token: { type: Types.String({ trim: true, nonEmpty: true }) },
+            tag: { type: Types.Regex(/^v\d+$/g, "v<n>"), multiple: true },
+            verbose: { type: Types.Counter, short: "v" },
+            workers: { type: Types.Integer() },
+          },
+          run(ctx) {
+            captured = { args: ctx.args, flags: ctx.flags };
+          },
+        }),
+      ],
     });
 
-    await cli.run(
+    await app.run(
       [
         "run",
         "prod",
@@ -83,39 +95,39 @@ describe("Types and Standard Schema v1", () => {
     });
 
     await expect(
-      cli.run(["run", "qa"], { terminal, throwOnError: true }),
+      app.run(["run", "qa"], { terminal, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--port", "99999"], {
+      app.run(["run", "dev", "--port", "99999"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--workers", "1.5"], {
+      app.run(["run", "dev", "--workers", "1.5"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--workers", ""], {
+      app.run(["run", "dev", "--workers", ""], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--port", "80.5"], {
+      app.run(["run", "dev", "--port", "80.5"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
     await expect(
-      cli.run(["run", "dev", "--token", "   "], {
+      app.run(["run", "dev", "--token", "   "], {
         terminal,
         throwOnError: true,
       }),
@@ -151,25 +163,28 @@ describe("Types and Standard Schema v1", () => {
     let captured: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command("invite <code-id>", {
-      args: { codeId: asyncUpperSchema },
-      flags: {
-        email: { type: emailSchema, required: true },
-      },
-      run(ctx) {
-        captured = { args: ctx.args, flags: ctx.flags };
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("invite <code-id>", {
+          args: { codeId: asyncUpperSchema },
+          flags: {
+            email: { type: emailSchema, required: true },
+          },
+          run(ctx) {
+            captured = { args: ctx.args, flags: ctx.flags };
+          },
+        }),
+      ],
     });
 
-    await cli.run(["invite", "ab", "--email", "Ray@Example.COM"], { terminal });
+    await app.run(["invite", "ab", "--email", "Ray@Example.COM"], { terminal });
 
     expect(captured).toEqual({
       args: { codeId: "AB" },
       flags: { email: "ray@example.com" },
     });
 
-    const res = await cli.run(["invite", "ab", "--email", "invalid"], {
+    const res = await app.run(["invite", "ab", "--email", "invalid"], {
       terminal,
     });
 
@@ -184,170 +199,174 @@ describe("Types and Standard Schema v1", () => {
   it("enforces array constraints (unique, minItems, maxItems) on multiple flags and variadic args", async () => {
     let captured: any;
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli();
-
-    cli.command("order <ids...>", {
-      args: {
-        ids: { unique: true, minItems: 2, maxItems: 4 },
-      },
-      flags: {
-        tags: {
-          type: String,
-          multiple: true,
-          delimiter: ",",
-          unique: true,
-          minItems: 1,
-          maxItems: 3,
-        },
-      },
-      run(ctx) {
-        captured = { args: ctx.args, flags: ctx.flags };
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("order <ids...>", {
+          args: {
+            ids: { unique: true, minItems: 2, maxItems: 4 },
+          },
+          flags: {
+            tags: {
+              type: String,
+              multiple: true,
+              delimiter: ",",
+              unique: true,
+              minItems: 1,
+              maxItems: 3,
+            },
+          },
+          run(ctx) {
+            captured = { args: ctx.args, flags: ctx.flags };
+          },
+        }),
+      ],
     });
 
-    // Valid call (optional --tags omitted does not fail minItems)
-    await cli.run(["order", "a", "b", "c"], { terminal });
+    await app.run(["order", "a", "b", "c"], { terminal });
 
     expect(captured).toEqual({
       args: { ids: ["a", "b", "c"] },
       flags: { tags: [] },
     });
 
-    // Valid --tags
-    await cli.run(["order", "a", "b", "--tags", "x,y"], { terminal });
+    await app.run(["order", "a", "b", "--tags", "x,y"], { terminal });
 
     expect(captured.flags.tags).toEqual(["x", "y"]);
 
-    // Duplicate variadic arg
     await expect(
-      cli.run(["order", "a", "b", "a"], { terminal, throwOnError: true }),
+      app.run(["order", "a", "b", "a"], { terminal, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
 
-    // Too few / too many variadic args
     await expect(
-      cli.run(["order", "only-one"], { terminal, throwOnError: true }),
+      app.run(["order", "only-one"], { terminal, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
     await expect(
-      cli.run(["order", "1", "2", "3", "4", "5"], {
+      app.run(["order", "1", "2", "3", "4", "5"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
-    // Duplicate / too many multiple flag items
     await expect(
-      cli.run(["order", "a", "b", "--tags", "x,x"], {
+      app.run(["order", "a", "b", "--tags", "x,x"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
     await expect(
-      cli.run(["order", "a", "b", "--tags", "1,2,3,4"], {
+      app.run(["order", "a", "b", "--tags", "1,2,3,4"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
-    // Compile-time schema errors for non-array targets or invalid bounds
-    const badFlagCli = createTestBaseCli().command("bad", {
-      flags: { single: { type: String, unique: true } },
+    const badFlagCli = createTestBaseCli({
+      commands: [
+        command("bad", {
+          flags: { single: { type: String, unique: true } },
+        }),
+      ],
     });
 
     expect(() => badFlagCli.buildModel()).toThrow(InvalidSchemaError);
 
-    const badArgCli = createTestBaseCli().command("bad <id>", {
-      args: { id: { minItems: 1 } },
+    const badArgCli = createTestBaseCli({
+      commands: [
+        command("bad <id>", {
+          args: { id: { minItems: 1 } },
+        }),
+      ],
     });
 
     expect(() => badArgCli.buildModel()).toThrow(InvalidSchemaError);
   });
 
-  it("supports r.group(), auto env hints, structured custom rule failures, documented constraints, and composable rules arrays", async () => {
+  it("supports group(title, constraint), auto env hints, structured check failures, and documented NOTES", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli({ help: true }).groups({
-      flags: { fields: "Monitor Fields" },
-    });
 
-    const authRules = (r: any) => [
-      r.oneOf([r.flag("token"), r.flag("tokenFile")]),
-    ];
-
-    cli.command("edit", {
-      flags: {
-        token: { type: String, env: "API_TOKEN" },
-        tokenFile: { type: String, env: "API_TOKEN_FILE" },
-        name: { type: String, group: "fields" },
-        url: { type: String, group: "fields" },
-        statusMin: {
-          type: Types.Integer({ min: 100, max: 599 }),
-          group: "fields",
-        },
-        statusMax: {
-          type: Types.Integer({ min: 100, max: 599 }),
-          group: "fields",
-        },
-        body: { type: String, group: "fields" },
-      },
-      rules: [
-        authRules,
-        (r) => [r.atLeastOne(r.group("fields"))],
-        {
-          description: "--status-max must be >= --status-min",
-          check({ flags }) {
-            if (
-              flags.statusMin !== undefined &&
-              flags.statusMax !== undefined &&
-              flags.statusMax < flags.statusMin
-            ) {
-              return {
-                message: "'--status-max' must be >= '--status-min'",
-                detail: `got min=${flags.statusMin}, max=${flags.statusMax}`,
-                hints: ["pass a status-max >= status-min"],
-              };
-            }
+    const app = createTestBaseCli({
+      help: true,
+      commands: [
+        command("edit", {
+          flags: [
+            oneOf(
+              { token: { type: String, required: true, env: "API_TOKEN" } },
+              {
+                tokenFile: {
+                  type: String,
+                  required: true,
+                  env: "API_TOKEN_FILE",
+                },
+              },
+            ),
+            group(
+              "Monitor Fields",
+              atLeastOne({
+                name: String,
+                url: String,
+                statusMin: Types.Integer({ min: 100, max: 599 }),
+                statusMax: Types.Integer({ min: 100, max: 599 }),
+                body: String,
+              }),
+            ),
+          ],
+          check: {
+            description: "--status-max must be >= --status-min",
+            validate({ flags }) {
+              if (
+                flags.statusMin !== undefined &&
+                flags.statusMax !== undefined &&
+                flags.statusMax < flags.statusMin
+              ) {
+                return {
+                  message: "'--status-max' must be >= '--status-min'",
+                  detail: `got min=${flags.statusMin}, max=${flags.statusMax}`,
+                  hints: ["pass a status-max >= status-min"],
+                };
+              }
+            },
           },
-        },
+          run() {},
+        }),
       ],
-      run() {},
     });
 
-    // Auto env hints on oneOf failure
-    const missingAuth = await cli.run(["edit", "--name", "web"], { terminal });
+    const missingAuth = await app.run(["edit", "--name", "web"], { terminal });
 
     expect(missingAuth.ok).toBeFalsy();
-    expect(missingAuth.error).toBeInstanceOf(RuleError);
-    expect((missingAuth.error as RuleError).hints[0]).toContain("API_TOKEN");
-    expect((missingAuth.error as RuleError).hints[0]).toContain(
+    expect(missingAuth.error).toBeInstanceOf(ConstraintError);
+    expect((missingAuth.error as ConstraintError).hints[0]).toContain(
+      "API_TOKEN",
+    );
+    expect((missingAuth.error as ConstraintError).hints[0]).toContain(
       "API_TOKEN_FILE",
     );
 
-    // r.atLeastOne(r.group("fields")) triggers when no field flag is passed
-    const missingField = await cli.run(["edit", "--token", "abc"], {
+    const missingField = await app.run(["edit", "--token", "abc"], {
       terminal,
     });
 
     expect(missingField.ok).toBeFalsy();
-    expect(missingField.error).toBeInstanceOf(RuleError);
+    expect(missingField.error).toBeInstanceOf(ConstraintError);
 
-    // Structured custom rule failure includes detail & hints
-    const badRange = await cli.run(
+    const badRange = await app.run(
       ["edit", "--token", "abc", "--status-min", "400", "--status-max", "200"],
       { terminal },
     );
 
     expect(badRange.ok).toBeFalsy();
-    expect(badRange.error).toBeInstanceOf(RuleError);
-    expect((badRange.error as RuleError).detail).toContain("min=400, max=200");
-    expect((badRange.error as RuleError).hints).toContain(
+    expect(badRange.error).toBeInstanceOf(ConstraintError);
+    expect((badRange.error as ConstraintError).detail).toContain(
+      "min=400, max=200",
+    );
+    expect((badRange.error as ConstraintError).hints).toContain(
       "pass a status-max >= status-min",
     );
 
-    // Help renders group badge on heading, inline oneOf tag, and custom rule under NOTES
     terminal.clear();
-    await cli.run(["edit", "--help"], { terminal });
+    await app.run(["edit", "--help"], { terminal });
     const help = terminal.stdoutText();
 
-    expect(help).not.toContain("CONSTRAINTS");
     expect(help).toContain("MONITOR FIELDS  [at least one]");
     expect(help).toContain("[one of: --token, --token-file]");
     expect(help).toContain("NOTES\n  --status-max must be >= --status-min");

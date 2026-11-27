@@ -1,19 +1,13 @@
 import type { Logger, LoggerOptions } from "@clerc/logger";
 import type { ThemeStyleMap } from "@clerc/theme";
 
-import type { ContextualArgs, ExtractArgNames, InferCommandArgs } from "./args";
+import type { Command } from "./command";
 import type { CommandNode, CommandTree } from "./command-tree";
-import type {
-  ContextualFlags,
-  FlagDescriptor,
-  InferFlags,
-  MergedFlags,
-} from "./flags";
+import type { FlagDescriptor } from "./flags";
 import type { HelpSectionRenderers } from "./help/renderer";
-import type { RawInputType, StopParsingOption } from "./parser";
-import type { RuleDescriptor, RulesInput } from "./rules";
+import type { RawInputType } from "./parser";
 import type { Terminal } from "./terminal";
-import type { MaybeArray, MaybeAsyncGetter, Prettify } from "./utils";
+import type { MaybeAsyncGetter, Prettify } from "./utils";
 
 export interface CommandCustomMeta {}
 export interface CustomState {}
@@ -32,24 +26,12 @@ export interface CompletionCandidate {
 export type CompletionItem = string | CompletionCandidate;
 
 export interface CompleteListOptions {
-  /**
-   * Allow shell file path completion alongside the provided items.
-   */
   readonly allowFiles?: boolean;
-  /**
-   * Suppress trailing space after accepting a completion.
-   */
   readonly noSpace?: boolean;
-  /**
-   * Preserve candidate order instead of sorting alphabetically in the shell.
-   */
   readonly keepOrder?: boolean;
 }
 
 export interface CompleteFileOptions {
-  /**
-   * Restrict file completions to matching extensions (e.g. `["ts", "json"]`).
-   */
   readonly extensions?: readonly string[];
 }
 
@@ -108,12 +90,6 @@ export interface GroupDefinition {
   readonly title: string;
 }
 
-export interface GroupsInput {
-  readonly commands?: Readonly<Record<string, string>>;
-  readonly flags?: Readonly<Record<string, string>>;
-  readonly globalFlags?: Readonly<Record<string, string>>;
-}
-
 export type ExampleInput =
   string | readonly [command: string, description?: string];
 
@@ -127,31 +103,13 @@ export interface CliMeta {
   readonly notes?: MetaAsyncGetter<readonly string[]>;
 }
 
-export interface ScopeOptions {
-  readonly group?: string;
-}
-
-export type SubcommandOptions = Pick<
-  CommandOptions,
-  | "aliases"
-  | "description"
-  | "group"
-  | "hidden"
-  | "deprecated"
-  | "examples"
-  | "notes"
-  | "meta"
->;
-
 export interface CliModel {
   readonly meta: CliMeta;
   readonly tree: CommandTree;
   readonly globalFlags: readonly FlagDescriptor[];
-  readonly globalRules: readonly RuleDescriptor[];
   readonly groups: {
     readonly commands: readonly GroupDefinition[];
     readonly flags: readonly GroupDefinition[];
-    readonly globalFlags: readonly GroupDefinition[];
   };
 }
 
@@ -177,8 +135,8 @@ export interface RawParseContext {
   readonly doubleDash: readonly string[];
 }
 
-export interface ErrorContext<
-  TGlobalFlags extends Record<string, any> = {},
+export interface CliContext<
+  TFlags = Record<string, any>,
   TState extends Record<string, any> = {},
 > {
   readonly model: CliModel;
@@ -190,160 +148,54 @@ export interface ErrorContext<
     options?: RunOptions,
   ) => Promise<RunResult>;
   readonly exit: (code?: number) => never;
-  readonly command?: AnyCommandDefinition;
+  readonly command?: Command;
   readonly commandPath: readonly string[];
   readonly calledAs?: string;
   readonly args: Record<string, any>;
-  readonly flags: InferFlags<TGlobalFlags> & Record<string, any>;
+  readonly flags: Partial<TFlags> & Record<string, any>;
   readonly state: Partial<State<TState>>;
   readonly raw: RawParseContext;
 }
 
-export interface RunContext<
-  TGlobalFlags extends Record<string, any> = {},
+export interface MiddlewareContext<
+  TFlags = Record<string, any>,
   TState extends Record<string, any> = {},
-> extends Omit<ErrorContext<TGlobalFlags, TState>, "state"> {
-  readonly command: AnyCommandDefinition;
+> extends Omit<
+  CliContext<TFlags, TState>,
+  "flags" | "state" | "command" | "calledAs"
+> {
+  readonly command: Command;
   readonly calledAs: string;
+  readonly flags: TFlags;
   readonly state: State<TState>;
 }
 
 export type CommandContext<
-  Spec extends string = string,
-  Args extends Partial<Record<string, any>> = {},
-  Flags extends Record<string, any> = {},
-  GlobalFlags extends Record<string, any> = {},
+  TArgs extends Record<string, any> = Record<string, any>,
+  TFlags = Record<string, any>,
   TState extends Record<string, any> = {},
-> = Omit<RunContext<GlobalFlags, TState>, "args" | "flags"> & {
-  readonly args: InferCommandArgs<Spec, Args>;
-  readonly flags: MergedFlags<Flags, GlobalFlags>;
+> = Omit<MiddlewareContext<TFlags, TState>, "args"> & {
+  readonly args: TArgs;
 };
 
 export type CommandHandler<
-  Spec extends string = string,
-  Args extends Partial<Record<string, any>> = {},
-  Flags extends Record<string, any> = {},
-  GlobalFlags extends Record<string, any> = {},
+  TArgs extends Record<string, any> = Record<string, any>,
+  TFlags = Record<string, any>,
   TState extends Record<string, any> = {},
-> = (
-  ctx: CommandContext<Spec, Args, Flags, GlobalFlags, TState>,
-) => void | Promise<void>;
-
-export interface CommandOptions<
-  Spec extends string = string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
-  Flags extends Record<string, any> = {},
-  GlobalFlags extends Record<string, any> = {},
-  TState extends Record<string, any> = {},
-> {
-  readonly aliases?: MaybeArray<string>;
-  readonly description?: string;
-  readonly args?: ContextualArgs<Spec, Args>;
-  readonly flags?: ContextualFlags<Flags>;
-  readonly rules?: RulesInput<
-    keyof MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>> & string,
-    ExtractArgNames<Spec>,
-    InferCommandArgs<Spec, NoInfer<Args>>,
-    MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
-  >;
-  readonly default?: boolean;
-  readonly stopParsing?: StopParsingOption;
-  readonly standalone?: boolean;
-  readonly group?: string;
-  readonly hidden?: boolean;
-  readonly deprecated?: boolean | string;
-  readonly examples?: MetaAsyncGetter<readonly ExampleInput[]>;
-  readonly notes?: MetaAsyncGetter<readonly string[]>;
-  readonly complete?: CompletionOption<
-    InferCommandArgs<Spec, NoInfer<Args>>,
-    MergedFlags<NoInfer<Flags>, NoInfer<GlobalFlags>>
-  >;
-  readonly run?: CommandHandler<
-    Spec,
-    NoInfer<Args>,
-    NoInfer<Flags>,
-    NoInfer<GlobalFlags>,
-    NoInfer<TState>
-  >;
-  readonly meta?: CommandMeta;
-}
-
-export type RootCommandOptions<
-  Flags extends Record<string, any> = {},
-  GlobalFlags extends Record<string, any> = {},
-  TState extends Record<string, any> = {},
-> = Omit<
-  CommandOptions<"", {}, Flags, GlobalFlags, TState>,
-  "args" | "aliases" | "group" | "default"
->;
-
-export interface CommandDefinition<
-  Spec extends string = string,
-  Args extends Partial<Record<ExtractArgNames<Spec>, any>> = {},
-  Flags extends Record<string, any> = {},
-  GlobalFlags extends Record<string, any> = {},
-  TState extends Record<string, any> = {},
-> extends CommandOptions<Spec, Args, Flags, GlobalFlags, TState> {
-  readonly spec: Spec;
-  readonly name: string;
-  readonly argTokens: readonly string[];
-  /**
-   * @internal
-   */
-  readonly builtin?: boolean;
-}
-
-export type AnyCommandDefinition = CommandDefinition<any, any, any, any, any>;
-
-export interface MiddlewareResult<TAdded extends Record<string, any> = {}> {
-  readonly "~state": TAdded;
-}
-
-export type MiddlewareNext = <Added extends Record<string, any> = {}>(
-  state?: Added,
-) => Promise<MiddlewareResult<Added>>;
-
-export interface MiddlewareOptions {
-  readonly enforce?: "pre" | "post";
-}
-
-export type ExtractMiddlewareState<R> =
-  Awaited<R> extends MiddlewareResult<infer Added> ? Added : {};
-
-export type Middleware<
-  TGlobalFlags extends Record<string, any> = {},
-  TState extends Record<string, any> = {},
-  TAdded extends Record<string, any> = {},
-> = (
-  ctx: RunContext<TGlobalFlags, TState>,
-  next: MiddlewareNext,
-) =>
-  | MiddlewareResult<TAdded>
-  | Promise<MiddlewareResult<TAdded>>
-  | void
-  | Promise<void>;
+> = (ctx: CommandContext<TArgs, TFlags, TState>) => void | Promise<void>;
 
 export type ErrorHandler<
-  TGlobalFlags extends Record<string, any> = {},
+  TFlags = Record<string, any>,
   TState extends Record<string, any> = {},
 > = (
   error: unknown,
-  ctx: ErrorContext<TGlobalFlags, TState>,
+  ctx: CliContext<TFlags, TState>,
 ) => boolean | void | Promise<boolean | void>;
 
-export interface ClercOptions
-  extends
-    Partial<Pick<CliMeta, "description" | "version">>,
-    Pick<CliMeta, "name" | "examples" | "notes"> {
-  readonly help?: boolean | HelpOptions;
-  readonly verbosity?: boolean;
-  readonly strictFlags?: boolean;
+export interface RunOptions {
+  readonly terminal?: Terminal;
   readonly theme?: Partial<ThemeStyleMap>;
   readonly logger?: LoggerOptions;
-}
-
-export interface RunOptions extends Pick<ClercOptions, "theme" | "logger"> {
-  readonly terminal?: Terminal;
   /**
    * When true, rethrows unhandled errors instead of rendering diagnostics to
    * stderr. Useful in tests asserting on thrown error instances.

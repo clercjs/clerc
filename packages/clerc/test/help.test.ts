@@ -1,13 +1,59 @@
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
 import { describe, expect, it } from "vitest";
 
-import { Types, clerc } from "../src";
+import { Types, cli, command, group } from "../src";
 
 describe("built-in v2 editorial help", () => {
   it("renders clean header, unified section headings, and aligned columns", async () => {
     const terminal = createMemoryTerminal({ columns: 96 });
 
-    const cli = clerc({
+    const build = command("build <entry>", {
+      aliases: ["b"],
+      description: "Compile source files",
+      args: {
+        entry: { description: "Entry file path" },
+      },
+      flags: [
+        {
+          output: { type: String, short: "o", description: "Output directory" },
+          port: {
+            type: Number,
+            short: "p",
+            default: 3000,
+            env: "PORT",
+            description: "Server port",
+          },
+          verbose: {
+            type: Boolean,
+            short: "v",
+            description: "Enable verbose output",
+          },
+          format: {
+            type: Types.Enum("json", "yaml"),
+            default: "json",
+            description: "Output format",
+          },
+          secret: {
+            type: String,
+            hidden: true,
+          },
+        },
+        group("Input Options", {
+          src: {
+            type: String,
+            description: "Source directory",
+          },
+          cache: {
+            type: Boolean,
+            default: true,
+            description: "Use build cache",
+          },
+        }),
+      ],
+      run() {},
+    });
+
+    const app = cli({
       name: "acme",
       version: "2.0.0",
       description: "Build and deploy modern TypeScript apps",
@@ -15,57 +61,10 @@ describe("built-in v2 editorial help", () => {
         ["$ acme build src/index.ts -p 8080", "Build with custom port"],
       ],
       notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-    }).groups({
-      commands: { core: "Core" },
-      flags: { input: "Input Options" },
+      commands: [group("Core", [build])],
     });
 
-    cli.command("build <entry>", {
-      aliases: ["b"],
-      group: "core",
-      description: "Compile source files",
-      args: {
-        entry: { description: "Entry file path" },
-      },
-      flags: {
-        output: { type: String, short: "o", description: "Output directory" },
-        port: {
-          type: Number,
-          short: "p",
-          default: 3000,
-          env: "PORT",
-          description: "Server port",
-        },
-        verbose: {
-          type: Boolean,
-          short: "v",
-          description: "Enable verbose output",
-        },
-        format: {
-          type: Types.Enum("json", "yaml"),
-          default: "json",
-          description: "Output format",
-        },
-        src: {
-          type: String,
-          group: "input",
-          description: "Source directory",
-        },
-        cache: {
-          type: Boolean,
-          default: true,
-          group: "input",
-          description: "Use build cache",
-        },
-        secret: {
-          type: String,
-          hidden: true,
-        },
-      },
-      run() {},
-    });
-
-    await cli.run(["build", "--help"], { terminal });
+    await app.run(["build", "--help"], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       [
@@ -95,7 +94,7 @@ describe("built-in v2 editorial help", () => {
     );
 
     terminal.clear();
-    await cli.run(["--help"], { terminal });
+    await app.run(["--help"], { terminal });
 
     const rootOut = terminal.stdoutText();
 
@@ -108,7 +107,6 @@ describe("built-in v2 editorial help", () => {
       rootOut.indexOf("\nOTHER COMMANDS\n"),
     );
 
-    // Commands and Options snap to the same column when within threshold
     const buildDescCol = rootOut
       .split("\n")
       .find((l) => l.includes("build (b)"))!
@@ -130,15 +128,19 @@ describe("built-in v2 editorial help", () => {
 
   it("decouples command and option columns when an option is very wide", async () => {
     const terminal = createMemoryTerminal({ columns: 100 });
-    const cli = clerc({ name: "acme", version: "1.0.0" }).flags({
-      experimentalModuleResolution: {
-        type: String,
-        description: "Resolution strategy",
+    const app = cli({
+      name: "acme",
+      version: "1.0.0",
+      flags: {
+        experimentalModuleResolution: {
+          type: String,
+          description: "Resolution strategy",
+        },
       },
+      commands: [command("db", { description: "Database tools", run() {} })],
     });
-    cli.command("db", { description: "Database tools", run() {} });
 
-    await cli.run(["--help"], { terminal });
+    await app.run(["--help"], { terminal });
 
     const lines = terminal.stdoutText().split("\n");
     const dbLine = lines.find((l) => l.startsWith("  db "))!;
@@ -149,7 +151,7 @@ describe("built-in v2 editorial help", () => {
 
   it("renders stacked examples and notes cleanly on narrow terminals", async () => {
     const terminal = createMemoryTerminal({ columns: 68, unicode: false });
-    const cli = clerc({
+    const app = cli({
       name: "acme",
       version: "2.0.0",
       examples: [
@@ -157,10 +159,10 @@ describe("built-in v2 editorial help", () => {
         "$ acme deploy staging",
       ],
       notes: ["Keep it tidy."],
+      commands: [command("deploy", { description: "Deploy app", run() {} })],
     });
-    cli.command("deploy", { description: "Deploy app", run() {} });
 
-    await cli.run(["--help"], { terminal });
+    await app.run(["--help"], { terminal });
 
     const out = terminal.stdoutText();
 
@@ -174,11 +176,18 @@ describe("built-in v2 editorial help", () => {
 
   it("shows subcommands when a namespace-only parent command is invoked", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli();
-    cli.command("db migrate", { description: "Run migrations", run() {} });
-    cli.command("db seed", { description: "Seed data", run() {} });
+    const app = createTestCli({
+      commands: [
+        command("db", {
+          commands: [
+            command("migrate", { description: "Run migrations", run() {} }),
+            command("seed", { description: "Seed data", run() {} }),
+          ],
+        }),
+      ],
+    });
 
-    await cli.run(["db"], { terminal });
+    await app.run(["db"], { terminal });
 
     expect(terminal.stdoutText()).toContain("test db v1.0.0");
     expect(terminal.stdoutText()).toContain("\nSUBCOMMANDS\n");
@@ -188,10 +197,11 @@ describe("built-in v2 editorial help", () => {
 
   it("does not render blank Arguments section when only -- parameter is defined", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli();
-    cli.command("exec --", { run() {} });
+    const app = createTestCli({
+      commands: [command("exec --", { run() {} })],
+    });
 
-    await cli.run(["exec", "--help"], { terminal });
+    await app.run(["exec", "--help"], { terminal });
 
     expect(terminal.stdoutText()).not.toContain("\nARGUMENTS\n");
     expect(terminal.stdoutText()).toContain(
@@ -201,48 +211,51 @@ describe("built-in v2 editorial help", () => {
 
   it("renders dynamic CLI name in help command examples", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli();
+    const app = createTestCli();
 
-    await cli.run(["help", "help"], { terminal });
+    await app.run(["help", "help"], { terminal });
 
     expect(terminal.stdoutText()).toContain("$ test help");
   });
 
   it("keeps metadata tags intact across line wraps, renders arg types cleanly, and supports section overrides", async () => {
     const terminal = createMemoryTerminal({ columns: 80 });
-    const cli = clerc({
+    const app = cli({
       name: "acme",
       version: "2.0.0",
       notes: [
         "This is a deliberately long note line that should wrap cleanly inside narrow terminal widths without overflowing.",
       ],
-    }).flags({
-      config: {
-        type: String,
-        short: "c",
-        default: "acme.config.ts",
-        env: "ACME_CONFIG",
-        description: "Path to config file",
-      },
-    });
-    cli.command("deploy <env> [region]", {
-      description: "Deploy application",
-      args: {
-        env: {
-          type: Types.Enum("staging", "prod"),
-          description: "Target environment",
+      flags: {
+        config: {
+          type: String,
+          short: "c",
+          default: "acme.config.ts",
+          env: "ACME_CONFIG",
+          description: "Path to config file",
         },
-        region: { description: "Cloud region", default: "us-east-1" },
       },
-      run() {},
-    });
-    cli.command("legacy", {
-      deprecated: "use deploy instead",
-      description: "Old helper",
-      run() {},
+      commands: [
+        command("deploy <env> [region]", {
+          description: "Deploy application",
+          args: {
+            env: {
+              type: Types.Enum("staging", "prod"),
+              description: "Target environment",
+            },
+            region: { description: "Cloud region", default: "us-east-1" },
+          },
+          run() {},
+        }),
+        command("legacy", {
+          deprecated: "use deploy instead",
+          description: "Old helper",
+          run() {},
+        }),
+      ],
     });
 
-    await cli.run(["--help"], { terminal });
+    await app.run(["--help"], { terminal });
     const rootOut = terminal.stdoutText();
 
     expect(rootOut).toContain("[default: acme.config.ts]");
@@ -251,7 +264,7 @@ describe("built-in v2 editorial help", () => {
     expect(rootOut).toContain("[deprecated: use deploy instead]");
 
     terminal.clear();
-    await cli.run(["deploy", "--help"], { terminal });
+    await app.run(["deploy", "--help"], { terminal });
     const deployOut = terminal.stdoutText();
 
     expect(deployOut).not.toContain("<env> <staging|prod>");
@@ -260,7 +273,7 @@ describe("built-in v2 editorial help", () => {
     expect(deployOut).toContain("Cloud region  [default: us-east-1]");
 
     const customTerm = createMemoryTerminal({ columns: 80 });
-    const customCli = clerc({
+    const customCli = cli({
       name: "acme",
       version: "2.0.0",
       notes: ["Hidden note"],
@@ -270,8 +283,8 @@ describe("built-in v2 editorial help", () => {
           notes: () => undefined,
         },
       },
+      commands: [command("ping", { description: "Ping server", run() {} })],
     });
-    customCli.command("ping", { description: "Ping server", run() {} });
 
     await customCli.run(["--help"], { terminal: customTerm });
 
@@ -279,19 +292,21 @@ describe("built-in v2 editorial help", () => {
     expect(customTerm.stdoutText()).not.toContain("NOTES");
     expect(customTerm.stdoutText()).not.toContain("Hidden note");
 
-    // Implicit namespace inherits shared group & run-less .command("pr", ...) prints help instead of silent no-op
     const nsTerm = createMemoryTerminal({ columns: 80 });
-    const nsCli = clerc({ name: "firn", version: "1.0.0" }).groups({
-      commands: { admin: "Admin" },
-    });
-    nsCli.command("pr", {
-      description: "Inspect and manage PR overlays",
-      group: "admin",
-    });
-    nsCli.command("cache ls", {
-      description: "List cache entries",
-      group: "admin",
-      run() {},
+    const nsCli = cli({
+      name: "firn",
+      version: "1.0.0",
+      commands: [
+        group("Admin", [
+          command("pr", {
+            description: "Inspect and manage PR overlays",
+          }),
+          command("cache ls", {
+            description: "List cache entries",
+            run() {},
+          }),
+        ]),
+      ],
     });
 
     await nsCli.run(["--help"], { terminal: nsTerm });

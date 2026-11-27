@@ -2,7 +2,11 @@ import type {
   PlaygroundScenario,
   TypeFunction,
 } from "../.vitepress/components/playground-runtime.ts";
-import { Types, clerc } from "../.vitepress/components/playground-runtime.ts";
+import {
+  Types,
+  cli,
+  command,
+} from "../.vitepress/components/playground-runtime.ts";
 
 const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
   const eq = raw.indexOf("=");
@@ -16,25 +20,34 @@ parseKeyValue.display = "KEY=VALUE";
 
 export const builtinTypes: PlaygroundScenario = {
   createCli: () =>
-    clerc({ name: "acme", version: "2.0.0" }).command("release <channel>", {
-      description: "Publish a validated release",
-      args: {
-        channel: {
-          type: Types.Enum("alpha", "beta", "rc", "stable"),
-          description: "Release channel",
-        },
-      },
-      flags: {
-        port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
-        workers: { type: Types.Integer({ min: 1 }), default: 4 },
-        tag: {
-          type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>"),
-          description: "Version tag",
-        },
-      },
-      run({ args, flags, log }) {
-        log.success(`Validated '${args.channel}' release`, flags);
-      },
+    cli({
+      name: "acme",
+      version: "2.0.0",
+      commands: [
+        command("release <channel>", {
+          description: "Publish a validated release",
+          args: {
+            channel: {
+              type: Types.Enum("alpha", "beta", "rc", "stable"),
+              description: "Release channel",
+            },
+          },
+          flags: {
+            port: {
+              type: Types.Integer({ min: 1, max: 65_535 }),
+              default: 3000,
+            },
+            workers: { type: Types.Integer({ min: 1 }), default: 4 },
+            tag: {
+              type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>"),
+              description: "Version tag",
+            },
+          },
+          run({ args, flags, log }) {
+            log.success(`Validated '${args.channel}' release`, flags);
+          },
+        }),
+      ],
     }),
   presets: [
     { cmd: "release beta --tag v2.1" },
@@ -47,19 +60,25 @@ export const builtinTypes: PlaygroundScenario = {
 
 export const customParser: PlaygroundScenario = {
   createCli: () =>
-    clerc({ name: "acme", version: "2.0.0" }).command("env", {
-      description: "Define build constants with custom KEY=VALUE parser",
-      flags: {
-        define: {
-          type: parseKeyValue,
-          multiple: true,
-          short: "D",
-          description: "Constants",
-        },
-      },
-      run({ flags, log }) {
-        log.info("Parsed define tuples", { define: flags.define });
-      },
+    cli({
+      name: "acme",
+      version: "2.0.0",
+      commands: [
+        command("env", {
+          description: "Define build constants with custom KEY=VALUE parser",
+          flags: {
+            define: {
+              type: parseKeyValue,
+              multiple: true,
+              short: "D",
+              description: "Constants",
+            },
+          },
+          run({ flags, log }) {
+            log.info("Parsed define tuples", { define: flags.define });
+          },
+        }),
+      ],
     }),
   presets: [
     { cmd: "env -D API=prod -D MOCK=0" },

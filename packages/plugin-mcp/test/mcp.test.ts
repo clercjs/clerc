@@ -1,15 +1,19 @@
 import { PassThrough } from "node:stream";
 
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
-import { Types, plugin } from "clerc";
+import {
+  Types,
+  command,
+  exclusive,
+  group,
+  middleware,
+  oneOf,
+  together,
+  use,
+} from "clerc";
 import { describe, expect, it } from "vitest";
 
-import {
-  createMcpHandler,
-  listMcpResources,
-  listMcpTools,
-  mcpPlugin,
-} from "../src";
+import { createMcpHandler, listMcpResources, listMcpTools, mcp } from "../src";
 
 describe("@clerc/plugin-mcp", () => {
   it("generates typed JSON Schemas from args, flags, Types.*, Standard JSON Schema, and meta.mcp", () => {
@@ -28,50 +32,50 @@ describe("@clerc/plugin-mcp", () => {
       },
     };
 
-    const cli = createTestCli()
-      .flags({
+    const app = createTestCli({
+      flags: {
         verbose: {
           type: Types.Counter,
           short: "v",
           description: "Verbosity level",
         },
-      })
-      .use(mcpPlugin());
-
-    cli.command("deploy <env> [files...]", {
-      description: "Deploy application",
-      args: {
-        env: {
-          type: Types.Enum("staging", "prod"),
-          description: "Target environment",
-        },
       },
-      flags: {
-        port: {
-          type: Types.Integer({ min: 1, max: 65_535 }),
-          default: 3000,
-          description: "Server port",
-        },
-        dryRun: { type: Boolean, description: "Preview only" },
-        notify: { type: emailStandardJsonSchema, required: true },
-        secret: { type: String, hidden: true },
-      },
-      meta: {
-        mcp: { destructive: true },
-      },
-      run() {},
+      commands: [
+        mcp(),
+        command("deploy <env> [files...]", {
+          description: "Deploy application",
+          args: {
+            env: {
+              type: Types.Enum("staging", "prod"),
+              description: "Target environment",
+            },
+          },
+          flags: {
+            port: {
+              type: Types.Integer({ min: 1, max: 65_535 }),
+              default: 3000,
+              description: "Server port",
+            },
+            dryRun: { type: Boolean, description: "Preview only" },
+            notify: { type: emailStandardJsonSchema, required: true },
+            secret: { type: String, hidden: true },
+          },
+          meta: {
+            mcp: { destructive: true },
+          },
+          run() {},
+        }),
+        command("db migrate", {
+          description: "Run migrations",
+          meta: { mcp: { readOnly: false, idempotent: true } },
+          run() {},
+        }),
+        command("internal", { hidden: true, run() {} }),
+        command("skipped", { meta: { mcp: { enabled: false } }, run() {} }),
+      ],
     });
 
-    cli.command("db migrate", {
-      description: "Run migrations",
-      meta: { mcp: { readOnly: false, idempotent: true } },
-      run() {},
-    });
-
-    cli.command("internal", { hidden: true, run() {} });
-    cli.command("skipped", { meta: { mcp: { enabled: false } }, run() {} });
-
-    const tools = listMcpTools(cli.buildModel());
+    const tools = listMcpTools(app.buildModel());
 
     expect(tools.map((t) => t.name)).toEqual(["deploy", "db_migrate"]);
 
@@ -106,37 +110,44 @@ describe("@clerc/plugin-mcp", () => {
   });
 
   it("executes commands via tools/call through full state middleware + validation pipeline", async () => {
-    const authPlugin = plugin("auth")
-      .flags({ token: { type: String, default: "guest" } })
-      .middleware(async (ctx, next) =>
-        next({
+    const authMw = middleware({
+      flags: { token: { type: String, default: "guest" } },
+      async setup(ctx) {
+        return {
           actor: await Promise.resolve(`user:${ctx.flags.token}`),
-        }),
-      )
-      .middleware(async (ctx, next) => {
+        };
+      },
+      async run(ctx, next) {
         ctx.terminal.stdout(`actor=${ctx.state.actor}`);
         await next();
-      });
-
-    const cli = createTestCli().use(authPlugin).use(mcpPlugin());
-    cli.command("release <channel> -- [extra...]", {
-      description: "Publish release",
-      args: { channel: Types.Enum("alpha", "beta") },
-      flags: {
-        tags: { type: String, multiple: true },
-        dryRun: Boolean,
-        strict: { type: Boolean, default: true, negatable: false },
-      },
-      run(ctx) {
-        ctx.terminal.stdout(
-          `released ${ctx.args.channel} dry=${ctx.flags.dryRun} strict=${ctx.flags.strict} tags=${ctx.flags.tags.join(",")} extra=${ctx.args.extra.join(",")}`,
-        );
       },
     });
 
+    const app = createTestCli({
+      use: [authMw],
+      commands: [
+        mcp(),
+        command("release <channel> -- [extra...]", {
+          use: [authMw],
+          description: "Publish release",
+          args: { channel: Types.Enum("alpha", "beta") },
+          flags: {
+            tags: { type: String, multiple: true },
+            dryRun: Boolean,
+            strict: { type: Boolean, default: true, negatable: false },
+          },
+          run(ctx) {
+            ctx.terminal.stdout(
+              `released ${ctx.args.channel} dry=${ctx.flags.dryRun} strict=${ctx.flags.strict} tags=${ctx.flags.tags.join(",")} extra=${ctx.args.extra.join(",")}`,
+            );
+          },
+        }),
+      ],
+    });
+
     const handler = createMcpHandler({
-      model: cli.buildModel(),
-      run: (argv, opts) => cli.run(argv, opts),
+      model: app.buildModel(),
+      run: (argv, opts) => app.run(argv, opts),
     });
 
     const init = await handler({
@@ -211,14 +222,18 @@ describe("@clerc/plugin-mcp", () => {
   });
 
   it("exposes ANSI-free CLI overview and command help pages as MCP resources", async () => {
-    const cli = createTestCli().use(mcpPlugin());
-    cli.command("db migrate", {
-      description: "Run database migrations",
-      flags: { force: { type: Boolean, description: "Skip prompt" } },
-      run() {},
+    const app = createTestCli({
+      commands: [
+        mcp(),
+        command("db migrate", {
+          description: "Run database migrations",
+          flags: { force: { type: Boolean, description: "Skip prompt" } },
+          run() {},
+        }),
+      ],
     });
 
-    const resources = listMcpResources(cli.buildModel());
+    const resources = listMcpResources(app.buildModel());
 
     expect(resources.map((r) => r.uri)).toEqual([
       "cli://test/help",
@@ -226,8 +241,8 @@ describe("@clerc/plugin-mcp", () => {
     ]);
 
     const handler = createMcpHandler({
-      model: cli.buildModel(),
-      run: (argv, opts) => cli.run(argv, opts),
+      model: app.buildModel(),
+      run: (argv, opts) => app.run(argv, opts),
     });
 
     const rootHelp = await handler({
@@ -263,15 +278,19 @@ describe("@clerc/plugin-mcp", () => {
     output.on("data", (chunk) => chunks.push(chunk.toString("utf8")));
 
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().use(mcpPlugin({ input, output }));
-    cli.command("greet <name>", {
-      description: "Greet someone",
-      run(ctx) {
-        ctx.terminal.stdout(`Hello, ${ctx.args.name}!`);
-      },
+    const app = createTestCli({
+      commands: [
+        mcp({ input, output }),
+        command("greet <name>", {
+          description: "Greet someone",
+          run(ctx) {
+            ctx.terminal.stdout(`Hello, ${ctx.args.name}!`);
+          },
+        }),
+      ],
     });
 
-    const runPromise = cli.run(["mcp"], { terminal });
+    const runPromise = app.run(["mcp"], { terminal });
 
     input.write(
       `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" })}\n`,
@@ -297,22 +316,26 @@ describe("@clerc/plugin-mcp", () => {
     expect(responses[1].result.content[0].text).toContain("Hello, MCP!");
   });
 
-  it("handles dash-prefixed positional args safely and rejects duplicate MCP tool names", async () => {
-    const cli = createTestCli().use(mcpPlugin());
-    cli.command("echo <text>", {
-      flags: { prefix: { type: String } },
-      run(ctx) {
-        ctx.terminal.stdout(
-          ctx.flags.prefix
-            ? `${ctx.flags.prefix}:${ctx.args.text}`
-            : ctx.args.text,
-        );
-      },
+  it("handles dash-prefixed positional args safely, exports combinator constraints, and rejects duplicate MCP tool names", async () => {
+    const app = createTestCli({
+      commands: [
+        mcp(),
+        command("echo <text>", {
+          flags: { prefix: { type: String } },
+          run(ctx) {
+            ctx.terminal.stdout(
+              ctx.flags.prefix
+                ? `${ctx.flags.prefix}:${ctx.args.text}`
+                : ctx.args.text,
+            );
+          },
+        }),
+      ],
     });
 
     const handler = createMcpHandler({
-      model: cli.buildModel(),
-      run: (argv, opts) => cli.run(argv, opts),
+      model: app.buildModel(),
+      run: (argv, opts) => app.run(argv, opts),
     });
 
     const res = await handler({
@@ -328,25 +351,24 @@ describe("@clerc/plugin-mcp", () => {
     expect((res?.result as any).content[0].text).toBe("-v:--not-a-flag");
     expect((res?.result as any).isError).toBeUndefined();
 
-    const dupCli = createTestCli();
-    dupCli.command("db migrate", { run() {} });
-    dupCli.command("db_migrate", { run() {} });
-
-    // Rules export JSON Schema dependentRequired & allOf constraints
-    const rulesCli = createTestCli().command("serve [env]", {
-      flags: {
-        all: Boolean,
-        json: Boolean,
-        yaml: Boolean,
-        tlsKey: String,
-        tlsCert: String,
-      },
-      rules: ({ exclusive, together, oneOf, flag, arg }) => [
-        exclusive(flag("json"), flag("yaml")),
-        together(flag("tlsKey"), flag("tlsCert")),
-        oneOf(arg("env"), flag("all")),
+    const dupCli = createTestCli({
+      commands: [
+        command("db migrate", { run() {} }),
+        command("db_migrate", { run() {} }),
       ],
-      run() {},
+    });
+
+    const rulesCli = createTestCli({
+      commands: [
+        command("serve", {
+          flags: [
+            exclusive({ json: Boolean }, { yaml: Boolean }),
+            together({ tlsKey: String, tlsCert: String }),
+            oneOf({ token: String }, { tokenFile: String }),
+          ],
+          run() {},
+        }),
+      ],
     });
     const [serveTool] = listMcpTools(rulesCli.buildModel());
 
@@ -356,8 +378,8 @@ describe("@clerc/plugin-mcp", () => {
     });
     expect(serveTool.inputSchema.allOf).toEqual([
       { not: { required: ["json", "yaml"] } },
-      { anyOf: [{ required: ["env"] }, { required: ["all"] }] },
-      { not: { required: ["env", "all"] } },
+      { anyOf: [{ required: ["token"] }, { required: ["tokenFile"] }] },
+      { not: { required: ["token", "tokenFile"] } },
     ]);
 
     expect(() => listMcpTools(dupCli.buildModel())).toThrow(
@@ -365,39 +387,51 @@ describe("@clerc/plugin-mcp", () => {
     );
   });
 
-  it("exports scoped flags, scoped rules, and array constraints (uniqueItems/minItems/maxItems) into MCP schemas", () => {
-    const cli = createTestCli().use(mcpPlugin());
+  it("exports scoped middleware flags, constraints, and array bounds (uniqueItems/minItems/maxItems) into MCP schemas", () => {
+    const adminAuth = middleware({
+      flags: oneOf(
+        { token: { type: String, description: "API token" } },
+        { tokenFile: { type: String, description: "Token file" } },
+      ),
+    });
 
-    const admin = cli
-      .scope({ group: "admin" })
-      .flags({
-        token: { type: String, description: "API token" },
-        tokenFile: { type: String, description: "Token file" },
-      })
-      .rules((r) => [r.oneOf(r.flag("token"), r.flag("tokenFile"))]);
+    const node = command("node", {
+      description: "Manage nodes",
+      commands: [
+        command("order <ids...>", {
+          description: "Order nodes",
+          args: {
+            ids: { unique: true, minItems: 1, maxItems: 10 },
+          },
+          flags: {
+            tags: {
+              type: String,
+              multiple: true,
+              unique: true,
+              minItems: 1,
+              maxItems: 5,
+            },
+          },
+          run() {},
+        }),
+      ],
+    });
 
-    const node = admin.subcommand("node", { description: "Manage nodes" });
-    node.command("order <ids...>", {
-      description: "Order nodes",
-      args: {
-        ids: { unique: true, minItems: 1, maxItems: 10 },
-      },
-      flags: {
-        tags: {
-          type: String,
-          multiple: true,
-          unique: true,
-          minItems: 1,
-          maxItems: 5,
-        },
-      },
+    const serve = command("serve", {
+      description: "Start server",
+      flags: { db: String },
       run() {},
     });
 
-    const server = cli.scope({ group: "server" }).flags({ db: String });
-    server.command("serve", { description: "Start server", run() {} });
+    const app = createTestCli({
+      commands: [
+        mcp(),
+        group("Admin", use([adminAuth], [node])),
+        group("Server", [serve]),
+      ],
+    });
 
-    const tools = listMcpTools(cli.buildModel());
+    const tools = listMcpTools(app.buildModel());
     const orderTool = tools.find((t) => t.name === "node_order")!;
     const serveTool = tools.find((t) => t.name === "serve")!;
 
@@ -425,41 +459,41 @@ describe("@clerc/plugin-mcp", () => {
   });
 
   it("handles optional positional dependencies, arg/flag collisions, implicitValue flags, and ctx.exit()", async () => {
-    const cli = createTestCli().use(mcpPlugin());
-
-    cli.command("deploy [env] [region] [zone]", {
-      run(ctx) {
-        ctx.terminal.stdout(
-          `env=${ctx.args.env ?? "-"} region=${ctx.args.region ?? "-"} zone=${ctx.args.zone ?? "-"}`,
-        );
-      },
+    const app = createTestCli({
+      commands: [
+        mcp(),
+        command("deploy [env] [region] [zone]", {
+          run(ctx) {
+            ctx.terminal.stdout(
+              `env=${ctx.args.env ?? "-"} region=${ctx.args.region ?? "-"} zone=${ctx.args.zone ?? "-"}`,
+            );
+          },
+        }),
+        command("copy [target]", {
+          flags: {
+            target: { type: String, description: "Target flag" },
+            inspect: {
+              type: Number,
+              implicitValue: 9229,
+              description: "Enable inspector",
+            },
+          },
+          run(ctx) {
+            ctx.terminal.stdout(
+              `arg=${ctx.args.target ?? "-"} flag=${ctx.flags.target ?? "-"} inspect=${ctx.flags.inspect ?? "-"}`,
+            );
+          },
+        }),
+        command("check", {
+          run(ctx) {
+            ctx.log.warn("needs formatting");
+            ctx.exit(1);
+          },
+        }),
+      ],
     });
 
-    cli.command("copy [target]", {
-      flags: {
-        target: { type: String, description: "Target flag" },
-        inspect: {
-          type: Number,
-          implicitValue: 9229,
-          description: "Enable inspector",
-        },
-      },
-      rules: (r) => [r.exclusive(r.arg("target"), r.flag("target"))],
-      run(ctx) {
-        ctx.terminal.stdout(
-          `arg=${ctx.args.target ?? "-"} flag=${ctx.flags.target ?? "-"} inspect=${ctx.flags.inspect ?? "-"}`,
-        );
-      },
-    });
-
-    cli.command("check", {
-      run(ctx) {
-        ctx.log.warn("needs formatting");
-        ctx.exit(1);
-      },
-    });
-
-    const tools = listMcpTools(cli.buildModel());
+    const tools = listMcpTools(app.buildModel());
     const deployTool = tools.find((t) => t.name === "deploy")!;
     const copyTool = tools.find((t) => t.name === "copy")!;
 
@@ -476,16 +510,12 @@ describe("@clerc/plugin-mcp", () => {
       anyOf: [{ type: "boolean" }, { type: "number" }],
       description: "Enable inspector",
     });
-    expect(copyTool.inputSchema.allOf).toEqual([
-      { not: { required: ["target", "flag_target"] } },
-    ]);
 
     const handler = createMcpHandler({
-      model: cli.buildModel(),
-      run: (argv, opts) => cli.run(argv, opts),
+      model: app.buildModel(),
+      run: (argv, opts) => app.run(argv, opts),
     });
 
-    // Skipping preceding optional positional arg returns -32602 invalid params
     const skippedRes = await handler({
       jsonrpc: "2.0",
       id: 1,
@@ -499,7 +529,6 @@ describe("@clerc/plugin-mcp", () => {
         "Cannot provide positional argument 'region' without preceding argument 'env'",
     });
 
-    // Colliding flag property + implicitValue boolean true/false/number
     const implicitTrueRes = await handler({
       jsonrpc: "2.0",
       id: 2,
@@ -542,7 +571,6 @@ describe("@clerc/plugin-mcp", () => {
       "arg=- flag=- inspect=9230",
     );
 
-    // ctx.exit(1) returns MCP isError: true without crashing the handler
     const exitRes = await handler({
       jsonrpc: "2.0",
       id: 5,

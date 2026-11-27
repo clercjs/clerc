@@ -8,7 +8,7 @@ import { dynamicCompletions, shellScripts } from "../../official-plugins/plugin-
 
 # @clerc/plugin-completions
 
-零依赖的 **Zsh**、**Bash**、**Fish** 和 **PowerShell** 自动补全插件，支持静态脚本生成与异步动态补全。
+零依赖的 **Zsh**、**Bash**、**Fish** 和 **PowerShell** 自动补全组件，支持静态脚本生成与异步动态补全。
 
 ## 安装
 
@@ -26,18 +26,13 @@ npm install @clerc/plugin-completions
 
 ## 用法与自定义异步 `complete()`
 
-子命令、别名、选项、`Types.Enum(...)`、静态 `complete` 声明以及内置 `help [command...]` 会直接编译进生成的 Shell 脚本；命令、参数或选项也可以提供同步或 `async` 的 `complete(ctx)` 函数，仅在补全该位置时回调 `<cli> complete -- ...`：
+将 `completions()` 直接放入 `commands: [...]` 即可（`commands` 会自动拍平嵌套数组，无需展开 `...`）。子命令、别名、选项、`Types.Enum(...)`、静态 `complete` 声明以及内置 `help [command...]` 会直接编译进生成的 Shell 脚本；命令、参数或选项也可以提供同步或 `async` 的 `complete(ctx)` 函数，仅在补全该位置时回调 `<cli> complete -- ...`：
 
 ```ts
-import { completionsPlugin } from "@clerc/plugin-completions";
-import { Complete, Types, clerc } from "clerc";
+import { completions } from "@clerc/plugin-completions";
+import { Complete, Types, cli, command } from "clerc";
 
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-}).use(completionsPlugin());
-
-cli.command("deploy <env> [service]", {
+const deploy = command("deploy <env> [service]", {
   aliases: ["d"],
   description: "部署应用",
   args: {
@@ -75,10 +70,16 @@ cli.command("deploy <env> [service]", {
   run() {},
 });
 
-await cli.runMain();
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [deploy, completions()],
+});
+
+await app.runMain();
 ```
 
-你也可以直接在命令顶层声明 `complete(ctx)`（如 `cli.command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`），或在任意命令、参数、选项上设置 `complete: false` 将其从补全列表中隐藏。
+你也可以直接在命令顶层声明 `complete(ctx)`（如 `command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`），或在任意命令、参数、选项上设置 `complete: false` 将其从补全列表中隐藏。
 
 <CliPlayground :scenario="dynamicCompletions" lang="zh" />
 

@@ -9,8 +9,8 @@ import type {
   CompletionItem,
   CompletionResult,
   CompletionSpec,
+  FlagConstraint,
   FlagDescriptor,
-  RuleDescriptor,
   Terminal,
 } from "clerc";
 import { parseBooleanLiteral } from "clerc";
@@ -25,6 +25,18 @@ export interface ResolvedCompletions {
 export interface ResolveCompletionsOptions {
   readonly terminal?: Terminal;
 }
+
+export const evalDefault = (value: unknown): unknown =>
+  typeof value === "function" ? (value as () => unknown)() : value;
+
+export const flagToArgvSpec = (flag: FlagDescriptor): ArgvFlagSpec => ({
+  key: flag.name,
+  kind: flag.kind,
+  short: flag.short,
+  aliases: flag.aliases.length > 0 ? flag.aliases : undefined,
+  negatable: flag.kind === "boolean" ? flag.negatable : undefined,
+  optionalValue: flag.implicitValue !== undefined,
+});
 
 export const sanitizeDescription = (description?: string): string =>
   description ? description.replace(/[\r\n\t]+/g, " ").trim() : "";
@@ -89,18 +101,6 @@ export function extractEnumCandidates(
   return rawEnum.map((val) => ({ value: String(val) }));
 }
 
-export const flagsToSpecs = (
-  flags: readonly FlagDescriptor[],
-): ArgvFlagSpec[] =>
-  flags.map((flag) => ({
-    key: flag.name,
-    kind: flag.kind,
-    short: flag.short,
-    aliases: flag.aliases.length > 0 ? flag.aliases : undefined,
-    negatable: flag.kind === "boolean" ? flag.negatable : undefined,
-    optionalValue: flag.implicitValue !== undefined,
-  }));
-
 export function applyFlagDefaults(
   flags: readonly FlagDescriptor[],
   rawValues: Readonly<Record<string, unknown>>,
@@ -135,10 +135,7 @@ export function applyFlagDefaults(
       continue;
     }
     if (flag.default !== undefined) {
-      resolved[flag.name] =
-        typeof flag.default === "function"
-          ? (flag.default as () => unknown)()
-          : flag.default;
+      resolved[flag.name] = evalDefault(flag.default);
     } else if (flag.kind === "boolean") {
       resolved[flag.name] = false;
     } else if (flag.kind === "counter") {
@@ -327,39 +324,34 @@ export function matchInlineFlagValue(
   return { flag, valuePart };
 }
 
-export function collectConflictedTargets(
-  rules: readonly RuleDescriptor[],
+export function collectConflictedFlags(
+  constraints: readonly FlagConstraint[],
   usedFlags: ReadonlySet<string>,
-  usedArgs: ReadonlySet<string>,
-): {
-  readonly flags: ReadonlySet<string>;
-  readonly args: ReadonlySet<string>;
-} {
+): ReadonlySet<string> {
   const conflictedFlags = new Set<string>();
-  const conflictedArgs = new Set<string>();
 
-  for (const rule of rules) {
-    if (rule.kind !== "exclusive" && rule.kind !== "oneOf") {
+  for (const constraint of constraints) {
+    if (constraint.kind !== "exclusive" && constraint.kind !== "oneOf") {
       continue;
     }
-    const anyUsed = rule.targets.some((ref) =>
-      ref.kind === "flag" ? usedFlags.has(ref.name) : usedArgs.has(ref.name),
-    );
-    if (!anyUsed) {
-      continue;
-    }
-    for (const ref of rule.targets) {
-      if (ref.kind === "flag") {
-        if (!usedFlags.has(ref.name)) {
-          conflictedFlags.add(ref.name);
+    for (const branch of constraint.branches) {
+      if (!branch.flags.some((f) => usedFlags.has(f))) {
+        continue;
+      }
+      for (const other of constraint.branches) {
+        if (other === branch) {
+          continue;
         }
-      } else if (!usedArgs.has(ref.name)) {
-        conflictedArgs.add(ref.name);
+        for (const f of other.flags) {
+          if (!usedFlags.has(f)) {
+            conflictedFlags.add(f);
+          }
+        }
       }
     }
   }
 
-  return { flags: conflictedFlags, args: conflictedArgs };
+  return conflictedFlags;
 }
 
 export function completeFlagNames(

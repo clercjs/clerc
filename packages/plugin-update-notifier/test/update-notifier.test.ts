@@ -3,9 +3,10 @@ import os from "node:os";
 import path from "node:path";
 
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
+import { command } from "clerc";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { updateNotifierPlugin } from "../src";
+import { updateNotifier } from "../src";
 
 describe("@clerc/plugin-update-notifier", () => {
   const tempDirs: string[] = [];
@@ -33,17 +34,21 @@ describe("@clerc/plugin-update-notifier", () => {
     let currentTime = 1_000_000;
     const terminal = createMemoryTerminal({ isTTY: true, color: false });
 
-    const cli = createTestCli({ name: "acme-cli", version: "2.0.0" }).use(
-      updateNotifierPlugin({
-        cacheDir,
-        fetch: mockFetch,
-        now: () => currentTime,
-        checkIntervalMs: 60_000,
-      }),
-    );
-    cli.command("run", { run() {} });
+    const app = createTestCli({
+      name: "acme-cli",
+      version: "2.0.0",
+      use: [
+        updateNotifier({
+          cacheDir,
+          fetch: mockFetch,
+          now: () => currentTime,
+          checkIntervalMs: 60_000,
+        }),
+      ],
+      commands: [command("run", { run() {} })],
+    });
 
-    await cli.run(["run"], { terminal });
+    await app.run(["run"], { terminal });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(terminal.stderrText()).toContain("Update available: 2.0.0 → 2.1.0");
@@ -51,14 +56,13 @@ describe("@clerc/plugin-update-notifier", () => {
 
     terminal.clear();
     currentTime += 10_000;
-    await cli.run(["run"], { terminal });
+    await app.run(["run"], { terminal });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(terminal.stderrText()).toContain("Update available: 2.0.0 → 2.1.0");
 
-    // Quiet mode (-q) suppresses warn box
     terminal.clear();
-    await cli.run(["run", "-q"], { terminal });
+    await app.run(["run", "-q"], { terminal });
 
     expect(terminal.stderrText()).toBe("");
 
@@ -67,26 +71,26 @@ describe("@clerc/plugin-update-notifier", () => {
       env: { CI: "true" },
     });
     currentTime += 120_000;
-    await cli.run(["run"], { terminal: ciTerminal });
+    await app.run(["run"], { terminal: ciTerminal });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(ciTerminal.stderrText()).toBe("");
 
-    // Prerelease current version (2.1.0-beta.1) detects stable 2.1.0 as newer
     const preCacheDir = await mkdtemp(path.join(os.tmpdir(), "clerc-pre-"));
     tempDirs.push(preCacheDir);
     const preTerm = createMemoryTerminal({ isTTY: true, color: false });
     const preCli = createTestCli({
       name: "acme-cli",
       version: "2.1.0-beta.1",
-    }).use(
-      updateNotifierPlugin({
-        cacheDir: preCacheDir,
-        fetch: mockFetch,
-        now: () => currentTime,
-      }),
-    );
-    preCli.command("run", { run() {} });
+      use: [
+        updateNotifier({
+          cacheDir: preCacheDir,
+          fetch: mockFetch,
+          now: () => currentTime,
+        }),
+      ],
+      commands: [command("run", { run() {} })],
+    });
     await preCli.run(["run"], { terminal: preTerm });
 
     expect(preTerm.stderrText()).toContain(

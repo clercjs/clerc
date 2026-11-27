@@ -19,9 +19,9 @@ Parse and usage errors exit with code `2`, while runtime and validation errors e
 Throw `ClercError` in your own commands to render matching diagnostics with `detail`, `hints`, and `usage`:
 
 ```ts
-import { ClercError, clerc } from "clerc";
+import { ClercError, cli, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
+const publish = command("publish", {
   run() {
     throw new ClercError("not logged in to registry", {
       code: "ERR_AUTH",
@@ -30,18 +30,30 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
     }).addHint("run 'acme login' first or set ACME_TOKEN");
   },
 });
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  commands: [publish],
+});
 ```
 
 <CliPlayground :scenario="clercError" lang="en" />
 
-## Custom `.onError()` Handlers
+## Custom `onError` Handlers
 
-Register `.onError((err, ctx) => ...)` handlers to intercept errors in reverse registration (LIFO) order. Returning `true` marks the error as handled and suppresses default diagnostic printing:
+Pass `onError(err, ctx)` on `cli()`, `middleware()`, or `command()` to intercept errors in reverse registration (LIFO) order—command-level handlers run first, then inner-to-outer middleware handlers, then the root `cli` handler. Returning `true` marks the error as handled and suppresses default diagnostic printing:
 
 ```ts
-const cli = clerc({ name: "acme", version: "1.0.0" }).onError((err, ctx) => {
-  ctx.log.error("Unhandled failure", err.message);
+import { cli } from "clerc";
 
-  return true;
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  onError(err, ctx) {
+    ctx.log.error("Unhandled failure", Error.isError(err) ? err.message : err);
+
+    return true;
+  },
 });
 ```

@@ -13,19 +13,14 @@ import {
 
 # 命令
 
-在 Clerc 中，命令路径和位置参数直接写在 `.command()` 的签名字符串里。
+在 Clerc 中，每个命令都是通过 `command(spec, options)` 创建的不可变值，最终组装进 `cli({ commands: [...] })`。
 
 ## 定义命令
 
 ```ts
-import { clerc } from "clerc";
+import { cli, command } from "clerc";
 
-const cli = clerc({
-  name: "git-lite",
-  version: "1.0.0",
-});
-
-cli.command("clone <repo> [dir]", {
+const clone = command("clone <repo> [dir]", {
   aliases: ["c"],
   description: "克隆仓库到指定目录",
   flags: {
@@ -39,22 +34,22 @@ cli.command("clone <repo> [dir]", {
     ctx.log.info(`Cloning ${ctx.args.repo} into ${ctx.args.dir ?? "."}`);
   },
 });
+
+const app = cli({
+  name: "git-lite",
+  version: "1.0.0",
+  commands: [clone],
+});
 ```
 
 ## 多级子命令与命名空间
 
-命令名之间用空格分隔即可定义多级子命令。没有 `run` 处理函数的父节点会自动充当**命名空间**：运行 `acme db` 会打印 `db` 下的子命令帮助，输错 `acme db migrat` 时则会提示 `db migrate`。
+在父命令的 `commands: [...]` 中嵌套子命令即可构建命令树。没有 `run` 处理函数且未指定 `default` 的父节点会自动充当**命名空间**：运行 `acme db` 会打印 `db` 下的子命令帮助，输错 `acme db migrat` 时则会提示 `db migrate`。
 
 ```ts
-const cli = clerc({ name: "acme", version: "1.0.0" });
+import { cli, command } from "clerc";
 
-// 可选：不传 run 时作为命名空间展示帮助与分组；日后需要直接调用 db 时补上 run(ctx) 即可
-cli.command("db", {
-  description: "数据库管理命令",
-  group: "data",
-});
-
-cli.command("db migrate", {
+const dbMigrate = command("migrate", {
   aliases: "m",
   description: "执行待处理的数据库迁移",
   run(ctx) {
@@ -63,28 +58,76 @@ cli.command("db migrate", {
   },
 });
 
-cli.command("db seed", {
+const dbSeed = command("seed", {
   description: "写入开发测试数据",
   run(ctx) {
     ctx.log.success("Seeded database");
   },
 });
+
+const db = command("db", {
+  description: "数据库管理命令",
+  commands: [dbMigrate, dbSeed],
+});
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  commands: [db],
+});
 ```
 
-全局选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
+全局或父级选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
 
 <CliPlayground :scenario="subcommands" lang="zh" />
 
-## 单命令 CLI（根命令）
+## 词法作用域组合（`use` 与 `group`）
 
-像 `curl` 或 `bumpp` 这类没有子命令的工具，可以直接向 `cli.command(options)` 传入配置对象，或只写参数签名：
+使用 `use(middlewares, commands)` 可以把共享选项、`setup` 状态、生命周期钩子与 `onError` 限定在一组子命令上，绝不污染同级的其他命令；搭配 `group(title, commands)` 即可在 `--help` 中按分组归类：
+
+```ts
+import { cli, command, group, middleware, use } from "clerc";
+
+const withAuth = middleware({
+  flags: { token: { type: String, required: true, env: "ACME_TOKEN" } },
+  setup: (ctx) => ({ token: ctx.flags.token }),
+});
+
+const deploy = command("deploy", {
+  use: [withAuth],
+  run(ctx) {
+    ctx.log.info(`Deploying with ${ctx.state.token}`);
+  },
+});
+
+const serve = command("serve", {
+  run(ctx) {
+    // 完全不受 withAuth 影响（既不要求也不接受 --token）
+    ctx.log.info("Starting local server");
+  },
+});
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  commands: [group("Admin", use(withAuth, [deploy])), group("Local", [serve])],
+});
+```
+
+`commands: [...]` 会自动拍平任意层级的嵌套数组，因此 `group(...)` 与 `use(...)` 可以直接套用，无需写 `...` 展开。
+
+## 单命令 CLI
+
+像 `curl` 或 `bumpp` 这类没有子命令的工具，直接在 `cli(options)` 或 `cli(spec, options)` 上提供 `run` 即可：
 
 ::: code-group
 
-```ts [仅含选项的根命令]
-import { clerc } from "clerc";
+```ts [仅含选项]
+import { cli } from "clerc";
 
-const cli = clerc({ name: "serve", version: "1.0.0" }).command({
+const app = cli({
+  name: "serve",
+  version: "1.0.0",
   description: "启动静态文件服务器",
   flags: {
     port: { type: Number, short: "p", default: 3000 },
@@ -95,10 +138,12 @@ const cli = clerc({ name: "serve", version: "1.0.0" }).command({
 });
 ```
 
-```ts [带位置参数的根命令]
-import { clerc } from "clerc";
+```ts [带位置参数]
+import { cli } from "clerc";
 
-const cli = clerc({ name: "bumpp", version: "1.0.0" }).command("[files...]", {
+const app = cli("[files...]", {
+  name: "bumpp",
+  version: "1.0.0",
   description: "升级版本号",
   flags: {
     yes: { type: Boolean, short: "y" },
@@ -112,20 +157,14 @@ const cli = clerc({ name: "bumpp", version: "1.0.0" }).command("[files...]", {
 
 :::
 
-## 默认子命令（`default: true`）
+## 默认子命令（`default`）
 
-像 `vite` 这样既有 `vite build` 子命令，又希望直接运行 `vite` 或 `vite ./my-app` 时默认走 `dev` 的工具，可在子命令上声明 `default: true`（根级和任意 `subcommand()` 下都支持）：
+像 `vite` 这样既有 `vite build` 子命令，又希望直接运行 `vite` 或 `vite ./my-app` 时默认走 `dev` 的工具，直接把子命令对象传给 `cli()` 或命名空间 `command()` 的 `default` 字段：
 
 ```ts
-import { clerc } from "clerc";
+import { cli, command } from "clerc";
 
-const cli = clerc({
-  name: "vite",
-  version: "1.0.0",
-});
-
-cli.command("dev [root]", {
-  default: true,
+const dev = command("dev [root]", {
   description: "启动开发服务器",
   flags: { port: { type: Number, short: "p", default: 5173 } },
   run(ctx) {
@@ -133,9 +172,16 @@ cli.command("dev [root]", {
   },
 });
 
-cli.command("build [root]", {
+const build = command("build [root]", {
   description: "构建生产产物",
   run() {},
+});
+
+const app = cli({
+  name: "vite",
+  version: "1.0.0",
+  commands: [dev, build],
+  default: dev,
 });
 ```
 
@@ -145,6 +191,7 @@ cli.command("build [root]", {
 - 运行 `vite --help` 或 `vite --version` 会显示根级帮助（在 `dev` 旁标注 `[default]`）或版本号。
 - 若默认命令声明了位置参数（如 `dev [root]`），`vite ./app` 会将 `./app` 转发给 `dev`。
 - 若默认命令**不接受**位置参数，输错 `vite biuld` 依然会抛出 `UnknownCommandError` 并提示 `'build'`。
+- 如果父命令自身有一套独立于子命令的参数签名（如 `pr [id]` 搭配 `pr ls`），则直接在父命令上写 `command("pr [id]", { commands: [prLs], run })`。
 
 <CliPlayground :scenario="defaultCommand" lang="zh" />
 
@@ -157,31 +204,31 @@ cli.command("build [root]", {
 - `(token) => boolean`：无状态判断函数，接收 `{ kind, raw, index, positionalCount }`，可用于在第 N 个位置参数或自定义分隔符处截停。
 
 ```ts
-cli
-  .command("exec <cmd> [args...]", {
-    stopParsing: "first-positional",
-    flags: {
-      quiet: { type: Boolean, short: "q" },
-    },
-    run(ctx) {
-      // $ acme exec -q git --status -s
-      // ctx.flags.quiet -> true
-      // ctx.args.cmd    -> "git"
-      // ctx.args.args   -> ["--status", "-s"]
-    },
-  })
-  .command("run <env> <script> [args...]", {
-    stopParsing: (token) =>
-      token.kind === "positional" && token.positionalCount === 1,
-    flags: { verbose: Boolean },
-    run(ctx) {
-      // $ acme run prod --verbose app.ts --port 3000
-      // ctx.flags.verbose -> true
-      // ctx.args.env      -> "prod"
-      // ctx.args.script   -> "app.ts"
-      // ctx.args.args     -> ["--port", "3000"]
-    },
-  });
+const execCmd = command("exec <cmd> [args...]", {
+  stopParsing: "first-positional",
+  flags: {
+    quiet: { type: Boolean, short: "q" },
+  },
+  run(ctx) {
+    // $ acme exec -q git --status -s
+    // ctx.flags.quiet -> true
+    // ctx.args.cmd    -> "git"
+    // ctx.args.args   -> ["--status", "-s"]
+  },
+});
+
+const runCmd = command("run <env> <script> [args...]", {
+  stopParsing: (token) =>
+    token.kind === "positional" && token.positionalCount === 1,
+  flags: { verbose: Boolean },
+  run(ctx) {
+    // $ acme run prod --verbose app.ts --port 3000
+    // ctx.flags.verbose -> true
+    // ctx.args.env      -> "prod"
+    // ctx.args.script   -> "app.ts"
+    // ctx.args.args     -> ["--port", "3000"]
+  },
+});
 ```
 
 <CliPlayground :scenario="stopParsing" lang="zh" />

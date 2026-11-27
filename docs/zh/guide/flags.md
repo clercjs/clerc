@@ -12,14 +12,12 @@ import { arraysAndCounters, implicitValue } from "../../guide/flags.playground.t
 
 ## 简写与完整配置
 
-只需要指定类型时可直接传入构造函数或 Schema；需要短选项、默认值、环境变量或约束时传入配置对象：
+只需要指定类型时可直接传入构造函数或 Schema；需要短选项、默认值、环境变量或数组约束时传入配置对象：
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("serve", {
+const serve = command("serve", {
   flags: {
     open: Boolean, // 简写：boolean（默认 false）
     host: String, // 简写：string | undefined
@@ -49,19 +47,18 @@ cli.command("serve", {
 
 ## 数组选项、分隔符与计数器
 
-通过 `multiple: true` 收集多次传入的值为数组，或使用 `Types.Counter` 统计重复出现的次数：
+通过 `multiple: true` 收集多次传入的值为数组（可选搭配 `delimiter`、`unique`、`minItems`、`maxItems`），或使用 `Types.Counter` 统计重复出现的次数：
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("build", {
+const build = command("build", {
   flags: {
     // 支持重复传入与逗号切分：-t a,b -t c -> ["a", "b", "c"]
     tags: {
       type: String,
       multiple: true,
+      unique: true,
       short: "t",
       delimiter: ",",
       description: "发布标签",
@@ -89,7 +86,7 @@ cli.command("build", {
 类似 `node --inspect` 或 `git log --color` 的选项：不传时为 `undefined`（或 `default`），单独传 `--inspect` 时取 `implicitValue`，显式传 `--inspect=9230` 时取解析后的值：
 
 ```ts
-cli.command("dev", {
+const dev = command("dev", {
   flags: {
     inspect: {
       type: Number,
@@ -114,10 +111,7 @@ cli.command("dev", {
 
 <CliPlayground :scenario="implicitValue" lang="zh" />
 
-## 选项与参数约束规则
+## 组合约束与跨命令复用
 
-如需声明选项互斥、成对共现、单向依赖、位置参数与选项联动或自定义校验，请参阅 [约束规则](/zh/guide/rules)。
-
-## 全局选项与局部覆盖
-
-在 `cli.flags({ ... })` 或 `plugin().flags({ ... })` 上注册全局选项后，所有命令的 `ctx.flags` 都会自动合并全局与局部选项类型。如果某个子命令定义了同名局部选项，该子命令内优先使用局部选项的类型与配置。
+- **选项分组与约束**：`flags` 既接受普通对象，也接受 `group(title, flags)`、约束组合子（`oneOf`、`exclusive`、`together`、`atLeastOne`）或它们的数组组合，详见 [约束与校验](/zh/guide/constraints)。
+- **共享选项与局部覆盖**：将共享选项定义在 `middleware({ flags: { ... } })` 中，通过命令上的 `use: [mw]` 获得完整的 `ctx.flags` 类型推导，并用 `use(mw, commands)` 或 `cli({ use: [mw] })` 控制作用范围。若子命令声明了同名局部选项，该子命令内优先采用局部选项的类型与配置。

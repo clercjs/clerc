@@ -1,10 +1,8 @@
 import type { ArgDescriptor } from "../args";
 import type { CommandNode, CommandTree } from "../command-tree";
 import { getCommandFlags } from "../command-tree";
-import type { FlagDescriptor } from "../flags";
+import type { ConstraintKind, FlagConstraint, FlagDescriptor } from "../flags";
 import { DOUBLE_DASH } from "../parser";
-import type { MultiRuleKind, RuleDescriptor, RuleRef } from "../rules";
-import { formatRuleRef } from "../rules";
 import type { CliModel, GroupDefinition } from "../types";
 import { formatFlagName, formatVersion, resolveAsyncValue } from "../utils";
 
@@ -148,10 +146,7 @@ function buildOptionItem(
   };
 }
 
-const buildArgumentItem = (
-  arg: ArgDescriptor,
-  constraints?: readonly string[],
-): HelpArgumentItem => ({
+const buildArgumentItem = (arg: ArgDescriptor): HelpArgumentItem => ({
   name: arg.name,
   token: arg.token,
   typeLabel: arg.display,
@@ -161,31 +156,27 @@ const buildArgumentItem = (
   env: arg.env,
   required: arg.isRequired,
   variadic: arg.isVariadic,
-  ...(constraints?.length ? { constraints } : {}),
 });
 
-const GROUP_RULE_BADGES: Readonly<Record<MultiRuleKind, string>> = {
+const GROUP_CONSTRAINT_BADGES: Readonly<Record<ConstraintKind, string>> = {
   exclusive: "exclusive",
   oneOf: "one of",
   atLeastOne: "at least one",
   together: "together",
 };
 
-function collectRuleAnnotations(
-  rules: readonly RuleDescriptor[],
+function collectConstraintAnnotations(
+  constraints: readonly FlagConstraint[],
   flagMap: ReadonlyMap<string, FlagDescriptor>,
-  argMap: ReadonlyMap<string, ArgDescriptor>,
   visibleFlagGroups: ReadonlySet<string>,
-  flagGroupTitles: ReadonlyMap<string, string>,
 ): {
   readonly flagTags: Map<string, string[]>;
-  readonly argTags: Map<string, string[]>;
   readonly groupTags: Map<string, string[]>;
 } {
   const flagTags = new Map<string, string[]>();
-  const argTags = new Map<string, string[]>();
   const groupTags = new Map<string, string[]>();
-  const fmt = (ref: RuleRef) => formatRuleRef(ref, flagMap, argMap);
+  const fmt = (name: string) =>
+    flagMap.get(name)?.target ?? formatFlagName(name);
 
   function pushTag(map: Map<string, string[]>, key: string, tag: string) {
     let list = map.get(key);
@@ -198,49 +189,60 @@ function collectRuleAnnotations(
     }
   }
 
-  function pushRefTag(ref: RuleRef, tag: string) {
-    pushTag(ref.kind === "flag" ? flagTags : argTags, ref.name, tag);
-  }
+  for (const constraint of constraints) {
+    const activeFlags = constraint.flags.filter((f) => flagMap.has(f));
+    if (activeFlags.length === 0) {
+      continue;
+    }
 
-  for (const rule of rules) {
-    if (rule.kind === "requires") {
-      const targetText =
-        rule.group && rule.targets.length > 4
-          ? `group '${flagGroupTitles.get(rule.group) ?? rule.group}'`
-          : rule.targets.map(fmt).join(", ");
-      pushRefTag(rule.source, `requires: ${targetText}`);
+    if (constraint.group && visibleFlagGroups.has(constraint.group)) {
+      pushTag(
+        groupTags,
+        constraint.group,
+        GROUP_CONSTRAINT_BADGES[constraint.kind],
+      );
 
       continue;
     }
 
-    if (rule.group && visibleFlagGroups.has(rule.group)) {
-      pushTag(groupTags, rule.group, GROUP_RULE_BADGES[rule.kind]);
-
-      continue;
-    }
-
-    if (rule.kind === "exclusive" || rule.kind === "together") {
-      const prefix = rule.kind === "exclusive" ? "conflicts" : "with";
-      for (const ref of rule.targets) {
-        const others = rule.targets
-          .filter((other) => other.kind !== ref.kind || other.name !== ref.name)
+    if (constraint.kind === "exclusive") {
+      for (const branch of constraint.branches) {
+        const others = constraint.branches
+          .filter((other) => other !== branch)
+          .flatMap((other) => other.flags)
+          .filter((f) => flagMap.has(f))
           .map(fmt);
         if (others.length > 0) {
-          pushRefTag(ref, `${prefix}: ${others.join(", ")}`);
+          for (const f of branch.flags) {
+            if (flagMap.has(f)) {
+              pushTag(flagTags, f, `conflicts: ${others.join(", ")}`);
+            }
+          }
         }
       }
 
       continue;
     }
 
-    const prefix = rule.kind === "oneOf" ? "one of" : "at least one";
-    const listText = rule.targets.map(fmt).join(", ");
-    for (const ref of rule.targets) {
-      pushRefTag(ref, `${prefix}: ${listText}`);
+    if (constraint.kind === "together") {
+      for (const f of activeFlags) {
+        const others = activeFlags.filter((other) => other !== f).map(fmt);
+        if (others.length > 0) {
+          pushTag(flagTags, f, `with: ${others.join(", ")}`);
+        }
+      }
+
+      continue;
+    }
+
+    const prefix = constraint.kind === "oneOf" ? "one of" : "at least one";
+    const listText = activeFlags.map(fmt).join(", ");
+    for (const f of activeFlags) {
+      pushTag(flagTags, f, `${prefix}: ${listText}`);
     }
   }
 
-  return { flagTags, argTags, groupTags };
+  return { flagTags, groupTags };
 }
 
 function groupItems<T, R>(
@@ -424,9 +426,8 @@ export async function buildHelpDocument(
 
   const visibleLocalFlags = node.localFlags.filter((f) => !f.hidden);
   const localNames = new Set(node.localFlags.map((f) => f.name));
-  const isStandalone = Boolean(command?.standalone);
   const visibleGlobalFlags = [
-    ...(isStandalone
+    ...(command?.builtin
       ? []
       : globalFlags.filter((f) => !f.hidden && !localNames.has(f.name))),
     ...node.builtinFlags.filter((f) => !f.hidden),
@@ -444,28 +445,20 @@ export async function buildHelpDocument(
   const rawNotes = notesSource
     ? await resolveAsyncValue(notesSource, meta)
     : [];
-  const notes = [...rawNotes, ...node.ruleNotes];
+  const notes = [...rawNotes, ...node.checkNotes];
 
   const flagMap = new Map<string, FlagDescriptor>(
     getCommandFlags(model, node).map((f) => [f.name, f]),
-  );
-  const argMap = new Map<string, ArgDescriptor>(
-    node.args.map((a) => [a.name, a]),
   );
   const visibleFlagGroups = new Set(
     [...visibleLocalFlags, ...visibleGlobalFlags]
       .map((f) => f.group)
       .filter((g): g is string => Boolean(g)),
   );
-  const flagGroupTitles = new Map(
-    [...groups.flags, ...groups.globalFlags].map((g) => [g.key, g.title]),
-  );
-  const { flagTags, argTags, groupTags } = collectRuleAnnotations(
-    node.rules,
+  const { flagTags, groupTags } = collectConstraintAnnotations(
+    node.constraints,
     flagMap,
-    argMap,
     visibleFlagGroups,
-    flagGroupTitles,
   );
 
   return {
@@ -485,9 +478,7 @@ export async function buildHelpDocument(
       hasCommandFlags || hasGlobalFlags,
       Boolean(node.defaultChild),
     ),
-    arguments: node.args.map((arg) =>
-      buildArgumentItem(arg, argTags.get(arg.name)),
-    ),
+    arguments: node.args.map(buildArgumentItem),
     commandGroups: groupItems(
       orderedChildren,
       (child) => resolveNodeGroup(child, tree),
@@ -520,7 +511,7 @@ export async function buildHelpDocument(
           visibleGlobalFlags,
           (f) => f.group,
           (f) => buildOptionItem(f, flagTags.get(f.name)),
-          groups.globalFlags,
+          groups.flags,
           hasCommandFlags ? "Global Options" : "Options",
           false,
           groupTags,

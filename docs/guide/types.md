@@ -25,12 +25,10 @@ Pass any Standard Schema v1 object directly as `type`. No adapter package is nee
 ::: code-group
 
 ```ts [Zod v4] no-twoslash
-import { clerc } from "clerc";
+import { command } from "clerc";
 import { z } from "zod";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: z.email(),
   },
@@ -53,12 +51,10 @@ cli.command("invite <email>", {
 ```
 
 ```ts [Valibot] no-twoslash
-import { clerc } from "clerc";
+import { command } from "clerc";
 import * as v from "valibot";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: v.pipe(v.string(), v.email()),
   },
@@ -76,11 +72,9 @@ cli.command("invite <email>", {
 
 ```ts [ArkType] no-twoslash
 import { type } from "arktype";
-import { clerc } from "clerc";
+import { command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("invite <email>", {
+const invite = command("invite <email>", {
   args: {
     email: type("string.email"),
   },
@@ -103,11 +97,9 @@ Async Standard Schema validators are also supported. Clerc resolves flags and ar
 When you don't need an external validation library, `clerc` ships zero-dependency Standard Schema v1 helpers under `Types`:
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("release <channel>", {
+const release = command("release <channel>", {
   args: {
     // Displays <alpha|beta|rc|stable>, auto-completes in shells, exports JSON enum
     channel: Types.Enum("alpha", "beta", "rc", "stable"),
@@ -145,7 +137,7 @@ Any function `(raw: string) => T` is a valid type. Throw an `Error` to report a 
 
 ```ts
 import type { TypeFunction } from "clerc";
-import { clerc } from "clerc";
+import { command } from "clerc";
 
 const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
   const eq = raw.indexOf("=");
@@ -157,7 +149,7 @@ const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
 };
 parseKeyValue.display = "KEY=VALUE";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("env", {
+const envCmd = command("env", {
   flags: {
     define: {
       type: parseKeyValue,

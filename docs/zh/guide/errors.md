@@ -19,9 +19,9 @@ import { clercError, typoSuggestions } from "../../guide/errors.playground.ts";
 在业务代码中抛出 `ClercError` 即可获得风格一致的 `detail`、`tip` 和 `usage` 输出：
 
 ```ts
-import { ClercError, clerc } from "clerc";
+import { ClercError, cli, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
+const publish = command("publish", {
   run() {
     throw new ClercError("尚未登录制品仓库", {
       code: "ERR_AUTH",
@@ -30,18 +30,30 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("publish", {
     }).addHint("请先运行 'acme login' 或设置环境变量 ACME_TOKEN");
   },
 });
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  commands: [publish],
+});
 ```
 
 <CliPlayground :scenario="clercError" lang="zh" />
 
-## 自定义 `.onError()` 拦截
+## 自定义 `onError` 拦截
 
-通过 `.onError((err, ctx) => ...)` 按后进先出（LIFO）顺序拦截错误。返回 `true` 表示已处理，不再打印默认错误诊断：
+在 `cli()`、`middleware()` 或 `command()` 上传入 `onError(err, ctx)`，会按后进先出（LIFO）顺序拦截错误（子命令最先执行，其次由内向外执行中间件，最后是根 `cli`）。返回 `true` 表示已处理，不再打印默认错误诊断：
 
 ```ts
-const cli = clerc({ name: "acme", version: "1.0.0" }).onError((err, ctx) => {
-  ctx.log.error("执行失败", err.message);
+import { cli } from "clerc";
 
-  return true;
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  onError(err, ctx) {
+    ctx.log.error("执行失败", Error.isError(err) ? err.message : err);
+
+    return true;
+  },
 });
 ```

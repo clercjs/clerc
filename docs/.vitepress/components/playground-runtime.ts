@@ -1,24 +1,48 @@
-import type { Clerc } from "../../../packages/clerc/src/cli.ts";
+import type { Cli } from "../../../packages/clerc/src/cli.ts";
+import { cli } from "../../../packages/clerc/src/cli.ts";
+import { command, group, use } from "../../../packages/clerc/src/command.ts";
+import { Complete } from "../../../packages/clerc/src/complete.ts";
+import { ClercError } from "../../../packages/clerc/src/errors.ts";
+import {
+  atLeastOne,
+  exclusive,
+  oneOf,
+  together,
+} from "../../../packages/clerc/src/flags.ts";
+import { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
+import { middleware } from "../../../packages/clerc/src/middleware.ts";
+import type { TypeFunction } from "../../../packages/clerc/src/schema.ts";
+import { Types } from "../../../packages/clerc/src/schema.ts";
 import { createMemoryTerminal } from "../../../packages/clerc/src/terminal.ts";
 import type { CliModel } from "../../../packages/clerc/src/types.ts";
 import type { Logger } from "../../../packages/logger/src/index.ts";
 import { createLogger } from "../../../packages/logger/src/index.ts";
 import {
   ShellCompDirective,
-  completionsPlugin,
+  completions,
   resolveCompletions,
 } from "../../../packages/plugin-completions/src/index.ts";
 import type { TerminalBlock } from "./terminal-render.ts";
 import { parseAnsiLines } from "./terminal-render.ts";
 
-export { completionsPlugin, createLogger };
-export { clerc } from "../../../packages/clerc/src/cli.ts";
-export { Complete } from "../../../packages/clerc/src/complete.ts";
-export { ClercError } from "../../../packages/clerc/src/errors.ts";
-export { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
-export { plugin } from "../../../packages/clerc/src/plugin.ts";
-export type { TypeFunction } from "../../../packages/clerc/src/schema.ts";
-export { Types } from "../../../packages/clerc/src/schema.ts";
+export {
+  ClercError,
+  Complete,
+  Types,
+  atLeastOne,
+  cli,
+  command,
+  completions,
+  createLogger,
+  defaultHelpSections,
+  exclusive,
+  group,
+  middleware,
+  oneOf,
+  together,
+  use,
+};
+export type { TypeFunction };
 
 Error.isError ??= (val: unknown): val is Error => val instanceof Error;
 
@@ -73,7 +97,7 @@ export interface ManualSpinnerSpec {
 }
 
 export interface PlaygroundScenario {
-  readonly createCli: (live?: LiveRunContext) => Clerc<any, any>;
+  readonly createCli: (live?: LiveRunContext) => Cli;
   readonly source?: string;
   readonly presets: readonly {
     readonly cmd: string;
@@ -138,8 +162,8 @@ export async function runScenarioCli(
   readonly exitCode: number;
   readonly blocks: readonly TerminalBlock[];
 }> {
-  const cli = scenario.createCli();
-  const binName = cli.buildModel().meta.name;
+  const app = scenario.createCli();
+  const binName = app.buildModel().meta.name;
   const argv = tokenizeArgv(rawInput, binName);
   const terminal = createMemoryTerminal({
     color: true,
@@ -148,7 +172,7 @@ export async function runScenarioCli(
     env: scenario.env,
   });
 
-  const result = await cli.run(argv, { terminal });
+  const result = await app.run(argv, { terminal });
   const rawLines = [...terminal.stdoutLines, ...terminal.stderrLines].flatMap(
     (chunk) => chunk.split("\n"),
   );
@@ -334,14 +358,14 @@ export async function runScenarioLive(
     isCancel: (val): val is symbol => val === CANCEL_SYMBOL,
   };
 
-  const cli = scenario.createCli(live);
-  const binName = cli.buildModel().meta.name;
+  const app = scenario.createCli(live);
+  const binName = app.buildModel().meta.name;
   const argv = tokenizeArgv(rawInput, binName);
 
   emit();
 
   try {
-    const result = await cli.run(argv, { terminal: streamingTerminal });
+    const result = await app.run(argv, { terminal: streamingTerminal });
     if (signal.aborted) {
       return { exitCode: 0, blocks: [], aborted: true };
     }
@@ -398,8 +422,6 @@ export async function resolvePlaygroundCompletions(
     terminal,
   });
 
-  // When pressing Tab on an empty slot with no subcommands/positional candidates
-  // left, surface available long flags from @clerc/plugin-completions.
   if (resolved.candidates.length === 0 && current.length === 0) {
     resolved = await resolveCompletions(model, [...prior, "--"], { terminal });
   }

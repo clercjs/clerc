@@ -8,7 +8,7 @@ import { alignedOutput, calloutBox, logLevels } from "../../guide/logger.playgro
 
 # 日志
 
-每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 和 `@clerc/theme` 驱动），默认挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` 或 `-v` 会自动让位，也可通过 `verbosity: false` 关闭）。你也可以在任意模块中通过 `createLogger()` 独立创建日志器。
+每个命令上下文内置 `ctx.log`（由 `@clerc/logger` 和 `@clerc/theme` 驱动），`cli()` 默认挂载 `-q, --quiet` 与 `-v, --verbose` 控制日志级别（若命令自定义了 `-q` 或 `-v` 会自动让位，也可通过 `verbosity: false` 关闭）。你也可以在任意模块中通过 `createLogger()` 独立创建日志器。
 
 ## 对齐输出与对象、Error 格式化
 
@@ -54,6 +54,6 @@ ctx.log.box.info(
 
 ## 运行期级别与主题
 
-可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`），使用 `ctx.log.raw()` 输出无格式原始文本，也可以在 `clerc({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。
+可以在运行期修改 `ctx.log.level`（`"silent" | "error" | "warn" | "info" | "debug"`），使用 `ctx.log.raw()` 输出无格式原始文本，也可以在 `cli({ theme: { brand: ["bold", "cyan"] } })` 中自定义配色主题。
 
 <CliPlayground :scenario="logLevels" lang="zh" />

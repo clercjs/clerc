@@ -59,6 +59,6 @@ ctx.log.box.warn(
 
 ## Log Levels and Themes
 
-By default, `clerc()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) at runtime, write unformatted output with `ctx.log.raw()`, and customize colors via `theme` in `clerc({ theme: { brand: ["bold", "cyan"] } })`.
+By default, `cli()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) at runtime, write unformatted output with `ctx.log.raw()`, and customize colors via `theme` in `cli({ theme: { brand: ["bold", "cyan"] } })`.
 
 <CliPlayground :scenario="logLevels" lang="en" />

@@ -1,12 +1,11 @@
 import type {
-  AnyCommandDefinition,
   ArgDescriptor,
   CliModel,
+  Command,
   CommandNode,
+  FlagConstraint,
   FlagDescriptor,
   FlagKind,
-  RuleDescriptor,
-  RuleRef,
 } from "clerc";
 import { getCommandFlags } from "clerc";
 
@@ -121,12 +120,12 @@ export function listExposedCommands(
   options: McpFilterOptions = {},
 ): readonly {
   readonly node: CommandNode;
-  readonly command: AnyCommandDefinition;
+  readonly command: Command;
 }[] {
   const { mcpCommandName = "mcp", filter } = options;
   const exposed: {
     readonly node: CommandNode;
-    readonly command: AnyCommandDefinition;
+    readonly command: Command;
   }[] = [];
 
   for (const node of model.tree.walkCommands()) {
@@ -140,7 +139,7 @@ export function listExposedCommands(
       node.fullPath.length === 1 && node.fullPath[0] === mcpCommandName;
     if (
       mcpMeta?.enabled !== true &&
-      (cmd.hidden || cmd.standalone || isMcpCommand)
+      (cmd.hidden || cmd.builtin || isMcpCommand)
     ) {
       continue;
     }
@@ -168,17 +167,7 @@ function collectArgSchemas(
       isVariadic: arg.isVariadic,
     });
 
-    const itemSchema = { ...arg.toJsonSchema() };
-    const prop: Record<string, unknown> = arg.isVariadic
-      ? {
-          type: "array",
-          items: itemSchema,
-          ...(arg.unique ? { uniqueItems: true } : {}),
-          ...(arg.minItems === undefined ? {} : { minItems: arg.minItems }),
-          ...(arg.maxItems === undefined ? {} : { maxItems: arg.maxItems }),
-        }
-      : itemSchema;
-
+    const prop: Record<string, unknown> = { ...arg.toJsonSchema() };
     if (arg.description) {
       prop.description = arg.description;
     }
@@ -241,10 +230,9 @@ function collectFlagSchemas(
 }
 
 function buildSchemaConstraints(
-  rules: readonly RuleDescriptor[],
+  constraints: readonly FlagConstraint[],
   slices: readonly (readonly ArgSlot[])[],
   required: readonly string[],
-  properties: Readonly<Record<string, unknown>>,
   flagPropByName: ReadonlyMap<string, string>,
 ): {
   readonly dependentRequired?: Record<string, string[]>;
@@ -274,51 +262,65 @@ function buildSchemaConstraints(
     }
   }
 
-  const resolveProp = (ref: RuleRef): string | undefined =>
-    ref.kind === "arg"
-      ? ref.name in properties
-        ? ref.name
-        : undefined
-      : flagPropByName.get(ref.name);
+  for (const constraint of constraints) {
+    const props = constraint.flags
+      .map((f) => flagPropByName.get(f))
+      .filter((p): p is string => Boolean(p));
 
-  for (const rule of rules) {
-    if (rule.kind === "requires") {
-      const src = resolveProp(rule.source);
-      if (!src) {
+    if (constraint.kind === "together") {
+      if (props.length < 2) {
         continue;
       }
-      for (const target of rule.targets) {
-        const dep = resolveProp(target);
-        if (dep) {
-          addDep(src, dep);
-        }
-      }
-
-      continue;
-    }
-
-    const props = rule.targets
-      .map(resolveProp)
-      .filter((p): p is string => Boolean(p));
-    if (props.length < 2) {
-      continue;
-    }
-
-    if (rule.kind === "together") {
       for (const a of props) {
         for (const b of props) {
           addDep(a, b);
         }
       }
-    } else if (rule.kind === "atLeastOne") {
-      allOf.push({ anyOf: props.map((p) => ({ required: [p] })) });
-    } else if (rule.kind === "exclusive" || rule.kind === "oneOf") {
-      if (rule.kind === "oneOf") {
+    } else if (constraint.kind === "atLeastOne") {
+      if (props.length > 0) {
         allOf.push({ anyOf: props.map((p) => ({ required: [p] })) });
       }
-      for (let i = 0; i < props.length; i++) {
-        for (let j = i + 1; j < props.length; j++) {
-          allOf.push({ not: { required: [props[i], props[j]] } });
+    } else if (constraint.kind === "exclusive" || constraint.kind === "oneOf") {
+      const activeBranches = constraint.branches
+        .map((b) => ({
+          props: b.flags
+            .map((f) => flagPropByName.get(f))
+            .filter((p): p is string => Boolean(p)),
+          reqProps: b.requiredFlags
+            .map((f) => flagPropByName.get(f))
+            .filter((p): p is string => Boolean(p)),
+        }))
+        .filter((b) => b.props.length > 0);
+
+      if (activeBranches.length < 2) {
+        continue;
+      }
+
+      if (constraint.kind === "oneOf") {
+        allOf.push({
+          anyOf: activeBranches.map((b) => ({
+            required: b.reqProps.length > 0 ? b.reqProps : b.props,
+          })),
+        });
+      }
+
+      for (let i = 0; i < activeBranches.length; i++) {
+        for (let j = i + 1; j < activeBranches.length; j++) {
+          for (const pi of activeBranches[i].props) {
+            for (const pj of activeBranches[j].props) {
+              allOf.push({ not: { required: [pi, pj] } });
+            }
+          }
+        }
+      }
+
+      for (const b of activeBranches) {
+        if (b.props.length > 1 && b.reqProps.length > 0) {
+          for (const p of b.props) {
+            for (const req of b.reqProps) {
+              addDep(p, req);
+            }
+          }
         }
       }
     }
@@ -333,7 +335,7 @@ function buildSchemaConstraints(
 
 function buildToolEntry(
   node: CommandNode,
-  cmd: AnyCommandDefinition,
+  cmd: Command,
   model: CliModel,
 ): McpToolEntry {
   const mcpMeta = getMcpMeta(cmd.meta);
@@ -351,10 +353,9 @@ function buildToolEntry(
     required,
   );
   const { dependentRequired, allOf } = buildSchemaConstraints(
-    node.rules,
+    node.constraints,
     [mainArgs, doubleDashArgs],
     required,
-    properties,
     flagPropByName,
   );
 

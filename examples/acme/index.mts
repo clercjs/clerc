@@ -1,10 +1,22 @@
-import { completionsPlugin } from "@clerc/plugin-completions";
-import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Complete, Types, clerc, plugin } from "clerc";
+import { completions } from "@clerc/plugin-completions";
+import { mcp } from "@clerc/plugin-mcp";
+import {
+  Complete,
+  Types,
+  atLeastOne,
+  cli,
+  command,
+  exclusive,
+  group,
+  middleware,
+  oneOf,
+  together,
+  use,
+} from "clerc";
 
-// 1. Custom plugin with global flag + async context derivation
-const configPlugin = plugin("acme:config")
-  .flags({
+// 1. Global config middleware: declares --config and derives typed ctx.state.config
+const withConfig = middleware({
+  flags: {
     config: {
       type: String,
       short: "c",
@@ -13,18 +25,19 @@ const configPlugin = plugin("acme:config")
       description: "Path to config file",
       complete: Complete.file("ts", "json"),
     },
-  })
-  .middleware(async (ctx, next) =>
-    next({
+  },
+  async setup(ctx) {
+    return {
       config: await Promise.resolve({
         path: ctx.flags.config,
         loadedAt: new Date().toISOString(),
       }),
-    }),
-  );
+    };
+  },
+});
 
-// 2. Custom onion middleware plugin (logs timing under -v)
-const timingPlugin = plugin("acme:timing").middleware(async (ctx, next) => {
+// 2. Onion timing middleware (logs command duration under -v)
+const withTiming = middleware(async (ctx, next) => {
   const start = performance.now();
   try {
     await next();
@@ -34,24 +47,20 @@ const timingPlugin = plugin("acme:timing").middleware(async (ctx, next) => {
   }
 });
 
-// 3. Modular subcommand namespace as a plugin (scoped flags + default subcommand)
-const dbPlugin = plugin("acme:db");
-const db = dbPlugin
-  .subcommand("db", {
-    group: "db",
-    description: "Database management commands",
-  })
-  .flags({
+// 3. Database commands: shared db middleware + namespace with default subcommand
+const withDb = middleware({
+  flags: {
     url: {
       type: Types.String({ trim: true, nonEmpty: true }),
       env: "DATABASE_URL",
       default: "sqlite://./acme.db",
       description: "Database connection URL",
     },
-  });
+  },
+});
 
-db.command("migrate", {
-  default: true,
+const dbMigrate = command("migrate", {
+  use: [withDb],
   aliases: "m",
   description: "Run pending database migrations",
   flags: {
@@ -76,7 +85,8 @@ db.command("migrate", {
   },
 });
 
-db.command("seed", {
+const dbSeed = command("seed", {
+  use: [withDb],
   description: "Seed development data",
   flags: {
     reset: { type: Boolean, description: "Truncate tables before seeding" },
@@ -91,45 +101,16 @@ db.command("seed", {
   },
 });
 
-// 4. Assemble CLI
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-  description: "Build and deploy modern TypeScript apps (Clerc v2 demo)",
-  examples: [
-    ["$ acme deploy prod --port 8080 -n", "Preview a production deploy"],
-    ["$ acme db migrate -s 2", "Apply the next 2 database migrations"],
-    [
-      "$ acme monitor edit web --token tok --status-min 200 --status-max 299",
-      "Edit monitor fields with group + range rules",
-    ],
-    ["$ acme format --stdin", "Format input from stdin"],
-    ["$ acme mcp", "Start an MCP stdio server exposing all commands"],
-  ],
-  notes: [
-    "Pass -v for debug timing logs, or -q for quiet mode.",
-    "Try violating rules (e.g. 'acme deploy prod --json --yaml', 'acme deploy prod --tls', 'acme monitor edit web --token tok') to see diagnostics.",
-  ],
-})
-  .groups({
-    commands: { deploy: "Deployment", cloud: "Cloud", db: "Database" },
-    flags: {
-      network: "Network Options",
-      tls: "TLS Options",
-      output: "Output Options",
-      auth: "Authentication",
-    },
-  })
-  .use(configPlugin)
-  .use(timingPlugin)
-  .use(dbPlugin)
-  .use(completionsPlugin())
-  .use(mcpPlugin());
+const db = command("db", {
+  description: "Database management commands",
+  commands: use(withDb, [dbMigrate, dbSeed]),
+  default: dbMigrate,
+});
 
-// 5. Deployment command: exclusive + requires + together + r.group() + unique array flag
-cli.command("deploy <env> [region]", {
+// 4. Deployment command: group() + together() + exclusive() + check + unique array flag
+const deploy = command("deploy <env> [region]", {
+  use: [withConfig],
   aliases: ["d"],
-  group: "deploy",
   description: "Deploy application to target environment",
   args: {
     env: {
@@ -145,65 +126,69 @@ cli.command("deploy <env> [region]", {
       ],
     },
   },
-  flags: {
-    port: {
-      type: Types.Integer({ min: 1, max: 65_535 }),
-      short: "p",
-      default: 3000,
-      env: "PORT",
-      group: "network",
-      description: "Server port",
+  flags: [
+    group("Network Options", {
+      port: {
+        type: Types.Integer({ min: 1, max: 65_535 }),
+        short: "p",
+        default: 3000,
+        env: "PORT",
+        description: "Server port",
+      },
+      tls: {
+        type: Boolean,
+        description: "Enable TLS",
+      },
+    }),
+    group(
+      "TLS Options",
+      together({
+        cert: {
+          type: String,
+          required: true,
+          env: "ACME_TLS_CERT",
+          description: "TLS certificate path",
+        },
+        key: {
+          type: String,
+          required: true,
+          env: "ACME_TLS_KEY",
+          description: "TLS private key path",
+        },
+      }),
+    ),
+    group(
+      "Output Options",
+      exclusive(
+        { json: { type: Boolean, description: "Format summary as JSON" } },
+        { yaml: { type: Boolean, description: "Format summary as YAML" } },
+      ),
+    ),
+    {
+      dryRun: {
+        type: Boolean,
+        short: "n",
+        description: "Preview without deploying",
+      },
+      cache: {
+        type: Boolean,
+        default: true,
+        description: "Use build cache",
+      },
+      tags: {
+        type: String,
+        multiple: true,
+        unique: true,
+        short: "t",
+        description: "Release tags",
+      },
     },
-    tls: {
-      type: Boolean,
-      group: "network",
-      description: "Enable TLS",
-    },
-    cert: {
-      type: String,
-      group: "tls",
-      env: "ACME_TLS_CERT",
-      description: "TLS certificate path",
-    },
-    key: {
-      type: String,
-      group: "tls",
-      env: "ACME_TLS_KEY",
-      description: "TLS private key path",
-    },
-    dryRun: {
-      type: Boolean,
-      short: "n",
-      description: "Preview without deploying",
-    },
-    cache: {
-      type: Boolean,
-      default: true,
-      description: "Use build cache",
-    },
-    tags: {
-      type: String,
-      multiple: true,
-      unique: true,
-      short: "t",
-      description: "Release tags",
-    },
-    json: {
-      type: Boolean,
-      group: "output",
-      description: "Format summary as JSON",
-    },
-    yaml: {
-      type: Boolean,
-      group: "output",
-      description: "Format summary as YAML",
-    },
-  },
-  rules: (r) => [
-    r.exclusive(r.flag("json"), r.flag("yaml")),
-    r.together(r.group("tls")),
-    r.requires(r.flag("tls"), r.group("tls")),
   ],
+  check({ flags }) {
+    if (flags.tls && !flags.cert) {
+      return "'--tls' requires '--cert' and '--key'";
+    }
+  },
   examples: [
     ["$ acme deploy staging", "Deploy to staging with defaults"],
     [
@@ -266,9 +251,8 @@ cli.command("deploy <env> [region]", {
   },
 });
 
-// 6. Format command: flag + arg oneOf with custom hints, exclusive, and numeric float range
-cli.command("format [files...]", {
-  group: "deploy",
+// 5. Format command: exclusive() + check across <files...> and --stdin
+const format = command("format [files...]", {
   description: "Format source files or stdin",
   args: {
     files: {
@@ -276,32 +260,46 @@ cli.command("format [files...]", {
       description: "Files to format",
     },
   },
-  flags: {
-    stdin: {
-      type: Boolean,
-      description: "Read input from stdin",
+  flags: [
+    {
+      stdin: {
+        type: Boolean,
+        description: "Read input from stdin",
+      },
+      ratio: {
+        type: Types.Number({ min: 0, max: 1 }),
+        description: "Formatting heuristic threshold",
+      },
     },
-    write: {
-      type: Boolean,
-      short: "w",
-      description: "Write formatted output back to files",
-    },
-    check: {
-      type: Boolean,
-      description: "Exit non-zero if formatting changes are needed",
-    },
-    ratio: {
-      type: Types.Number({ min: 0, max: 1 }),
-      description: "Formatting heuristic threshold",
-    },
-  },
-  rules: (r) => [
-    r.oneOf([r.arg("files"), r.flag("stdin")], {
-      hints: ["pass one or more <files...> or use '--stdin'"],
-    }),
-    r.exclusive(r.flag("write"), r.flag("check")),
-    r.exclusive(r.flag("stdin"), r.flag("write")),
+    exclusive(
+      {
+        write: {
+          type: Boolean,
+          short: "w",
+          description: "Write formatted output back to files",
+        },
+      },
+      {
+        check: {
+          type: Boolean,
+          description: "Exit non-zero if formatting changes are needed",
+        },
+      },
+    ),
   ],
+  check({ flags, provided }) {
+    const hasFiles = provided.args.has("files");
+    const hasStdin = provided.flags.has("stdin");
+    if (hasFiles === hasStdin) {
+      return {
+        message: "pass either '<files...>' or '--stdin'",
+        hints: ["pass one or more <files...> or use '--stdin'"],
+      };
+    }
+    if (flags.stdin && flags.write) {
+      return "'--stdin' and '--write' cannot be used together";
+    }
+  },
   examples: [
     ["$ acme format src/index.ts --write", "Format files in place"],
     ["$ acme format --stdin --check", "Check stdin formatting"],
@@ -319,56 +317,57 @@ cli.command("format [files...]", {
   },
 });
 
-// 7. Scoped cloud commands: shared auth flags + oneOf (with auto env hints) + scoped middleware
-const cloud = cli
-  .scope({ group: "cloud" })
-  .flags({
-    server: {
-      type: Types.String({ trim: true, nonEmpty: true }),
-      placeholder: "<url>",
-      env: "ACME_SERVER",
-      default: "https://api.acme.dev",
-      group: "auth",
-      description: "Cloud hub URL",
+// 6. Scoped cloud auth middleware: oneOf() discriminated union narrowing + setup()
+const cloudAuth = middleware({
+  use: [withConfig],
+  flags: group("Authentication", [
+    {
+      server: {
+        type: Types.String({ trim: true, nonEmpty: true }),
+        placeholder: "<url>",
+        env: "ACME_SERVER",
+        default: "https://api.acme.dev",
+        description: "Cloud hub URL",
+      },
     },
-    token: {
-      type: Types.String({ trim: true, nonEmpty: true }),
-      placeholder: "<token>",
-      env: "ACME_TOKEN",
-      group: "auth",
-      description: "API Bearer token",
-    },
-    tokenFile: {
-      type: Types.String({ trim: true, nonEmpty: true }),
-      placeholder: "<path>",
-      env: "ACME_TOKEN_FILE",
-      group: "auth",
-      description: "File containing API Bearer token",
-    },
-  })
-  .rules((r) => [r.oneOf(r.flag("token"), r.flag("tokenFile"))])
-  .middleware((ctx, next) =>
-    next({
+    oneOf(
+      {
+        token: {
+          type: Types.String({ trim: true, nonEmpty: true }),
+          required: true,
+          placeholder: "<token>",
+          env: "ACME_TOKEN",
+          description: "API Bearer token",
+        },
+      },
+      {
+        tokenFile: {
+          type: Types.String({ trim: true, nonEmpty: true }),
+          required: true,
+          placeholder: "<path>",
+          env: "ACME_TOKEN_FILE",
+          description: "File containing API Bearer token",
+        },
+      },
+    ),
+  ]),
+  setup(ctx) {
+    // Discriminated union narrows ctx.flags.tokenFile to string when token is undefined!
+    const source = ctx.flags.token
+      ? "inline-token"
+      : `file:${ctx.flags.tokenFile}`;
+
+    return {
       cloudAuth: {
         server: ctx.flags.server,
-        source: ctx.flags.token
-          ? "inline-token"
-          : `file:${ctx.flags.tokenFile}`,
+        source,
       },
-    }),
-  );
+    };
+  },
+});
 
-const monitor = cloud
-  .subcommand("monitor", {
-    aliases: ["mon"],
-    description: "Manage HTTP monitors",
-  })
-  .groups({
-    flags: { fields: "Monitor Fields" },
-  });
-
-monitor.command("ls", {
-  default: true,
+const monitorLs = command("ls", {
+  use: [cloudAuth],
   description: "List all monitors",
   run(ctx) {
     ctx.log.info(
@@ -377,70 +376,63 @@ monitor.command("ls", {
   },
 });
 
-// Showcases r.atLeastOne(r.group("fields")), composable rules array, and documented custom rule with detail + hints
-monitor.command("edit <id>", {
+const monitorEdit = command("edit <id>", {
+  use: [cloudAuth],
   description: "Update fields of an existing HTTP monitor",
   args: {
     id: { description: "Monitor identifier" },
   },
-  flags: {
-    name: {
-      type: Types.String({ trim: true, nonEmpty: true }),
-      group: "fields",
-      description: "Display name",
-    },
-    url: {
-      type: Types.String({ trim: true, nonEmpty: true }),
-      group: "fields",
-      description: "Probe URL",
-    },
-    method: {
-      type: Types.Enum("GET", "HEAD", "POST"),
-      group: "fields",
-      description: "HTTP probe method",
-    },
-    statusMin: {
-      type: Types.Integer({ min: 100, max: 599 }),
-      group: "fields",
-      description: "Minimum accepted HTTP status code",
-    },
-    statusMax: {
-      type: Types.Integer({ min: 100, max: 599 }),
-      group: "fields",
-      description: "Maximum accepted HTTP status code",
-    },
-    interval: {
-      type: Types.Integer({ min: 10, max: 86_400 }),
-      group: "fields",
-      description: "Probe interval in seconds",
-    },
-    timeout: {
-      type: Types.Integer({ min: 500, max: 30_000 }),
-      group: "fields",
-      description: "Probe timeout in milliseconds",
+  flags: group(
+    "Monitor Fields",
+    atLeastOne({
+      name: {
+        type: Types.String({ trim: true, nonEmpty: true }),
+        description: "Display name",
+      },
+      url: {
+        type: Types.String({ trim: true, nonEmpty: true }),
+        description: "Probe URL",
+      },
+      method: {
+        type: Types.Enum("GET", "HEAD", "POST"),
+        description: "HTTP probe method",
+      },
+      statusMin: {
+        type: Types.Integer({ min: 100, max: 599 }),
+        description: "Minimum accepted HTTP status code",
+      },
+      statusMax: {
+        type: Types.Integer({ min: 100, max: 599 }),
+        description: "Maximum accepted HTTP status code",
+      },
+      interval: {
+        type: Types.Integer({ min: 10, max: 86_400 }),
+        description: "Probe interval in seconds",
+      },
+      timeout: {
+        type: Types.Integer({ min: 500, max: 30_000 }),
+        description: "Probe timeout in milliseconds",
+      },
+    }),
+  ),
+  check: {
+    description: "--status-max must be >= --status-min",
+    validate({ flags }) {
+      if (
+        flags.statusMin !== undefined &&
+        flags.statusMax !== undefined &&
+        flags.statusMax < flags.statusMin
+      ) {
+        return {
+          message: "'--status-max' must be >= '--status-min'",
+          detail: `received status-min=${flags.statusMin}, status-max=${flags.statusMax}`,
+          hints: [
+            `try '--status-min ${flags.statusMax} --status-max ${flags.statusMin}'`,
+          ],
+        };
+      }
     },
   },
-  rules: [
-    (r) => [r.atLeastOne(r.group("fields"))],
-    {
-      description: "--status-max must be >= --status-min",
-      check({ flags }) {
-        if (
-          flags.statusMin !== undefined &&
-          flags.statusMax !== undefined &&
-          flags.statusMax < flags.statusMin
-        ) {
-          return {
-            message: "'--status-max' must be >= '--status-min'",
-            detail: `received status-min=${flags.statusMin}, status-max=${flags.statusMax}`,
-            hints: [
-              `try '--status-min ${flags.statusMax} --status-max ${flags.statusMin}'`,
-            ],
-          };
-        }
-      },
-    },
-  ],
   run(ctx) {
     ctx.log.success(
       `Updated monitor '${ctx.args.id}' on ${ctx.state.cloudAuth.server}`,
@@ -457,8 +449,8 @@ monitor.command("edit <id>", {
   },
 });
 
-// Showcases array-level constraints (unique + minItems + maxItems) on variadic args
-monitor.command("order <ids...>", {
+const monitorOrder = command("order <ids...>", {
+  use: [cloudAuth],
   description: "Set display order for monitors",
   args: {
     ids: {
@@ -475,7 +467,15 @@ monitor.command("order <ids...>", {
   },
 });
 
-cli.command("exec <cmd> -- [args...]", {
+const monitor = command("monitor", {
+  aliases: ["mon"],
+  description: "Manage HTTP monitors",
+  commands: [monitorLs, monitorEdit, monitorOrder],
+  default: monitorLs,
+});
+
+// 7. Utility commands
+const execCmd = command("exec <cmd> -- [args...]", {
   description: "Run a subcommand with forwarded arguments after --",
   args: {
     cmd: { description: "Executable name" },
@@ -487,7 +487,7 @@ cli.command("exec <cmd> -- [args...]", {
   },
 });
 
-cli.command("legacy", {
+const legacy = command("legacy", {
   deprecated: "use 'acme deploy' instead",
   description: "Deprecated deployment helper",
   run(ctx) {
@@ -495,4 +495,35 @@ cli.command("legacy", {
   },
 });
 
-await cli.runMain();
+// 8. Assemble CLI with lexical groups, scoped middlewares, completions(), and mcp()
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  description: "Build and deploy modern TypeScript apps (Clerc v2 demo)",
+  examples: [
+    ["$ acme deploy prod --port 8080 -n", "Preview a production deploy"],
+    ["$ acme db migrate -s 2", "Apply the next 2 database migrations"],
+    [
+      "$ acme monitor edit web --token tok --status-min 200 --status-max 299",
+      "Edit monitor fields with group + range check",
+    ],
+    ["$ acme format --stdin", "Format input from stdin"],
+    ["$ acme mcp", "Start an MCP stdio server exposing all commands"],
+  ],
+  notes: [
+    "Pass -v for debug timing logs, or -q for quiet mode.",
+    "Try violating constraints (e.g. 'acme deploy prod --json --yaml', 'acme deploy prod --tls', 'acme monitor edit web --token tok') to see diagnostics.",
+  ],
+  use: [withConfig, withTiming],
+  commands: [
+    group("Deployment", [deploy, format]),
+    group("Database", [db]),
+    group("Cloud", use(cloudAuth, [monitor])),
+    execCmd,
+    legacy,
+    completions(),
+    mcp(),
+  ],
+});
+
+await app.runMain();

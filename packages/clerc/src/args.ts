@@ -3,10 +3,9 @@ import {
   MissingRequiredArgumentError,
   UnexpectedArgumentError,
 } from "./errors";
-import type { ArrayConstraintOptions } from "./flags";
-import { convertItemList, validateArraySchemaOptions } from "./flags";
 import { DOUBLE_DASH } from "./parser";
 import type {
+  ArrayConstraintOptions,
   DefaultValue,
   InferSingleType,
   SingleType,
@@ -14,7 +13,13 @@ import type {
   TypeConverter,
   UnwrapDefault,
 } from "./schema";
-import { describeType, isStandardSchema } from "./schema";
+import {
+  convertItemList,
+  describeType,
+  isStandardSchema,
+  validateArraySchemaOptions,
+  withArrayJsonSchema,
+} from "./schema";
 import type { CompletionOption } from "./types";
 import type { CamelCase, Prettify } from "./utils";
 import { camelCase, evaluateDefault } from "./utils";
@@ -66,22 +71,6 @@ export type ContextualArgs<
     : never;
 } & Partial<Record<Exclude<ExtractArgNames<Spec>, keyof Args>, ArgOptions>>;
 
-type TrimWhitespace<S extends string> = S extends
-  | ` ${infer R}`
-  | `${infer R} `
-  | `\t${infer R}`
-  | `${infer R}\t`
-  | `\n${infer R}`
-  | `${infer R}\n`
-  ? TrimWhitespace<R>
-  : S;
-
-export type NonEmptySpec<S extends string> = string extends S
-  ? S
-  : TrimWhitespace<S> extends ""
-    ? never
-    : S;
-
 type StripVariadic<S extends string> = S extends `${infer Name}...` ? Name : S;
 
 type ExtractSingleArgName<Token extends string> = Token extends
@@ -122,19 +111,17 @@ type InferArgDefault<
 type InferTokenArg<
   Token extends string,
   Args extends Partial<Record<string, any>>,
-> = Token extends `<${infer Name}...>`
+> = Token extends `<${infer Name}...>` | `[${infer Name}...]`
   ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
-  : Token extends `[${infer Name}...]`
-    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>[]>
-    : Token extends `<${infer Name}>`
-      ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
-      : Token extends `[${infer Name}]`
-        ? Record<
-            CamelCase<Name>,
-            | ResolveArgType<CamelCase<Name>, Args>
-            | InferArgDefault<CamelCase<Name>, Args, undefined>
-          >
-        : {};
+  : Token extends `<${infer Name}>`
+    ? Record<CamelCase<Name>, ResolveArgType<CamelCase<Name>, Args>>
+    : Token extends `[${infer Name}]`
+      ? Record<
+          CamelCase<Name>,
+          | ResolveArgType<CamelCase<Name>, Args>
+          | InferArgDefault<CamelCase<Name>, Args, undefined>
+        >
+      : {};
 
 type InferSpecArgsAcc<
   S extends string,
@@ -150,7 +137,7 @@ export type InferCommandArgs<
   ? Record<string, any>
   : Prettify<InferSpecArgsAcc<Spec, Args>>;
 
-const ARG_TOKEN_REGEX = /^(<|\[)([\w-]+)(\.\.\.)?(\]|>)$/;
+const ARG_TOKEN_REGEX = /^(?:<([\w-]+)(\.\.\.)?>|\[([\w-]+)(\.\.\.)?\])$/;
 
 const isArgToken = (token: string): boolean =>
   token === DOUBLE_DASH || token.startsWith("<") || token.startsWith("[");
@@ -158,11 +145,6 @@ const isArgToken = (token: string): boolean =>
 const defaultStringJsonSchema = (): Record<string, unknown> => ({
   type: "string",
 });
-
-interface ParsedCommandSpec {
-  readonly name: string;
-  readonly argTokens: readonly string[];
-}
 
 interface CompiledArgItem extends ArgDescriptor {
   readonly convert?: TypeConverter;
@@ -175,68 +157,21 @@ export interface CompiledArgs {
   readonly hasDoubleDashSpec: boolean;
 }
 
-function normalizeArgValue(arg: ArgDefinitionValue): ArgOptions {
-  if (typeof arg === "function" || isStandardSchema(arg)) {
-    return { type: arg as SingleType };
-  }
-
-  return arg as ArgOptions;
-}
-
-function splitArgTokens(argTokens: readonly string[]): {
-  readonly main: readonly string[];
-  readonly doubleDash: readonly string[];
-  readonly hasDoubleDash: boolean;
-} {
-  const ddIdx = argTokens.indexOf(DOUBLE_DASH);
-
-  return ddIdx === -1
-    ? { main: argTokens, doubleDash: [], hasDoubleDash: false }
-    : {
-        main: argTokens.slice(0, ddIdx),
-        doubleDash: argTokens.slice(ddIdx + 1),
-        hasDoubleDash: true,
-      };
-}
-
-function parseArgToken(token: string): {
+export function parseCommandSpec(spec: string): {
   readonly name: string;
-  readonly rawName: string;
-  readonly token: string;
-  readonly isRequired: boolean;
-  readonly isVariadic: boolean;
+  readonly argTokens: readonly string[];
 } {
-  const match = ARG_TOKEN_REGEX.exec(token);
-  if (
-    !match ||
-    (match[1] === "<" && match[4] !== ">") ||
-    (match[1] === "[" && match[4] !== "]")
-  ) {
-    throw new InvalidSchemaError(`invalid argument definition: ${token}`);
-  }
-
-  return {
-    name: camelCase(match[2]),
-    rawName: match[2],
-    token,
-    isRequired: match[1] === "<",
-    isVariadic: Boolean(match[3]),
-  };
-}
-
-export function parseCommandSpec(spec: string): ParsedCommandSpec {
   const trimmed = spec.trim();
-  if (trimmed === "") {
+  if (!trimmed) {
     throw new InvalidSchemaError(
       "command spec cannot be empty; pass options directly to command({ ... }) to register a root command",
     );
   }
 
-  const tokens = trimmed.split(/\s+/);
   const nameTokens: string[] = [];
   const argTokens: string[] = [];
 
-  for (const token of tokens) {
+  for (const token of trimmed.split(/\s+/)) {
     if (argTokens.length > 0 || isArgToken(token)) {
       if (!isArgToken(token)) {
         throw new InvalidSchemaError(
@@ -249,10 +184,7 @@ export function parseCommandSpec(spec: string): ParsedCommandSpec {
     }
   }
 
-  return {
-    name: nameTokens.join(" "),
-    argTokens,
-  };
+  return { name: nameTokens.join(" "), argTokens };
 }
 
 function compileArgSlice(
@@ -264,47 +196,58 @@ function compileArgSlice(
   const items: CompiledArgItem[] = [];
   let hasOptional = false;
 
-  for (let i = 0; i < tokens.length; i++) {
-    const info = parseArgToken(tokens[i]);
-
-    if (seen.has(info.name)) {
-      throw new InvalidSchemaError(`duplicate argument name: ${info.name}`);
+  for (const [i, token] of tokens.entries()) {
+    const match = ARG_TOKEN_REGEX.exec(token);
+    if (!match) {
+      throw new InvalidSchemaError(`invalid argument definition: ${token}`);
     }
-    seen.add(info.name);
+    const rawName = match[1] ?? match[3];
+    const name = camelCase(rawName);
+    const isRequired = match[1] !== undefined;
+    const isVariadic = Boolean(match[2] ?? match[4]);
 
-    if (info.isVariadic && i !== tokens.length - 1) {
+    if (seen.has(name)) {
+      throw new InvalidSchemaError(`duplicate argument name: ${name}`);
+    }
+    seen.add(name);
+
+    if (isVariadic && i !== tokens.length - 1) {
       throw new InvalidSchemaError(
         "variadic argument must be the last argument in the signature",
       );
     }
-    if (info.isRequired) {
-      if (hasOptional) {
-        throw new InvalidSchemaError(
-          `required argument "${info.name}" cannot appear after an optional argument`,
-        );
-      }
-    } else {
-      hasOptional = true;
-    }
-
-    const def = argDefs?.[info.name];
-    const norm = def ? normalizeArgValue(def) : undefined;
-    if (info.isRequired && norm?.default !== undefined) {
+    if (isRequired && hasOptional) {
       throw new InvalidSchemaError(
-        `required argument "${info.name}" cannot have a default value`,
+        `required argument "${name}" cannot appear after an optional argument`,
+      );
+    }
+    hasOptional ||= !isRequired;
+
+    const def = argDefs?.[name];
+    const norm: ArgOptions | undefined =
+      typeof def === "function" || isStandardSchema(def)
+        ? { type: def as SingleType }
+        : (def as ArgOptions | undefined);
+
+    if (isRequired && norm?.default !== undefined) {
+      throw new InvalidSchemaError(
+        `required argument "${name}" cannot have a default value`,
       );
     }
     if (norm) {
-      validateArraySchemaOptions(
-        `Argument "${info.name}"`,
-        info.isVariadic,
-        norm,
-      );
+      validateArraySchemaOptions(`Argument "${name}"`, isVariadic, norm);
     }
 
     const typeDesc = norm?.type ? describeType(norm.type) : undefined;
+    const itemJsonSchema = typeDesc
+      ? typeDesc.toJsonSchema
+      : defaultStringJsonSchema;
     items.push({
-      ...info,
+      name,
+      rawName,
+      token,
+      isRequired,
+      isVariadic,
       afterDoubleDash,
       display: typeDesc?.display,
       description: norm?.description,
@@ -315,7 +258,13 @@ function compileArgSlice(
       maxItems: norm?.maxItems,
       complete: norm?.complete,
       meta: norm?.meta,
-      toJsonSchema: typeDesc ? typeDesc.toJsonSchema : defaultStringJsonSchema,
+      toJsonSchema: isVariadic
+        ? () =>
+            withArrayJsonSchema(
+              { type: "array", items: itemJsonSchema() },
+              norm ?? {},
+            )
+        : itemJsonSchema,
       convert: typeDesc?.convert,
     });
   }
@@ -327,10 +276,13 @@ export function compileArgs(
   argTokens: readonly string[],
   argDefs?: Readonly<Record<string, ArgDefinitionValue>>,
 ): CompiledArgs {
-  const { main, doubleDash, hasDoubleDash } = splitArgTokens(argTokens);
+  const ddIdx = argTokens.indexOf(DOUBLE_DASH);
+  const mainTokens = ddIdx === -1 ? argTokens : argTokens.slice(0, ddIdx);
+  const ddTokens = ddIdx === -1 ? [] : argTokens.slice(ddIdx + 1);
+
   const seen = new Set<string>();
-  const compiledMain = compileArgSlice(main, argDefs, false, seen);
-  const compiledDd = compileArgSlice(doubleDash, argDefs, true, seen);
+  const main = compileArgSlice(mainTokens, argDefs, false, seen);
+  const doubleDash = compileArgSlice(ddTokens, argDefs, true, seen);
 
   if (argDefs) {
     for (const key of Object.keys(argDefs)) {
@@ -343,22 +295,11 @@ export function compileArgs(
   }
 
   return {
-    descriptors: [...compiledMain, ...compiledDd],
-    main: compiledMain,
-    doubleDash: compiledDd,
-    hasDoubleDashSpec: hasDoubleDash,
+    descriptors: [...main, ...doubleDash],
+    main,
+    doubleDash,
+    hasDoubleDashSpec: ddIdx !== -1,
   };
-}
-
-async function convertArgValue(
-  item: CompiledArgItem,
-  raw: string | readonly string[],
-): Promise<unknown> {
-  if (Array.isArray(raw)) {
-    return convertItemList(item.convert, item.token, raw, item);
-  }
-
-  return item.convert ? item.convert(raw as string, item.token) : raw;
 }
 
 async function applyArgSlice(
@@ -368,20 +309,23 @@ async function applyArgSlice(
   provided: Set<string>,
   env: Readonly<Record<string, string | undefined>>,
 ): Promise<void> {
-  const hasVariadic = items.some((item) => item.isVariadic);
-  if (!hasVariadic && values.length > items.length) {
+  if (!items.some((item) => item.isVariadic) && values.length > items.length) {
     throw new UnexpectedArgumentError(values.slice(items.length));
   }
 
   for (const [i, item] of items.entries()) {
     const raw = item.isVariadic ? values.slice(i) : values[i];
-    const isMissing = item.isVariadic
-      ? (raw as string[]).length === 0
-      : raw === undefined;
+    const hasCliValue = item.isVariadic
+      ? (raw as string[]).length > 0
+      : raw !== undefined;
 
-    if (!isMissing) {
+    if (hasCliValue) {
       provided.add(item.name);
-      result[item.name] = await convertArgValue(item, raw);
+      result[item.name] = Array.isArray(raw)
+        ? await convertItemList(item.convert, item.token, raw, item)
+        : item.convert
+          ? await item.convert(raw, item.token)
+          : raw;
 
       continue;
     }
@@ -389,33 +333,31 @@ async function applyArgSlice(
     const envValue = item.env ? env[item.env] : undefined;
     if (envValue !== undefined && envValue !== "") {
       provided.add(item.name);
-      result[item.name] = await convertArgValue(
-        item,
-        item.isVariadic ? envValue.split(",").map((s) => s.trim()) : envValue,
-      );
+      result[item.name] = item.isVariadic
+        ? await convertItemList(
+            item.convert,
+            item.token,
+            envValue.split(",").map((s) => s.trim()),
+            item,
+          )
+        : item.convert
+          ? await item.convert(envValue, item.token)
+          : envValue;
 
       continue;
     }
 
     if (item.default !== undefined) {
       result[item.name] = evaluateDefault(item.default);
-
-      continue;
-    }
-
-    if (item.isRequired) {
-      const hints = item.env
-        ? [`provide '${item.token}' or set ${item.env}`]
-        : undefined;
-
+    } else if (item.isRequired) {
       throw new MissingRequiredArgumentError(
         item.rawName,
         item.isVariadic,
-        hints,
+        item.env ? [`provide '${item.token}' or set ${item.env}`] : undefined,
       );
+    } else {
+      result[item.name] = item.isVariadic ? [] : undefined;
     }
-
-    result[item.name] = item.isVariadic ? [] : undefined;
   }
 }
 
@@ -428,24 +370,23 @@ export async function executeCompiledArgs(
   readonly args: Record<string, unknown>;
   readonly provided: Set<string>;
 }> {
-  const result: Record<string, unknown> = {};
+  const args: Record<string, unknown> = {};
   const provided = new Set<string>();
+  const mainValues =
+    !compiled.hasDoubleDashSpec && doubleDashValues.length > 0
+      ? [...values, ...doubleDashValues]
+      : values;
+
+  await applyArgSlice(compiled.main, mainValues, args, provided, env);
   if (compiled.doubleDash.length > 0) {
-    await applyArgSlice(compiled.main, values, result, provided, env);
     await applyArgSlice(
       compiled.doubleDash,
       doubleDashValues,
-      result,
+      args,
       provided,
       env,
     );
-  } else if (compiled.hasDoubleDashSpec) {
-    await applyArgSlice(compiled.main, values, result, provided, env);
-  } else {
-    const combined =
-      doubleDashValues.length > 0 ? [...values, ...doubleDashValues] : values;
-    await applyArgSlice(compiled.main, combined, result, provided, env);
   }
 
-  return { args: result, provided };
+  return { args, provided };
 }

@@ -16,14 +16,15 @@ import type { ResolveCompletionsOptions, ResolvedCompletions } from "./helpers";
 import {
   applyFlagDefaults,
   buildPartialArgs,
-  collectConflictedTargets,
+  collectConflictedFlags,
   collectVisibleAliases,
   collectVisibleSubcommands,
   completeFlagNames,
   completeFlagValue,
+  evalDefault,
   extractEnumCandidates,
   filterAndDedupe,
-  flagsToSpecs,
+  flagToArgvSpec,
   matchInlineFlagValue,
   normalizeResult,
   resolveTargetNode,
@@ -42,14 +43,15 @@ export async function resolveCompletions(
   const rawCurrent = input.at(-1) ?? "";
 
   let node: CommandNode = model.tree.root;
-  const matchedIndices: number[] = [];
-  let isContiguousPrefix = true;
+  const matchedIndices = new Set<number>();
   let startIndex = 0;
 
   while (startIndex < priorTokens.length) {
     const scanNode = resolveTargetNode(node);
     const scanner = createArgvParser(
-      flagsToSpecs(getCommandFlags(model, scanNode, { includeBuiltins: true })),
+      getCommandFlags(model, scanNode, { includeBuiltins: true }).map(
+        flagToArgvSpec,
+      ),
     );
     let matched = false;
     scanner.scan(
@@ -59,11 +61,8 @@ export async function resolveCompletions(
         if (!child) {
           return false;
         }
-        if (index !== matchedIndices.length) {
-          isContiguousPrefix = false;
-        }
         node = child;
-        matchedIndices.push(index);
+        matchedIndices.add(index);
         startIndex = index + 1;
         matched = true;
 
@@ -77,11 +76,9 @@ export async function resolveCompletions(
   }
 
   const remainingPrior =
-    matchedIndices.length === 0
+    matchedIndices.size === 0
       ? priorTokens
-      : isContiguousPrefix
-        ? priorTokens.slice(matchedIndices.length)
-        : priorTokens.filter((_, idx) => !new Set(matchedIndices).has(idx));
+      : priorTokens.filter((_, idx) => !matchedIndices.has(idx));
 
   const targetNode = resolveTargetNode(node);
 
@@ -89,7 +86,7 @@ export async function resolveCompletions(
     includeBuiltins: true,
   });
   const flagByName = new Map(activeFlags.map((flag) => [flag.name, flag]));
-  const targetParser = createArgvParser(flagsToSpecs(activeFlags), {
+  const targetParser = createArgvParser(activeFlags.map(flagToArgvSpec), {
     stopParsing: targetNode.command?.stopParsing,
   });
   const parsed = targetParser.parse(remainingPrior);
@@ -106,10 +103,7 @@ export async function resolveCompletions(
     }
     const raw = parsed.flags[key];
     if (raw === IMPLICIT_FLAG_VALUE) {
-      rawFlagValues[key] =
-        typeof flag.implicitValue === "function"
-          ? (flag.implicitValue as () => unknown)()
-          : flag.implicitValue;
+      rawFlagValues[key] = evalDefault(flag.implicitValue);
     } else if (flag.kind === "array" && flag.delimiter) {
       rawFlagValues[key] = (raw as string[]).flatMap((v) =>
         v.split(flag.delimiter!),
@@ -150,11 +144,9 @@ export async function resolveCompletions(
   }
 
   const usedFlags = new Set(parsed.provided);
-  const usedArgs = new Set(Object.keys(resolvedArgs));
-  const conflicted = collectConflictedTargets(
-    targetNode.rules,
+  const conflictedFlags = collectConflictedFlags(
+    targetNode.constraints,
     usedFlags,
-    usedArgs,
   );
 
   if (!afterDoubleDash && !parsed.stoppedEarly) {
@@ -175,7 +167,7 @@ export async function resolveCompletions(
         activeFlags,
         rawCurrent,
         usedFlags,
-        conflicted.flags,
+        conflictedFlags,
       );
     }
   }
@@ -224,10 +216,7 @@ export async function resolveCompletions(
   };
 
   let positionalResolved: ResolvedCompletions | undefined;
-  if (
-    targetArg?.complete === false ||
-    (targetArg && conflicted.args.has(targetArg.name))
-  ) {
+  if (targetArg?.complete === false) {
     positionalResolved = {
       candidates: [],
       directive: ShellCompDirective.NoFileComp,

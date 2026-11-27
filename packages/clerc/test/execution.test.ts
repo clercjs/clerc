@@ -3,17 +3,21 @@ import { describe, expect, it } from "vitest";
 
 import {
   ClercError,
+  ConstraintError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredArgumentError,
   MissingRequiredFlagError,
   NoCommandError,
-  RuleError,
   Types,
   UnexpectedArgumentError,
   UnknownCommandError,
   UnknownFlagError,
   ValidationError,
+  command,
+  exclusive,
+  middleware,
+  together,
 } from "../src";
 
 describe("Clerc execution pipeline", () => {
@@ -21,18 +25,21 @@ describe("Clerc execution pipeline", () => {
     let result: any;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command("copy <src> [dest] -- [extra...]", {
-      flags: {
-        force: { type: Boolean, short: "f" },
-        retries: { type: Number, short: "r", default: 3 },
-      },
-      run(ctx) {
-        result = { args: ctx.args, flags: ctx.flags };
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("copy <src> [dest] -- [extra...]", {
+          flags: {
+            force: { type: Boolean, short: "f" },
+            retries: { type: Number, short: "r", default: 3 },
+          },
+          run(ctx) {
+            result = { args: ctx.args, flags: ctx.flags };
+          },
+        }),
+      ],
     });
 
-    await cli.run(
+    await app.run(
       ["copy", "a.txt", "b.txt", "-f", "--retries", "5", "--", "x", "y"],
       { terminal },
     );
@@ -47,33 +54,39 @@ describe("Clerc execution pipeline", () => {
     let captured: boolean | undefined;
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command("build", {
-      flags: { cache: { type: Boolean, default: true } },
-      run(ctx) {
-        captured = ctx.flags.cache;
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("build", {
+          flags: { cache: { type: Boolean, default: true } },
+          run(ctx) {
+            captured = ctx.flags.cache;
+          },
+        }),
+      ],
     });
 
-    await cli.run(["build"], { terminal });
+    await app.run(["build"], { terminal });
 
     expect(captured).toBeTruthy();
 
-    await cli.run(["build", "--no-cache"], { terminal });
+    await app.run(["build", "--no-cache"], { terminal });
 
     expect(captured).toBeFalsy();
   });
 
   it("validates Number arguments with ValidationError on NaN", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli();
-    cli.command("wait <seconds>", {
-      args: { seconds: Number },
-      run() {},
+    const app = createTestBaseCli({
+      commands: [
+        command("wait <seconds>", {
+          args: { seconds: Number },
+          run() {},
+        }),
+      ],
     });
 
     await expect(
-      cli.run(["wait", "abc"], { terminal, throwOnError: true }),
+      app.run(["wait", "abc"], { terminal, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -83,19 +96,22 @@ describe("Clerc execution pipeline", () => {
       env: { API_TOKEN: "secret-123", PORT: "4000", ENABLE_CACHE: "true" },
     });
 
-    const cli = createTestBaseCli();
-    cli.command("serve", {
-      flags: {
-        token: { type: String, required: true, env: "API_TOKEN" },
-        port: { type: Number, env: "PORT", default: 3000 },
-        cache: { type: Boolean, env: "ENABLE_CACHE" },
-      },
-      run(ctx) {
-        captured = ctx.flags;
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("serve", {
+          flags: {
+            token: { type: String, required: true, env: "API_TOKEN" },
+            port: { type: Number, env: "PORT", default: 3000 },
+            cache: { type: Boolean, env: "ENABLE_CACHE" },
+          },
+          run(ctx) {
+            captured = ctx.flags;
+          },
+        }),
+      ],
     });
 
-    await cli.run(["serve"], { terminal });
+    await app.run(["serve"], { terminal });
 
     expect(captured).toEqual({
       token: "secret-123",
@@ -104,85 +120,100 @@ describe("Clerc execution pipeline", () => {
     });
   });
 
-  it("enforces required flags, declarative & custom rules (args + flags), and validates Number", async () => {
+  it("enforces required flags, declarative flag combinators, custom check (args + flags), and validates Number", async () => {
     const terminal = createMemoryTerminal();
     let middlewareRan = false;
-    const cli = createTestBaseCli({ help: true })
-      .flags({
-        json: Boolean,
-        yaml: Boolean,
-      })
-      .rules(({ exclusive, flag }) => [exclusive(flag("json"), flag("yaml"))])
-      .middleware(async (_ctx, next) => {
-        middlewareRan = true;
-        await next();
-      });
 
-    cli.command("deploy [env]", {
-      flags: {
-        token: { type: String, required: true, env: "DEPLOY_TOKEN" },
-        port: { type: Number },
-        all: Boolean,
-        tlsKey: String,
-        tlsCert: String,
-        sudo: Boolean,
-      },
-      rules: ({ oneOf, together, flag, arg }) => [
-        oneOf(arg("env"), flag("all")),
-        together(flag("tlsKey"), flag("tlsCert")),
-        ({ flags }) => {
-          if (flags.port !== undefined && flags.port < 1024 && !flags.sudo) {
-            return "ports below 1024 require --sudo";
-          }
-        },
+    const app = createTestBaseCli({
+      help: true,
+      flags: exclusive({ json: Boolean }, { yaml: Boolean }),
+      use: [
+        middleware(async (_ctx, next) => {
+          middlewareRan = true;
+          await next();
+        }),
       ],
-      run() {},
+      commands: [
+        command("deploy [env]", {
+          flags: [
+            {
+              token: { type: String, required: true, env: "DEPLOY_TOKEN" },
+              port: { type: Number },
+              all: Boolean,
+              sudo: Boolean,
+            },
+            together({
+              tlsKey: { type: String, required: true },
+              tlsCert: { type: String, required: true },
+            }),
+          ],
+          check: [
+            ({ provided }) => {
+              const hasEnv = provided.args.has("env");
+              const hasAll = provided.flags.has("all");
+              if (hasEnv === hasAll) {
+                return "exactly one of '[env]' or '--all' must be provided";
+              }
+            },
+            ({ flags }) => {
+              if (
+                flags.port !== undefined &&
+                flags.port < 1024 &&
+                !flags.sudo
+              ) {
+                return "ports below 1024 require --sudo";
+              }
+            },
+          ],
+          run() {},
+        }),
+      ],
     });
 
     await expect(
-      cli.run(["deploy", "prod"], { terminal, throwOnError: true }),
+      app.run(["deploy", "prod"], { terminal, throwOnError: true }),
     ).rejects.toThrow(MissingRequiredFlagError);
 
     await expect(
-      cli.run(["deploy", "prod", "--token", "ok", "--port", "not-a-num"], {
+      app.run(["deploy", "prod", "--token", "ok", "--port", "not-a-num"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
-    // Global exclusive rule: --json vs --yaml (uniform ERR_RULE_VIOLATION code)
-    const conflictRes = await cli.run(
+    // Global exclusive combinator: --json vs --yaml
+    const conflictRes = await app.run(
       ["deploy", "prod", "--token", "ok", "--json", "--yaml"],
       { terminal },
     );
 
     expect(conflictRes.ok).toBeFalsy();
-    expect(conflictRes.error).toBeInstanceOf(RuleError);
-    expect((conflictRes.error as RuleError).code).toBe("ERR_RULE_VIOLATION");
+    expect(conflictRes.error).toBeInstanceOf(ConstraintError);
+    expect((conflictRes.error as ConstraintError).code).toBe("ERR_CONSTRAINT");
 
-    // Mixed arg + flag oneOf rule: missing both & providing both
+    // Cross arg + flag check: missing both & providing both
     await expect(
-      cli.run(["deploy", "--token", "ok"], { terminal, throwOnError: true }),
-    ).rejects.toThrow(RuleError);
+      app.run(["deploy", "--token", "ok"], { terminal, throwOnError: true }),
+    ).rejects.toThrow(ConstraintError);
 
     await expect(
-      cli.run(["deploy", "prod", "--all", "--token", "ok"], {
+      app.run(["deploy", "prod", "--all", "--token", "ok"], {
         terminal,
         throwOnError: true,
       }),
-    ).rejects.toThrow(RuleError);
+    ).rejects.toThrow(ConstraintError);
 
-    // Together rule: partial pair fails
+    // Together combinator: partial pair fails, omitting both succeeds!
     await expect(
-      cli.run(["deploy", "prod", "--token", "ok", "--tls-key", "k.pem"], {
+      app.run(["deploy", "prod", "--token", "ok", "--tls-key", "k.pem"], {
         terminal,
         throwOnError: true,
       }),
-    ).rejects.toThrow(RuleError);
+    ).rejects.toThrow(ConstraintError);
 
-    // Custom rule runs BEFORE middleware and attaches usage on failure
+    // Custom check runs BEFORE middleware and attaches usage on failure
     const customFailTerm = createMemoryTerminal();
-    const customFail = await cli.run(
+    const customFail = await app.run(
       ["deploy", "prod", "--token", "ok", "--port", "80"],
       { terminal: customFailTerm },
     );
@@ -197,18 +228,16 @@ describe("Clerc execution pipeline", () => {
       "usage test deploy [options] [env]",
     );
 
-    // Help renders inline constraint tags on options/args and never runs rules
+    // Help renders inline constraint tags on options and never runs checks
     const helpTerm = createMemoryTerminal();
-    const helpRes = await cli.run(["deploy", "--help"], { terminal: helpTerm });
+    const helpRes = await app.run(["deploy", "--help"], { terminal: helpTerm });
 
     expect(helpRes.ok).toBeTruthy();
-    expect(helpTerm.stdoutText()).not.toContain("CONSTRAINTS");
     expect(helpTerm.stdoutText()).toContain("[conflicts: --yaml]");
-    expect(helpTerm.stdoutText()).toContain("[one of: [env], --all]");
     expect(helpTerm.stdoutText()).toContain("[with: --tls-cert]");
 
-    // Valid invocation passes all rules and reaches middleware
-    const okRes = await cli.run(
+    // Valid invocation passes all checks and reaches middleware
+    const okRes = await app.run(
       [
         "deploy",
         "--all",
@@ -228,17 +257,17 @@ describe("Clerc execution pipeline", () => {
     expect(okRes.ok).toBeTruthy();
     expect(middlewareRan).toBeTruthy();
 
-    // Invalid rule reference fails upfront during buildModel()
-    const invalidRuleCli = createTestBaseCli();
-    invalidRuleCli.command("deploy", {
-      flags: { json: Boolean },
-      rules: ({ exclusive, flag }) => [
-        exclusive(flag("json"), flag("nonExistent" as never)),
+    // Invalid constraint (e.g. single flag in together) fails upfront during buildModel()
+    const invalidConstraintCli = createTestBaseCli({
+      commands: [
+        command("deploy", {
+          flags: together({ onlyOne: String }),
+          run() {},
+        }),
       ],
-      run() {},
     });
 
-    expect(() => invalidRuleCli.buildModel()).toThrow(InvalidSchemaError);
+    expect(() => invalidConstraintCli.buildModel()).toThrow(InvalidSchemaError);
   });
 
   it("supports async handlers including dynamic lazy loading", async () => {
@@ -251,15 +280,18 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
-    const cli = createTestBaseCli();
-    cli.command("heavy", {
-      async run(ctx) {
-        const mod = await loadHeavy();
-        await mod.default(ctx);
-      },
+    const app = createTestBaseCli({
+      commands: [
+        command("heavy", {
+          async run(ctx) {
+            const mod = await loadHeavy();
+            await mod.default(ctx);
+          },
+        }),
+      ],
     });
 
-    const res = await cli.run(["heavy"], { terminal });
+    const res = await app.run(["heavy"], { terminal });
 
     expect(res.ok).toBeTruthy();
     expect(ran).toBeTruthy();
@@ -269,14 +301,17 @@ describe("Clerc execution pipeline", () => {
   it("emits deprecation warnings for deprecated commands and flags", async () => {
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli();
-    cli.command("old", {
-      deprecated: "use new instead",
-      flags: { legacy: { type: Boolean, deprecated: true } },
-      run() {},
+    const app = createTestBaseCli({
+      commands: [
+        command("old", {
+          deprecated: "use new instead",
+          flags: { legacy: { type: Boolean, deprecated: true } },
+          run() {},
+        }),
+      ],
     });
 
-    await cli.run(["old", "--legacy"], { terminal });
+    await app.run(["old", "--legacy"], { terminal });
 
     expect(terminal.stderrText()).toContain(
       "Command 'old' is deprecated: use new instead",
@@ -284,7 +319,8 @@ describe("Clerc execution pipeline", () => {
     expect(terminal.stderrText()).toContain("Option '--legacy' is deprecated");
 
     terminal.clear();
-    const rootCli = createTestBaseCli({ name: "legacy-cli" }).command({
+    const rootCli = createTestBaseCli({
+      name: "legacy-cli",
       deprecated: "use modern-cli instead",
       run() {},
     });
@@ -299,24 +335,30 @@ describe("Clerc execution pipeline", () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal();
 
-    const cli = createTestBaseCli().middleware(async (ctx, next) => {
-      events.push(`before:${ctx.calledAs}`);
-      await next();
-      events.push(`after:${ctx.calledAs}`);
-    });
-    cli.command("a", {
-      run() {
-        events.push("run:a");
-      },
-    });
-    cli.command("b", {
-      run() {
-        events.push("run:b");
-      },
+    const app = createTestBaseCli({
+      use: [
+        middleware(async (ctx, next) => {
+          events.push(`before:${ctx.calledAs}`);
+          await next();
+          events.push(`after:${ctx.calledAs}`);
+        }),
+      ],
+      commands: [
+        command("a", {
+          run() {
+            events.push("run:a");
+          },
+        }),
+        command("b", {
+          run() {
+            events.push("run:b");
+          },
+        }),
+      ],
     });
 
-    await cli.run(["a"], { terminal });
-    await cli.run(["b"], { terminal });
+    await app.run(["a"], { terminal });
+    await app.run(["b"], { terminal });
 
     expect(events).toEqual([
       "before:a",
@@ -330,70 +372,71 @@ describe("Clerc execution pipeline", () => {
 
   it("throws NoCommandError, UnknownCommandError, and MissingRequiredArgumentError when throwOnError is true", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli();
-    cli.command("greet <name>", { run() {} });
+    const app = createTestBaseCli({
+      commands: [command("greet <name>", { run() {} })],
+    });
 
-    await expect(cli.run([], { terminal, throwOnError: true })).rejects.toThrow(
+    await expect(app.run([], { terminal, throwOnError: true })).rejects.toThrow(
       NoCommandError,
     );
     await expect(
-      cli.run(["nope"], { terminal, throwOnError: true }),
+      app.run(["nope"], { terminal, throwOnError: true }),
     ).rejects.toThrow(UnknownCommandError);
     await expect(
-      cli.run(["greet"], { terminal, throwOnError: true }),
+      app.run(["greet"], { terminal, throwOnError: true }),
     ).rejects.toThrow(MissingRequiredArgumentError);
   });
 
   it("rejects missing flag values, invalid boolean literals, root unknown flags, and unexpected arguments", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli().flags({
-      config: { type: String, short: "c" },
-      verbose: { type: Types.Counter, short: "v" },
-    });
-    cli.command("deploy <env>", {
+    const app = createTestBaseCli({
       flags: {
-        dryRun: { type: Boolean, short: "n" },
-        port: { type: Number, short: "p" },
+        config: { type: String, short: "c" },
+        verbose: { type: Types.Counter, short: "v" },
       },
-      run() {},
+      commands: [
+        command("deploy <env>", {
+          flags: {
+            dryRun: { type: Boolean, short: "n" },
+            port: { type: Number, short: "p" },
+          },
+          run() {},
+        }),
+      ],
     });
 
-    // Missing value before next flag or --
     await expect(
-      cli.run(["deploy", "prod", "-c", "-n"], { terminal, throwOnError: true }),
+      app.run(["deploy", "prod", "-c", "-n"], { terminal, throwOnError: true }),
     ).rejects.toThrow(MissingFlagValueError);
     await expect(
-      cli.run(["deploy", "prod", "-c", "--", "rest"], {
+      app.run(["deploy", "prod", "-c", "--", "rest"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(MissingFlagValueError);
 
-    // Invalid boolean literal
     await expect(
-      cli.run(["deploy", "prod", "--dry-run=banana"], {
+      app.run(["deploy", "prod", "--dry-run=banana"], {
         terminal,
         throwOnError: true,
       }),
     ).rejects.toThrow(ValidationError);
 
-    // Extra positional argument rejected
     await expect(
-      cli.run(["deploy", "prod", "extra"], { terminal, throwOnError: true }),
+      app.run(["deploy", "prod", "extra"], { terminal, throwOnError: true }),
     ).rejects.toThrow(UnexpectedArgumentError);
 
-    // Counter flag does not eat positional argument & -p=8080 works
-    const okRes = await cli.run(["deploy", "--verbose", "prod", "-p=8080"], {
+    const okRes = await app.run(["deploy", "--verbose", "prod", "-p=8080"], {
       terminal,
     });
 
     expect(okRes.ok).toBeTruthy();
 
-    // Unknown root flag does not silently print help
-    const rootCli = createTestBaseCli({ help: true }).flags({
-      config: { type: String, short: "c" },
+    const rootCli = createTestBaseCli({
+      help: true,
+      flags: { config: { type: String, short: "c" } },
+      commands: [command("deploy", { run() {} })],
     });
-    rootCli.command("deploy", { run() {} });
 
     await expect(
       rootCli.run(["--conifg", "x"], { terminal, throwOnError: true }),
@@ -403,43 +446,45 @@ describe("Clerc execution pipeline", () => {
   it("supports stopParsing presets and stateless predicates for wrapper commands", async () => {
     const runs: any[] = [];
     const terminal = createMemoryTerminal();
-    const cli = createTestBaseCli();
-    cli
-      .command("exec <cmd> [args...]", {
-        stopParsing: "first-positional",
-        flags: { quiet: { type: Boolean, short: "q" } },
-        run(ctx) {
-          runs.push({ cmd: "exec", quiet: ctx.flags.quiet, args: ctx.args });
-        },
-      })
-      .command("dev [args...]", {
-        stopParsing: "unknown-flag",
-        flags: { config: String },
-        run(ctx) {
-          runs.push({ cmd: "dev", config: ctx.flags.config, args: ctx.args });
-        },
-      })
-      .command("run <env> <script> [args...]", {
-        stopParsing: (token) =>
-          token.kind === "positional" && token.positionalCount === 1,
-        flags: { verbose: Boolean },
-        run(ctx) {
-          runs.push({
-            cmd: "run",
-            verbose: ctx.flags.verbose,
-            args: ctx.args,
-          });
-        },
-      });
+    const app = createTestBaseCli({
+      commands: [
+        command("exec <cmd> [args...]", {
+          stopParsing: "first-positional",
+          flags: { quiet: { type: Boolean, short: "q" } },
+          run(ctx) {
+            runs.push({ cmd: "exec", quiet: ctx.flags.quiet, args: ctx.args });
+          },
+        }),
+        command("dev [args...]", {
+          stopParsing: "unknown-flag",
+          flags: { config: String },
+          run(ctx) {
+            runs.push({ cmd: "dev", config: ctx.flags.config, args: ctx.args });
+          },
+        }),
+        command("run <env> <script> [args...]", {
+          stopParsing: (token) =>
+            token.kind === "positional" && token.positionalCount === 1,
+          flags: { verbose: Boolean },
+          run(ctx) {
+            runs.push({
+              cmd: "run",
+              verbose: ctx.flags.verbose,
+              args: ctx.args,
+            });
+          },
+        }),
+      ],
+    });
 
-    await cli.run(["exec", "-q", "git", "--status", "-s"], { terminal });
-    await cli.run(["dev", "--config", "a.ts", "--port", "3000", "--open"], {
+    await app.run(["exec", "-q", "git", "--status", "-s"], { terminal });
+    await app.run(["dev", "--config", "a.ts", "--port", "3000", "--open"], {
       terminal,
     });
-    await cli.run(["run", "prod", "--verbose", "app.ts", "--port", "3000"], {
+    await app.run(["run", "prod", "--verbose", "app.ts", "--port", "3000"], {
       terminal,
     });
-    await cli.run(["run", "dev", "index.ts", "--watch"], { terminal });
+    await app.run(["run", "dev", "index.ts", "--watch"], { terminal });
 
     expect(runs).toEqual([
       {
@@ -471,37 +516,40 @@ describe("Clerc execution pipeline", () => {
       env: { DEPLOY_TOKEN: "env-tok", DEPLOY_TAGS: "a;b" },
     });
 
-    const cli = createTestBaseCli({ help: true });
-    cli.command("deploy <token> [region] [files...]", {
-      args: {
-        token: { description: "Auth token", env: "DEPLOY_TOKEN" },
-        region: { description: "Target region", default: "us-east-1" },
-        files: { description: "Entry files", default: () => ["index.ts"] },
-      },
-      flags: {
-        output: { type: String, short: "o", aliases: ["out", "outFile"] },
-        tags: {
-          type: String,
-          multiple: true,
-          delimiter: ",",
-          env: "DEPLOY_TAGS",
-        },
-        nums: { type: Number, multiple: true, delimiter: "," },
-        inspect: { type: Number, short: "I", implicitValue: 9229 },
-        color: {
-          type: String,
-          default: "auto",
-          implicitValue: "always",
-        },
-        pattern: { type: String },
-      },
-      run(ctx) {
-        captured = { args: ctx.args, flags: ctx.flags };
-      },
+    const app = createTestBaseCli({
+      help: true,
+      commands: [
+        command("deploy <token> [region] [files...]", {
+          args: {
+            token: { description: "Auth token", env: "DEPLOY_TOKEN" },
+            region: { description: "Target region", default: "us-east-1" },
+            files: { description: "Entry files", default: () => ["index.ts"] },
+          },
+          flags: {
+            output: { type: String, short: "o", aliases: ["out", "outFile"] },
+            tags: {
+              type: String,
+              multiple: true,
+              delimiter: ",",
+              env: "DEPLOY_TAGS",
+            },
+            nums: { type: Number, multiple: true, delimiter: "," },
+            inspect: { type: Number, short: "I", implicitValue: 9229 },
+            color: {
+              type: String,
+              default: "auto",
+              implicitValue: "always",
+            },
+            pattern: { type: String },
+          },
+          run(ctx) {
+            captured = { args: ctx.args, flags: ctx.flags };
+          },
+        }),
+      ],
     });
 
-    // Aliases, delimiter, implicitValue (without =), arg env + default
-    await cli.run(
+    await app.run(
       [
         "deploy",
         "--out-file",
@@ -528,8 +576,7 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
-    // Optional-value with explicit =value and unset implicitValue
-    await cli.run(
+    await app.run(
       [
         "deploy",
         "cli-tok",
@@ -553,8 +600,7 @@ describe("Clerc execution pipeline", () => {
       },
     });
 
-    // MissingFlagValueError hint when next token looks like a flag
-    const dashValRes = await cli.run(["deploy", "tok", "--pattern", "-foo"], {
+    const dashValRes = await app.run(["deploy", "tok", "--pattern", "-foo"], {
       terminal,
     });
 
@@ -564,9 +610,8 @@ describe("Clerc execution pipeline", () => {
       "if '-foo' is intended as the value, pass it as '--pattern=-foo'",
     ]);
 
-    // Help renders aliases, [=placeholder], and arg [default: ...] / [env: ...]
     const helpTerm = createMemoryTerminal();
-    await cli.run(["deploy", "--help"], { terminal: helpTerm });
+    await app.run(["deploy", "--help"], { terminal: helpTerm });
     const helpText = helpTerm.stdoutText();
 
     expect(helpText).toContain("-o, --output, --out, --out-file");
@@ -574,77 +619,93 @@ describe("Clerc execution pipeline", () => {
     expect(helpText).toContain("[default: us-east-1]");
     expect(helpText).toContain("[env: DEPLOY_TOKEN]");
 
-    // Schema validation guards
-    const badDelimiterCli = createTestBaseCli();
-    badDelimiterCli.command("bad", {
-      flags: { port: { type: String, delimiter: "," } },
-      run() {},
+    const badDelimiterCli = createTestBaseCli({
+      commands: [
+        command("bad", {
+          flags: { port: { type: String, delimiter: "," } },
+          run() {},
+        }),
+      ],
     });
 
     await expect(
       badDelimiterCli.run(["bad"], { terminal, throwOnError: true }),
     ).rejects.toThrow(InvalidSchemaError);
 
-    const badImplicitCli = createTestBaseCli();
-    badImplicitCli.command("bad", {
-      flags: { flag: { type: Boolean, implicitValue: true } },
-      run() {},
+    const badImplicitCli = createTestBaseCli({
+      commands: [
+        command("bad", {
+          flags: { flag: { type: Boolean, implicitValue: true } },
+          run() {},
+        }),
+      ],
     });
 
     await expect(
       badImplicitCli.run(["bad"], { terminal, throwOnError: true }),
     ).rejects.toThrow(InvalidSchemaError);
 
-    const badArgDefaultCli = createTestBaseCli();
-    badArgDefaultCli.command("bad <req>", {
-      args: { req: { default: "x" } },
-      run() {},
+    const badArgDefaultCli = createTestBaseCli({
+      commands: [
+        command("bad <req>", {
+          args: { req: { default: "x" } },
+          run() {},
+        }),
+      ],
     });
 
     await expect(
       badArgDefaultCli.run(["bad"], { terminal, throwOnError: true }),
     ).rejects.toThrow(InvalidSchemaError);
 
-    const unknownArgKeyCli = createTestBaseCli();
-    unknownArgKeyCli.command("bad <entry>", {
-      args: { typo: String } as any,
-      run() {},
+    const unknownArgKeyCli = createTestBaseCli({
+      commands: [
+        command("bad <entry>", {
+          args: { typo: String } as any,
+          run() {},
+        }),
+      ],
     });
 
     expect(() => unknownArgKeyCli.buildModel()).toThrow(InvalidSchemaError);
 
-    const zeroArgUnknownKeyCli = createTestBaseCli();
-    zeroArgUnknownKeyCli.command("bad", {
-      args: { typo: String } as any,
-      run() {},
+    const zeroArgUnknownKeyCli = createTestBaseCli({
+      commands: [
+        command("bad", {
+          args: { typo: String } as any,
+          run() {},
+        }),
+      ],
     });
 
     expect(() => zeroArgUnknownKeyCli.buildModel()).toThrow(InvalidSchemaError);
 
-    const dupDdArgCli = createTestBaseCli();
-    dupDdArgCli.command("bad <x> -- <x>", { run() {} });
+    const dupDdArgCli = createTestBaseCli({
+      commands: [command("bad <x> -- <x>", { run() {} })],
+    });
 
     expect(() => dupDdArgCli.buildModel()).toThrow(InvalidSchemaError);
 
-    // Array literal defaults are cloned per invocation
     let seenDefaultTags: string[] = [];
-    const arrayDefaultCli = createTestBaseCli();
-    arrayDefaultCli.command("tag", {
-      flags: {
-        tags: { type: String, multiple: true, default: ["latest"] },
-      },
-      run(ctx) {
-        ctx.flags.tags.push("mutated");
-        seenDefaultTags = ctx.flags.tags;
-      },
+    const arrayDefaultCli = createTestBaseCli({
+      commands: [
+        command("tag", {
+          flags: {
+            tags: { type: String, multiple: true, default: ["latest"] },
+          },
+          run(ctx) {
+            ctx.flags.tags.push("mutated");
+            seenDefaultTags = ctx.flags.tags;
+          },
+        }),
+      ],
     });
     await arrayDefaultCli.run(["tag"], { terminal });
     await arrayDefaultCli.run(["tag"], { terminal });
 
     expect(seenDefaultTags).toEqual(["latest", "mutated"]);
 
-    // Kebab-case alias suggestion works accurately
-    const aliasTypoRes = await cli.run(
+    const aliasTypoRes = await app.run(
       ["deploy", "tok", "--out-flie", "a.js"],
       { terminal },
     );
@@ -656,66 +717,74 @@ describe("Clerc execution pipeline", () => {
   });
 
   it("validates counter env, keeps ctx.flags clean on parse error, compiles subcommands upfront, and avoids -h collision", async () => {
-    // 1. Counter env rejects invalid values instead of silently becoming 0
     const badEnvTerm = createMemoryTerminal({ env: { VERBOSE: "banana" } });
-    const envCli = createTestBaseCli();
-    envCli.command("ping", {
-      flags: { verbose: { type: Types.Counter, env: "VERBOSE" } },
-      run() {},
+    const envCli = createTestBaseCli({
+      commands: [
+        command("ping", {
+          flags: { verbose: { type: Types.Counter, env: "VERBOSE" } },
+          run() {},
+        }),
+      ],
     });
 
     await expect(
       envCli.run(["ping"], { terminal: badEnvTerm, throwOnError: true }),
     ).rejects.toThrow(ValidationError);
 
-    // 2. Error handler never sees raw unconverted strings or internal IMPLICIT_FLAG_VALUE symbols
     let errorFlags: Record<string, unknown> | undefined;
-    const errCli = createTestBaseCli().onError((_err, ctx) => {
-      errorFlags = { ...ctx.flags };
+    const errCli = createTestBaseCli({
+      onError(_err, ctx) {
+        errorFlags = { ...ctx.flags };
 
-      return true;
-    });
-    errCli.command("serve <entry>", {
-      flags: {
-        port: { type: Number },
-        inspect: { type: Number, implicitValue: 9229 },
+        return true;
       },
-      run() {},
+      commands: [
+        command("serve <entry>", {
+          flags: {
+            port: { type: Number },
+            inspect: { type: Number, implicitValue: 9229 },
+          },
+          run() {},
+        }),
+      ],
     });
 
-    // Parse error before flag resolution: ctx.flags stays empty (no raw strings or internal symbols)
     await errCli.run(["serve", "--port", "8080", "--inspect", "--unknown"], {
       terminal: createMemoryTerminal(),
     });
 
     expect(errorFlags).toEqual({});
 
-    // Arg error after flag resolution: ctx.flags holds resolved typed values
     await errCli.run(["serve", "--port", "8080", "--inspect"], {
       terminal: createMemoryTerminal(),
     });
 
     expect(errorFlags).toEqual({ port: 8080, inspect: 9229 });
 
-    // 3. Upfront compilation catches invalid schema in unused subcommands immediately
-    const brokenSubCli = createTestBaseCli();
-    brokenSubCli.command("ok", { run() {} });
-    brokenSubCli.command("unused", {
-      flags: { bad: { type: String, delimiter: "," } },
-      run() {},
+    const brokenSubCli = createTestBaseCli({
+      commands: [
+        command("ok", { run() {} }),
+        command("unused", {
+          flags: { bad: { type: String, delimiter: "," } },
+          run() {},
+        }),
+      ],
     });
 
     expect(() => brokenSubCli.buildModel()).toThrow(InvalidSchemaError);
 
-    // 4. User short '-h' (e.g. --host) does not crash against built-in --help
     let hostObserved: string | undefined;
     const hostTerm = createMemoryTerminal();
-    const hostCli = createTestBaseCli({ help: true });
-    hostCli.command("connect", {
-      flags: { host: { type: String, short: "h", description: "DB host" } },
-      run(ctx) {
-        hostObserved = ctx.flags.host;
-      },
+    const hostCli = createTestBaseCli({
+      help: true,
+      commands: [
+        command("connect", {
+          flags: { host: { type: String, short: "h", description: "DB host" } },
+          run(ctx) {
+            hostObserved = ctx.flags.host;
+          },
+        }),
+      ],
     });
 
     await hostCli.run(["connect", "-h", "db.local"], { terminal: hostTerm });
@@ -727,7 +796,6 @@ describe("Clerc execution pipeline", () => {
     expect(hostTerm.stdoutText()).toContain("-h, --host <string>");
     expect(hostTerm.stdoutText()).toContain("    --help");
 
-    // 5. Raw parse artifacts live under ctx.raw (argv, unknown, doubleDash)
     let rawSnapshot:
       | {
           readonly argv: readonly string[];
@@ -735,15 +803,19 @@ describe("Clerc execution pipeline", () => {
           readonly doubleDash: readonly string[];
         }
       | undefined;
-    const rawCli = createTestBaseCli({ strictFlags: false });
-    rawCli.command("run <script> --", {
-      run(ctx) {
-        rawSnapshot = {
-          argv: ctx.raw.argv,
-          unknown: ctx.raw.unknown,
-          doubleDash: ctx.raw.doubleDash,
-        };
-      },
+    const rawCli = createTestBaseCli({
+      strictFlags: false,
+      commands: [
+        command("run <script> --", {
+          run(ctx) {
+            rawSnapshot = {
+              argv: ctx.raw.argv,
+              unknown: ctx.raw.unknown,
+              doubleDash: ctx.raw.doubleDash,
+            };
+          },
+        }),
+      ],
     });
 
     const rawRes = await rawCli.run(
@@ -763,60 +835,64 @@ describe("Clerc execution pipeline", () => {
     const events: string[] = [];
     const terminal = createMemoryTerminal({ stdin: "hello from pipe\n" });
 
-    const cli = createTestBaseCli({ help: true })
-      .middleware(async (ctx, next) => {
-        try {
-          await next();
-        } finally {
-          events.push(`finally:${ctx.calledAs}`);
-        }
-      })
-      .onError((err, ctx) => {
+    const app = createTestBaseCli({
+      help: true,
+      use: [
+        middleware(async (ctx, next) => {
+          try {
+            await next();
+          } finally {
+            events.push(`finally:${ctx.calledAs}`);
+          }
+        }),
+      ],
+      onError(err, ctx) {
         events.push(`onError:${(err as Error).message}`);
         if (err instanceof Error && err.message === "override-exit") {
           ctx.exit(4);
         }
-      });
+      },
+      commands: [
+        command("auth", {
+          run() {
+            throw new ClercError("not logged in", {
+              code: "ERR_AUTH",
+              detail: "Run login first",
+            });
+          },
+        }),
+        command("simple-fail", {
+          run() {
+            throw new ClercError("deployment aborted");
+          },
+        }),
+        command("check", {
+          flags: { ok: Boolean },
+          run(ctx) {
+            if (ctx.flags.ok) {
+              ctx.exit(0);
+            }
+            ctx.log.warn("formatting differs");
+            ctx.exit(3);
+          },
+        }),
+        command("override", {
+          run() {
+            throw new Error("override-exit");
+          },
+        }),
+        command("pipe", {
+          async run(ctx) {
+            const input = await ctx.terminal.readStdin();
+            ctx.terminal.stdout(
+              `tty=${String(ctx.terminal.isInputTTY)}:${input.trim()}`,
+            );
+          },
+        }),
+      ],
+    });
 
-    cli.command("auth", {
-      run() {
-        throw new ClercError("not logged in", {
-          code: "ERR_AUTH",
-          detail: "Run login first",
-        });
-      },
-    });
-    cli.command("simple-fail", {
-      run() {
-        throw new ClercError("deployment aborted");
-      },
-    });
-    cli.command("check", {
-      flags: { ok: Boolean },
-      run(ctx) {
-        if (ctx.flags.ok) {
-          ctx.exit(0);
-        }
-        ctx.log.warn("formatting differs");
-        ctx.exit(3);
-      },
-    });
-    cli.command("override", {
-      run() {
-        throw new Error("override-exit");
-      },
-    });
-    cli.command("pipe", {
-      async run(ctx) {
-        const input = await ctx.terminal.readStdin();
-        ctx.terminal.stdout(
-          `tty=${String(ctx.terminal.isInputTTY)}:${input.trim()}`,
-        );
-      },
-    });
-
-    // Domain ClercError defaults to exitCode 1 and omits --help hint
-    const authRes = await cli.run(["auth"], { terminal });
+    const authRes = await app.run(["auth"], { terminal });
 
     expect(authRes.ok).toBeFalsy();
     expect(authRes.exitCode).toBe(1);
@@ -824,19 +900,17 @@ describe("Clerc execution pipeline", () => {
     expect(terminal.stderrText()).toContain("error not logged in");
     expect(terminal.stderrText()).not.toContain("--help");
 
-    // ClercError without options defaults to ERR_CLI and exitCode 1
     terminal.clear();
-    const simpleRes = await cli.run(["simple-fail"], { terminal });
+    const simpleRes = await app.run(["simple-fail"], { terminal });
 
     expect(simpleRes.ok).toBeFalsy();
     expect(simpleRes.exitCode).toBe(1);
     expect((simpleRes.error as ClercError).code).toBe("ERR_CLI");
     expect(terminal.stderrText()).toBe("error deployment aborted");
 
-    // ctx.exit(3) skips onError & throwOnError, still runs middleware finally
     events.length = 0;
     terminal.clear();
-    const exitRes = await cli.run(["check"], {
+    const exitRes = await app.run(["check"], {
       terminal,
       throwOnError: true,
     });
@@ -845,9 +919,8 @@ describe("Clerc execution pipeline", () => {
     expect(events).toEqual(["finally:check"]);
     expect(terminal.stderrText()).toBe(" warn formatting differs");
 
-    // ctx.exit(0) exits cleanly as ok: true
     events.length = 0;
-    const zeroRes = await cli.run(["check", "--ok"], {
+    const zeroRes = await app.run(["check", "--ok"], {
       terminal,
       throwOnError: true,
     });
@@ -855,10 +928,9 @@ describe("Clerc execution pipeline", () => {
     expect(zeroRes).toEqual({ ok: true, exitCode: 0 });
     expect(events).toEqual(["finally:check"]);
 
-    // ctx.exit() inside onError overrides exitCode cleanly
     events.length = 0;
     terminal.clear();
-    const overrideRes = await cli.run(["override"], {
+    const overrideRes = await app.run(["override"], {
       terminal,
       throwOnError: true,
     });
@@ -867,9 +939,8 @@ describe("Clerc execution pipeline", () => {
     expect(events).toEqual(["finally:override", "onError:override-exit"]);
     expect(terminal.stderrText()).toBe("");
 
-    // terminal.readStdin() & isInputTTY
     terminal.clear();
-    const pipeRes = await cli.run(["pipe"], { terminal });
+    const pipeRes = await app.run(["pipe"], { terminal });
 
     expect(pipeRes.ok).toBeTruthy();
     expect(terminal.stdoutText()).toBe("tty=false:hello from pipe");

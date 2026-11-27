@@ -19,9 +19,9 @@ import {
 `ctx.log.task(title, fn)` 在 TTY 终端显示动画 Spinner，支持通过 `s.message(...)` 更新阶段说明，成功时自动输出 `done`；失败时清理 Spinner 并重新抛出错误，交给 Clerc 统一渲染一次（如需额外输出任务级失败文案，可传 `{ errorMessage }`）。在 CI 或非 TTY 环境下会自动降级为普通文本日志。
 
 ```ts
-import { clerc } from "clerc";
+import { cli, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("upload", {
+const upload = command("upload", {
   async run(ctx) {
     await ctx.log.task("正在上传构建产物...", async (s) => {
       s.message("正在压缩 14 个分块...");
@@ -30,6 +30,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("upload", {
     });
   },
 });
+
+const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 ```
 
 <CliPlayground :scenario="taskSpinner" lang="zh" />
@@ -52,10 +54,10 @@ s.stop("已连接");
 `clerc/prompts` 单独重导出了 `@clack/prompts`（包含 `text`、`select`、`confirm`、`multiselect`、`autocomplete`、`isCancel` 等），无需额外安装，且不会拖慢非交互命令的冷启动。既可在顶层引入，也可在命令 `run()` 中按需 `await import("clerc/prompts")`：
 
 ```ts
-import { clerc } from "clerc";
+import { cli, command } from "clerc";
 import * as prompts from "clerc/prompts";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
+const deploy = command("deploy", {
   async run(ctx) {
     const ok = await prompts.confirm({ message: "确认部署到生产环境？" });
     if (!ok || prompts.isCancel(ok)) {
@@ -65,6 +67,8 @@ const cli = clerc({ name: "acme", version: "1.0.0" }).command("deploy", {
     await ctx.log.task("正在部署...", async () => "已发布至生产环境");
   },
 });
+
+const app = cli({ name: "acme", version: "1.0.0", commands: [deploy] });
 ```
 
 <CliPlayground :scenario="interactivePrompts" lang="zh" />

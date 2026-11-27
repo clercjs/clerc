@@ -2,24 +2,34 @@ import type { Plugin } from "vitepress";
 
 // @keep-sorted
 export const clercImports = [
+  "atLeastOne",
   "buildHelpDocument",
-  "clerc",
-  "Clerc",
   "ClercError",
+  "cli",
+  "Cli",
+  "command",
+  "Command",
+  "Complete",
+  "ConstraintError",
   "createLogger",
   "createMemoryTerminal",
   "createTerminal",
   "createTheme",
   "defaultHelpSections",
   "defaultThemeStyles",
+  "exclusive",
   "formatDiagnostic",
+  "group",
   "isStandardSchema",
-  "plugin",
-  "Plugin",
+  "middleware",
+  "Middleware",
+  "oneOf",
   "prompts",
   "renderHelp",
   "renderHelpDocument",
+  "together",
   "Types",
+  "use",
 ];
 
 export const MarkdownTransform = (): Plugin => ({

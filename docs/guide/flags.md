@@ -12,14 +12,12 @@ Flags configure commands via `--long` options, `-s` short aliases, or environmen
 
 ## Shorthand vs Full Definition
 
-When a flag only needs a type, pass the constructor or schema directly. Use an options object when adding metadata, defaults, or constraints:
+When a flag only needs a type, pass the constructor or schema directly. Use an options object when adding metadata, defaults, or array bounds:
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("serve", {
+const serve = command("serve", {
   flags: {
     open: Boolean, // shorthand: boolean (defaults to false)
     host: String, // shorthand: string | undefined
@@ -51,19 +49,18 @@ Clerc's built-in POSIX argv parser supports all standard flag conventions:
 
 ## Repeatable Arrays, Delimiters, and Counters
 
-Set `multiple: true` to collect repeatable occurrences into an array, or use `Types.Counter` to count repeated short/long flags:
+Set `multiple: true` to collect repeatable occurrences into an array (with optional `delimiter`, `unique`, `minItems`, and `maxItems`), or use `Types.Counter` to count repeated short/long flags:
 
 ```ts
-import { Types, clerc } from "clerc";
+import { Types, command } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" });
-
-cli.command("build", {
+const build = command("build", {
   flags: {
     // Repeatable array with comma delimiter: -t a,b -t c -> ["a", "b", "c"]
     tags: {
       type: String,
       multiple: true,
+      unique: true,
       short: "t",
       delimiter: ",",
       description: "Release tags",
@@ -91,7 +88,7 @@ cli.command("build", {
 Flags like `node --inspect` or `git log --color` accept an optional `=value`, falling back to `implicitValue` when passed bare and `default` (or `undefined`) when omitted:
 
 ```ts
-cli.command("dev", {
+const dev = command("dev", {
   flags: {
     inspect: {
       type: Number,
@@ -116,10 +113,7 @@ To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I 
 
 <CliPlayground :scenario="implicitValue" lang="en" />
 
-## Cross-Flag and Argument Rules
+## Constraints and Shared Flags
 
-To declare mutual exclusion, paired flags, conditional requirements, or custom validation across flags and positional arguments, see [Rules and Constraints](/guide/rules).
-
-## Global Flags vs Command Flags
-
-Register global flags on `cli.flags({ ... })` (or inside a `plugin().flags({ ... })`). Every command receives typed access to both its local `flags` and all global flags. If a command defines a local flag with the same name as a global flag, the local flag's type and behavior take precedence for that command.
+- **Constraints & Groups**: `flags` accepts a plain object, `group(title, flags)`, constraint combinators (`oneOf`, `exclusive`, `together`, `atLeastOne`), or an array combining them. See [Constraints](/guide/constraints).
+- **Sharing flags across commands**: Define shared flags in a `middleware({ flags: { ... } })` and pass it to `use: [mw]` on commands (for full static typing inside `run(ctx)`) and `use(mw, commands)` or `cli({ use: [mw] })`. If a command defines a local flag with the same name as a middleware or global flag, the local flag's type and behavior take precedence.

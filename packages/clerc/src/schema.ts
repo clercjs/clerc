@@ -75,19 +75,10 @@ export interface StandardSchemaV1Props<Input = unknown, Output = Input> {
     | undefined;
 }
 
-/**
- * Standard Schema v1 & Standard JSON Schema v1 interface (Zod, Valibot,
- * ArkType, etc.).
- *
- * @see https://standardschema.dev
- */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly "~standard": StandardSchemaV1Props<Input, Output>;
 }
 
-/**
- * Built-in Standard Schema v1 validator with a help display label.
- */
 export interface ClercSchema<Output = unknown> extends StandardSchemaV1<
   string,
   Output
@@ -113,21 +104,10 @@ interface TypeDescriptor {
   readonly toJsonSchema: () => Record<string, unknown>;
 }
 
-export function isStandardSchema(
+export const isStandardSchema = (
   value: unknown,
-): value is StandardSchemaV1<any, any> {
-  if (typeof value !== "object" || value === null || !("~standard" in value)) {
-    return false;
-  }
-  const std = value["~standard"] as Partial<StandardSchemaV1Props> | null;
-
-  return (
-    typeof std === "object" &&
-    std !== null &&
-    std.version === 1 &&
-    typeof std.validate === "function"
-  );
-}
+): value is StandardSchemaV1<any, any> =>
+  typeof value === "object" && value !== null && "~standard" in value;
 
 const parseNumber = (raw: string): number =>
   raw.trim() === "" ? Number.NaN : Number(raw);
@@ -143,7 +123,19 @@ const convertNumber: TypeConverter = (raw, target) => {
   return num;
 };
 
-const ENUM_DISTANCE_THRESHOLD = 3;
+const stringJsonSchema = (): Record<string, unknown> => ({ type: "string" });
+
+function readStandardJsonSchema(
+  schema: StandardSchemaV1<any, any>,
+): Record<string, unknown> {
+  const input = schema["~standard"].jsonSchema?.input;
+  if (!input) {
+    return stringJsonSchema();
+  }
+  const { $schema: _, ...rest } = input({ target: "draft-2020-12" });
+
+  return rest;
+}
 
 const createSchemaConverter =
   (schema: StandardSchemaV1<any, any>): TypeConverter =>
@@ -151,16 +143,13 @@ const createSchemaConverter =
     const result = await schema["~standard"].validate(raw);
     if (result.issues) {
       const error = new ValidationError(target, raw, result.issues);
-      const jsonSchema = readStandardJsonSchema(schema);
-      if (Array.isArray(jsonSchema.enum)) {
-        const candidates = jsonSchema.enum.filter(
-          (val): val is string => typeof val === "string",
+      const { enum: values } = readStandardJsonSchema(schema);
+      if (Array.isArray(values)) {
+        const candidates = values.filter(
+          (v): v is string => typeof v === "string",
         );
-        const maxDistance = Math.min(
-          ENUM_DISTANCE_THRESHOLD,
-          Math.max(1, Math.floor(raw.length / 2)),
-        );
-        const match = findClosest(raw, candidates, maxDistance);
+        const maxDist = Math.min(3, Math.max(1, Math.floor(raw.length / 2)));
+        const match = findClosest(raw, candidates, maxDist);
         if (match) {
           error.addHint(`a similar value exists: '${match}'`);
         }
@@ -184,76 +173,50 @@ const createFunctionConverter =
     }
   };
 
-const stringJsonSchema = (): Record<string, unknown> => ({ type: "string" });
-
-function readStandardJsonSchema(
-  schema: StandardSchemaV1<any, any>,
-): Record<string, unknown> {
-  const input = schema["~standard"].jsonSchema?.input;
-  if (!input) {
-    return stringJsonSchema();
-  }
-  try {
-    const { $schema: _, ...rest } = input({ target: "draft-2020-12" });
-
-    return rest;
-  } catch {
-    return stringJsonSchema();
-  }
-}
-
-function getDisplayLabel(type: SingleType): string {
-  if ("display" in type && typeof type.display === "string") {
-    return type.display;
-  }
-
-  return typeof type === "function" && type.name
-    ? type.name.toLowerCase()
-    : "value";
-}
-
 function describeSingle(type: SingleType): TypeDescriptor {
-  switch (type) {
-    case Boolean: {
-      return {
-        kind: "boolean",
-        display: "boolean",
-        toJsonSchema: () => ({ type: "boolean" }),
-      };
-    }
-    case Number: {
-      return {
-        kind: "single",
-        display: "number",
-        convert: convertNumber,
-        toJsonSchema: () => ({ type: "number" }),
-      };
-    }
-    case String: {
-      return {
-        kind: "single",
-        display: "string",
-        toJsonSchema: stringJsonSchema,
-      };
-    }
+  if (type === Boolean) {
+    return {
+      kind: "boolean",
+      display: "boolean",
+      toJsonSchema: () => ({ type: "boolean" }),
+    };
   }
-
-  const display = getDisplayLabel(type);
-  if (isStandardSchema(type)) {
-    if ("~kind" in type && type["~kind"] === "counter") {
-      return {
-        kind: "counter",
-        display,
-        toJsonSchema: () => readStandardJsonSchema(type),
-      };
-    }
-
+  if (type === Number) {
     return {
       kind: "single",
-      display,
-      convert: createSchemaConverter(type),
-      toJsonSchema: () => readStandardJsonSchema(type),
+      display: "number",
+      convert: convertNumber,
+      toJsonSchema: () => ({ type: "number" }),
     };
+  }
+  if (type === String) {
+    return {
+      kind: "single",
+      display: "string",
+      toJsonSchema: stringJsonSchema,
+    };
+  }
+
+  const display =
+    "display" in type && typeof type.display === "string"
+      ? type.display
+      : typeof type === "function" && type.name
+        ? type.name.toLowerCase()
+        : "value";
+
+  if (isStandardSchema(type)) {
+    return "~kind" in type && type["~kind"] === "counter"
+      ? {
+          kind: "counter",
+          display,
+          toJsonSchema: () => readStandardJsonSchema(type),
+        }
+      : {
+          kind: "single",
+          display,
+          convert: createSchemaConverter(type),
+          toJsonSchema: () => readStandardJsonSchema(type),
+        };
   }
 
   return {
@@ -264,26 +227,15 @@ function describeSingle(type: SingleType): TypeDescriptor {
   };
 }
 
-/**
- * Single source of truth for classifying any flag or argument type across flag
- * compilation, help rendering, completions, and MCP JSON Schema export.
- */
 export function describeType(
   type: SingleType,
   multiple = false,
 ): TypeDescriptor {
-  if (Array.isArray(type)) {
-    throw new InvalidSchemaError(
-      'Array tuple flag types ([Type]) are no longer supported. Use "{ type, multiple: true }" or "Types.Counter" instead.',
-    );
-  }
-
-  const singleDesc = describeSingle(type);
+  const single = describeSingle(type);
   if (!multiple) {
-    return singleDesc;
+    return single;
   }
-
-  if (singleDesc.kind === "boolean" || singleDesc.kind === "counter") {
+  if (single.kind === "boolean" || single.kind === "counter") {
     throw new InvalidSchemaError(
       'Cannot combine "multiple: true" with Boolean or Counter flags. Use "Types.Counter" to count occurrences.',
     );
@@ -291,9 +243,9 @@ export function describeType(
 
   return {
     kind: "array",
-    display: `${singleDesc.display}...`,
-    convert: singleDesc.convert,
-    toJsonSchema: () => ({ type: "array", items: singleDesc.toJsonSchema() }),
+    display: `${single.display}...`,
+    convert: single.convert,
+    toJsonSchema: () => ({ type: "array", items: single.toJsonSchema() }),
   };
 }
 
@@ -313,10 +265,7 @@ const createSchema = <T>(
     version: 1,
     vendor: "clerc",
     validate: (value) => validate(String(value)),
-    jsonSchema: {
-      input: () => ({ ...jsonSchema }),
-      output: () => ({ ...jsonSchema }),
-    },
+    jsonSchema: { input: () => ({ ...jsonSchema }) },
   },
 });
 
@@ -361,72 +310,53 @@ export interface StringSchemaOptions {
   readonly display?: string;
 }
 
-function formatNumericDisplay(
-  fallback: string,
-  min?: number,
-  max?: number,
-  display?: string,
-): string {
-  if (display !== undefined) {
-    return display;
-  }
-  if (min !== undefined && max !== undefined) {
-    return `${min}..${max}`;
-  }
-  if (min !== undefined) {
-    return `>=${min}`;
-  }
-  if (max !== undefined) {
-    return `<=${max}`;
-  }
-
-  return fallback;
-}
-
 function createNumericSchema(
   kind: "integer" | "number",
   options: NumericSchemaOptions = {},
 ): ClercSchema<number> {
   const { min, max, display } = options;
-  if (
-    (min !== undefined && Number.isNaN(min)) ||
-    (max !== undefined && Number.isNaN(max)) ||
-    (min !== undefined && max !== undefined && min > max)
-  ) {
+  if (min !== undefined && max !== undefined && min > max) {
     throw new InvalidSchemaError(
       `Types.${kind === "integer" ? "Integer" : "Number"} invalid bounds: min (${min}) must be <= max (${max}).`,
     );
   }
 
   const noun = kind === "integer" ? "an integer" : "a number";
-  const jsonSchema: Record<string, unknown> = { type: kind };
-  if (min !== undefined) {
-    jsonSchema.minimum = min;
-  }
-  if (max !== undefined) {
-    jsonSchema.maximum = max;
-  }
+  const label =
+    display ??
+    (min !== undefined && max !== undefined
+      ? `${min}..${max}`
+      : min === undefined
+        ? max === undefined
+          ? kind
+          : `<=${max}`
+        : `>=${min}`);
 
   return createSchema<number>(
-    formatNumericDisplay(kind, min, max, display),
-    jsonSchema,
+    label,
+    {
+      type: kind,
+      ...(min !== undefined && { minimum: min }),
+      ...(max !== undefined && { maximum: max }),
+    },
     (raw) => {
       const num = parseNumber(raw);
       if (kind === "integer" ? !Number.isInteger(num) : Number.isNaN(num)) {
         return fail(`expected ${noun}`);
       }
-      if (
-        (min !== undefined && num < min) ||
-        (max !== undefined && num > max)
-      ) {
-        if (min !== undefined && max !== undefined) {
-          return fail(`expected ${noun} between ${min} and ${max}`);
-        }
-        if (min !== undefined) {
-          return fail(`expected ${noun} >= ${min}`);
-        }
-
-        return fail(`expected ${noun} <= ${max}`);
+      if (min !== undefined && num < min) {
+        return fail(
+          max === undefined
+            ? `expected ${noun} >= ${min}`
+            : `expected ${noun} between ${min} and ${max}`,
+        );
+      }
+      if (max !== undefined && num > max) {
+        return fail(
+          min === undefined
+            ? `expected ${noun} <= ${max}`
+            : `expected ${noun} between ${min} and ${max}`,
+        );
       }
 
       return { value: num };
@@ -434,81 +364,156 @@ function createNumericSchema(
   );
 }
 
-const Integer = (options?: NumericSchemaOptions): ClercSchema<number> =>
-  createNumericSchema("integer", options);
-
-const NumberType = (options?: NumericSchemaOptions): ClercSchema<number> =>
-  createNumericSchema("number", options);
-
 function StringType(options: StringSchemaOptions = {}): ClercSchema<string> {
-  const { trim = false, nonEmpty = false, pattern, display } = options;
+  const {
+    trim = false,
+    nonEmpty = false,
+    pattern,
+    display,
+    maxLength,
+  } = options;
   const minLength =
     options.minLength === undefined
       ? nonEmpty
         ? 1
         : undefined
       : Math.max(options.minLength, nonEmpty ? 1 : 0);
-  const { maxLength } = options;
 
   if (
-    (minLength !== undefined &&
-      (!Number.isInteger(minLength) || minLength < 0)) ||
-    (maxLength !== undefined &&
-      (!Number.isInteger(maxLength) || maxLength < 0)) ||
-    (minLength !== undefined &&
-      maxLength !== undefined &&
-      minLength > maxLength)
+    minLength !== undefined &&
+    maxLength !== undefined &&
+    minLength > maxLength
   ) {
     throw new InvalidSchemaError(
       `Types.String invalid length bounds: minLength (${minLength}) must be <= maxLength (${maxLength}).`,
     );
   }
 
-  const jsonSchema: Record<string, unknown> = { type: "string" };
-  if (minLength !== undefined) {
-    jsonSchema.minLength = minLength;
-  }
-  if (maxLength !== undefined) {
-    jsonSchema.maxLength = maxLength;
-  }
-  if (pattern !== undefined) {
-    jsonSchema.pattern = pattern.source;
-  }
-
-  return createSchema<string>(display ?? "string", jsonSchema, (raw) => {
-    const value = trim ? raw.trim() : raw;
-    if (nonEmpty && value.length === 0) {
-      return fail("expected a non-empty string");
-    }
-    if (minLength !== undefined && value.length < minLength) {
-      return fail(
-        `expected a string with at least ${minLength} ${plural(minLength, "character")}`,
-      );
-    }
-    if (maxLength !== undefined && value.length > maxLength) {
-      return fail(
-        `expected a string with at most ${maxLength} ${plural(maxLength, "character")}`,
-      );
-    }
-    if (pattern !== undefined) {
-      pattern.lastIndex = 0;
-      if (!pattern.test(value)) {
-        return fail(`expected value matching ${pattern}`);
+  return createSchema<string>(
+    display ?? "string",
+    {
+      type: "string",
+      ...(minLength !== undefined && { minLength }),
+      ...(maxLength !== undefined && { maxLength }),
+      ...(pattern !== undefined && { pattern: pattern.source }),
+    },
+    (raw) => {
+      const value = trim ? raw.trim() : raw;
+      if (nonEmpty && value.length === 0) {
+        return fail("expected a non-empty string");
       }
-    }
+      if (minLength !== undefined && value.length < minLength) {
+        return fail(
+          `expected a string with at least ${minLength} ${plural(minLength, "character")}`,
+        );
+      }
+      if (maxLength !== undefined && value.length > maxLength) {
+        return fail(
+          `expected a string with at most ${maxLength} ${plural(maxLength, "character")}`,
+        );
+      }
+      if (pattern !== undefined) {
+        pattern.lastIndex = 0;
+        if (!pattern.test(value)) {
+          return fail(`expected value matching ${pattern}`);
+        }
+      }
 
-    return { value };
-  });
+      return { value };
+    },
+  );
 }
 
-const Regex = (pattern: RegExp, display?: string): ClercSchema<string> =>
-  StringType({ pattern, display: display ?? pattern.toString() });
+export interface ArrayConstraintOptions {
+  readonly unique?: boolean;
+  readonly minItems?: number;
+  readonly maxItems?: number;
+}
+
+export function validateArraySchemaOptions(
+  label: string,
+  isArray: boolean,
+  { unique, minItems, maxItems }: ArrayConstraintOptions,
+): void {
+  if (!unique && minItems === undefined && maxItems === undefined) {
+    return;
+  }
+  if (!isArray) {
+    throw new InvalidSchemaError(
+      `${label} array constraints (unique, minItems, maxItems) can only be used with array flags or variadic arguments.`,
+    );
+  }
+  if (
+    (minItems !== undefined && minItems < 0) ||
+    (maxItems !== undefined && maxItems < 0) ||
+    (minItems !== undefined && maxItems !== undefined && minItems > maxItems)
+  ) {
+    throw new InvalidSchemaError(`${label} has invalid item count bounds.`);
+  }
+}
+
+export const withArrayJsonSchema = (
+  schema: Record<string, unknown>,
+  { unique, minItems, maxItems }: ArrayConstraintOptions,
+): Record<string, unknown> => ({
+  ...schema,
+  ...(unique ? { uniqueItems: true } : {}),
+  ...(minItems === undefined ? {} : { minItems }),
+  ...(maxItems === undefined ? {} : { maxItems }),
+});
+
+export function validateArrayConstraints(
+  target: string,
+  values: readonly unknown[],
+  { unique, minItems, maxItems }: ArrayConstraintOptions,
+): void {
+  if (minItems !== undefined && values.length < minItems) {
+    throw new ValidationError(target, values, [
+      { message: `expected at least ${minItems} ${plural(minItems, "item")}` },
+    ]);
+  }
+  if (maxItems !== undefined && values.length > maxItems) {
+    throw new ValidationError(target, values, [
+      { message: `expected at most ${maxItems} ${plural(maxItems, "item")}` },
+    ]);
+  }
+  if (unique) {
+    const seen = new Set<unknown>();
+    for (const item of values) {
+      if (seen.has(item)) {
+        throw new ValidationError(target, values, [
+          { message: `duplicate value '${String(item)}'` },
+        ]);
+      }
+      seen.add(item);
+    }
+  }
+}
+
+export async function convertItemList(
+  convert: TypeConverter | undefined,
+  target: string,
+  items: readonly string[],
+  constraints?: ArrayConstraintOptions,
+): Promise<unknown[]> {
+  const converted = convert
+    ? await Promise.all(items.map((item) => convert(item, target)))
+    : [...items];
+  if (constraints) {
+    validateArrayConstraints(target, converted, constraints);
+  }
+
+  return converted;
+}
 
 export const Types = {
   Counter,
   Enum,
-  Integer,
-  Number: NumberType,
+  Integer: (options?: NumericSchemaOptions) =>
+    createNumericSchema("integer", options),
+  Number: (options?: NumericSchemaOptions) =>
+    createNumericSchema("number", options),
   String: StringType,
-  Regex,
+  Regex: (pattern: RegExp, display?: string) =>
+    StringType({ pattern, display: display ?? pattern.toString() }),
 } as const;

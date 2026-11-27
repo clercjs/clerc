@@ -5,16 +5,10 @@ Expose any Clerc v2 CLI as a zero-dependency **Model Context Protocol (MCP)** st
 ## Usage
 
 ```ts
-import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc } from "clerc";
+import { mcp } from "@clerc/plugin-mcp";
+import { Types, cli, command } from "clerc";
 
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-  description: "Build and deploy apps",
-}).use(mcpPlugin());
-
-cli.command("deploy <env>", {
+const deploy = command("deploy <env>", {
   description: "Deploy application",
   args: { env: Types.Enum("staging", "prod") },
   flags: {
@@ -25,7 +19,14 @@ cli.command("deploy <env>", {
   },
 });
 
-await cli.runMain();
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  description: "Build and deploy apps",
+  commands: [deploy, mcp()],
+});
+
+await app.runMain();
 ```
 
 Start the MCP server over stdio:

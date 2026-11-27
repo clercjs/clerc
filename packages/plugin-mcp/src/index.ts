@@ -1,6 +1,7 @@
 import type { Readable, Writable } from "node:stream";
 
-import { plugin } from "clerc";
+import type { Command } from "clerc";
+import { command } from "clerc";
 
 import type {
   CreateMcpHandlerOptions,
@@ -48,7 +49,7 @@ declare module "clerc" {
   }
 }
 
-export interface McpPluginOptions {
+export interface McpOptions {
   /**
    * Subcommand name that starts the MCP stdio server.
    *
@@ -81,7 +82,7 @@ export interface McpPluginOptions {
   readonly output?: Writable;
 }
 
-export function mcpPlugin(options: McpPluginOptions = {}) {
+export function mcp(options: McpOptions = {}): Command {
   const {
     command: commandName = "mcp",
     serverName,
@@ -91,9 +92,9 @@ export function mcpPlugin(options: McpPluginOptions = {}) {
     output,
   } = options;
 
-  return plugin("clerc:mcp").command(commandName, {
+  return command(commandName, {
     description: "Start an MCP stdio server exposing CLI commands as tools",
-    standalone: true,
+    meta: { mcp: { enabled: false } },
     async run(ctx) {
       const handler = createMcpHandler({
         model: ctx.model,

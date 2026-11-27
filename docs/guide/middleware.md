@@ -8,56 +8,65 @@ import { onionState } from "./middleware.playground.ts";
 
 # Middleware
 
-Clerc wraps command execution in an onion middleware pipeline. Middleware only runs after a command matches and passes validation; built-in `--help` and `--version` requests return immediately without opening connections or running auth checks.
+Middlewares wrap command execution in an onion pipeline and can bundle shared flags, checks, error handlers, and typed `ctx.state`. Middleware only runs after a command matches and passes validation; built-in `--help` and `--version` requests return immediately without opening connections or running auth checks.
 
-## Onion Lifecycle and Teardown
+## Shorthand Onion Middleware
 
-Call `await next()` to run downstream middlewares and the matched command handler. Wrap `await next()` in `try / finally` to guarantee cleanup even if the command throws:
+Pass an async function `(ctx, next) => ...` to `middleware()`. Wrap `await next()` in `try / finally` to guarantee cleanup even if downstream handlers throw:
 
 ```ts
-import { clerc } from "clerc";
+import { cli, middleware } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" }).middleware(
-  async (ctx, next) => {
-    const start = performance.now();
-    try {
-      await next();
-    } finally {
-      const ms = (performance.now() - start).toFixed(1);
-      ctx.log.debug(`${ctx.calledAs} completed in ${ms}ms`);
-    }
-  },
-);
+const withTiming = middleware(async (ctx, next) => {
+  const start = performance.now();
+  try {
+    await next();
+  } finally {
+    const ms = (performance.now() - start).toFixed(1);
+    ctx.log.debug(`${ctx.calledAs} completed in ${ms}ms`);
+  }
+});
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  use: [withTiming],
+});
 ```
 
-## Injecting Typed `ctx.state`
+## Injecting Typed `ctx.state` (`setup` + `run`)
 
-All user- and plugin-injected runtime data lives in a dedicated `ctx.state` namespace, keeping Clerc's built-in context properties (`ctx.args`, `ctx.flags`, `ctx.log`, `ctx.terminal`, `ctx.help`, `ctx.model`) isolated from naming collisions.
+All middleware-injected data lives in `ctx.state`, keeping Clerc's built-in context properties (`ctx.args`, `ctx.flags`, `ctx.log`, `ctx.terminal`, `ctx.help`, `ctx.model`) isolated from naming collisions.
 
-Pass an object to `next({ ... })` and return its result to merge new properties into `ctx.state` with full TypeScript inference for all subsequent middlewares and commands:
+Use the object form of `middleware({ use, flags, check, onError, setup, run })` to declare flags and return derived state directly from `setup(ctx)`. Both the middleware's own `run(ctx, next)` (for `try / finally` resource cleanup) and all downstream middlewares and commands receive the inferred `ctx.state` type automatically:
 
 ```ts
-import { clerc } from "clerc";
+import { cli, command, middleware } from "clerc";
 
-const cli = clerc({ name: "acme", version: "1.0.0" })
-  .flags({
+const withDb = middleware({
+  flags: {
     config: { type: String, default: "acme.json" },
-  })
-  .middleware(async (ctx, next) => {
+  },
+  async setup(ctx) {
     const db = {
       url: `sqlite://${ctx.flags.config}`,
       query: async (sql: string) => [{ id: 1, sql }],
       close: async () => {},
     };
 
+    return { db };
+  },
+  async run(ctx, next) {
     try {
-      return await next({ db });
+      await next();
     } finally {
-      await db.close();
+      await ctx.state.db.close();
     }
-  });
+  },
+});
 
-cli.command("users", {
+const users = command("users", {
+  use: [withDb],
   async run(ctx) {
     ctx.state.db;
     //        ^?
@@ -65,25 +74,28 @@ cli.command("users", {
     ctx.log.info(`Loaded ${rows.length} rows`);
   },
 });
+
+const app = cli({
+  name: "acme",
+  version: "1.0.0",
+  use: [withDb],
+  commands: [users],
+});
 ```
 
 <CliPlayground :scenario="onionState" lang="en" />
 
-## Execution Order and `enforce`
+## Execution Order and Deduplication
 
-By default, middlewares run in registration order (`.use()` and `.middleware()` order). Because plugins encapsulate middlewares behind `.use(somePlugin())`, infrastructure plugins can pin their position in the onion using `{ enforce: "pre" | "post" }`:
+Middlewares execute in **topological + lexical order**:
 
-1. `enforce: "pre"`: outermost layer, running **first** on entry and **last** in `finally` (used by `@clerc/plugin-update-notifier` to start fetching early and print after teardown logs).
-2. _(default)_: normal middleware in registration order.
-3. `enforce: "post"`: innermost layer, running right before `command.run()` after normal middleware has populated `ctx.state`.
-
-::: tip Compile-time safety for `enforce: "pre"`
-Because a `"pre"` middleware runs before normal middlewares at runtime, Clerc narrows its `ctx.state` parameter at compile time so it cannot accidentally read state injected by normal middlewares registered earlier in the builder chain.
-:::
+1. If middleware `B` declares `use: [A]`, `A` is expanded before `B`.
+2. Middlewares are deduplicated by object reference (`Set`), so referencing `withDb` on both `command("users", { use: [withDb] })` (for static typing) and `use(withDb, [users])` or `cli({ use: [withDb] })` runs `withDb` **exactly once**.
+3. Outer middlewares in `use: [first, second]` wrap inner ones—place infrastructure middlewares like `updateNotifier()` first in `cli({ use: [updateNotifier(), ...] })` so they start earliest and finish after inner `finally` blocks.
 
 ## Module Augmentation (`CustomState`)
 
-When authoring standalone command modules or plugins that expect ambient state, augment `CustomState` on `"clerc"`:
+When authoring standalone helpers that expect ambient state across the application, augment `CustomState` on `"clerc"`:
 
 ```ts
 declare module "clerc" {

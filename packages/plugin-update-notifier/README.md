@@ -1,15 +1,19 @@
 # @clerc/plugin-update-notifier
 
-Zero-dependency, non-blocking npm update notifier plugin for [Clerc](https://clerc.so1ve.dev).
+Zero-dependency, non-blocking npm update notifier middleware for [Clerc](https://clerc.so1ve.dev).
 
 ## Usage
 
 ```ts
-import { updateNotifierPlugin } from "@clerc/plugin-update-notifier";
-import { clerc } from "clerc";
+import { updateNotifier } from "@clerc/plugin-update-notifier";
+import { cli } from "clerc";
 
-const cli = clerc({
+const app = cli({
   name: "acme-cli",
   version: "2.0.0",
-}).use(updateNotifierPlugin());
+  use: [updateNotifier()],
+  commands: [
+    // ...
+  ],
+});
 ```

@@ -8,42 +8,40 @@ import { customHelp, groupedHelp } from "./help.playground.ts";
 
 # Help
 
-Clerc formats `--help` with a top rule, uppercase section headings, aligned columns, and metadata tags (`[default: ...]`, `[env: ...]`) that stay intact when lines wrap.
+Clerc formats `--help` with uppercase section headings, aligned columns, and metadata tags (`[default: ...]`, `[env: ...]`) that stay intact when lines wrap.
 
 ## Grouping Commands and Options
 
-Organize large CLIs with `.groups()` and assign `group` keys on commands or flags:
+Use the overloaded `group(title, target)` combinator to group either commands inside `commands: [...]` or flags inside `flags: [...]`:
 
 ```ts
-import { Types, clerc } from "clerc";
+import { cli, command, group } from "clerc";
 
-const cli = clerc({
+const build = command("build <entry>", {
+  aliases: ["b"],
+  description: "Compile source files",
+  args: { entry: { description: "Entry file path" } },
+  flags: [
+    { output: { type: String, short: "o", description: "Output directory" } },
+    group("Input Options", {
+      src: { type: String, description: "Source directory" },
+      cache: {
+        type: Boolean,
+        default: true,
+        description: "Use build cache",
+      },
+    }),
+  ],
+  run() {},
+});
+
+const app = cli({
   name: "acme",
   version: "2.0.0",
   description: "Build and deploy TypeScript apps",
-  examples: [["$ acme build src/index.ts -p 8080", "Build with custom port"]],
+  examples: [["$ acme build src/index.ts -o dist", "Build with custom outDir"]],
   notes: ["Set NO_COLOR=1 to disable ANSI colors."],
-}).groups({
-  commands: { core: "Core" },
-  flags: { input: "Input Options" },
-});
-
-cli.command("build <entry>", {
-  aliases: ["b"],
-  group: "core",
-  description: "Compile source files",
-  args: { entry: { description: "Entry file path" } },
-  flags: {
-    output: { type: String, short: "o", description: "Output directory" },
-    src: { type: String, group: "input", description: "Source directory" },
-    cache: {
-      type: Boolean,
-      default: true,
-      group: "input",
-      description: "Use build cache",
-    },
-  },
-  run() {},
+  commands: [group("Core", [build])],
 });
 ```
 
@@ -51,12 +49,12 @@ cli.command("build <entry>", {
 
 ## Customizing Help Sections
 
-You can add a `header` or `footer`, override individual section renderers via `help.sections`, or inspect the structured AST directly with `buildHelpDocument(cli.buildModel())`:
+You can add a `header` or `footer`, override individual section renderers via `help.sections`, or inspect the structured AST directly with `buildHelpDocument(app.buildModel())`:
 
 ```ts
-import { clerc, defaultHelpSections } from "clerc";
+import { cli, defaultHelpSections } from "clerc";
 
-const cli = clerc({
+const app = cli({
   name: "acme",
   version: "2.0.0",
   help: {

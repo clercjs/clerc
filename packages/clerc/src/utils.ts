@@ -17,8 +17,6 @@ export type CamelCase<S extends string> =
 
 export type IsAny<T> = 0 extends 1 & T ? true : false;
 
-export const EMPTY_ARRAY: readonly never[] = Object.freeze([]);
-
 export const toArray = <T>(value: MaybeArray<T>): T[] =>
   Array.isArray(value) ? [...value] : [value as T];
 
@@ -71,13 +69,12 @@ export function joinList(
   return `${values.slice(0, -1).join(", ")}, ${conjunction} ${values.at(-1)}`;
 }
 
-export function evaluateDefault(value: unknown): unknown {
-  if (typeof value === "function") {
-    return (value as () => unknown)();
-  }
-
-  return Array.isArray(value) ? [...value] : value;
-}
+export const evaluateDefault = (value: unknown): unknown =>
+  typeof value === "function"
+    ? (value as () => unknown)()
+    : Array.isArray(value)
+      ? [...value]
+      : value;
 
 export const resolveAsyncValue = async <T, Arg = void>(
   value: MaybeAsyncGetter<T, Arg>,

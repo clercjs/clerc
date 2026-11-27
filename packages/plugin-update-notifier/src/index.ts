@@ -2,7 +2,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { plugin } from "clerc";
+import type { Middleware } from "clerc";
+import { middleware } from "clerc";
 
 export interface UpdateInfo {
   readonly current: string;
@@ -10,7 +11,7 @@ export interface UpdateInfo {
   readonly name: string;
 }
 
-export interface UpdateNotifierPluginOptions {
+export interface UpdateNotifierOptions {
   /**
    * Package name on npm. Defaults to `ctx.model.meta.name`.
    */
@@ -140,9 +141,9 @@ const awaitWithin = <T>(
         }),
       ]);
 
-export function updateNotifierPlugin(
-  options: UpdateNotifierPluginOptions = {},
-) {
+export function updateNotifier(
+  options: UpdateNotifierOptions = {},
+): Middleware {
   const {
     packageName,
     version,
@@ -199,31 +200,28 @@ export function updateNotifierPlugin(
     return undefined;
   }
 
-  return plugin("clerc:update-notifier").middleware(
-    async (ctx, next) => {
-      const pkgName = packageName ?? ctx.model.meta.name;
-      const currentVersion = version ?? ctx.model.meta.version;
-      const checkPromise = checkForUpdate(
-        pkgName,
-        currentVersion,
-        ctx.terminal.env,
-        ctx.terminal.isTTY,
-      );
+  return middleware(async (ctx, next) => {
+    const pkgName = packageName ?? ctx.model.meta.name;
+    const currentVersion = version ?? ctx.model.meta.version;
+    const checkPromise = checkForUpdate(
+      pkgName,
+      currentVersion,
+      ctx.terminal.env,
+      ctx.terminal.isTTY,
+    );
 
-      try {
-        await next();
-      } finally {
-        const info = await awaitWithin(checkPromise, postRunGraceMs);
+    try {
+      await next();
+    } finally {
+      const info = await awaitWithin(checkPromise, postRunGraceMs);
 
-        if (info) {
-          const updateCmd = installCommand ?? `npm i -g ${info.name}`;
-          ctx.log.box.warn(
-            `Update available: ${ctx.log.theme.muted(info.current)} → ${ctx.log.theme.success(info.latest)}`,
-            `Run ${ctx.log.theme.accent(updateCmd)} to update`,
-          );
-        }
+      if (info) {
+        const updateCmd = installCommand ?? `npm i -g ${info.name}`;
+        ctx.log.box.warn(
+          `Update available: ${ctx.log.theme.muted(info.current)} → ${ctx.log.theme.success(info.latest)}`,
+          `Run ${ctx.log.theme.accent(updateCmd)} to update`,
+        );
       }
-    },
-    { enforce: "pre" },
-  );
+    }
+  });
 }

@@ -26,17 +26,13 @@ npm install @clerc/plugin-mcp
 
 ## Usage
 
+Add `mcp()` directly to `commands: [...]`:
+
 ```ts
-import { mcpPlugin } from "@clerc/plugin-mcp";
-import { Types, clerc } from "clerc";
+import { mcp } from "@clerc/plugin-mcp";
+import { Types, cli, command } from "clerc";
 
-const cli = clerc({
-  name: "acme",
-  version: "2.0.0",
-  description: "Manage Acme deployments and databases",
-}).use(mcpPlugin());
-
-cli.command("deploy <env>", {
+const deploy = command("deploy <env>", {
   description: "Deploy service to target environment",
   args: {
     env: {
@@ -57,7 +53,7 @@ cli.command("deploy <env>", {
   },
 });
 
-cli.command("status", {
+const status = command("status", {
   description: "Check cluster health",
   meta: {
     mcp: { readOnly: true, idempotent: true },
@@ -67,7 +63,14 @@ cli.command("status", {
   },
 });
 
-await cli.runMain();
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  description: "Manage Acme deployments and databases",
+  commands: [deploy, status, mcp()],
+});
+
+await app.runMain();
 ```
 
 Point any MCP client at `acme mcp`:

@@ -32,8 +32,32 @@ export type {
   ArgOptions,
   InferCommandArgs,
 } from "./args";
-export { Clerc, clerc } from "./cli";
 export type {
+  CheckContext,
+  CheckFailure,
+  CheckFn,
+  CheckInput,
+  CheckItem,
+  CheckOptions,
+  CheckResult,
+} from "./check";
+export type {
+  Cli,
+  CliOptions,
+  CliWithDefaultOptions,
+  SingleCommandCliOptions,
+} from "./cli";
+export { cli } from "./cli";
+export type {
+  Command,
+  CommandItem,
+  CommandOptions,
+  NamespaceCommandOptions,
+  RootCommandOptions,
+} from "./command";
+export { command, group, use } from "./command";
+export type {
+  CommandMatch,
   CommandNode,
   CommandTree,
   GetCommandFlagsOptions,
@@ -44,18 +68,18 @@ export type {
   BuiltinErrorCode,
   ClercErrorCode,
   ClercErrorOptions,
+  ConstraintErrorOptions,
   FormatDiagnosticOptions,
-  RuleErrorOptions,
   ValidationIssue,
 } from "./errors";
 export {
   ClercError,
+  ConstraintError,
   InvalidSchemaError,
   MissingFlagValueError,
   MissingRequiredArgumentError,
   MissingRequiredFlagError,
   NoCommandError,
-  RuleError,
   UnexpectedArgumentError,
   UnknownCommandError,
   UnknownFlagError,
@@ -63,14 +87,23 @@ export {
   formatDiagnostic,
 } from "./errors";
 export type {
+  ConstraintBranch,
+  ConstraintKind,
+  ConstraintOptions,
+  FlagConstraint,
   FlagCustomMeta,
   FlagDefinitionValue,
   FlagDescriptor,
   FlagMeta,
   FlagOptions,
+  FlagsConstraintNode,
   FlagsDefinition,
+  FlagsGroupNode,
+  FlagsInput,
   InferFlags,
+  InferFlagsInput,
 } from "./flags";
+export { atLeastOne, exclusive, oneOf, together } from "./flags";
 export type {
   HelpArgumentItem,
   HelpCommandGroup,
@@ -96,6 +129,17 @@ export {
   renderHelpDocument,
 } from "./help/renderer";
 export type {
+  InferMiddlewareFlags,
+  InferMiddlewareState,
+  InferMiddlewaresFlags,
+  InferMiddlewaresState,
+  Middleware,
+  MiddlewareFn,
+  MiddlewareNext,
+  MiddlewareOptions,
+} from "./middleware";
+export { middleware } from "./middleware";
+export type {
   ArgvFlagSpec,
   ArgvParseResult,
   ArgvParser,
@@ -114,28 +158,8 @@ export {
   createArgvParser,
   parseBooleanLiteral,
 } from "./parser";
-export { Plugin, plugin } from "./plugin";
 export type {
-  ArgRef,
-  CustomRuleDescriptor,
-  CustomRuleFailure,
-  CustomRuleFn,
-  CustomRuleResult,
-  DeclarativeRuleOptions,
-  FlagRef,
-  GroupRef,
-  MultiRuleKind,
-  RuleBuilder,
-  RuleCheckContext,
-  RuleDescriptor,
-  RuleInput,
-  RuleRef,
-  RuleTarget,
-  RulesEntry,
-  RulesFactory,
-  RulesInput,
-} from "./rules";
-export type {
+  ArrayConstraintOptions,
   ClercSchema,
   CounterSchema,
   DefaultValue,
@@ -148,7 +172,6 @@ export type {
   TypeFunction,
 } from "./schema";
 export { Types, isStandardSchema } from "./schema";
-export { Scope } from "./scope";
 export type {
   MemoryTerminal,
   MemoryTerminalOptions,
@@ -156,16 +179,13 @@ export type {
 } from "./terminal";
 export { createMemoryTerminal, createTerminal } from "./terminal";
 export type {
-  AnyCommandDefinition,
-  ClercOptions,
+  CliContext,
   CliMeta,
   CliModel,
   CommandContext,
   CommandCustomMeta,
-  CommandDefinition,
   CommandHandler,
   CommandMeta,
-  CommandOptions,
   CompleteFileOptions,
   CompleteListOptions,
   CompletionCandidate,
@@ -176,23 +196,14 @@ export type {
   CompletionResult,
   CompletionSpec,
   CustomState,
-  ErrorContext,
   ErrorHandler,
   ExampleInput,
   GroupDefinition,
-  GroupsInput,
   HelpHelper,
   HelpOptions,
-  Middleware,
-  MiddlewareNext,
-  MiddlewareOptions,
-  MiddlewareResult,
+  MiddlewareContext,
   RawParseContext,
-  RootCommandOptions,
-  RunContext,
   RunOptions,
   RunResult,
-  ScopeOptions,
   State,
-  SubcommandOptions,
 } from "./types";

@@ -15,17 +15,17 @@ export type BuiltinErrorCode =
   | "ERR_UNEXPECTED_ARGUMENT"
   | "ERR_UNKNOWN_FLAG"
   | "ERR_VALIDATION"
-  | "ERR_RULE_VIOLATION"
+  | "ERR_CONSTRAINT"
   | "ERR_INVALID_SCHEMA";
 
 export type ClercErrorCode = BuiltinErrorCode | (string & {});
 
 const BUILTIN_USAGE_EXIT_CODES = new Set<string>([
+  "ERR_CONSTRAINT",
   "ERR_MISSING_ARGUMENT",
   "ERR_MISSING_FLAG",
   "ERR_MISSING_FLAG_VALUE",
   "ERR_NO_COMMAND",
-  "ERR_RULE_VIOLATION",
   "ERR_UNEXPECTED_ARGUMENT",
   "ERR_UNKNOWN_COMMAND",
   "ERR_UNKNOWN_FLAG",
@@ -210,16 +210,16 @@ export class ValidationError extends ClercError {
   }
 }
 
-export interface RuleErrorOptions extends ErrorOptions {
+export interface ConstraintErrorOptions extends ErrorOptions {
   readonly detail?: string;
   readonly hints?: readonly string[];
   readonly exitCode?: number;
 }
 
-export class RuleError extends ClercError {
-  constructor(message: string, options?: RuleErrorOptions) {
+export class ConstraintError extends ClercError {
+  constructor(message: string, options?: ConstraintErrorOptions) {
     super(message, {
-      code: "ERR_RULE_VIOLATION",
+      code: "ERR_CONSTRAINT",
       exitCode: options?.exitCode ?? 2,
       detail: options?.detail,
       hints: options?.hints,
@@ -240,10 +240,10 @@ export class InvalidSchemaError extends ClercError {
 const COMMAND_DISTANCE_THRESHOLD = 4;
 
 const USAGE_ERROR_CODES = new Set<ClercErrorCode>([
+  "ERR_CONSTRAINT",
   "ERR_MISSING_ARGUMENT",
   "ERR_MISSING_FLAG",
   "ERR_MISSING_FLAG_VALUE",
-  "ERR_RULE_VIOLATION",
   "ERR_UNEXPECTED_ARGUMENT",
 ]);
 

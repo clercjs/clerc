@@ -12,12 +12,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createMemoryTerminal, createTestCli } from "@clerc/test-utils";
-import { Complete, Types } from "clerc";
+import { Complete, Types, command, exclusive, middleware, use } from "clerc";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   ShellCompDirective,
-  completionsPlugin,
+  completions,
   detectShell,
   resolveInstallPlan,
 } from "../src";
@@ -28,18 +28,7 @@ const hasShell = (shell: string): boolean =>
 describe("plugin-completions v2", () => {
   it("generates pure-static zsh, bash, fish, and powershell scripts when no dynamic handlers exist", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .flags({
-        token: {
-          type: String,
-          required: true,
-          description: "Global auth token",
-        },
-      })
-      .use(completionsPlugin());
-
-    cli.command("build [env]", {
-      default: true,
+    const build = command("build [env]", {
       aliases: ["b"],
       description: "Build project",
       args: {
@@ -54,11 +43,30 @@ describe("plugin-completions v2", () => {
       },
       run() {},
     });
-    cli.command("internal", { hidden: true, run() {} });
+
+    const auth = middleware({
+      flags: {
+        token: {
+          type: String,
+          required: true,
+          description: "Scoped auth token",
+        },
+      },
+    });
+    const [scopedBuild] = use(auth, [build]);
+
+    const app = createTestCli({
+      commands: [
+        scopedBuild,
+        command("internal", { hidden: true, run() {} }),
+        completions(),
+      ],
+      default: scopedBuild,
+    });
 
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
-      const res = await cli.run(["completions", shell], { terminal });
+      const res = await app.run(["completions", shell], { terminal });
       const script = terminal.stdoutText();
 
       expect(res.ok).toBeTruthy();
@@ -71,7 +79,7 @@ describe("plugin-completions v2", () => {
     }
 
     terminal.clear();
-    await cli.run(["completions", "fish"], { terminal });
+    await app.run(["completions", "fish"], { terminal });
 
     expect(terminal.stdoutText()).toContain(
       "function __test_perform_completion",
@@ -80,83 +88,84 @@ describe("plugin-completions v2", () => {
 
     // Works even when global required flags (--token) are not set!
     terminal.clear();
-    await cli.run(["complete", "--", "--dry"], { terminal });
+    await app.run(["complete", "--", "--dry"], { terminal });
 
     expect(terminal.stdoutText()).toBe("--dry-run\tDry run\n:4");
 
-    // Negatable boolean flag with default: true suggests --no-cache
     terminal.clear();
-    await cli.run(["complete", "--", "build", "--no-"], { terminal });
+    await app.run(["complete", "--", "build", "--no-"], { terminal });
 
     expect(terminal.stdoutText()).toContain("--no-cache\tUse cache");
     expect(terminal.stdoutText()).toContain("--no-dry-run\tDry run");
 
-    // Alias resolution + automatic enum values
     terminal.clear();
-    await cli.run(["complete", "--", "b", ""], { terminal });
+    await app.run(["complete", "--", "b", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe("dev\nprod\n:4");
   });
 
   it("supports static declarative complete values on flags, args, and commands without dynamic fallback", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(completionsPlugin())
-      .command("deploy [region]", {
-        args: {
-          region: {
-            complete: [
-              { value: "us-east-1", description: "US East" },
-              { value: "eu-west-1", description: "Europe" },
-            ],
+    const app = createTestCli({
+      commands: [
+        completions(),
+        command("deploy [region]", {
+          args: {
+            region: {
+              complete: [
+                { value: "us-east-1", description: "US East" },
+                { value: "eu-west-1", description: "Europe" },
+              ],
+            },
           },
-        },
-        flags: {
-          config: {
-            type: String,
-            complete: Complete.file("ts", "json"),
+          flags: {
+            config: {
+              type: String,
+              complete: Complete.file("ts", "json"),
+            },
+            outDir: {
+              type: String,
+              complete: Complete.dir(),
+            },
+            anyFile: {
+              type: String,
+              complete: Complete.file(),
+            },
+            hidden: {
+              type: String,
+              complete: Complete.none,
+            },
           },
-          outDir: {
-            type: String,
-            complete: Complete.dir(),
-          },
-          anyFile: {
-            type: String,
-            complete: Complete.file(),
-          },
-          hidden: {
-            type: String,
-            complete: Complete.none,
-          },
-        },
-        run() {},
-      })
-      .command("open [target]", {
-        complete: Complete.list(["alpha", "beta"], {
-          keepOrder: true,
-          noSpace: true,
+          run() {},
         }),
-        run() {},
-      });
+        command("open [target]", {
+          complete: Complete.list(["alpha", "beta"], {
+            keepOrder: true,
+            noSpace: true,
+          }),
+          run() {},
+        }),
+      ],
+    });
 
-    await cli.run(["complete", "--", "deploy", "eu"], { terminal });
+    await app.run(["complete", "--", "deploy", "eu"], { terminal });
 
     expect(terminal.stdoutText()).toBe("eu-west-1\tEurope\n:4");
 
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--config", ""], { terminal });
+    await app.run(["complete", "--", "deploy", "--config", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       `ts\njson\n:${ShellCompDirective.FilterFileExt}`,
     );
 
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--out-dir", ""], { terminal });
+    await app.run(["complete", "--", "deploy", "--out-dir", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(`:${ShellCompDirective.FilterDirs}`);
 
     terminal.clear();
-    await cli.run(["complete", "--", "open", ""], { terminal });
+    await app.run(["complete", "--", "open", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       `alpha\nbeta\n:${ShellCompDirective.NoFileComp | ShellCompDirective.KeepOrder | ShellCompDirective.NoSpace}`,
@@ -164,7 +173,7 @@ describe("plugin-completions v2", () => {
 
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
-      await cli.run(["completions", shell], { terminal });
+      await app.run(["completions", shell], { terminal });
       const script = terminal.stdoutText();
 
       expect(script).not.toMatch(/\bcomplete (?:'--'|-- )/);
@@ -176,36 +185,43 @@ describe("plugin-completions v2", () => {
 
   it("completes multi-level subcommand paths for built-in help [command...]", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .flags({ server: { type: String, required: true } })
-      .use(completionsPlugin());
+    const serverMw = middleware({
+      flags: { server: { type: String, required: true } },
+    });
+    const app = createTestCli({
+      commands: [
+        completions(),
+        ...use(serverMw, [
+          command("deploy", {
+            description: "Deploy application",
+            run() {},
+          }),
+          command("db", {
+            description: "Database management",
+            commands: [
+              command("migrate", {
+                description: "Run pending migrations",
+                run() {},
+              }),
+              command("seed", {
+                description: "Seed development data",
+                run() {},
+              }),
+            ],
+          }),
+          command("secret", {
+            hidden: true,
+            run() {},
+          }),
+          command("unlisted", {
+            complete: false,
+            run() {},
+          }),
+        ]),
+      ],
+    });
 
-    cli.command("deploy", {
-      description: "Deploy application",
-      run() {},
-    });
-    cli.command("db", {
-      description: "Database management",
-    });
-    cli.command("db migrate", {
-      description: "Run pending migrations",
-      run() {},
-    });
-    cli.command("db seed", {
-      description: "Seed development data",
-      run() {},
-    });
-    cli.command("secret", {
-      hidden: true,
-      run() {},
-    });
-    cli.command("unlisted", {
-      complete: false,
-      run() {},
-    });
-
-    // Top-level: acme help <TAB>
-    await cli.run(["complete", "--", "help", ""], { terminal });
+    await app.run(["complete", "--", "help", ""], { terminal });
     const topOut = terminal.stdoutText();
 
     expect(topOut).toContain("deploy\tDeploy application");
@@ -215,9 +231,8 @@ describe("plugin-completions v2", () => {
     expect(topOut).not.toContain("unlisted");
     expect(topOut).not.toContain("complete\t");
 
-    // Prefix filter: acme help d<TAB>
     terminal.clear();
-    await cli.run(["complete", "--", "help", "d"], { terminal });
+    await app.run(["complete", "--", "help", "d"], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       ["deploy\tDeploy application", "db\tDatabase management", ":4"].join(
@@ -225,9 +240,8 @@ describe("plugin-completions v2", () => {
       ),
     );
 
-    // Nested level: acme help db <TAB>
     terminal.clear();
-    await cli.run(["complete", "--", "help", "db", ""], { terminal });
+    await app.run(["complete", "--", "help", "db", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       [
@@ -237,136 +251,134 @@ describe("plugin-completions v2", () => {
       ].join("\n"),
     );
 
-    // Nested prefix: acme help db m<TAB>
     terminal.clear();
-    await cli.run(["complete", "--", "help", "db", "m"], { terminal });
+    await app.run(["complete", "--", "help", "db", "m"], { terminal });
 
     expect(terminal.stdoutText()).toBe("migrate\tRun pending migrations\n:4");
   });
 
   it("supports async custom complete() on commands, args, and flags with typed context and file directives", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .flags({
-        profile: { type: String, default: "default" },
-      })
-      .use(completionsPlugin());
-
-    cli.command("deploy <env> <service>", {
-      flags: {
-        region: {
-          type: String,
-          short: "r",
-          async complete({ current }) {
-            await Promise.resolve();
-
-            return [
-              { value: "us-east-1", description: "US East" },
-              { value: "eu-west-1", description: "Europe" },
-            ].filter((item) => item.value.startsWith(current));
-          },
-        },
-        config: {
-          type: String,
-          complete: () => Complete.file("ts", "json"),
-        },
-        tags: {
-          type: Types.Enum("v1", "v2", "latest"),
-          multiple: true,
-          delimiter: ",",
-        },
-      },
-      args: {
-        env: Types.Enum("staging", "prod"),
-        service: {
-          async complete({ args, flags }) {
-            await Promise.resolve();
-
-            return [`${args.env ?? "dev"}-${flags.region ?? "global"}-api`];
-          },
-        },
-      },
-      complete(ctx) {
-        expectTypeOf(ctx.args).toEqualTypeOf<
-          Partial<{ env: "staging" | "prod"; service: string }>
-        >();
-        expectTypeOf(ctx.flags).toEqualTypeOf<
-          Partial<{
-            region: string | undefined;
-            config: string | undefined;
-            tags: ("v1" | "v2" | "latest")[];
-            profile: string;
-          }>
-        >();
-
-        return undefined;
-      },
-      run(ctx) {
-        expectTypeOf(ctx.flags.region).toEqualTypeOf<string | undefined>();
-      },
+    const profileMw = middleware({
+      flags: { profile: { type: String, default: "default" } },
     });
 
-    cli.command("checkout <branch>", {
-      async complete() {
-        await Promise.resolve();
+    const app = createTestCli({
+      use: [profileMw],
+      commands: [
+        completions(),
+        command("deploy <env> <service>", {
+          use: [profileMw],
+          flags: {
+            region: {
+              type: String,
+              short: "r",
+              async complete({ current }) {
+                await Promise.resolve();
 
-        return Complete.list(
-          [
-            { value: "main", description: "Default branch" },
-            { value: "release/v2", description: "Release branch" },
-          ],
-          { keepOrder: true },
-        );
-      },
-      run() {},
+                return [
+                  { value: "us-east-1", description: "US East" },
+                  { value: "eu-west-1", description: "Europe" },
+                ].filter((item) => item.value.startsWith(current));
+              },
+            },
+            config: {
+              type: String,
+              complete: () => Complete.file("ts", "json"),
+            },
+            tags: {
+              type: Types.Enum("v1", "v2", "latest"),
+              multiple: true,
+              delimiter: ",",
+            },
+          },
+          args: {
+            env: Types.Enum("staging", "prod"),
+            service: {
+              async complete({ args, flags }) {
+                await Promise.resolve();
+
+                return [`${args.env ?? "dev"}-${flags.region ?? "global"}-api`];
+              },
+            },
+          },
+          complete(ctx) {
+            expectTypeOf(ctx.args).toEqualTypeOf<
+              Partial<{ env: "staging" | "prod"; service: string }>
+            >();
+            expectTypeOf(ctx.flags).toEqualTypeOf<
+              Partial<{
+                region: string | undefined;
+                config: string | undefined;
+                tags: ("v1" | "v2" | "latest")[];
+                profile: string;
+              }>
+            >();
+
+            return undefined;
+          },
+          run(ctx) {
+            expectTypeOf(ctx.flags.region).toEqualTypeOf<string | undefined>();
+          },
+        }),
+        command("checkout <branch>", {
+          async complete() {
+            await Promise.resolve();
+
+            return Complete.list(
+              [
+                { value: "main", description: "Default branch" },
+                { value: "release/v2", description: "Release branch" },
+              ],
+              { keepOrder: true },
+            );
+          },
+          run() {},
+        }),
+      ],
     });
 
     for (const shell of ["zsh", "bash", "fish", "powershell"] as const) {
       terminal.clear();
-      const res = await cli.run(["completions", shell], { terminal });
+      const res = await app.run(["completions", shell], { terminal });
 
       expect(res.ok).toBeTruthy();
       expect(terminal.stdoutText()).toMatch(/\bcomplete (?:'--'|-- )/);
     }
 
-    // 1. Async flag completion (--region <TAB> and --region=eu<TAB>)
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--region", ""], { terminal });
+    await app.run(["complete", "--", "deploy", "--region", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       ["us-east-1\tUS East", "eu-west-1\tEurope", ":4"].join("\n"),
     );
 
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--region=eu"], { terminal });
+    await app.run(["complete", "--", "deploy", "--region=eu"], { terminal });
 
     expect(terminal.stdoutText()).toBe("eu-west-1\tEurope\n:4");
 
-    // 2. File extension directive (--config <TAB>)
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--config", ""], { terminal });
+    await app.run(["complete", "--", "deploy", "--config", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       `ts\njson\n:${ShellCompDirective.FilterFileExt}`,
     );
 
-    // 3. Delimited array flag (--tags=v1,l<TAB>)
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--tags=v1,l"], { terminal });
+    await app.run(["complete", "--", "deploy", "--tags=v1,l"], { terminal });
 
     expect(terminal.stdoutText()).toBe("v1,latest\n:4");
 
-    // 4. Context-aware async arg completion reading preceding args.env & flags.region
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "prod", "-r", "eu-west-1", ""], {
+    await app.run(["complete", "--", "deploy", "prod", "-r", "eu-west-1", ""], {
       terminal,
     });
 
     expect(terminal.stdoutText()).toBe("prod-eu-west-1-api\n:4");
 
-    // 5. Command-level async complete() + keepOrder directive
     terminal.clear();
-    await cli.run(["complete", "--", "checkout", ""], { terminal });
+    await app.run(["complete", "--", "checkout", ""], { terminal });
 
     expect(terminal.stdoutText()).toBe(
       [
@@ -379,9 +391,9 @@ describe("plugin-completions v2", () => {
 
   it("reports structured error when shell type is missing", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().use(completionsPlugin());
+    const app = createTestCli({ commands: [completions()] });
 
-    const res = await cli.run(["completions"], { terminal });
+    const res = await app.run(["completions"], { terminal });
 
     expect(res.ok).toBeFalsy();
     expect(res.exitCode).toBe(2);
@@ -390,18 +402,13 @@ describe("plugin-completions v2", () => {
     );
   });
 
-  it("omits already-used non-repeatable flags and rule conflicts (flag + arg), keeps counters/arrays, and parses default command flags", async () => {
+  it("omits already-used non-repeatable flags and exclusive conflicts, keeps counters/arrays, and parses default command flags", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(completionsPlugin())
-      .command("deploy [env]", {
-        default: true,
-        args: { env: Types.Enum("staging", "prod") },
-        flags: {
+    const deploy = command("deploy [env]", {
+      args: { env: Types.Enum("staging", "prod") },
+      flags: [
+        {
           port: { type: Number, short: "p", description: "Server port" },
-          all: { type: Boolean, description: "Deploy all environments" },
-          json: { type: Boolean, description: "JSON" },
-          yaml: { type: Boolean, description: "YAML" },
           tags: {
             type: String,
             multiple: true,
@@ -410,15 +417,20 @@ describe("plugin-completions v2", () => {
           },
           verbose: { type: Types.Counter, short: "v", description: "Verbose" },
         },
-        rules: ({ exclusive, oneOf, flag, arg }) => [
-          exclusive(flag("json"), flag("yaml")),
-          oneOf(arg("env"), flag("all")),
-        ],
-        run() {},
-      });
+        exclusive(
+          { json: { type: Boolean, description: "JSON" } },
+          { yaml: { type: Boolean, description: "YAML" } },
+        ),
+      ],
+      run() {},
+    });
 
-    // Already-used single/boolean flags and their exclusive partners are omitted
-    await cli.run(["complete", "--", "deploy", "--json", "--quiet", "--"], {
+    const app = createTestCli({
+      commands: [completions(), deploy],
+      default: deploy,
+    });
+
+    await app.run(["complete", "--", "deploy", "--json", "--quiet", "--"], {
       terminal,
     });
     const out = terminal.stdoutText();
@@ -430,28 +442,14 @@ describe("plugin-completions v2", () => {
     expect(out).toContain("--verbose");
     expect(out).toContain("--port");
 
-    // Positional arg provided -> conflicting --all flag is hidden
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "prod", "--"], { terminal });
-
-    expect(terminal.stdoutText()).not.toContain("--all");
-
-    // --all flag provided -> conflicting [env] positional completions are skipped
-    terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--all", ""], { terminal });
-
-    expect(terminal.stdoutText()).toBe(":4");
-
-    // Local flag before positional on defaultCommand is consumed instead of treated as positional <env>
-    terminal.clear();
-    await cli.run(["complete", "--", "-p", "8080", ""], { terminal });
+    await app.run(["complete", "--", "-p", "8080", ""], { terminal });
 
     expect(terminal.stdoutText()).toContain("staging");
     expect(terminal.stdoutText()).toContain("prod");
 
-    // Trailing missing-value flag after an earlier flag triggers value completion cleanly
     terminal.clear();
-    await cli.run(["complete", "--", "deploy", "--json", "-p", ""], {
+    await app.run(["complete", "--", "deploy", "--json", "-p", ""], {
       terminal,
     });
 
@@ -460,54 +458,54 @@ describe("plugin-completions v2", () => {
 
   it("stops flag completion once stopParsing triggers for presets and predicates", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli()
-      .use(completionsPlugin())
-      .command("exec <cmd> [args...]", {
-        stopParsing: "first-positional",
-        flags: { quiet: { type: Boolean, short: "q", description: "Quiet" } },
-        run() {},
-      })
-      .command("dev [args...]", {
-        stopParsing: "unknown-flag",
-        flags: { config: { type: String, description: "Config file" } },
-        run() {},
-      })
-      .command("run <env> <script> [args...]", {
-        stopParsing: (token) =>
-          token.kind === "positional" && token.positionalCount === 1,
-        flags: { verbose: { type: Boolean, description: "Verbose" } },
-        run() {},
-      });
+    const app = createTestCli({
+      commands: [
+        completions(),
+        command("exec <cmd> [args...]", {
+          stopParsing: "first-positional",
+          flags: { quiet: { type: Boolean, short: "q", description: "Quiet" } },
+          run() {},
+        }),
+        command("dev [args...]", {
+          stopParsing: "unknown-flag",
+          flags: { config: { type: String, description: "Config file" } },
+          run() {},
+        }),
+        command("run <env> <script> [args...]", {
+          stopParsing: (token) =>
+            token.kind === "positional" && token.positionalCount === 1,
+          flags: { verbose: { type: Boolean, description: "Verbose" } },
+          run() {},
+        }),
+      ],
+    });
 
-    // first-positional: still completes flags before first positional, stops after
-    await cli.run(["complete", "--", "exec", "--"], { terminal });
+    await app.run(["complete", "--", "exec", "--"], { terminal });
 
     expect(terminal.stdoutText()).toContain("--quiet");
 
     terminal.clear();
-    await cli.run(["complete", "--", "exec", "git", "--"], { terminal });
+    await app.run(["complete", "--", "exec", "git", "--"], { terminal });
 
     expect(terminal.stdoutText()).toBe(":4");
 
-    // unknown-flag: still completes flags before unknown flag, stops after
     terminal.clear();
-    await cli.run(["complete", "--", "dev", "--"], { terminal });
+    await app.run(["complete", "--", "dev", "--"], { terminal });
 
     expect(terminal.stdoutText()).toContain("--config");
 
     terminal.clear();
-    await cli.run(["complete", "--", "dev", "--watch", "--"], { terminal });
+    await app.run(["complete", "--", "dev", "--watch", "--"], { terminal });
 
     expect(terminal.stdoutText()).toBe(":4");
 
-    // custom predicate: allows flags after 1st positional, stops after 2nd
     terminal.clear();
-    await cli.run(["complete", "--", "run", "prod", "--"], { terminal });
+    await app.run(["complete", "--", "run", "prod", "--"], { terminal });
 
     expect(terminal.stdoutText()).toContain("--verbose");
 
     terminal.clear();
-    await cli.run(["complete", "--", "run", "prod", "app.ts", "--"], {
+    await app.run(["complete", "--", "run", "prod", "app.ts", "--"], {
       terminal,
     });
 
@@ -516,21 +514,26 @@ describe("plugin-completions v2", () => {
 
   it("completes scoped flags and subcommands when scoped flags precede subcommand names", async () => {
     const terminal = createMemoryTerminal();
-    const cli = createTestCli().use(completionsPlugin());
-
-    const pr = cli
-      .subcommand("pr", { description: "Manage pull requests" })
-      .flags({
+    const prLs = command("ls", { description: "List PRs", run() {} });
+    const pr = command("pr", {
+      description: "Manage pull requests",
+      flags: {
         repo: {
           type: String,
           short: "R",
           description: "Target repository",
         },
-      });
-    pr.command("ls", { default: true, description: "List PRs", run() {} });
-    pr.command("merge <id>", { description: "Merge PR", run() {} });
+      },
+      commands: [
+        prLs,
+        command("merge <id>", { description: "Merge PR", run() {} }),
+      ],
+      default: prLs,
+    });
 
-    await cli.run(["complete", "--", "pr", "--repo", "org/app", ""], {
+    const app = createTestCli({ commands: [completions(), pr] });
+
+    await app.run(["complete", "--", "pr", "--repo", "org/app", ""], {
       terminal,
     });
     const out = terminal.stdoutText();
@@ -553,69 +556,83 @@ describe("plugin-completions v2", () => {
         );
         chmodSync(stubBin, 0o755);
 
-        const cli = createTestCli({ name: "mycli", version: "1.0.0" })
-          .use(completionsPlugin({ executable: stubBin }))
-          .command("deploy [env] [service]", {
-            aliases: ["d"],
-            description: "Deploy app",
-            args: {
-              env: Types.Enum("staging", "prod"),
-              service: {
-                complete: () => ["api-svc"],
-              },
-            },
-            flags: {
-              all: { type: Boolean, description: "Deploy all" },
-              json: { type: Boolean, description: "JSON" },
-              yaml: { type: Boolean, description: "YAML" },
-              cache: { type: Boolean, default: true, description: "Use cache" },
-              tags: {
-                type: Types.Enum("v1", "v2", "latest"),
-                multiple: true,
-                delimiter: ",",
-                description: "Tags",
-              },
-              config: {
-                type: String,
-                complete: Complete.file("ts", "json"),
-              },
-              outDir: {
-                type: String,
-                complete: Complete.dir(),
-              },
-              region: {
-                type: String,
-                short: "r",
-                complete: () => ["us-east-1"],
-              },
-            },
-            rules: ({ exclusive, oneOf, flag, arg }) => [
-              exclusive(flag("json"), flag("yaml")),
-              oneOf(arg("env"), flag("all")),
-            ],
-            run() {},
-          })
-          .command("exec <cmd> [args...]", {
-            stopParsing: "first-positional",
-            flags: { quiet: Boolean },
-            run() {},
-          })
-          .command("run <env> [args...]", {
-            stopParsing: (token) => token.kind === "positional",
-            flags: { verbose: Boolean },
-            run() {},
-          });
-
-        const db = cli.subcommand("db", { description: "Database" });
-        db.command("migrate", {
-          default: true,
+        const migrate = command("migrate", {
           description: "Migrate",
           run() {},
         });
-        db.command("seed", { description: "Seed", run() {} });
+        const db = command("db", {
+          description: "Database",
+          commands: [
+            migrate,
+            command("seed", { description: "Seed", run() {} }),
+          ],
+          default: migrate,
+        });
+
+        const app = createTestCli({
+          name: "mycli",
+          version: "1.0.0",
+          commands: [
+            completions({ executable: stubBin }),
+            command("deploy [env] [service]", {
+              aliases: ["d"],
+              description: "Deploy app",
+              args: {
+                env: Types.Enum("staging", "prod"),
+                service: {
+                  complete: () => ["api-svc"],
+                },
+              },
+              flags: [
+                {
+                  cache: {
+                    type: Boolean,
+                    default: true,
+                    description: "Use cache",
+                  },
+                  tags: {
+                    type: Types.Enum("v1", "v2", "latest"),
+                    multiple: true,
+                    delimiter: ",",
+                    description: "Tags",
+                  },
+                  config: {
+                    type: String,
+                    complete: Complete.file("ts", "json"),
+                  },
+                  outDir: {
+                    type: String,
+                    complete: Complete.dir(),
+                  },
+                  region: {
+                    type: String,
+                    short: "r",
+                    complete: () => ["us-east-1"],
+                  },
+                },
+                exclusive(
+                  { json: { type: Boolean, description: "JSON" } },
+                  { yaml: { type: Boolean, description: "YAML" } },
+                ),
+              ],
+              run() {},
+            }),
+            command("exec <cmd> [args...]", {
+              stopParsing: "first-positional",
+              flags: { quiet: Boolean },
+              run() {},
+            }),
+            command("run <env> [args...]", {
+              stopParsing: (token) => token.kind === "positional",
+              flags: { verbose: Boolean },
+              run() {},
+            }),
+            db,
+          ],
+        });
 
         const terminal = createMemoryTerminal();
-        await cli.run(["completions", "fish"], { terminal });
+        await app.run(["completions", "fish"], { terminal });
         const scriptFile = join(dir, "mycli.fish");
         writeFileSync(scriptFile, terminal.stdoutText(), "utf8");
 
@@ -650,8 +667,6 @@ describe("plugin-completions v2", () => {
         expect(flagOut).not.toContain("--yaml");
         expect(flagOut).toContain("--no-cache");
 
-        expect(runFish("mycli deploy prod --")).not.toContain("--all");
-        expect(runFish("mycli deploy --all ")).toBe("");
         expect(runFish("mycli help db ")).toBe("migrate\tMigrate\nseed\tSeed");
         expect(runFish("mycli exec git --")).toBe("");
 
@@ -706,50 +721,55 @@ describe("plugin-completions v2", () => {
         );
         chmodSync(stubBin, 0o755);
 
-        const cli = createTestCli({ name: "mycli", version: "1.0.0" })
-          .use(completionsPlugin({ executable: stubBin }))
-          .command("deploy [env] [service]", {
-            aliases: ["d"],
-            args: {
-              env: Types.Enum("staging", "prod"),
-              service: { complete: () => ["api-svc"] },
-            },
-            flags: {
-              all: Boolean,
-              json: Boolean,
-              yaml: Boolean,
-              tags: {
-                type: Types.Enum("v1", "v2", "latest"),
-                multiple: true,
-                delimiter: ",",
-              },
-              config: {
-                type: String,
-                complete: Complete.file("ts", "json"),
-              },
-              outDir: {
-                type: String,
-                complete: Complete.dir(),
-              },
-              region: {
-                type: String,
-                short: "r",
-                complete: () => ["us-east-1"],
-              },
-            },
-            rules: ({ exclusive, oneOf, flag, arg }) => [
-              exclusive(flag("json"), flag("yaml")),
-              oneOf(arg("env"), flag("all")),
-            ],
-            run() {},
-          });
+        const migrate = command("migrate", { run() {} });
+        const db = command("db", {
+          description: "Database",
+          commands: [migrate, command("seed", { run() {} })],
+          default: migrate,
+        });
 
-        const db = cli.subcommand("db", { description: "Database" });
-        db.command("migrate", { default: true, run() {} });
-        db.command("seed", { run() {} });
+        const app = createTestCli({
+          name: "mycli",
+          version: "1.0.0",
+          commands: [
+            completions({ executable: stubBin }),
+            command("deploy [env] [service]", {
+              aliases: ["d"],
+              args: {
+                env: Types.Enum("staging", "prod"),
+                service: { complete: () => ["api-svc"] },
+              },
+              flags: [
+                {
+                  tags: {
+                    type: Types.Enum("v1", "v2", "latest"),
+                    multiple: true,
+                    delimiter: ",",
+                  },
+                  config: {
+                    type: String,
+                    complete: Complete.file("ts", "json"),
+                  },
+                  outDir: {
+                    type: String,
+                    complete: Complete.dir(),
+                  },
+                  region: {
+                    type: String,
+                    short: "r",
+                    complete: () => ["us-east-1"],
+                  },
+                },
+                exclusive({ json: Boolean }, { yaml: Boolean }),
+              ],
+              run() {},
+            }),
+            db,
+          ],
+        });
 
         const terminal = createMemoryTerminal();
-        await cli.run(["completions", "bash"], { terminal });
+        await app.run(["completions", "bash"], { terminal });
         const scriptFile = join(dir, "mycli.bash");
         writeFileSync(scriptFile, terminal.stdoutText(), "utf8");
 
@@ -789,10 +809,6 @@ describe("plugin-completions v2", () => {
         expect(runBash(["mycli", "deploy", "--json", "--"])).not.toContain(
           "--yaml",
         );
-        expect(runBash(["mycli", "deploy", "prod", "--"])).not.toContain(
-          "--all",
-        );
-        expect(runBash(["mycli", "deploy", "--all", ""])).toEqual([]);
         expect(runBash(["mycli", "help", "db", ""])).toEqual([
           "migrate",
           "seed",
@@ -852,29 +868,34 @@ describe("plugin-completions v2", () => {
 
     const dir = mkdtempSync(join(tmpdir(), "clerc-install-comp-"));
     try {
-      const cli = createTestCli({ name: "acme", version: "1.0.0" })
-        .flags({ token: { type: String, required: true } })
-        .use(completionsPlugin())
-        .command("deploy", { description: "Deploy app", run() {} });
+      const auth = middleware({
+        flags: { token: { type: String, required: true } },
+      });
+      const app = createTestCli({
+        name: "acme",
+        version: "1.0.0",
+        commands: [
+          completions(),
+          use(auth, command("deploy", { description: "Deploy app", run() {} })),
+        ],
+      });
 
-      // Completing 'acme completions ' suggests both install/uninstall subcommands and shell names
       const compTerm = createMemoryTerminal();
-      await cli.run(["complete", "--", "completions", ""], {
+      await app.run(["complete", "--", "completions", ""], {
         terminal: compTerm,
       });
 
       expect(compTerm.stdoutText()).toContain(
-        "install	Install shell completions",
+        "install\tInstall shell completions",
       );
       expect(compTerm.stdoutText()).toContain(
-        "uninstall	Remove installed shell completions",
+        "uninstall\tRemove installed shell completions",
       );
       expect(compTerm.stdoutText()).toContain("fish");
       expect(compTerm.stdoutText()).toContain("zsh");
 
-      // Unknown shell environment fails with ClercError (exitCode 1)
       const noShellTerm = createMemoryTerminal({ env: {} });
-      const noShellRes = await cli.run(["completions", "install"], {
+      const noShellRes = await app.run(["completions", "install"], {
         terminal: noShellTerm,
       });
 
@@ -884,14 +905,13 @@ describe("plugin-completions v2", () => {
         "could not detect shell from environment",
       );
 
-      // 1. Fish: auto-detected from SHELL, writes drop-in file without touching config.fish
       const fishEnv = {
         HOME: dir,
         XDG_CONFIG_HOME: join(dir, "xdg-config"),
         SHELL: "/usr/bin/fish",
       };
       const fishTerm = createMemoryTerminal({ env: fishEnv });
-      const dryRes = await cli.run(["completions", "install", "--dry-run"], {
+      const dryRes = await app.run(["completions", "install", "--dry-run"], {
         terminal: fishTerm,
       });
       const fishScript = join(
@@ -907,7 +927,7 @@ describe("plugin-completions v2", () => {
       expect(fishTerm.stdoutText()).toContain(fishScript);
 
       fishTerm.clear();
-      const fishInstallRes = await cli.run(["completions", "install"], {
+      const fishInstallRes = await app.run(["completions", "install"], {
         terminal: fishTerm,
       });
 
@@ -920,23 +940,21 @@ describe("plugin-completions v2", () => {
       ).toBeFalsy();
 
       fishTerm.clear();
-      const fishUninstallRes = await cli.run(["completions", "uninstall"], {
+      const fishUninstallRes = await app.run(["completions", "uninstall"], {
         terminal: fishTerm,
       });
 
       expect(fishUninstallRes.ok).toBeTruthy();
       expect(existsSync(fishScript)).toBeFalsy();
 
-      // Second uninstall is a clean no-op
       fishTerm.clear();
-      const fishUninstallAgain = await cli.run(["completions", "uninstall"], {
+      const fishUninstallAgain = await app.run(["completions", "uninstall"], {
         terminal: fishTerm,
       });
 
       expect(fishUninstallAgain.ok).toBeTruthy();
       expect(fishTerm.stdoutText()).toContain("No fish completions found");
 
-      // 2. Zsh: writes _acme and idempotently upserts/removes marker block in .zshrc
       const zshDir = join(dir, "zdot");
       const zshRc = join(zshDir, ".zshrc");
       mkdirSync(zshDir, { recursive: true });
@@ -948,8 +966,8 @@ describe("plugin-completions v2", () => {
       };
       const zshTerm = createMemoryTerminal({ env: zshEnv });
 
-      await cli.run(["completions", "install", "zsh"], { terminal: zshTerm });
-      await cli.run(["completions", "install", "zsh"], { terminal: zshTerm });
+      await app.run(["completions", "install", "zsh"], { terminal: zshTerm });
+      await app.run(["completions", "install", "zsh"], { terminal: zshTerm });
 
       const zshScript = join(dir, "xdg-data", "zsh", "site-functions", "_acme");
       const zshRcAfterInstall = readFileSync(zshRc, "utf8");
@@ -960,12 +978,11 @@ describe("plugin-completions v2", () => {
       ).toHaveLength(1);
       expect(zshRcAfterInstall).toContain("export EDITOR=nvim");
 
-      await cli.run(["completions", "uninstall", "zsh"], { terminal: zshTerm });
+      await app.run(["completions", "uninstall", "zsh"], { terminal: zshTerm });
 
       expect(existsSync(zshScript)).toBeFalsy();
       expect(readFileSync(zshRc, "utf8")).toBe("export EDITOR=nvim\n");
 
-      // 3. Bash: writes script and valid marker block in .bashrc
       const bashHome = join(dir, "bash-home");
       const bashRc = join(bashHome, ".bashrc");
       mkdirSync(bashHome, { recursive: true });
@@ -976,7 +993,7 @@ describe("plugin-completions v2", () => {
       };
       const bashTerm = createMemoryTerminal({ env: bashEnv });
 
-      await cli.run(["completions", "install", "bash"], { terminal: bashTerm });
+      await app.run(["completions", "install", "bash"], { terminal: bashTerm });
       const bashPlan = resolveInstallPlan("bash", "acme", {
         env: bashEnv,
         homeDir: bashHome,
@@ -994,7 +1011,7 @@ describe("plugin-completions v2", () => {
         execFileSync("bash", ["-n", bashPlan.scriptPath]);
       }
 
-      await cli.run(["completions", "uninstall", "bash"], {
+      await app.run(["completions", "uninstall", "bash"], {
         terminal: bashTerm,
       });
 
@@ -1003,12 +1020,11 @@ describe("plugin-completions v2", () => {
         "alias ll='ls -la'\n",
       );
 
-      // 4. PowerShell: respects PROFILE env var
       const psProfile = join(dir, "ps", "Microsoft.PowerShell_profile.ps1");
       const psEnv = { HOME: dir, PROFILE: psProfile };
       const psTerm = createMemoryTerminal({ env: psEnv });
 
-      await cli.run(["completions", "install", "powershell"], {
+      await app.run(["completions", "install", "powershell"], {
         terminal: psTerm,
       });
 
@@ -1019,7 +1035,7 @@ describe("plugin-completions v2", () => {
       );
       expect(readFileSync(psProfile, "utf8")).toContain("Test-Path");
 
-      await cli.run(["completions", "uninstall", "powershell"], {
+      await app.run(["completions", "uninstall", "powershell"], {
         terminal: psTerm,
       });
 
