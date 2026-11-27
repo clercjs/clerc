@@ -8,10 +8,10 @@ import { HomeLanding } from "../components/HomeLanding.ts";
 import { TeamPage } from "../components/TeamPage.ts";
 import { TerminalWindow } from "../components/TerminalWindow.ts";
 
-import "./style.css";
+import "@shikijs/vitepress-twoslash/style.css";
 import "virtual:uno.css";
 import "virtual:group-icons.css";
-import "@shikijs/vitepress-twoslash/style.css";
+import "./style.css";
 
 export default {
   extends: DefaultTheme,
@@ -24,6 +24,12 @@ export default {
       "CopyOrDownloadAsMarkdownButtons",
       CopyOrDownloadAsMarkdownButtons,
     );
-    app.use(TwoslashFloatingVue);
+    app.use(TwoslashFloatingVue, {
+      themes: {
+        twoslash: {
+          flip: true,
+        },
+      },
+    });
   },
 } satisfies Theme;

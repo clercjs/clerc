@@ -1,6 +1,9 @@
 import path from "node:path";
 
-import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
+import {
+  rendererFloatingVue,
+  transformerTwoslash,
+} from "@shikijs/vitepress-twoslash";
 import UnoCSS from "unocss/vite";
 import { defineConfig } from "vitepress";
 import {
@@ -16,6 +19,17 @@ import {
   MarkdownTransform,
   clercImports,
 } from "../plugins/markdown-transform.ts";
+
+const baseTwoslashRenderer = rendererFloatingVue({
+  queryRendering: "line",
+});
+
+const twoslashRenderer = {
+  ...baseTwoslashRenderer,
+  // Keep the queried token as a plain inline span (suppressing duplicate hover
+  // poppers and preserving its text child so lineQuery aligns the arrow).
+  nodeQuery: (_query: unknown, node: any) => node,
+};
 
 export const sharedConfig = defineConfig({
   title: "Clerc",
@@ -41,6 +55,7 @@ export const sharedConfig = defineConfig({
     },
     codeTransformers: [
       transformerTwoslash({
+        renderer: twoslashRenderer,
         twoslashOptions: {
           compilerOptions: {
             target: 99,

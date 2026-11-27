@@ -987,11 +987,11 @@ span {
   margin: 1.25rem 0;
 }
 
-.vp-doc [class*="language-"] pre {
+.vp-doc [class*="language-"] > pre {
   padding: 1.05rem 0;
 }
 
-.vp-doc [class*="language-"] code {
+.vp-doc [class*="language-"] > pre > code {
   padding: 0 1.25rem;
   font-family: var(--clerc-font-mono);
   font-variant-ligatures: none;
@@ -2327,6 +2327,63 @@ span {
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
+}
+
+/* ==========================================================================
+   Twoslash Inline Type Queries & Hover Popups
+   ========================================================================== */
+
+:root {
+  --twoslash-popup-bg: var(--vp-c-bg-elv);
+  --twoslash-border-color: var(--vp-c-border);
+  --twoslash-popup-shadow: 0 4px 14px -6px rgba(15, 23, 42, 0.14);
+}
+
+.dark {
+  --twoslash-popup-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.55);
+}
+
+.vp-doc .twoslash .twoslash-query-line {
+  display: block;
+}
+
+.vp-doc .twoslash .twoslash-query-line .twoslash-popup-container {
+  position: relative;
+  transform: none;
+  margin: 0.4rem 0 0.55rem;
+  border-radius: 6px;
+  line-height: 1.5;
+  vertical-align: top;
+}
+
+.vp-doc .twoslash .twoslash-query-line .twoslash-popup-arrow {
+  top: -4px;
+  left: 0.9em;
+}
+
+.vp-doc .twoslash .twoslash-query-line .twoslash-popup-code {
+  display: block;
+  padding: 6px 10px !important;
+  font-size: 0.92em;
+  line-height: 1.55;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.vp-doc .twoslash .twoslash-query-line .twoslash-popup-code pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  overflow: visible;
+}
+
+.vp-doc .twoslash .twoslash-query-line .twoslash-popup-code code {
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
