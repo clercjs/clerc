@@ -19,6 +19,7 @@ import {
   MarkdownTransform,
   clercImports,
 } from "../plugins/markdown-transform.ts";
+import { PlaygroundPlugin } from "../plugins/playground-plugin.ts";
 
 const baseTwoslashRenderer = rendererFloatingVue({
   queryRendering: "line",
@@ -88,6 +89,7 @@ export const sharedConfig = defineConfig({
       GroupIconVitePlugin(),
       UnoCSS(),
       MarkdownTransform(),
+      PlaygroundPlugin(),
       Llms({
         ignoreFiles: ["index.md", "zh/**/*"],
         description: pkg.description,

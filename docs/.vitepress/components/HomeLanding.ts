@@ -1,7 +1,6 @@
 import type { PropType } from "vue";
 import { defineComponent, h, onBeforeUnmount, ref } from "vue";
 
-import defaultScenario from "../../guide/getting-started.playground.ts";
 import { CliPlayground } from "./CliPlayground.ts";
 
 interface SpecItem {
@@ -227,7 +226,10 @@ export const HomeLanding = defineComponent({
           h(CliPlayground, {
             lang: props.lang,
             variant: "split",
-            scenario: defaultScenario,
+            scenario: () =>
+              import("../../guide/getting-started.playground.ts").then(
+                (m) => m.default,
+              ),
           }),
         ]),
 

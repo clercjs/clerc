@@ -136,50 +136,6 @@ const scenario: PlaygroundScenario = {
       commands: [group("Deployment", [deploy]), group("Database", [db])],
     });
   },
-  source: `import { Types, cli, command, exclusive } from "clerc";
-
-const deploy = command("deploy <env> [region]", {
-  aliases: "d",
-  args: {
-    env: Types.Enum("staging", "prod"),
-    region: { default: "us-east-1" },
-  },
-  flags: [
-    {
-      port: {
-        type: Types.Integer({ min: 1, max: 65_535 }),
-        short: "p",
-        default: 3000,
-      },
-      dryRun: { type: Boolean, short: "n" },
-      tags: {
-        type: String,
-        multiple: true,
-        short: "t",
-        delimiter: ",",
-      },
-    },
-    exclusive({ json: Boolean }, { yaml: Boolean }),
-  ],
-  run({ args, flags, log }) {
-    log.step(
-      \`Deploying to \${args.env} (\${args.region})\`,
-      \`port=\${flags.port}\`,
-    );
-    if (flags.dryRun) {
-      log.box.info("Dry run", "No remote changes.");
-    } else {
-      log.success(\`Deployed \${args.env}\`);
-    }
-  },
-});
-
-const app = cli({
-  name: "acme",
-  version: "2.0.0",
-  description: "Build and deploy TypeScript services",
-  commands: [deploy],
-});`,
   presets: [
     {
       cmd: "deploy prod eu-west-1 -p 8080 -n -t v2",
