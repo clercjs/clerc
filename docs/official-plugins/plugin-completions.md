@@ -83,6 +83,23 @@ You can also attach `complete(ctx)` directly on command options (`command("check
 
 <CliPlayground :scenario="dynamicCompletions" lang="en" />
 
+## `Complete` Helpers & Plugin Options
+
+Use `Complete` (exported from `"clerc"`) for declarative completion directives without writing custom callbacks:
+
+| Helper                           | Behavior                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Complete.file(...extensions)`   | Shell file completion (optionally filtered by extensions, e.g. `Complete.file("ts", "json")`). |
+| `Complete.dir()`                 | Shell directory-only completion.                                                               |
+| `Complete.list(items, options?)` | Static candidate list with optional `{ allowFiles?, noSpace?, keepOrder? }`.                   |
+| `Complete.none`                  | Equivalent to `false`; suppresses completion suggestions and file fallback.                    |
+
+`completions(options?)` accepts:
+
+| Option       | Type     | Default           | Description                                                                        |
+| ------------ | -------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `executable` | `string` | `model.meta.name` | Binary command invoked by the generated shell script when resolving dynamic slots. |
+
 ## Activating in Your Shell
 
 Install completions for your current shell (or pass `zsh`, `bash`, `fish`, or `powershell` explicitly):
@@ -117,10 +134,11 @@ acme completions powershell | Out-String | Invoke-Expression
 
 <CliPlayground :scenario="shellScripts" lang="en" />
 
-## What Gets Completed
+## What Gets Completed & Programmatic API
 
 - Multi-level subcommands, namespaces, and command aliases
 - Built-in `help [command...]` at arbitrary subcommand depth (`acme help <TAB>`, `acme help db <TAB>`)
 - Kebab-case long flags (`--dry-run`), `--no-*` negations, short flags (`-r`), `--flag=value`, and comma-delimited array flags
+- Constraint-aware filtering: `exclusive` and `oneOf` automatically hide conflicting flags once a partner is already present
 - `Types.Enum(...)` and Standard JSON Schema `enum` values on flags and arguments
-- `Complete` helpers (`Complete.file(...extensions)`, `Complete.dir()`, `Complete.list(items, { keepOrder, noSpace, allowFiles })`, `Complete.none`) and sync/async `complete(ctx)` handlers
+- Programmatic helpers exported from `@clerc/plugin-completions`: `renderCompletionScript`, `resolveCompletions`, `formatCompletionOutput`, `installCompletions`, `uninstallCompletions`, `resolveInstallPlan`, `detectShell`, `SUPPORTED_SHELLS`, and `ShellCompDirective`

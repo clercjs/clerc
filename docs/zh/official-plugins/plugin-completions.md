@@ -83,6 +83,23 @@ await app.runMain();
 
 <CliPlayground :scenario="dynamicCompletions" lang="zh" />
 
+## `Complete` 辅助器与插件配置
+
+直接从 `"clerc"` 导入 `Complete`，以声明式写法指定常见补全策略：
+
+| 辅助器                           | 行为说明                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `Complete.file(...extensions)`   | 触发 Shell 文件路径补全（可按扩展名过滤，如 `Complete.file("ts", "json")`）。 |
+| `Complete.dir()`                 | 仅补全目录路径。                                                              |
+| `Complete.list(items, options?)` | 静态候选列表，支持 `{ allowFiles?, noSpace?, keepOrder? }` 控制指令。         |
+| `Complete.none`                  | 等价于 `false`，禁用该位置的补全提示与文件回退。                              |
+
+`completions(options?)` 配置项：
+
+| 配置项       | 类型     | 默认值            | 说明                                                      |
+| ------------ | -------- | ----------------- | --------------------------------------------------------- |
+| `executable` | `string` | `model.meta.name` | 生成的 Shell 脚本在触发动态补全时实际回调的可执行程序名。 |
+
 ## 在 Shell 中启用
 
 自动检测当前 Shell 并安装补全脚本（也可以显式传入 `zsh`、`bash`、`fish` 或 `powershell`）：
@@ -117,10 +134,11 @@ acme completions powershell | Out-String | Invoke-Expression
 
 <CliPlayground :scenario="shellScripts" lang="zh" />
 
-## 补全能力一览
+## 补全能力与编程式 API
 
 - 所有多级子命令、命名空间与前缀匹配的命令别名
 - 内置 `help [command...]` 任意层级可用命令补全（如 `acme help <TAB>`、`acme help db <TAB>`）
 - 短横线长选项（`--dry-run`）、`--no-*` 取反选项、短选项（`-r`）、`--flag=value` 以及带分隔符的数组选项
+- 约束联动过滤：`exclusive` 与 `oneOf` 会在伙伴选项已出现时自动隐藏冲突选项
 - `Types.Enum(...)` 及 Standard JSON Schema 中的 `enum` 候选值
-- `Complete` 构造器（`Complete.file(...extensions)`、`Complete.dir()`、`Complete.list(items, { keepOrder, noSpace, allowFiles })`、`Complete.none`）以及同步 / `async` 的 `complete(ctx)` 动态补全
+- `@clerc/plugin-completions` 同时导出编程式 API：`renderCompletionScript`、`resolveCompletions`、`formatCompletionOutput`、`installCompletions`、`uninstallCompletions`、`resolveInstallPlan`、`detectShell`、`SUPPORTED_SHELLS` 与 `ShellCompDirective`

@@ -88,6 +88,17 @@ Point any MCP client at `acme mcp`:
 
 <CliPlayground :scenario="mcpRpc" lang="en" />
 
+## `McpOptions` Reference
+
+| Option       | Type                                          | Default           | Description                                                               |
+| ------------ | --------------------------------------------- | ----------------- | ------------------------------------------------------------------------- |
+| `command`    | `string`                                      | `"mcp"`           | Subcommand name that starts the MCP stdio server.                         |
+| `serverName` | `string`                                      | `model.meta.name` | Server name reported in MCP `initialize`.                                 |
+| `resources`  | `boolean`                                     | `true`            | Expose root and command `--help` pages as `cli://...` MCP text resources. |
+| `filter`     | `(commandPath: readonly string[]) => boolean` | —                 | Predicate controlling which command paths are exposed as tools/resources. |
+| `input`      | `Readable`                                    | `process.stdin`   | Custom JSON-RPC input stream.                                             |
+| `output`     | `Writable`                                    | `process.stdout`  | Custom JSON-RPC output stream.                                            |
+
 ## Per-Command `meta.mcp` Annotations
 
 Importing `@clerc/plugin-mcp` augments `CommandCustomMeta` with typed `meta.mcp` options:
@@ -103,4 +114,25 @@ Importing `@clerc/plugin-mcp` augments `CommandCustomMeta` with typed `meta.mcp`
 
 ## Programmatic Handler API
 
-You can also embed the JSON-RPC 2.0 MCP handler directly in custom transports or tests using `createMcpHandler`, `listMcpTools`, and `listMcpResources`.
+Embed the JSON-RPC 2.0 MCP handler directly in HTTP/SSE transports or unit tests with `createMcpHandler`, `listMcpTools`, `listMcpResources`, and `serveMcpStdio`:
+
+```ts
+import { createMcpHandler, listMcpTools } from "@clerc/plugin-mcp";
+import { cli, command } from "clerc";
+
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [command("ping", { run: (ctx) => ctx.terminal.stdout("pong") })],
+});
+
+const model = app.buildModel();
+const tools = listMcpTools(model);
+const handle = createMcpHandler({ model, run: app.run });
+const response = await handle({
+  jsonrpc: "2.0",
+  id: 1,
+  method: "tools/call",
+  params: { name: "ping", arguments: {} },
+});
+```

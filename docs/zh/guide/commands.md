@@ -50,7 +50,7 @@ const app = cli({
 import { cli, command } from "clerc";
 
 const dbMigrate = command("migrate", {
-  aliases: "m",
+  aliases: ["m", "db-migrate"],
   description: "执行待处理的数据库迁移",
   run(ctx) {
     ctx.calledAs; // "db migrate" 或 "db m"
@@ -77,7 +77,7 @@ const app = cli({
 });
 ```
 
-全局或父级选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
+单词别名注册在当前父命名空间下（如 `acme db m`），多词别名则会从根路径开始注册（如 `aliases: ["db m"]`）。全局或父级选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
 
 <CliPlayground :scenario="subcommands" lang="zh" />
 
@@ -233,9 +233,22 @@ const runCmd = command("run <env> <script> [args...]", {
 
 <CliPlayground :scenario="stopParsing" lang="zh" />
 
-## 懒加载与弃用提示
+## 隐藏命令、动态帮助元数据与懒加载
 
-- **懒加载**：在 `async run(ctx)` 中使用 `await import("./commands/analyze.js")`，让 `--help` 和其他子命令不加载重型依赖。
+- **隐藏命令（`hidden: true`）**：从 `--help`、拼写建议、Shell 补全与 MCP 工具中隐藏（除非显式配置 `meta.mcp.enabled: true`），但仍可直接执行（适合内部辅助命令）。
+- **动态 `examples` 与 `notes`**：两者均支持传入静态数组，或接收 `CliMeta`（`name`、`version`、`description`）的同步/异步函数 `(meta) => [...]`。
+- **懒加载**：在 `async run(ctx)` 中动态 `await import("./commands/analyze.js")`，让 `--help` 和其他子命令不加载重型依赖。
 - **弃用提示**：设置 `deprecated: "use 'acme create' instead"`，`--help` 会显示弃用标签，调用时自动向 `stderr` 输出警告（在 `-q` 静默模式下自动隐藏）。
+
+```ts no-twoslash
+const analyze = command("analyze <entry>", {
+  description: "分析打包产物大小",
+  examples: (meta) => [[`$ ${meta.name} analyze src/index.ts`, "分析指定入口"]],
+  async run(ctx) {
+    const { runBundleAnalysis } = await import("./commands/analyze.js");
+    await runBundleAnalysis(ctx);
+  },
+});
+```
 
 <CliPlayground :scenario="deprecated" lang="zh" />

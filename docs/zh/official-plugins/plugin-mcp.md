@@ -86,7 +86,20 @@ await app.runMain();
 
 <CliPlayground :scenario="mcpRpc" lang="zh" />
 
+## `McpOptions` 配置项
+
+| 配置项       | 类型                                          | 默认值            | 说明                                                    |
+| ------------ | --------------------------------------------- | ----------------- | ------------------------------------------------------- |
+| `command`    | `string`                                      | `"mcp"`           | 启动 MCP stdio 服务的子命令名称。                       |
+| `serverName` | `string`                                      | `model.meta.name` | 在 MCP `initialize` 握手中上报的服务名。                |
+| `resources`  | `boolean`                                     | `true`            | 是否将根帮助与各子命令帮助暴露为 `cli://...` 文本资源。 |
+| `filter`     | `(commandPath: readonly string[]) => boolean` | —                 | 自定义过滤函数，决定哪些命令路径暴露为 MCP 工具与资源。 |
+| `input`      | `Readable`                                    | `process.stdin`   | 自定义 JSON-RPC 输入流。                                |
+| `output`     | `Writable`                                    | `process.stdout`  | 自定义 JSON-RPC 输出流。                                |
+
 ## `meta.mcp` 工具注解选项
+
+引入 `@clerc/plugin-mcp` 后会自动为 `CommandCustomMeta` 扩展强类型的 `meta.mcp` 配置：
 
 | 字段          | 类型      | 说明                                                        |
 | ------------- | --------- | ----------------------------------------------------------- |
@@ -96,3 +109,28 @@ await app.runMain();
 | `readOnly`    | `boolean` | 对应 MCP `annotations.readOnlyHint`。                       |
 | `destructive` | `boolean` | 对应 MCP `annotations.destructiveHint`。                    |
 | `idempotent`  | `boolean` | 对应 MCP `annotations.idempotentHint`。                     |
+
+## 编程式 Handler API
+
+如需接入自定义传输层（如 HTTP/SSE）或在测试中直接调用，可使用导出的 `createMcpHandler`、`listMcpTools`、`listMcpResources` 与 `serveMcpStdio`：
+
+```ts
+import { createMcpHandler, listMcpTools } from "@clerc/plugin-mcp";
+import { cli, command } from "clerc";
+
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [command("ping", { run: (ctx) => ctx.terminal.stdout("pong") })],
+});
+
+const model = app.buildModel();
+const tools = listMcpTools(model);
+const handle = createMcpHandler({ model, run: app.run });
+const response = await handle({
+  jsonrpc: "2.0",
+  id: 1,
+  method: "tools/call",
+  params: { name: "ping", arguments: {} },
+});
+```

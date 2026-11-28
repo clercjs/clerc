@@ -8,7 +8,7 @@ import { builtinTypes, customParser } from "./types.playground.ts";
 
 # Types
 
-Every flag and positional argument in Clerc goes through a single type descriptor pipeline. You can use JavaScript constructors, built-in `Types.*`, custom parser functions, or **any [Standard Schema v1](https://standardschema.dev) validator** (Zod, Valibot, ArkType).
+Every flag and positional argument in Clerc goes through a single type descriptor pipeline. You can use JavaScript constructors (`String`, `Number`, `Boolean`), built-in `Types.*`, custom parser functions, or **any [Standard Schema v1](https://standardschema.dev) validator** (Zod, Valibot, ArkType).
 
 One schema automatically drives five places:
 
@@ -90,11 +90,22 @@ const invite = command("invite <email>", {
 
 :::
 
-Async Standard Schema validators are also supported. Clerc resolves flags and arguments asynchronously before running middleware and handlers.
+Async Standard Schema validators are also supported. When a schema exposes Standard JSON Schema `enum` values (including `Types.Enum` and Zod v4 `z.enum`), mistyped values automatically receive a typo hint (`a similar value exists: '...'`).
 
 ## Built-in `Types`
 
 When you don't need an external validation library, `clerc` ships zero-dependency Standard Schema v1 helpers under `Types`:
+
+| Helper                           | Options                                                            | Output type       |
+| -------------------------------- | ------------------------------------------------------------------ | ----------------- |
+| `Types.Enum(...values)`          | One or more literal strings                                        | union of `values` |
+| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`          |
+| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`          |
+| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`          |
+| `Types.Regex(pattern, display?)` | Shorthand for `Types.String({ pattern, display })`                 | `string`          |
+| `Types.Counter`                  | Counts repeated flag occurrences (`-vvv` → `3`, default `0`)       | `number`          |
+
+Native constructors are also supported directly: `String` passes raw strings through, `Number` parses finite numbers (rejecting empty strings and `NaN` with `ValidationError`), and `Boolean` creates a negatable boolean flag defaulting to `false`.
 
 ```ts
 import { Types, command } from "clerc";
@@ -111,8 +122,10 @@ const release = command("release <channel>", {
     workers: { type: Types.Integer({ min: 1 }), default: 4 },
     // Displays <0..1>, validates floating-point bounds
     ratio: { type: Types.Number({ min: 0, max: 1 }) },
-    // Trims whitespace and rejects empty strings
-    token: { type: Types.String({ trim: true, nonEmpty: true }) },
+    // Trims whitespace and enforces length bounds
+    token: {
+      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
+    },
     // Displays <v<major>.<minor>> (or regex literal if label omitted)
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
     // Counts occurrences (-vvv -> 3, defaults to 0)

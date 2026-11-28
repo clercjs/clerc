@@ -20,6 +20,7 @@ const sidebar: DefaultTheme.Config["sidebar"] = [
       { text: "类型与校验", link: "/zh/guide/types" },
       { text: "约束与校验", link: "/zh/guide/constraints" },
       { text: "中间件", link: "/zh/guide/middleware" },
+      { text: "上下文与终端", link: "/zh/guide/context" },
       { text: "模块化组合与插件", link: "/zh/guide/plugins" },
     ],
   },

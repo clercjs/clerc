@@ -12,6 +12,8 @@ Clerc 核心执行管线完全不依赖全局 `process.argv`、`process.env` 或
 
 ## 使用 `createMemoryTerminal()` 编写测试
 
+`createMemoryTerminal()` 会创建隔离的内存 `Terminal`，支持自定义 `env`、`cwd`、`stdin`、`isTTY`、`isInputTTY`、`color`、`unicode` 与 `columns`，并提供 `stdoutText()` / `stderrText()` / `clear()` 辅助方法：
+
 ```ts
 import { Types, cli, command, createMemoryTerminal } from "clerc";
 import { expect, test } from "vitest";
@@ -69,6 +71,25 @@ await expect(
 
 ## 读取编译后的 `CliModel`
 
-调用 `app.buildModel()` 可以拿到只读的完整命令树与选项元数据模型，适合用于自动生成文档、自定义帮助页或静态检查命令配置。
+调用 `app.buildModel()` 可以拿到只读的 `CliModel`（`meta`、`tree`、`globalFlags`、`groups`），适合用于自动生成文档、自定义帮助页或静态检查命令配置：
+
+```ts
+import { buildHelpDocument, cli, command } from "clerc";
+
+const app = cli({
+  name: "acme",
+  version: "2.0.0",
+  commands: [
+    command("build", {
+      description: "构建项目",
+      run() {},
+    }),
+  ],
+});
+
+const model = app.buildModel();
+const helpAst = await buildHelpDocument(model);
+// helpAst.commandGroups[0].items -> [{ name: "build", ... }]
+```
 
 <CliPlayground :scenario="inspectModel" lang="zh" />

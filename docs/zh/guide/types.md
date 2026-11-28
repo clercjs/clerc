@@ -8,7 +8,7 @@ import { builtinTypes, customParser } from "../../guide/types.playground.ts";
 
 # 类型与校验
 
-Clerc 的选项和位置参数共用同一套类型系统。你可以使用原生构造函数、内置 `Types.*`、自定义解析函数，或直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
+Clerc 的选项和位置参数共用同一套类型系统。你可以使用原生构造函数（`String`、`Number`、`Boolean`）、内置 `Types.*`、自定义解析函数，或直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
 
 定义一次 Schema，会自动用于以下五个地方：
 
@@ -88,9 +88,22 @@ const invite = command("invite <email>", {
 
 :::
 
+同样支持异步 Standard Schema 校验器。当 Schema 导出了 Standard JSON Schema `enum` 候选列表（包含内置 `Types.Enum` 与 Zod v4 `z.enum`）时，输入拼写错误会自动附带相近值提示（`a similar value exists: '...'`）。
+
 ## 内置 `Types`
 
-不想引入外部校验库时，`clerc` 内置了常用 Standard Schema 构造器：
+不想引入外部校验库时，`clerc` 内置了零依赖的 Standard Schema v1 构造器：
+
+| 构造器                           | 可选参数                                                           | 推导类型       |
+| -------------------------------- | ------------------------------------------------------------------ | -------------- |
+| `Types.Enum(...values)`          | 一个或多个字符串字面量                                             | 字面量联合类型 |
+| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`       |
+| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`       |
+| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`       |
+| `Types.Regex(pattern, display?)` | `Types.String({ pattern, display })` 的简写                        | `string`       |
+| `Types.Counter`                  | 统计选项重复出现次数（`-vvv` → `3`，默认为 `0`）                   | `number`       |
+
+原生构造函数同样可直接使用：`String` 透传原始字符串，`Number` 解析有效数字（空字符串和 `NaN` 会抛 `ValidationError`），`Boolean` 定义支持 `--no-*` 取反且默认为 `false` 的布尔选项。
 
 ```ts
 import { Types, command } from "clerc";
@@ -103,7 +116,9 @@ const release = command("release <channel>", {
     port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
     workers: { type: Types.Integer({ min: 1 }), default: 4 },
     ratio: { type: Types.Number({ min: 0, max: 1 }) },
-    token: { type: Types.String({ trim: true, nonEmpty: true }) },
+    token: {
+      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
+    },
     tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
     verbose: { type: Types.Counter, short: "v" },
   },

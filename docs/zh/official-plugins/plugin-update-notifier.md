@@ -46,6 +46,22 @@ const app = cli({
 
 <TerminalWindow title="命令结束后的 stderr 提示框" :lines='[" {yellow:warn} {faint:╭─} {bold:Update available:} {muted:2.0.0} → {green:2.1.0} {faint:───╮}","      {faint:│}  {muted:Run} {cyan:npm i -g acme-cli} {muted:to update}    {faint:│}","      {faint:╰─────────────────────────────────────╯}"]' />
 
+## `UpdateNotifierOptions` 配置项
+
+| 配置项            | 类型                      | 默认值                         | 说明                                           |
+| ----------------- | ------------------------- | ------------------------------ | ---------------------------------------------- |
+| `packageName`     | `string`                  | `ctx.model.meta.name`          | 要查询的 npm 包名。                            |
+| `version`         | `string`                  | `ctx.model.meta.version`       | 当前版本，用于和远端最新版本比对。             |
+| `distTag`         | `string`                  | `"latest"`                     | 查询的 npm dist-tag（如 `"next"`、`"beta"`）。 |
+| `checkIntervalMs` | `number`                  | `86_400_000`（24 小时）        | 两次网络检查之间的最小间隔毫秒数。             |
+| `registryUrl`     | `string`                  | `"https://registry.npmjs.org"` | 自定义 npm registry 根地址。                   |
+| `installCommand`  | `string`                  | `` `npm i -g ${name}` ``       | 更新提示框中展示的升级命令。                   |
+| `timeoutMs`       | `number`                  | `1500`                         | registry 请求超时毫秒数。                      |
+| `postRunGraceMs`  | `number`                  | `250`                          | 命令结束后最多等待的毫秒数，超时直接跳过提示。 |
+| `cacheDir`        | `string`                  | `$XDG_CACHE_HOME` / `~/.cache` | 覆盖检查时间戳的缓存目录。                     |
+| `fetch`           | `typeof globalThis.fetch` | `globalThis.fetch`             | 自定义 `fetch` 实现（方便测试或走代理）。      |
+| `now`             | `() => number`            | `Date.now`                     | 自定义时钟函数（用于确定性单元测试）。         |
+
 ## 默认行为
 
 - 在 CI 环境（存在 `CI` 环境变量）、设置了 `NO_UPDATE_NOTIFIER` 或非交互终端（`!ctx.terminal.isTTY`）下自动跳过。

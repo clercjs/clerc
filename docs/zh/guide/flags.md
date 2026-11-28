@@ -12,7 +12,7 @@ import { arraysAndCounters, implicitValue } from "../../guide/flags.playground.t
 
 ## 简写与完整配置
 
-只需要指定类型时可直接传入构造函数或 Schema；需要短选项、默认值、环境变量或数组约束时传入配置对象：
+只需要指定类型时可直接传入构造函数或 Schema；需要短选项、必填、默认值、环境变量或数组约束时传入配置对象：
 
 ```ts
 import { Types, command } from "clerc";
@@ -21,6 +21,13 @@ const serve = command("serve", {
   flags: {
     open: Boolean, // 简写：boolean（默认 false）
     host: String, // 简写：string | undefined
+    token: {
+      type: String,
+      required: true, // 推导为 string（不含 undefined）
+      env: "ACME_TOKEN",
+      placeholder: "<secret>",
+      description: "API 认证令牌",
+    },
     port: {
       type: Types.Integer({ min: 1, max: 65_535 }),
       short: "p",
@@ -54,11 +61,13 @@ import { Types, command } from "clerc";
 
 const build = command("build", {
   flags: {
-    // 支持重复传入与逗号切分：-t a,b -t c -> ["a", "b", "c"]
+    // 支持重复传入、逗号切分与数量上下限：-t a,b -t c -> ["a", "b", "c"]
     tags: {
       type: String,
       multiple: true,
       unique: true,
+      minItems: 1,
+      maxItems: 5,
       short: "t",
       delimiter: ",",
       description: "发布标签",
@@ -110,6 +119,55 @@ const dev = command("dev", {
 :::
 
 <CliPlayground :scenario="implicitValue" lang="zh" />
+
+## 惰性默认值、环境变量解析与可见性
+
+- **惰性默认值函数**：`default: () => ...` 会在每次运行时重新求值（适合动态值或避免共享数组引用）；在函数上挂载 `.display` 属性可自定义 `--help` 中 `[default: ...]` 的展示文本：
+  ```ts
+  import type { DefaultValueFunction } from "clerc";
+  import { command } from "clerc";
+
+  const defaultCwd: DefaultValueFunction<string> = () => process.cwd();
+  defaultCwd.display = "current directory";
+
+  const scan = command("scan", {
+    flags: {
+      dir: { type: String, default: defaultCwd },
+    },
+    run() {},
+  });
+  ```
+- **环境变量解析规则（`env`）**：
+  - `Boolean` 选项解析 `true` / `1` / `false` / `0`（不区分大小写）。
+  - `Types.Counter` 解析非负整数（`2` → `2`）或布尔字面量（`true` → `1`、`false` → `0`）。
+  - `multiple: true` 数组选项按 `delimiter ?? ","` 切分并对每项做 `trim()`。
+  - 若必填选项已由环境变量提供则直接通过；两者皆缺失时报错会自动提示对应环境变量名。
+- **隐藏与弃用**：设置 `hidden: true` 可将选项从 `--help`、补全和 MCP Schema 中隐藏（命令行传入时仍可正常解析）；设置 `deprecated: true | "use --new-flag"` 会在 `--help` 标注弃用并在传入时向 `stderr` 输出警告。
+
+## `FlagOptions` 配置项一览
+
+| 配置项          | 类型                           | 说明                                                                    |
+| --------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `type`          | `SingleType`                   | 必填。原生构造函数、`Types.*`、自定义解析函数或 Standard Schema v1。    |
+| `short`         | `string`                       | 单字符短选项（如 `"p"` 对应 `-p`）。                                    |
+| `aliases`       | `string \| string[]`           | 额外长选项别名（如 `["out", "outFile"]`）。                             |
+| `description`   | `string`                       | 展示在 `--help`、补全候选与 MCP 工具 Schema 中的说明。                  |
+| `placeholder`   | `string`                       | 自定义 `--help` 中的值占位符（默认为 `<类型>`）。                       |
+| `default`       | `T \| DefaultValueFunction<T>` | 默认值或惰性工厂函数（与 `required: true` 互斥）。                      |
+| `implicitValue` | `T \| DefaultValueFunction<T>` | 仅传选项名未带 `=value` 时的隐式取值（仅限单值选项）。                  |
+| `required`      | `boolean`                      | 要求必须通过命令行或环境变量提供（否则抛 `MissingRequiredFlagError`）。 |
+| `env`           | `string`                       | 环境变量回退名。                                                        |
+| `multiple`      | `boolean`                      | 允许多次传入并收集为数组。                                              |
+| `delimiter`     | `string`                       | 数组选项的值分隔符（需配合 `multiple: true`）。                         |
+| `unique`        | `boolean`                      | 数组选项元素去重校验。                                                  |
+| `minItems`      | `number`                       | 数组选项最少元素个数。                                                  |
+| `maxItems`      | `number`                       | 数组选项最多元素个数。                                                  |
+| `negatable`     | `boolean`                      | 是否为 `Boolean` 选项启用 `--no-<flag>`（默认 `true`）。                |
+| `group`         | `string`                       | 直接指定所属 `--help` 分组名（等价于 `group(title, ...)`）。            |
+| `hidden`        | `boolean`                      | 从 `--help`、补全与 MCP 中隐藏。                                        |
+| `deprecated`    | `boolean \| string`            | 标记为已弃用并在使用时向 `stderr` 告警。                                |
+| `complete`      | `CompletionOption`             | 静态候选、`Complete.*`、`false` 或动态 `complete(ctx)` 函数。           |
+| `meta`          | `FlagMeta`                     | 开放元数据对象（可通过 `FlagCustomMeta` 扩展类型）。                    |
 
 ## 组合约束与跨命令复用
 

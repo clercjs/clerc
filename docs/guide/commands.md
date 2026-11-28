@@ -50,7 +50,7 @@ Nest child commands under `commands: [...]` on a parent `command()`. A parent wi
 import { cli, command } from "clerc";
 
 const dbMigrate = command("migrate", {
-  aliases: "m",
+  aliases: ["m", "db-migrate"],
   description: "Run pending migrations",
   run(ctx) {
     ctx.calledAs; // "db migrate" or "db m"
@@ -77,7 +77,7 @@ const app = cli({
 });
 ```
 
-Global and parent flags can appear **before or after** subcommand names on the command line: both `acme -v db migrate` and `acme db migrate -v` resolve to `db migrate`.
+Single-word aliases resolve under the command's parent namespace (`acme db m`), while multi-word aliases register at the full path from root (for example, `aliases: ["db m"]` on a nested command). Global and parent flags can appear **before or after** subcommand names on the command line: both `acme -v db migrate` and `acme db migrate -v` resolve to `db migrate`.
 
 <CliPlayground :scenario="subcommands" lang="en" />
 
@@ -233,13 +233,18 @@ const runCmd = command("run <env> <script> [args...]", {
 
 <CliPlayground :scenario="stopParsing" lang="en" />
 
-## Lazy-Loaded Handlers
+## Hidden Commands, Dynamic Help Metadata, and Lazy Handlers
 
-For large CLIs with heavy dependencies, dynamically `import()` the implementation inside `run` so `--help` and other commands pay zero module-loading cost:
+- **Hidden commands (`hidden: true`)**: Excluded from `--help`, typo suggestions, shell completions, and MCP tools (unless explicitly enabled via `meta.mcp.enabled: true`), while still callable directly (useful for internal plumbing like `complete`).
+- **Dynamic `examples` and `notes`**: Both `examples` and `notes` accept either a static array or a sync/async getter `(meta) => [...]` that receives `CliMeta` (`name`, `version`, `description`).
+- **Lazy-loaded handlers**: For large CLIs with heavy dependencies, dynamically `import()` inside `async run(ctx)` so `--help` and other commands pay zero module-loading cost:
 
 ```ts no-twoslash
 const analyze = command("analyze <entry>", {
   description: "Analyze bundle size",
+  examples: (meta) => [
+    [`$ ${meta.name} analyze src/index.ts`, "Inspect entry"],
+  ],
   async run(ctx) {
     const { runBundleAnalysis } = await import("./commands/analyze.js");
     await runBundleAnalysis(ctx);
