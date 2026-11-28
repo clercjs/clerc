@@ -51,7 +51,6 @@ export type {
   CommandItem,
   CommandOptions,
   NamespaceCommandOptions,
-  RootCommandOptions,
 } from "./command";
 export { command, group, use } from "./command";
 export type {

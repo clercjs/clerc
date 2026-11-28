@@ -14,7 +14,7 @@ import type {
   MergeFlagsTypes,
   ValidateFlagsInput,
 } from "./flags";
-import { createFlagsGroup, isFlagsNode } from "./flags";
+import { createFlagsGroup } from "./flags";
 import type {
   InferMiddlewaresFlags,
   InferMiddlewaresState,
@@ -125,17 +125,11 @@ export interface NamespaceCommandOptions<
   readonly args?: never;
   readonly check?: CheckInput<{}, EffectiveFlags<Use, NoInfer<F>>>;
   readonly complete?: CompletionOption<{}, EffectiveFlags<Use, NoInfer<F>>>;
-  readonly commands?: readonly CommandItem[];
   readonly default: Command;
   readonly run?: never;
 }
 
-export type RootCommandOptions<
-  Use extends readonly Middleware<any, any>[] = readonly [],
-  F extends FlagsInput = {},
-> = Omit<CommandOptions<"", {}, Use, F>, "args" | "aliases">;
-
-export const isCommand = (value: unknown): value is Command =>
+const isCommand = (value: unknown): value is Command =>
   typeof value === "object" && value !== null && COMMAND_NODE in value;
 
 export function flattenCommands(items?: readonly CommandItem[]): Command[] {
@@ -160,10 +154,6 @@ export function flattenCommands(items?: readonly CommandItem[]): Command[] {
 }
 
 export function command<
-  const Use extends readonly Middleware<any, any>[] = readonly [],
-  const F extends FlagsInput = {},
->(options: RootCommandOptions<Use, F>): Command;
-export function command<
   Spec extends string,
   const Use extends readonly Middleware<any, any>[] = readonly [],
   const F extends FlagsInput = {},
@@ -177,15 +167,13 @@ export function command<
   spec: NonEmptySpec<Spec>,
   options: CommandOptions<Spec, Args, Use, F>,
 ): Command;
-export function command(
-  specOrOptions: string | Record<string, any>,
-  maybeOptions?: Record<string, any>,
-): Command {
-  const hasSpec = typeof specOrOptions === "string";
-  const parsed = hasSpec
-    ? parseCommandSpec(specOrOptions)
-    : { name: "", argTokens: [] as readonly string[] };
-  const opts = (hasSpec ? maybeOptions : specOrOptions) ?? {};
+export function command(spec: string, opts: Record<string, any> = {}): Command {
+  const parsed = parseCommandSpec(spec);
+  if (!parsed.name) {
+    throw new InvalidSchemaError(
+      `command spec "${spec}" must include a command name; pass positional arguments directly to cli(spec, options) for a root command.`,
+    );
+  }
 
   if (opts.run && opts.default) {
     throw new InvalidSchemaError(
@@ -202,8 +190,8 @@ export function command(
 
   return {
     [COMMAND_NODE]: true,
-    [COMMAND_ID]: Symbol(parsed.name || "root"),
-    spec: hasSpec ? specOrOptions.trim() : "",
+    [COMMAND_ID]: Symbol(parsed.name),
+    spec: spec.trim(),
     name: parsed.name,
     argTokens: parsed.argTokens,
     aliases: opts.aliases,
@@ -267,7 +255,7 @@ export function group(
 
   if (
     containsCommand(target) ||
-    (Array.isArray(target) && target.length === 0 && !isFlagsNode(target))
+    (Array.isArray(target) && target.length === 0)
   ) {
     const flat = flattenCommands(
       Array.isArray(target)

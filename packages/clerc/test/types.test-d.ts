@@ -81,7 +81,7 @@ describe("core combinator static types & discriminated union narrowing", () => {
       },
     });
 
-    // @ts-expect-error empty string spec must be rejected in favor of command(options)
+    // @ts-expect-error empty string spec must be rejected
     command("", { run() {} });
 
     cli({

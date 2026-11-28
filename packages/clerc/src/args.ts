@@ -164,7 +164,7 @@ export function parseCommandSpec(spec: string): {
   const trimmed = spec.trim();
   if (!trimmed) {
     throw new InvalidSchemaError(
-      "command spec cannot be empty; pass options directly to command({ ... }) to register a root command",
+      "command spec cannot be empty; pass run() directly to cli({ ... }) to register a root command",
     );
   }
 
