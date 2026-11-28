@@ -58,7 +58,12 @@ test("读取模拟环境变量并校验枚举参数", async () => {
 
 如果想在测试中用 `rejects.toThrow(...)` 直接断言具体的 `ClercError` 子类，传入 `throwOnError: true` 即可跳过默认的 `stderr` 渲染并向外抛出原始错误对象：
 
-```ts no-twoslash
+```ts
+import type { Cli } from "clerc";
+import { createMemoryTerminal } from "clerc";
+import { expect } from "vitest";
+declare const app: Cli;
+// ---cut---
 import { MissingRequiredFlagError } from "clerc";
 
 await expect(

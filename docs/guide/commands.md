@@ -239,7 +239,7 @@ const runCmd = command("run <env> <script> [args...]", {
 - **Dynamic `examples` and `notes`**: Both `examples` and `notes` accept either a static array or a sync/async getter `(meta) => [...]` that receives `CliMeta` (`name`, `version`, `description`).
 - **Lazy-loaded handlers**: For large CLIs with heavy dependencies, dynamically `import()` inside `async run(ctx)` so `--help` and other commands pay zero module-loading cost:
 
-```ts no-twoslash
+```ts
 const analyze = command("analyze <entry>", {
   description: "Analyze bundle size",
   examples: (meta) => [

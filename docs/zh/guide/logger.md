@@ -39,6 +39,9 @@ log.error(
 - **边框面板**：`ctx.log.box` 提供同样的六个方法，渲染与日志标签对齐的圆角边框面板（不支持 Unicode 的终端自动降级为 `+---+`）。
 
 ```ts
+import type { CommandContext } from "clerc";
+declare const ctx: CommandContext;
+// ---cut---
 const step = ctx.log.step("正在执行数据库迁移");
 step.line("0001_init.sql (12ms)");
 step.line("0002_indexes.sql (8ms)");

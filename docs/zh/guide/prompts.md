@@ -41,6 +41,9 @@ const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 需要手动管理起止状态时，可使用 `ctx.log.spinner()`，提供 `.start()`、`.message()`、`.stop()`、`.cancel()` 和 `.error()` 方法：
 
 ```ts
+import type { CommandContext } from "clerc";
+declare const ctx: CommandContext;
+// ---cut---
 const s = ctx.log.spinner();
 s.start("正在连接集群...");
 s.message("校验凭证...");

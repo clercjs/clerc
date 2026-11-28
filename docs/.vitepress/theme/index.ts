@@ -13,6 +13,8 @@ import "virtual:uno.css";
 import "virtual:group-icons.css";
 import "./style.css";
 
+let twoslashDragResetBound = false;
+
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
@@ -31,5 +33,20 @@ export default {
         },
       },
     });
+    if (typeof window !== "undefined" && !twoslashDragResetBound) {
+      twoslashDragResetBound = true;
+      // @shikijs/vitepress-twoslash tracks mousedown/mouseup to suppress poppers
+      // while dragging; reset its flag if the pointer leaves or loses focus.
+      function resetTwoslashDrag() {
+        window.dispatchEvent(new MouseEvent("mouseup"));
+      }
+      window.addEventListener("blur", resetTwoslashDrag, { passive: true });
+      window.addEventListener("dragend", resetTwoslashDrag, { passive: true });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          resetTwoslashDrag();
+        }
+      });
+    }
   },
 } satisfies Theme;

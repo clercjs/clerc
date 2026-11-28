@@ -38,6 +38,9 @@ log.error(
 Every log call returns a `LogEntry` with a chainable `.line(...values)` method so long-running steps can append sub-lines under the same gutter (suppressed automatically if the parent log level was filtered out):
 
 ```ts
+import type { CommandContext } from "clerc";
+declare const ctx: CommandContext;
+// ---cut---
 const entry = ctx.log.step("Applying migrations");
 entry.line("0001_init.sql (12ms)");
 entry.line("0002_indexes.sql (8ms)");
@@ -48,6 +51,9 @@ entry.line("0002_indexes.sql (8ms)");
 `ctx.log.box` exposes the same six methods (`step`, `info`, `success`, `warn`, `error`, `debug`), rendering a rounded panel aligned to the label gutter (with automatic ASCII `+---+` fallback when Unicode is unsupported):
 
 ```ts
+import type { CommandContext } from "clerc";
+declare const ctx: CommandContext;
+// ---cut---
 ctx.log.box.warn(
   "Dry run mode",
   "No remote changes were written.",

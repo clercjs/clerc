@@ -41,6 +41,9 @@ const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 When you need explicit lifecycle control, use `ctx.log.spinner()`, which exposes `.start()`, `.message()`, `.stop()`, `.cancel()`, and `.error()`.
 
 ```ts
+import type { CommandContext } from "clerc";
+declare const ctx: CommandContext;
+// ---cut---
 const s = ctx.log.spinner();
 s.start("Connecting to cluster...");
 s.message("Authenticating...");

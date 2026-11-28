@@ -240,7 +240,7 @@ const runCmd = command("run <env> <script> [args...]", {
 - **懒加载**：在 `async run(ctx)` 中动态 `await import("./commands/analyze.js")`，让 `--help` 和其他子命令不加载重型依赖。
 - **弃用提示**：设置 `deprecated: "use 'acme create' instead"`，`--help` 会显示弃用标签，调用时自动向 `stderr` 输出警告（在 `-q` 静默模式下自动隐藏）。
 
-```ts no-twoslash
+```ts
 const analyze = command("analyze <entry>", {
   description: "分析打包产物大小",
   examples: (meta) => [[`$ ${meta.name} analyze src/index.ts`, "分析指定入口"]],
