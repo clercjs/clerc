@@ -18,6 +18,51 @@ Clerc 的选项和位置参数共用同一套类型系统。你可以使用原�
 4. **Shell 自动补全候选值**（枚举值在 `@clerc/plugin-completions` 中自动补全）
 5. **MCP 工具的 `inputSchema`**（在 `@clerc/plugin-mcp` 中通过 Standard JSON Schema v1 导出）
 
+## 内置 `Types`
+
+`clerc` 内置了零依赖的 Standard Schema v1 构造器：
+
+| 构造器                           | 可选参数                                                           | 推导类型       |
+| -------------------------------- | ------------------------------------------------------------------ | -------------- |
+| `Types.Enum(...values)`          | 一个或多个字符串字面量                                             | 字面量联合类型 |
+| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`       |
+| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`       |
+| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`       |
+| `Types.Regex(pattern, display?)` | `Types.String({ pattern, display })` 的简写                        | `string`       |
+| `Types.Counter`                  | 统计选项重复出现次数（`-vvv` → `3`，默认为 `0`）                   | `number`       |
+
+原生构造函数同样可直接使用：`String` 透传原始字符串，`Number` 解析有效数字（空字符串和 `NaN` 会抛 `ValidationError`），`Boolean` 定义支持 `--no-*` 取反且默认为 `false` 的布尔选项。
+
+```ts
+import { Types, command } from "clerc";
+
+const release = command("release <channel>", {
+  args: {
+    channel: Types.Enum("alpha", "beta", "rc", "stable"),
+  },
+  flags: {
+    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
+    workers: { type: Types.Integer({ min: 1 }), default: 4 },
+    ratio: { type: Types.Number({ min: 0, max: 1 }) },
+    token: {
+      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
+    },
+    tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
+    verbose: { type: Types.Counter, short: "v" },
+  },
+  run(ctx) {
+    ctx.args.channel;
+    //       ^?
+    ctx.flags.port;
+    //        ^?
+    ctx.flags.workers;
+    //        ^?
+  },
+});
+```
+
+<CliPlayground :scenario="builtinTypes" lang="zh" />
+
 ## 直接使用 Zod / Valibot / ArkType
 
 无需任何适配层，直接将 Schema 传给 `type`：
@@ -89,51 +134,6 @@ const invite = command("invite <email>", {
 :::
 
 同样支持异步 Standard Schema 校验器。当 Schema 导出了 Standard JSON Schema `enum` 候选列表（包含内置 `Types.Enum` 与 Zod v4 `z.enum`）时，输入拼写错误会自动附带相近值提示（`a similar value exists: '...'`）。
-
-## 内置 `Types`
-
-不想引入外部校验库时，`clerc` 内置了零依赖的 Standard Schema v1 构造器：
-
-| 构造器                           | 可选参数                                                           | 推导类型       |
-| -------------------------------- | ------------------------------------------------------------------ | -------------- |
-| `Types.Enum(...values)`          | 一个或多个字符串字面量                                             | 字面量联合类型 |
-| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`       |
-| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`       |
-| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`       |
-| `Types.Regex(pattern, display?)` | `Types.String({ pattern, display })` 的简写                        | `string`       |
-| `Types.Counter`                  | 统计选项重复出现次数（`-vvv` → `3`，默认为 `0`）                   | `number`       |
-
-原生构造函数同样可直接使用：`String` 透传原始字符串，`Number` 解析有效数字（空字符串和 `NaN` 会抛 `ValidationError`），`Boolean` 定义支持 `--no-*` 取反且默认为 `false` 的布尔选项。
-
-```ts
-import { Types, command } from "clerc";
-
-const release = command("release <channel>", {
-  args: {
-    channel: Types.Enum("alpha", "beta", "rc", "stable"),
-  },
-  flags: {
-    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
-    workers: { type: Types.Integer({ min: 1 }), default: 4 },
-    ratio: { type: Types.Number({ min: 0, max: 1 }) },
-    token: {
-      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
-    },
-    tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
-    verbose: { type: Types.Counter, short: "v" },
-  },
-  run(ctx) {
-    ctx.args.channel;
-    //       ^?
-    ctx.flags.port;
-    //        ^?
-    ctx.flags.workers;
-    //        ^?
-  },
-});
-```
-
-<CliPlayground :scenario="builtinTypes" lang="zh" />
 
 ## 自定义解析函数
 

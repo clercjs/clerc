@@ -18,6 +18,58 @@ One schema automatically drives five places:
 4. **Shell tab-completion candidates** (enum values complete automatically in `@clerc/plugin-completions`)
 5. **MCP tool `inputSchema`** (via Standard JSON Schema v1 in `@clerc/plugin-mcp`)
 
+## Built-in `Types`
+
+`clerc` ships zero-dependency Standard Schema v1 helpers under `Types`:
+
+| Helper                           | Options                                                            | Output type       |
+| -------------------------------- | ------------------------------------------------------------------ | ----------------- |
+| `Types.Enum(...values)`          | One or more literal strings                                        | union of `values` |
+| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`          |
+| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`          |
+| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`          |
+| `Types.Regex(pattern, display?)` | Shorthand for `Types.String({ pattern, display })`                 | `string`          |
+| `Types.Counter`                  | Counts repeated flag occurrences (`-vvv` → `3`, default `0`)       | `number`          |
+
+Native constructors are also supported directly: `String` passes raw strings through, `Number` parses finite numbers (rejecting empty strings and `NaN` with `ValidationError`), and `Boolean` creates a negatable boolean flag defaulting to `false`.
+
+```ts
+import { Types, command } from "clerc";
+
+const release = command("release <channel>", {
+  args: {
+    // Displays <alpha|beta|rc|stable>, auto-completes in shells, exports JSON enum
+    channel: Types.Enum("alpha", "beta", "rc", "stable"),
+  },
+  flags: {
+    // Displays <1..65535>, validates inclusive integer bounds
+    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
+    // Displays >=1, rejects floats like "1.5" or empty strings
+    workers: { type: Types.Integer({ min: 1 }), default: 4 },
+    // Displays <0..1>, validates floating-point bounds
+    ratio: { type: Types.Number({ min: 0, max: 1 }) },
+    // Trims whitespace and enforces length bounds
+    token: {
+      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
+    },
+    // Displays <v<major>.<minor>> (or regex literal if label omitted)
+    tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
+    // Counts occurrences (-vvv -> 3, defaults to 0)
+    verbose: { type: Types.Counter, short: "v" },
+  },
+  run(ctx) {
+    ctx.args.channel;
+    //       ^?
+    ctx.flags.port;
+    //        ^?
+    ctx.flags.workers;
+    //        ^?
+  },
+});
+```
+
+<CliPlayground :scenario="builtinTypes" lang="en" />
+
 ## Standard Schema v1 (Zod, Valibot, ArkType)
 
 Pass any Standard Schema v1 object directly as `type`. No adapter package is needed:
@@ -91,58 +143,6 @@ const invite = command("invite <email>", {
 :::
 
 Async Standard Schema validators are also supported. When a schema exposes Standard JSON Schema `enum` values (including `Types.Enum` and Zod v4 `z.enum`), mistyped values automatically receive a typo hint (`a similar value exists: '...'`).
-
-## Built-in `Types`
-
-When you don't need an external validation library, `clerc` ships zero-dependency Standard Schema v1 helpers under `Types`:
-
-| Helper                           | Options                                                            | Output type       |
-| -------------------------------- | ------------------------------------------------------------------ | ----------------- |
-| `Types.Enum(...values)`          | One or more literal strings                                        | union of `values` |
-| `Types.Integer(options?)`        | `{ min?, max?, display? }`                                         | `number`          |
-| `Types.Number(options?)`         | `{ min?, max?, display? }`                                         | `number`          |
-| `Types.String(options?)`         | `{ trim?, nonEmpty?, minLength?, maxLength?, pattern?, display? }` | `string`          |
-| `Types.Regex(pattern, display?)` | Shorthand for `Types.String({ pattern, display })`                 | `string`          |
-| `Types.Counter`                  | Counts repeated flag occurrences (`-vvv` → `3`, default `0`)       | `number`          |
-
-Native constructors are also supported directly: `String` passes raw strings through, `Number` parses finite numbers (rejecting empty strings and `NaN` with `ValidationError`), and `Boolean` creates a negatable boolean flag defaulting to `false`.
-
-```ts
-import { Types, command } from "clerc";
-
-const release = command("release <channel>", {
-  args: {
-    // Displays <alpha|beta|rc|stable>, auto-completes in shells, exports JSON enum
-    channel: Types.Enum("alpha", "beta", "rc", "stable"),
-  },
-  flags: {
-    // Displays <1..65535>, validates inclusive integer bounds
-    port: { type: Types.Integer({ min: 1, max: 65_535 }), default: 3000 },
-    // Displays >=1, rejects floats like "1.5" or empty strings
-    workers: { type: Types.Integer({ min: 1 }), default: 4 },
-    // Displays <0..1>, validates floating-point bounds
-    ratio: { type: Types.Number({ min: 0, max: 1 }) },
-    // Trims whitespace and enforces length bounds
-    token: {
-      type: Types.String({ trim: true, nonEmpty: true, minLength: 4 }),
-    },
-    // Displays <v<major>.<minor>> (or regex literal if label omitted)
-    tag: { type: Types.Regex(/^v\d+\.\d+$/, "v<major>.<minor>") },
-    // Counts occurrences (-vvv -> 3, defaults to 0)
-    verbose: { type: Types.Counter, short: "v" },
-  },
-  run(ctx) {
-    ctx.args.channel;
-    //       ^?
-    ctx.flags.port;
-    //        ^?
-    ctx.flags.workers;
-    //        ^?
-  },
-});
-```
-
-<CliPlayground :scenario="builtinTypes" lang="en" />
 
 ## Custom Parser Functions
 
