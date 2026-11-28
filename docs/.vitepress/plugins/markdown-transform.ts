@@ -24,7 +24,6 @@ export const clercImports = [
   "middleware",
   "Middleware",
   "oneOf",
-  "prompts",
   "renderHelp",
   "renderHelpDocument",
   "together",

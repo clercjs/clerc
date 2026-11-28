@@ -8,8 +8,6 @@ import type {
 import type { ErrorHandler, MiddlewareContext } from "./types";
 import type { Prettify } from "./utils";
 
-export type { MiddlewareContext };
-
 export const MIDDLEWARE_NODE: unique symbol = Symbol.for("clerc.middleware");
 
 export type MiddlewareNext = () => Promise<void>;

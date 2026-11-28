@@ -36,7 +36,6 @@ export interface HelpArgumentItem {
   readonly env?: string;
   readonly required: boolean;
   readonly variadic: boolean;
-  readonly constraints?: readonly string[];
 }
 
 export interface HelpCommandItem {

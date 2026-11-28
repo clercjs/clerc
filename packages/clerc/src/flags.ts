@@ -119,7 +119,7 @@ type ContextualFlagValue<V> = [V] extends [never]
     ? V
     : StrictOptions<V, FlagOptions>;
 
-export type ContextualFlags<Flags extends Record<string, any>> = {
+type ContextualFlags<Flags extends Record<string, any>> = {
   readonly [K in keyof Flags]: ContextualFlagValue<Flags[K]>;
 };
 
@@ -236,7 +236,7 @@ export type MergeFlagsTypes<Base, Next> = SimplifyUnion<
   DistributiveOmit<Base, KnownKeys<Next>> & Next
 >;
 
-export type MergeFlagsTuple<
+type MergeFlagsTuple<
   Items extends readonly unknown[],
   Acc = {},
 > = Items extends readonly [infer Head, ...infer Tail]
@@ -481,7 +481,7 @@ export const isFlagsNode = (
 ): value is FlagsGroupNode | FlagsConstraintNode =>
   typeof value === "object" && value !== null && FLAGS_NODE in value;
 
-export interface CompiledFlagEntry extends FlagDescriptor {
+interface CompiledFlagEntry extends FlagDescriptor {
   readonly convert?: TypeConverter;
 }
 
@@ -492,7 +492,7 @@ export interface CompiledFlags {
   readonly knownNames: readonly string[];
 }
 
-export interface CompiledFlagSet {
+interface CompiledFlagSet {
   readonly flags: CompiledFlags;
   readonly constraints: readonly FlagConstraint[];
   readonly groups: readonly GroupDefinition[];
@@ -583,7 +583,7 @@ function compileSingleFlagEntry(
       delimiter: norm.delimiter,
       unique: Boolean(norm.unique),
       minItems: norm.minItems,
-      maxItems: norm?.maxItems,
+      maxItems: norm.maxItems,
       required: suppressGlobalRequired ? false : declaredRequired,
       env: norm.env,
       negatable,
@@ -613,7 +613,7 @@ const flagToArgvSpec = (flag: FlagDescriptor): ArgvFlagSpec => ({
   optionalValue: flag.implicitValue !== undefined,
 });
 
-export function buildCompiledFlags(
+function buildCompiledFlags(
   entries: readonly CompiledFlagEntry[],
 ): CompiledFlags {
   const byName = new Map<string, CompiledFlagEntry>();

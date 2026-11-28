@@ -54,7 +54,6 @@ export type {
 } from "./command";
 export { command, group, use } from "./command";
 export type {
-  CommandMatch,
   CommandNode,
   CommandTree,
   GetCommandFlagsOptions,

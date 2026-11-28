@@ -1,5 +1,5 @@
 import type { Command } from "clerc";
-import { ClercError, Complete, Types, command } from "clerc";
+import { ClercError, Types, command } from "clerc";
 
 import { formatCompletionOutput, resolveCompletions } from "./complete";
 import type { ResolveCompletionsOptions, ResolvedCompletions } from "./helpers";
@@ -36,7 +36,6 @@ export type {
   UninstallCompletionsResult,
 };
 export {
-  Complete,
   SUPPORTED_SHELLS,
   ShellCompDirective,
   detectShell,

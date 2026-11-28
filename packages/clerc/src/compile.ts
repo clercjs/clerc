@@ -1,4 +1,4 @@
-import type { ArgDescriptor, CompiledArgs } from "./args";
+import type { CompiledArgs } from "./args";
 import { compileArgs, parseCommandSpec } from "./args";
 import type { CheckFn, CheckInput } from "./check";
 import { collectChecks } from "./check";
@@ -33,7 +33,6 @@ export interface CompiledNodeRuntime {
   readonly knownFlagNames: readonly string[];
   readonly parser: ArgvParser;
   readonly args?: CompiledArgs;
-  readonly argsByName: ReadonlyMap<string, ArgDescriptor>;
   readonly constraints: readonly FlagConstraint[];
   readonly checks: readonly CheckFn[];
   readonly middlewares: readonly Middleware<any, any>[];
@@ -52,7 +51,7 @@ export interface CompiledCli {
   readonly runtimes: ReadonlyMap<CommandNode, CompiledNodeRuntime>;
 }
 
-export interface CompileCliInput {
+interface CompileCliInput {
   readonly meta: CliMeta;
   readonly helpOptions: false | HelpOptions;
   readonly verbosity: boolean;
@@ -404,9 +403,6 @@ export function compileCli(input: CompileCliInput): CompiledCli {
     );
 
     const args = cmd ? compileArgs(cmd.argTokens, cmd.args) : undefined;
-    const argsByName = new Map(
-      (args?.descriptors ?? []).map((a) => [a.name, a]),
-    );
 
     const checks = collectChecks([
       ...env.middlewares.map((m) => m.check),
@@ -438,7 +434,6 @@ export function compileCli(input: CompileCliInput): CompiledCli {
         stopParsing: cmd?.stopParsing,
       }),
       args,
-      argsByName,
       constraints: compiledFlagSet.constraints,
       checks,
       middlewares: env.middlewares,

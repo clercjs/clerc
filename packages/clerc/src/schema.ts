@@ -462,7 +462,7 @@ export const withArrayJsonSchema = (
   ...(maxItems === undefined ? {} : { maxItems }),
 });
 
-export function validateArrayConstraints(
+function validateArrayConstraints(
   target: string,
   values: readonly unknown[],
   { unique, minItems, maxItems }: ArrayConstraintOptions,

@@ -99,9 +99,6 @@ function formatArgumentRow(arg: HelpArgumentItem, theme: Theme): TwoColumnRow {
   if (arg.env) {
     tags.push(theme.muted(`[env: ${arg.env}]`));
   }
-  for (const constraint of arg.constraints ?? []) {
-    tags.push(theme.muted(`[${constraint}]`));
-  }
 
   return [theme.command(arg.token), { text: arg.description, tags }];
 }
