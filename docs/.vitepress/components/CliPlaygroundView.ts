@@ -1044,7 +1044,10 @@ export const CliPlaygroundView = defineComponent({
 
       const exitBadge =
         exitCode.value === null
-          ? h("span", { class: "pg-exit running" }, isZh ? "运行中" : "running")
+          ? h("span", { class: "pg-exit running" }, [
+              h("span", { "class": "pg-live-dot", "aria-hidden": "true" }),
+              isZh ? "运行中" : "running",
+            ])
           : h(
               "span",
               {
@@ -1310,6 +1313,12 @@ export const CliPlaygroundView = defineComponent({
                   ),
                 )
               : null,
+            isRunning.value
+              ? h("span", {
+                  "class": "pg-progress-beam",
+                  "aria-hidden": "true",
+                })
+              : null,
           ]);
 
       const presetsBar =
@@ -1372,14 +1381,16 @@ export const CliPlaygroundView = defineComponent({
               "aria-live": "polite",
             },
             [
-              h("span", {
-                "class": "pg-loading-spinner",
-                "aria-hidden": "true",
-              }),
+              h("span", { "class": "pg-matrix", "aria-hidden": "true" }, [
+                h("span", { class: "pg-matrix-dot d1" }),
+                h("span", { class: "pg-matrix-dot d2" }),
+                h("span", { class: "pg-matrix-dot d3" }),
+                h("span", { class: "pg-matrix-dot d4" }),
+              ]),
               h(
                 "span",
-                { class: "pg-loading-text" },
-                isZh ? "正在运行..." : "Running...",
+                { class: "pg-loading-label" },
+                isZh ? "正在运行" : "Running",
               ),
             ],
           ),

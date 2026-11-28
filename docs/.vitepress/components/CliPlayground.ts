@@ -24,6 +24,63 @@ function loadPlaygroundView(): Promise<Component> {
   return cachedViewPromise;
 }
 
+const CODE_SKELETON_LINES: readonly {
+  readonly indent: number;
+  readonly widths: readonly [number, number?];
+  readonly accent?: boolean;
+}[] = [
+  { indent: 0, widths: [14, 42], accent: true },
+  { indent: 0, widths: [0] },
+  { indent: 0, widths: [18, 28], accent: true },
+  { indent: 1, widths: [22, 18] },
+  { indent: 1, widths: [16, 36] },
+  { indent: 2, widths: [26, 20] },
+  { indent: 2, widths: [34] },
+  { indent: 1, widths: [14, 24] },
+  { indent: 0, widths: [10] },
+];
+
+const renderMatrixLoader = () =>
+  h("span", { "class": "pg-matrix", "aria-hidden": "true" }, [
+    h("span", { class: "pg-matrix-dot d1" }),
+    h("span", { class: "pg-matrix-dot d2" }),
+    h("span", { class: "pg-matrix-dot d3" }),
+    h("span", { class: "pg-matrix-dot d4" }),
+  ]);
+
+const renderCodeSkeleton = () =>
+  h(
+    "div",
+    { "class": "pg-code-skel", "aria-hidden": "true" },
+    CODE_SKELETON_LINES.map((line, idx) =>
+      line.widths[0] === 0
+        ? h("div", { key: idx, class: "pg-skel-gap" })
+        : h(
+            "div",
+            {
+              key: idx,
+              class: "pg-skel-row",
+              style: {
+                paddingLeft: `${line.indent * 16}px`,
+                animationDelay: `${idx * 55}ms`,
+              },
+            },
+            [
+              h("span", {
+                class: ["pg-skel-bar", { accent: line.accent }],
+                style: { width: `${line.widths[0]}%` },
+              }),
+              line.widths[1]
+                ? h("span", {
+                    class: "pg-skel-bar subtle",
+                    style: { width: `${line.widths[1]}%` },
+                  })
+                : null,
+            ],
+          ),
+    ),
+  );
+
 export const CliPlayground = defineComponent({
   name: "CliPlayground",
   props: {
@@ -133,7 +190,10 @@ export const CliPlayground = defineComponent({
 
       const statusBadge = isError
         ? h("span", { class: "pg-exit err" }, isZh ? "加载失败" : "error")
-        : h("span", { class: "pg-exit running" }, isZh ? "加载中" : "loading");
+        : h("span", { class: "pg-exit running" }, [
+            h("span", { "class": "pg-live-dot", "aria-hidden": "true" }),
+            isZh ? "加载中" : "loading",
+          ]);
 
       const bodyContent = isError
         ? h("div", { class: "pg-load-error" }, [
@@ -158,20 +218,35 @@ export const CliPlayground = defineComponent({
         : h(
             "div",
             {
-              "class": "pg-loading",
+              "class": "pg-loading-stage",
               "role": "status",
               "aria-live": "polite",
             },
             [
-              h("span", {
-                "class": "pg-loading-spinner",
-                "aria-hidden": "true",
-              }),
-              h(
-                "span",
-                { class: "pg-loading-text" },
-                isZh ? "正在加载交互终端..." : "Loading playground...",
-              ),
+              h("div", { class: "pg-loading-head" }, [
+                renderMatrixLoader(),
+                h(
+                  "span",
+                  { class: "pg-loading-label" },
+                  isZh ? "正在初始化终端" : "Initializing terminal",
+                ),
+              ]),
+              h("div", { "class": "pg-loading-trace", "aria-hidden": "true" }, [
+                h("div", { class: "pg-trace-line" }, [
+                  h("span", { class: "pg-trace-rail" }, "│"),
+                  h("span", {
+                    class: "pg-skel-bar",
+                    style: { width: "44%" },
+                  }),
+                ]),
+                h("div", { class: "pg-trace-line" }, [
+                  h("span", { class: "pg-trace-rail" }, "│"),
+                  h("span", {
+                    class: "pg-skel-bar subtle",
+                    style: { width: "28%" },
+                  }),
+                ]),
+              ]),
             ],
           );
 
@@ -179,19 +254,7 @@ export const CliPlayground = defineComponent({
         h("div", { class: "pg-bar" }, [
           h("span", { class: "pg-filename" }, "cli.ts"),
         ]),
-        h("div", { class: "pg-code pg-code-loading" }, [
-          h("div", { class: "pg-loading" }, [
-            h("span", {
-              "class": "pg-loading-spinner",
-              "aria-hidden": "true",
-            }),
-            h(
-              "span",
-              { class: "pg-loading-text" },
-              isZh ? "正在加载示例源码..." : "Loading source...",
-            ),
-          ]),
-        ]),
+        h("div", { class: "pg-code pg-code-loading" }, [renderCodeSkeleton()]),
       ]);
 
       const termSkeleton = h("div", { class: "pg-pane pg-pane-term" }, [
@@ -209,9 +272,22 @@ export const CliPlayground = defineComponent({
           h("div", { class: "pg-prompt-box" }, [
             h("div", { class: "pg-prompt pg-prompt-placeholder" }, [
               h("span", { "class": "pg-dollar", "aria-hidden": "true" }, "$"),
-              h("span", { class: "pg-placeholder-cmd" }, "..."),
+              h(
+                "span",
+                { "class": "pg-placeholder-cmd", "aria-hidden": "true" },
+                [
+                  h("span", { class: "pg-skel-cmd" }),
+                  h("span", { class: "pg-cursor" }),
+                ],
+              ),
               isInline ? statusBadge : null,
             ]),
+            isError
+              ? null
+              : h("span", {
+                  "class": "pg-progress-beam",
+                  "aria-hidden": "true",
+                }),
           ]),
           h("div", { class: "pg-output" }, [bodyContent]),
         ]),
