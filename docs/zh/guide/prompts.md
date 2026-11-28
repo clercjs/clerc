@@ -1,5 +1,5 @@
 ---
-title: 进度与交互
+title: 进度和提示
 ---
 
 <script setup>
@@ -10,7 +10,7 @@ import {
 } from "../../guide/prompts.playground.ts";
 </script>
 
-# 进度与交互
+# 进度和提示
 
 `ctx.log` 内置了任务进度 Spinner，同时通过 `clerc/prompts` 子路径重导出了 `@clack/prompts`，用于构建交互式命令行问答。
 

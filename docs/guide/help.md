@@ -47,7 +47,7 @@ const app = cli({
 
 <CliPlayground :scenario="groupedHelp" lang="en" />
 
-## Customizing Help Sections & Renderers
+## Customizing Sections and Renderers
 
 Pass `help: false` to disable built-in `--help` and the `help` subcommand completely, or pass a `HelpOptions` object:
 

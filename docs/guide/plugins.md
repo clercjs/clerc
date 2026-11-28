@@ -1,12 +1,12 @@
 ---
-title: Composition & Plugins
+title: Plugins
 ---
 
 <script setup>
 import { authPluginDemo, rbacMetaDemo } from "./plugins.playground.ts";
 </script>
 
-# Composition & Plugins
+# Plugins
 
 Clerc does not have a separate `Plugin` class. Reusable capabilities—both within your own codebase and published as npm packages—are plain functions returning **`Middleware`**, **`Command`**, or **`Command[]`**:
 

@@ -83,7 +83,7 @@ You can also attach `complete(ctx)` directly on command options (`command("check
 
 <CliPlayground :scenario="dynamicCompletions" lang="en" />
 
-## `Complete` Helpers & Plugin Options
+## `Complete` Helpers and Options
 
 Use `Complete` (exported from `"clerc"`) for declarative completion directives without writing custom callbacks:
 
@@ -134,7 +134,7 @@ acme completions powershell | Out-String | Invoke-Expression
 
 <CliPlayground :scenario="shellScripts" lang="en" />
 
-## What Gets Completed & Programmatic API
+## What Gets Completed and Programmatic API
 
 - Multi-level subcommands, namespaces, and command aliases
 - Built-in `help [command...]` at arbitrary subcommand depth (`acme help <TAB>`, `acme help db <TAB>`)

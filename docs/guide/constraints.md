@@ -101,11 +101,11 @@ const app = cli({
 
 <CliPlayground :scenario="customChecks" lang="en" />
 
-## Execution Lifecycle & Ecosystem Integration
+## Execution Lifecycle and Integrations
 
 Constraints and `check` validators run **after** flag/argument parsing, environment fallbacks, required checks, and schema conversion, and **before** middlewares and `run()`:
 
-- **Built-in `--help` & `--version`** short-circuit before constraint evaluation, so help and version output are never blocked by `oneOf` or `atLeastOne`.
+- **Built-in `--help` and `--version`** short-circuit before constraint evaluation, so help and version output are never blocked by `oneOf` or `atLeastOne`.
 - **Diagnostics**: violations throw `ConstraintError` (`code: "ERR_CONSTRAINT"`, exit code `2`) with automatic `env` hints and the command's `usage` line.
 - **`--help`**: constraints render inline on options (`[conflicts: --yaml]`, `[with: --tls-cert]`, `[one of: ...]`) or on wrapped group headings (`TLS OPTIONS  [together]`).
 - **`@clerc/plugin-completions`**: `exclusive` and `oneOf` hide conflicting flags once a partner is already present on the command line.

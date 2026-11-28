@@ -1,8 +1,8 @@
 ---
-title: Context & Terminal
+title: Context
 ---
 
-# Context & Terminal
+# Context
 
 Every command handler, middleware, and error handler receives a typed context object (`ctx`). All terminal I/O, environment reads, help rendering, and early exits flow through `ctx`, keeping commands pure, testable, and free of global `process.*` coupling.
 
@@ -101,7 +101,7 @@ const release = command("release", {
 });
 ```
 
-## Non-Strict Flags & `ctx.raw`
+## Non-Strict Flags and `ctx.raw`
 
 By default, `strictFlags` is `true`, so any unrecognized flag throws `UnknownFlagError` with a typo suggestion. Set `strictFlags: false` on `cli()` to collect unknown flags into `ctx.raw.unknown` instead:
 

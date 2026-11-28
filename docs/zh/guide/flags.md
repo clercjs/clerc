@@ -171,5 +171,5 @@ const dev = command("dev", {
 
 ## 组合约束与跨命令复用
 
-- **选项分组与约束**：`flags` 既接受普通对象，也接受 `group(title, flags)`、约束组合子（`oneOf`、`exclusive`、`together`、`atLeastOne`）或它们的数组组合，详见 [约束与校验](/zh/guide/constraints)。
+- **选项分组与约束**：`flags` 既接受普通对象，也接受 `group(title, flags)`、约束组合子（`oneOf`、`exclusive`、`together`、`atLeastOne`）或它们的数组组合，详见 [约束](/zh/guide/constraints)。
 - **共享选项与局部覆盖**：将共享选项定义在 `middleware({ flags: { ... } })` 中，通过命令上的 `use: [mw]` 获得完整的 `ctx.flags` 类型推导，并用 `use(mw, commands)` 或 `cli({ use: [mw] })` 控制作用范围。若子命令声明了同名局部选项，该子命令内优先采用局部选项的类型与配置。

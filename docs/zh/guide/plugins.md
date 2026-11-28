@@ -1,12 +1,12 @@
 ---
-title: 模块化组合与插件
+title: 插件
 ---
 
 <script setup>
 import { authPluginDemo, rbacMetaDemo } from "../../guide/plugins.playground.ts";
 </script>
 
-# 模块化组合与插件
+# 插件
 
 Clerc 没有单独的 `Plugin` 类。无论是业务内部抽离的可复用模块，还是发布到 npm 的第三方插件，本质上都只是返回 **`Middleware`**、**`Command`** 或 **`Command[]`** 的普通函数：
 

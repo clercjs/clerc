@@ -59,10 +59,10 @@ const app = cli({
 
 <CliPlayground :scenario="clercError" lang="en" />
 
-::: tip Stack traces & clean exits
+::: tip Stack traces and clean exits
 
 - Set `DEBUG=1` in the environment or pass `-v` / `--verbose` to include full error stack traces in rendered diagnostics.
-- When a command wants to stop with a custom exit code **without** printing an error block or invoking `onError`, call `ctx.exit(code)` instead. See [Context & Terminal](/guide/context#clean-early-exits-ctx-exit).
+- When a command wants to stop with a custom exit code **without** printing an error block or invoking `onError`, call `ctx.exit(code)` instead. See [Context](/guide/context#clean-early-exits-ctx-exit).
   :::
 
 ## Custom `onError` Handlers

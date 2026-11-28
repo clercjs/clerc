@@ -62,7 +62,7 @@ const app = cli({
 ::: tip 堆栈输出与无诊断退出
 
 - 设置环境变量 `DEBUG=1` 或传入 `-v` / `--verbose` 时，默认诊断输出会自动附带完整错误堆栈。
-- 如果命令希望自行打印输出并以指定退出码结束，而不渲染错误块、也不触发 `onError`，请使用 `ctx.exit(code)`。详见 [上下文与终端](/zh/guide/context#优雅提前退出-ctx-exit)。
+- 如果命令希望自行打印输出并以指定退出码结束，而不渲染错误块、也不触发 `onError`，请使用 `ctx.exit(code)`。详见 [上下文](/zh/guide/context#优雅提前退出-ctx-exit)。
   :::
 
 ## 自定义 `onError` 拦截

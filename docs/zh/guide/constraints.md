@@ -1,12 +1,12 @@
 ---
-title: 约束与校验
+title: 约束
 ---
 
 <script setup>
 import { customChecks, flagConstraints } from "../../guide/constraints.playground.ts";
 </script>
 
-# 约束与校验
+# 约束
 
 在 `flags` 中直接通过 `oneOf`、`exclusive`、`together`、`atLeastOne` 组合声明选项约束，并用 `check` 编写跨字段取值校验。同一份定义会同时驱动 **TypeScript 可辨识联合类型收窄**、运行期校验、`--help` 标签、Shell 补全过滤和 MCP JSON Schema 导出。
 
@@ -58,7 +58,7 @@ const serve = command("serve <env>", {
 
 <CliPlayground :scenario="flagConstraints" lang="zh" />
 
-## 跨字段条件校验（`check`）
+## 跨字段检查（`check`）
 
 涉及具体取值或同时横跨 `args` 与 `flags` 的业务规则，可在 `command()`、`middleware()` 或 `cli()` 上配置 `check`（支持单个函数或函数数组）。校验函数接收 `{ args, flags, provided, terminal }`，返回错误提示字符串、结构化的 `{ message, detail?, hints? }` 对象，或返回 `undefined` 表示通过：
 

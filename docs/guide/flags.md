@@ -144,7 +144,7 @@ To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I 
   - `Types.Counter` parses a non-negative integer (`2` → `2`) or a boolean literal (`true` → `1`, `false` → `0`).
   - `multiple: true` array flags split the env string by `delimiter ?? ","` and trim each item.
   - Required flags satisfied by `env` pass without error; if both argv and `env` are missing, Clerc appends a hint mentioning the variable name.
-- **Visibility & deprecation**: Set `hidden: true` to omit a flag from `--help`, completions, and MCP schemas (it still parses when passed), or `deprecated: true | "use --new-flag"` to tag it in `--help` and emit a `stderr` warning when used.
+- **Visibility and deprecation**: Set `hidden: true` to omit a flag from `--help`, completions, and MCP schemas (it still parses when passed), or `deprecated: true | "use --new-flag"` to tag it in `--help` and emit a `stderr` warning when used.
 
 ## `FlagOptions` Reference
 
@@ -173,5 +173,5 @@ To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I 
 
 ## Constraints and Shared Flags
 
-- **Constraints & Groups**: `flags` accepts a plain object, `group(title, flags)`, constraint combinators (`oneOf`, `exclusive`, `together`, `atLeastOne`), or an array combining them. See [Constraints](/guide/constraints).
+- **Constraints and groups**: `flags` accepts a plain object, `group(title, flags)`, constraint combinators (`oneOf`, `exclusive`, `together`, `atLeastOne`), or an array combining them. See [Constraints](/guide/constraints).
 - **Sharing flags across commands**: Define shared flags in a `middleware({ flags: { ... } })` and pass it to `use: [mw]` on commands (for full static typing inside `run(ctx)`) and `use(mw, commands)` or `cli({ use: [mw] })`. If a command defines a local flag with the same name as a middleware or global flag, the local flag's type and behavior take precedence.

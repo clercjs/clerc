@@ -80,7 +80,7 @@ const app = cli({ name: "acme", version: "1.0.0", commands: [deploy] });
 
 <CliPlayground :scenario="interactivePrompts" lang="en" />
 
-## Non-TTY Safety Guard & Piped Input
+## Non-TTY Safety and Piped Input
 
 All interactive prompt helpers exported by `clerc/prompts` (`text`, `select`, `confirm`, `multiselect`, `autocomplete`, `password`, `path`, `date`, `multiline`, `selectKey`, etc.) automatically guard against non-TTY execution: if `process.stdin.isTTY` or `process.stdout.isTTY` is `false` (and no custom `input`/`output` stream is supplied), they fail fast with a clear error instead of hanging CI jobs or scripts.
 

@@ -108,11 +108,11 @@ await app.runMain();
 
 按需安装你需要的包：
 
-| 包名                                                                           | 用途                                                                                         |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `clerc`                                                                        | 核心组合子（`cli`、`command`、`middleware`、`group`、`use`）、POSIX 解析器、帮助与校验系统。 |
-| `@clerc/logger`                                                                | 独立终端日志库（已由 `clerc` 重导出为 `ctx.log` 与 `createLogger`）。                        |
-| `@clerc/theme`                                                                 | 零依赖语义化 ANSI 主题与终端能力检测（已由 `clerc` 重导出）。                                |
-| [`@clerc/plugin-completions`](/zh/official-plugins/plugin-completions)         | 生成并驱动 Bash、Zsh、Fish 与 PowerShell 自动补全（`completions()`）。                       |
-| [`@clerc/plugin-mcp`](/zh/official-plugins/plugin-mcp)                         | 将任意 CLI 暴露为 Model Context Protocol stdio 服务器（`mcp()`）。                           |
-| [`@clerc/plugin-update-notifier`](/zh/official-plugins/plugin-update-notifier) | 零依赖后台 npm 版本更新检查中间件（`updateNotifier()`）。                                    |
+| 包名                                                                           | 用途                                                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `clerc`                                                                        | 核心组合子（`cli`、`command`、`middleware`、`group`、`use`）、POSIX 解析器、帮助输出和参数校验。 |
+| `@clerc/logger`                                                                | 独立终端日志库（已由 `clerc` 重导出为 `ctx.log` 与 `createLogger`）。                            |
+| `@clerc/theme`                                                                 | 零依赖语义化 ANSI 主题与终端能力检测（已由 `clerc` 重导出）。                                    |
+| [`@clerc/plugin-completions`](/zh/official-plugins/plugin-completions)         | 生成并驱动 Bash、Zsh、Fish 与 PowerShell 自动补全（`completions()`）。                           |
+| [`@clerc/plugin-mcp`](/zh/official-plugins/plugin-mcp)                         | 将任意 CLI 暴露为 Model Context Protocol stdio 服务器（`mcp()`）。                               |
+| [`@clerc/plugin-update-notifier`](/zh/official-plugins/plugin-update-notifier) | 零依赖后台 npm 版本更新检查中间件（`updateNotifier()`）。                                        |
