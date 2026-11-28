@@ -996,7 +996,6 @@ describe("plugin-completions v2", () => {
       await app.run(["completions", "install", "bash"], { terminal: bashTerm });
       const bashPlan = resolveInstallPlan("bash", "acme", {
         env: bashEnv,
-        homeDir: bashHome,
       });
 
       expect(readFileSync(bashPlan.scriptPath, "utf8")).toContain(

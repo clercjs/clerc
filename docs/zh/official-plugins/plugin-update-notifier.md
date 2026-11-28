@@ -60,7 +60,6 @@ const app = cli({
 | `postRunGraceMs`  | `number`                  | `250`                          | 命令结束后最多等待的毫秒数，超时直接跳过提示。 |
 | `cacheDir`        | `string`                  | `$XDG_CACHE_HOME` / `~/.cache` | 覆盖检查时间戳的缓存目录。                     |
 | `fetch`           | `typeof globalThis.fetch` | `globalThis.fetch`             | 自定义 `fetch` 实现（方便测试或走代理）。      |
-| `now`             | `() => number`            | `Date.now`                     | 自定义时钟函数（用于确定性单元测试）。         |
 
 ## 默认行为
 

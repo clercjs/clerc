@@ -39,7 +39,6 @@ export interface UpdateNotifierOptions {
   readonly postRunGraceMs?: number;
   readonly cacheDir?: string;
   readonly fetch?: typeof globalThis.fetch;
-  readonly now?: () => number;
 }
 
 interface UpdateCache {
@@ -155,7 +154,6 @@ export function updateNotifier(
     postRunGraceMs = DEFAULT_POST_RUN_GRACE_MS,
     cacheDir,
     fetch: fetchFn = globalThis.fetch,
-    now = () => Date.now(),
   } = options;
 
   async function checkForUpdate(
@@ -176,7 +174,7 @@ export function updateNotifier(
 
     const cacheFile = resolveCacheFile(pkgName, env, cacheDir);
     const cache = await readCache(cacheFile);
-    const currentTime = now();
+    const currentTime = Date.now();
     let latest = cache?.latest;
 
     if (!cache || currentTime - cache.lastCheck >= checkIntervalMs) {

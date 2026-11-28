@@ -60,7 +60,6 @@ const app = cli({
 | `postRunGraceMs`  | `number`                  | `250`                          | Maximum wait after the command finishes before skipping the banner. |
 | `cacheDir`        | `string`                  | `$XDG_CACHE_HOME` / `~/.cache` | Override cache directory for storing check timestamps.              |
 | `fetch`           | `typeof globalThis.fetch` | `globalThis.fetch`             | Custom `fetch` implementation (handy in tests or proxies).          |
-| `now`             | `() => number`            | `Date.now`                     | Clock function for deterministic tests.                             |
 
 ## Default Behavior
 

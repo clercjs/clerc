@@ -9,8 +9,6 @@ import { renderCompletionScript } from "./shells";
 
 export interface ResolveInstallPlanOptions {
   readonly env?: Readonly<Record<string, string | undefined>>;
-  readonly homeDir?: string;
-  readonly platform?: NodeJS.Platform;
 }
 
 export interface CompletionInstallPlan {
@@ -96,8 +94,7 @@ export function resolveInstallPlan(
   options: ResolveInstallPlanOptions = {},
 ): CompletionInstallPlan {
   const env = options.env ?? process.env;
-  const home = options.homeDir ?? env.HOME ?? env.USERPROFILE ?? homedir();
-  const platform = options.platform ?? process.platform;
+  const home = env.HOME ?? env.USERPROFILE ?? homedir();
   const safeName = name.replace(/[^\w.-]/g, "_");
   const markerStart = `# >>> ${name} completions >>>`;
   const markerEnd = `# <<< ${name} completions <<<`;
@@ -151,7 +148,7 @@ export function resolveInstallPlan(
       const scriptPath = join(bashCompDir, "completions", safeName);
       const rcPath = join(
         home,
-        platform === "darwin" ? ".bash_profile" : ".bashrc",
+        process.platform === "darwin" ? ".bash_profile" : ".bashrc",
       );
       const qScript = shDoubleQuote(scriptPath);
 
@@ -173,7 +170,7 @@ export function resolveInstallPlan(
     case "powershell": {
       const rcPath = envOr(
         env.PROFILE,
-        platform === "win32"
+        process.platform === "win32"
           ? join(
               home,
               "Documents",

@@ -12,6 +12,7 @@ describe("@clerc/plugin-update-notifier", () => {
   const tempDirs: string[] = [];
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     for (const dir of tempDirs.splice(0)) {
       await rm(dir, { recursive: true, force: true });
     }
@@ -32,6 +33,7 @@ describe("@clerc/plugin-update-notifier", () => {
     ) as unknown as typeof globalThis.fetch;
 
     let currentTime = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => currentTime);
     const terminal = createMemoryTerminal({ isTTY: true, color: false });
 
     const app = createTestCli({
@@ -41,7 +43,6 @@ describe("@clerc/plugin-update-notifier", () => {
         updateNotifier({
           cacheDir,
           fetch: mockFetch,
-          now: () => currentTime,
           checkIntervalMs: 60_000,
         }),
       ],
@@ -86,7 +87,6 @@ describe("@clerc/plugin-update-notifier", () => {
         updateNotifier({
           cacheDir: preCacheDir,
           fetch: mockFetch,
-          now: () => currentTime,
         }),
       ],
       commands: [command("run", { run() {} })],
