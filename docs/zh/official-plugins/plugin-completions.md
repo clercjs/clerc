@@ -10,6 +10,10 @@ import { dynamicCompletions, shellScripts } from "../../official-plugins/plugin-
 
 零依赖的 **Zsh**、**Bash**、**Fish** 和 **PowerShell** 自动补全组件，支持静态脚本生成与异步动态补全。
 
+::: tip 事实上……
+整个文档站里交互终端按 `Tab` 弹出的补全菜单，其实就是这个包自己的 `resolveCompletions()` 算出来的 - 去下面的交互式 playground 里试试看
+:::
+
 ## 安装
 
 ::: code-group

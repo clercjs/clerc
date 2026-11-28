@@ -10,6 +10,10 @@ import { dynamicCompletions, shellScripts } from "./plugin-completions.playgroun
 
 Zero-dependency static completion script generator and dynamic runtime completion engine for **Zsh**, **Bash**, **Fish**, and **PowerShell**.
 
+::: tip Fun fact...
+Every `Tab` completion menu inside this site's interactive playgrounds is powered directly by this package's own `resolveCompletions()`. Go ahead and hit `Tab` below.
+:::
+
 ## Installation
 
 ::: code-group
