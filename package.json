@@ -1,7 +1,7 @@
 {
   "name": "@clerc/monorepo",
   "private": true,
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.5",
   "packageManager": "pnpm@12.21.0",
   "type": "module",
   "engines": {

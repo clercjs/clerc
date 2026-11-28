@@ -1,6 +1,6 @@
 {
   "name": "@clerc/theme",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.5",
   "author": "Ray <i@mk1.io> (https://github.com/so1ve)",
   "type": "module",
   "description": "Zero-dependency semantic CLI theme and terminal capability detection.",
