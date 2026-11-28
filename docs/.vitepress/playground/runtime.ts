@@ -1,48 +1,13 @@
-import type { Cli } from "../../../packages/clerc/src/cli.ts";
-import { cli } from "../../../packages/clerc/src/cli.ts";
-import { command, group, use } from "../../../packages/clerc/src/command.ts";
-import { Complete } from "../../../packages/clerc/src/complete.ts";
-import { ClercError } from "../../../packages/clerc/src/errors.ts";
-import {
-  atLeastOne,
-  exclusive,
-  oneOf,
-  together,
-} from "../../../packages/clerc/src/flags.ts";
-import { defaultHelpSections } from "../../../packages/clerc/src/help/renderer.ts";
-import { middleware } from "../../../packages/clerc/src/middleware.ts";
-import type { TypeFunction } from "../../../packages/clerc/src/schema.ts";
-import { Types } from "../../../packages/clerc/src/schema.ts";
-import { createMemoryTerminal } from "../../../packages/clerc/src/terminal.ts";
-import type { CliModel } from "../../../packages/clerc/src/types.ts";
-import type { Logger } from "../../../packages/logger/src/index.ts";
-import { createLogger } from "../../../packages/logger/src/index.ts";
+import type { Logger } from "@clerc/logger";
 import {
   ShellCompDirective,
-  completions,
   resolveCompletions,
-} from "../../../packages/plugin-completions/src/index.ts";
-import type { TerminalBlock } from "./terminal-render.ts";
-import { parseAnsiLines } from "./terminal-render.ts";
+} from "@clerc/plugin-completions";
+import type { Cli, CliModel } from "clerc";
+import { createMemoryTerminal } from "clerc";
 
-export {
-  ClercError,
-  Complete,
-  Types,
-  atLeastOne,
-  cli,
-  command,
-  completions,
-  createLogger,
-  defaultHelpSections,
-  exclusive,
-  group,
-  middleware,
-  oneOf,
-  together,
-  use,
-};
-export type { TypeFunction };
+import type { TerminalBlock } from "../components/terminal-render.ts";
+import { parseAnsiLines } from "../components/terminal-render.ts";
 
 Error.isError ??= (val: unknown): val is Error => val instanceof Error;
 
@@ -99,6 +64,7 @@ export interface ManualSpinnerSpec {
 export interface PlaygroundScenario {
   readonly createCli: (live?: LiveRunContext) => Cli;
   readonly source?: string;
+  readonly sourceHtml?: string;
   readonly presets: readonly {
     readonly cmd: string;
     readonly label?: string;

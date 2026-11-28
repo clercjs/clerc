@@ -2,10 +2,6 @@
 title: Flags
 ---
 
-<script setup>
-import { arraysAndCounters, implicitValue } from "./flags.playground.ts";
-</script>
-
 # Flags
 
 Flags configure commands via `--long` options, `-s` short aliases, or environment variables. Define camelCase keys in `flags` and Clerc automatically accepts both `--kebab-case` and `--camelCase` on the command line.
@@ -90,13 +86,16 @@ const build = command("build", {
 });
 ```
 
-<CliPlayground :scenario="arraysAndCounters" lang="en" />
+<CliPlayground demo="flags/arraysAndCounters" />
 
 ## Optional-Value Flags (`implicitValue`)
 
 Flags like `node --inspect` or `git log --color` accept an optional `=value`, falling back to `implicitValue` when passed bare and `default` (or `undefined`) when omitted:
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const dev = command("dev", {
   flags: {
     inspect: {
@@ -120,7 +119,7 @@ const dev = command("dev", {
 To avoid ambiguously swallowing the next positional argument (e.g. `acme dev -I src/index.ts`), pass explicit values attached via `=` (`--inspect=9230` or `-I9230`).
 :::
 
-<CliPlayground :scenario="implicitValue" lang="en" />
+<CliPlayground demo="flags/implicitValue" />
 
 ## Lazy Defaults, Env Parsing, and Visibility
 

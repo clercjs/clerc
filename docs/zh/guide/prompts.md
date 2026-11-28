@@ -2,14 +2,6 @@
 title: 进度和提示
 ---
 
-<script setup>
-import {
-  interactivePrompts,
-  manualSpinner,
-  taskSpinner,
-} from "../../guide/prompts.playground.ts";
-</script>
-
 # 进度和提示
 
 `ctx.log` 内置了任务进度 Spinner，同时通过 `clerc/prompts` 子路径重导出了 `@clack/prompts`，用于构建交互式命令行问答。
@@ -34,7 +26,7 @@ const upload = command("upload", {
 const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 ```
 
-<CliPlayground :scenario="taskSpinner" lang="zh" />
+<CliPlayground demo="prompts/taskSpinner" />
 
 ## 手动控制 Spinner（`ctx.log.spinner`）
 
@@ -51,7 +43,7 @@ s.message("校验凭证...");
 s.stop("已连接");
 ```
 
-<CliPlayground :scenario="manualSpinner" lang="zh" />
+<CliPlayground demo="prompts/manualSpinner" />
 
 ## 交互式提问（`prompts`）
 
@@ -80,7 +72,7 @@ const deploy = command("deploy", {
 const app = cli({ name: "acme", version: "1.0.0", commands: [deploy] });
 ```
 
-<CliPlayground :scenario="interactivePrompts" lang="zh" />
+<CliPlayground demo="prompts/interactivePrompts" />
 
 ## 非 TTY 自动保护与管道输入
 

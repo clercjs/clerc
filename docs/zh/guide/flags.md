@@ -2,10 +2,6 @@
 title: 选项
 ---
 
-<script setup>
-import { arraysAndCounters, implicitValue } from "../../guide/flags.playground.ts";
-</script>
-
 # 选项
 
 在 `flags` 中使用驼峰命名定义选项，命令行会自动同时接受 `--kebab-case` 与 `--camelCase`。
@@ -88,13 +84,16 @@ const build = command("build", {
 });
 ```
 
-<CliPlayground :scenario="arraysAndCounters" lang="zh" />
+<CliPlayground demo="flags/arraysAndCounters" />
 
 ## 可选值选项（`implicitValue`）
 
 类似 `node --inspect` 或 `git log --color` 的选项：不传时为 `undefined`（或 `default`），单独传 `--inspect` 时取 `implicitValue`，显式传 `--inspect=9230` 时取解析后的值：
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const dev = command("dev", {
   flags: {
     inspect: {
@@ -118,7 +117,7 @@ const dev = command("dev", {
 为避免把后面的位置参数误吞为选项值（例如 `acme dev -I src/index.ts`），为带有 `implicitValue` 的选项显式指定值时请使用 `--inspect=9230` 或 `-I9230`。
 :::
 
-<CliPlayground :scenario="implicitValue" lang="zh" />
+<CliPlayground demo="flags/implicitValue" />
 
 ## 惰性默认值、环境变量解析与可见性
 

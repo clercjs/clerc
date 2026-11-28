@@ -2,15 +2,6 @@
 title: 命令
 ---
 
-<script setup>
-import {
-  defaultCommand,
-  deprecated,
-  stopParsing,
-  subcommands,
-} from "../../guide/commands.playground.ts";
-</script>
-
 # 命令
 
 在 Clerc 中，每个命令都是通过 `command(spec, options)` 创建的不可变值，最终组装进 `cli({ commands: [...] })`。
@@ -79,7 +70,7 @@ const app = cli({
 
 单词别名注册在当前父命名空间下（如 `acme db m`），多词别名则会从根路径开始注册（如 `aliases: ["db m"]`）。全局或父级选项出现在子命令**之前或之后**均可正确识别：`acme -v db migrate` 与 `acme db migrate -v` 等价。
 
-<CliPlayground :scenario="subcommands" lang="zh" />
+<CliPlayground demo="commands/subcommands" />
 
 ## 词法作用域组合（`use` 与 `group`）
 
@@ -193,7 +184,7 @@ const app = cli({
 - 若默认命令**不接受**位置参数，输错 `vite biuld` 依然会抛出 `UnknownCommandError` 并提示 `'build'`。
 - 如果父命令自身有一套独立于子命令的参数签名（如 `pr [id]` 搭配 `pr ls`），则直接在父命令上写 `command("pr [id]", { commands: [prLs], run })`。
 
-<CliPlayground :scenario="defaultCommand" lang="zh" />
+<CliPlayground demo="commands/defaultCommand" />
 
 ## 透传子命令参数（`stopParsing`）
 
@@ -204,6 +195,9 @@ const app = cli({
 - `(token) => boolean`：无状态判断函数，接收 `{ kind, raw, index, positionalCount }`，可用于在第 N 个位置参数或自定义分隔符处截停。
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const execCmd = command("exec <cmd> [args...]", {
   stopParsing: "first-positional",
   flags: {
@@ -231,7 +225,7 @@ const runCmd = command("run <env> <script> [args...]", {
 });
 ```
 
-<CliPlayground :scenario="stopParsing" lang="zh" />
+<CliPlayground demo="commands/stopParsing" />
 
 ## 隐藏命令、动态帮助元数据与懒加载
 
@@ -241,6 +235,9 @@ const runCmd = command("run <env> <script> [args...]", {
 - **弃用提示**：设置 `deprecated: "use 'acme create' instead"`，`--help` 会显示弃用标签，调用时自动向 `stderr` 输出警告（在 `-q` 静默模式下自动隐藏）。
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const analyze = command("analyze <entry>", {
   description: "分析打包产物大小",
   examples: (meta) => [[`$ ${meta.name} analyze src/index.ts`, "分析指定入口"]],
@@ -251,4 +248,4 @@ const analyze = command("analyze <entry>", {
 });
 ```
 
-<CliPlayground :scenario="deprecated" lang="zh" />
+<CliPlayground demo="commands/deprecated" />

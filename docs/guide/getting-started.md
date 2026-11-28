@@ -2,10 +2,6 @@
 title: Getting Started
 ---
 
-<script setup>
-import scenario from "./getting-started.playground.ts";
-</script>
-
 # Getting Started
 
 Clerc is a typed CLI framework for Node.js built around small, composable functions. `--help`, `--version`, `-v`/`-q` verbosity, strict flag checking, typo suggestions, and a structured logger are built into `clerc` out of the box.
@@ -95,7 +91,7 @@ Run it directly:
 
 ## Try It Live
 
-<CliPlayground :scenario="scenario" variant="compact" lang="en" />
+<CliPlayground demo="getting-started" variant="compact" />
 
 ## `runMain()` vs `run()`
 

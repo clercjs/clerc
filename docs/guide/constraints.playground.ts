@@ -1,13 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  Types,
-  cli,
-  command,
-  exclusive,
-  group,
-  oneOf,
-  together,
-} from "../.vitepress/components/playground-runtime.ts";
+import { Types, cli, command, exclusive, group, oneOf, together } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const flagConstraints: PlaygroundScenario = {
   createCli: () =>

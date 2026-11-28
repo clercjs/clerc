@@ -1,10 +1,7 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  Types,
-  cli,
-  command,
-  completions,
-} from "../.vitepress/components/playground-runtime.ts";
+import { completions } from "@clerc/plugin-completions";
+import { Types, cli, command } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const dynamicCompletions: PlaygroundScenario = {
   createCli: () =>

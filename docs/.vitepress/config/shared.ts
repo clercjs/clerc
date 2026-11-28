@@ -1,9 +1,3 @@
-import path from "node:path";
-
-import {
-  rendererFloatingVue,
-  transformerTwoslash,
-} from "@shikijs/vitepress-twoslash";
 import UnoCSS from "unocss/vite";
 import { defineConfig } from "vitepress";
 import {
@@ -13,24 +7,8 @@ import {
 import Llms, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
 
 import pkg from "../../../packages/clerc/package.json" with { type: "json" };
-import tsconfigBase from "../../../tsconfig.base.json" with { type: "json" };
-import { BrowserClercShims } from "../plugins/browser-clerc-shims.ts";
-import {
-  MarkdownTransform,
-  clercImports,
-} from "../plugins/markdown-transform.ts";
-import { PlaygroundPlugin } from "../plugins/playground-plugin.ts";
-
-const baseTwoslashRenderer = rendererFloatingVue({
-  queryRendering: "line",
-});
-
-const twoslashRenderer = {
-  ...baseTwoslashRenderer,
-  // Keep the queried token as a plain inline span (suppressing duplicate hover
-  // poppers and preserving its text child so lineQuery aligns the arrow).
-  nodeQuery: (_query: unknown, node: any) => node,
-};
+import { PlaygroundVitePlugin } from "../playground/vite-plugin.ts";
+import { createTwoslashTransformer } from "./twoslash.ts";
 
 export const sharedConfig = defineConfig({
   title: "Clerc",
@@ -54,42 +32,14 @@ export const sharedConfig = defineConfig({
       md.use(groupIconMdPlugin);
       md.use(copyOrDownloadAsMarkdownButtons);
     },
-    codeTransformers: [
-      transformerTwoslash({
-        renderer: twoslashRenderer,
-        twoslashOptions: {
-          compilerOptions: {
-            target: 99,
-            module: 99,
-            moduleResolution: 100,
-            strict: true,
-            paths: Object.fromEntries(
-              Object.entries(tsconfigBase.compilerOptions.paths).map(
-                ([key, paths]) => [key, paths.map((p) => path.join("..", p))],
-              ),
-            ),
-          },
-          handbookOptions: {
-            noErrors: true,
-          },
-        },
-        includesMap: new Map([
-          [
-            "imports",
-            `// ---cut-start---\nimport { ${clercImports.join(", ")} } from "clerc";\n// ---cut-end---`,
-          ],
-        ]),
-      }),
-    ],
+    codeTransformers: [createTwoslashTransformer()],
     languages: ["js", "jsx", "ts", "tsx", "sh", "bash", "json"],
   },
   vite: {
     plugins: [
-      BrowserClercShims(),
+      PlaygroundVitePlugin(),
       GroupIconVitePlugin(),
       UnoCSS(),
-      MarkdownTransform(),
-      PlaygroundPlugin(),
       Llms({
         ignoreFiles: ["index.md", "zh/**/*"],
         description: pkg.description,

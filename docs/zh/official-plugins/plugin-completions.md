@@ -2,10 +2,6 @@
 title: "@clerc/plugin-completions"
 ---
 
-<script setup>
-import { dynamicCompletions, shellScripts } from "../../official-plugins/plugin-completions.playground.ts";
-</script>
-
 # @clerc/plugin-completions
 
 零依赖的 **Zsh**、**Bash**、**Fish** 和 **PowerShell** 自动补全组件，支持静态脚本生成与异步动态补全。
@@ -85,7 +81,7 @@ await app.runMain();
 
 你也可以直接在命令顶层声明 `complete(ctx)`（如 `command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`），或在任意命令、参数、选项上设置 `complete: false` 将其从补全列表中隐藏。
 
-<CliPlayground :scenario="dynamicCompletions" lang="zh" />
+<CliPlayground demo="plugin-completions/dynamicCompletions" />
 
 ## `Complete` 辅助器与插件配置
 
@@ -136,7 +132,7 @@ acme completions powershell | Out-String | Invoke-Expression
 
 :::
 
-<CliPlayground :scenario="shellScripts" lang="zh" />
+<CliPlayground demo="plugin-completions/shellScripts" />
 
 ## 补全能力与编程式 API
 

@@ -2,10 +2,6 @@
 title: Help
 ---
 
-<script setup>
-import { customHelp, groupedHelp } from "./help.playground.ts";
-</script>
-
 # Help
 
 Clerc formats `--help` with uppercase section headings, aligned columns, and metadata tags (`[default: ...]`, `[env: ...]`) that stay intact when lines wrap.
@@ -45,7 +41,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="groupedHelp" lang="en" />
+<CliPlayground demo="help/groupedHelp" />
 
 ## Customizing Sections and Renderers
 
@@ -78,7 +74,7 @@ const app = cli({
 
 Inside any command handler, call `await ctx.help.print()` (or `await ctx.help.render()`) for root help, or pass a command path such as `await ctx.help.print(["db", "migrate"])`. For programmatic help generation outside a run, use `buildHelpDocument(model, node?)`, `renderHelpDocument(doc, options)`, or `renderHelp(model, options)`.
 
-<CliPlayground :scenario="customHelp" lang="en" />
+<CliPlayground demo="help/customHelp" />
 
 ## Theme Customization (`@clerc/theme`)
 

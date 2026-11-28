@@ -1,7 +1,7 @@
 import type { PropType } from "vue";
 import { defineComponent, h, onBeforeUnmount, ref } from "vue";
 
-import { CliPlayground } from "./CliPlayground.ts";
+import { CliPlayground } from "../playground/CliPlayground.ts";
 
 interface SpecItem {
   readonly title: string;
@@ -224,12 +224,9 @@ export const HomeLanding = defineComponent({
 
         h("div", { class: "clerc-home-stage" }, [
           h(CliPlayground, {
+            demo: "getting-started",
             lang: props.lang,
             variant: "split",
-            scenario: () =>
-              import("../../guide/getting-started.playground.ts").then(
-                (m) => m.default,
-              ),
           }),
         ]),
 

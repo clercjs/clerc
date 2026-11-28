@@ -1,12 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  ClercError,
-  cli,
-  command,
-  group,
-  middleware,
-  use,
-} from "../.vitepress/components/playground-runtime.ts";
+import { ClercError, cli, command, group, middleware, use } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 const withAuth = (defaultRole = "viewer") =>
   middleware({

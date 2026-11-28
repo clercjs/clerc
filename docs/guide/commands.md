@@ -2,15 +2,6 @@
 title: Commands
 ---
 
-<script setup>
-import {
-  defaultCommand,
-  deprecated,
-  stopParsing,
-  subcommands,
-} from "./commands.playground.ts";
-</script>
-
 # Commands
 
 In Clerc, each command is an immutable value created with `command(spec, options)` and assembled into `cli({ commands: [...] })`.
@@ -79,7 +70,7 @@ const app = cli({
 
 Single-word aliases resolve under the command's parent namespace (`acme db m`), while multi-word aliases register at the full path from root (for example, `aliases: ["db m"]` on a nested command). Global and parent flags can appear **before or after** subcommand names on the command line: both `acme -v db migrate` and `acme db migrate -v` resolve to `db migrate`.
 
-<CliPlayground :scenario="subcommands" lang="en" />
+<CliPlayground demo="commands/subcommands" />
 
 ## Lexical Scoping (`use` and `group`)
 
@@ -193,7 +184,7 @@ How Clerc resolves `default`:
 - If `dev` takes **no** positional arguments, `vite biuld` still throws `UnknownCommandError` and suggests `'build'`.
 - When a parent command instead has its own distinct signature unrelated to any subcommand (such as `pr [id]` alongside `pr ls`), pass `run` directly on the parent `command("pr [id]", { commands: [prLs], run })`.
 
-<CliPlayground :scenario="defaultCommand" lang="en" />
+<CliPlayground demo="commands/defaultCommand" />
 
 ## Wrapper Commands (`stopParsing`)
 
@@ -204,6 +195,9 @@ When building a task runner or wrapper command where trailing flags belong to a 
 - `(token) => boolean`: a stateless predicate receiving `{ kind, raw, index, positionalCount }` for custom rules (such as stopping at the Nth positional or a custom sentinel token).
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const execCmd = command("exec <cmd> [args...]", {
   stopParsing: "first-positional",
   flags: {
@@ -231,7 +225,7 @@ const runCmd = command("run <env> <script> [args...]", {
 });
 ```
 
-<CliPlayground :scenario="stopParsing" lang="en" />
+<CliPlayground demo="commands/stopParsing" />
 
 ## Hidden Commands, Dynamic Help Metadata, and Lazy Handlers
 
@@ -240,6 +234,9 @@ const runCmd = command("run <env> <script> [args...]", {
 - **Lazy-loaded handlers**: For large CLIs with heavy dependencies, dynamically `import()` inside `async run(ctx)` so `--help` and other commands pay zero module-loading cost:
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const analyze = command("analyze <entry>", {
   description: "Analyze bundle size",
   examples: (meta) => [
@@ -257,10 +254,13 @@ const analyze = command("analyze <entry>", {
 Mark legacy commands with `deprecated: true` or a migration message. Clerc tags them in `--help` and logs a warning to `stderr` when invoked (silenced automatically under `-q`):
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const initLegacy = command("init-legacy", {
   deprecated: "use 'acme create' instead",
   run() {},
 });
 ```
 
-<CliPlayground :scenario="deprecated" lang="en" />
+<CliPlayground demo="commands/deprecated" />

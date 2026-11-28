@@ -2,10 +2,6 @@
 title: "@clerc/plugin-completions"
 ---
 
-<script setup>
-import { dynamicCompletions, shellScripts } from "./plugin-completions.playground.ts";
-</script>
-
 # @clerc/plugin-completions
 
 Zero-dependency static completion script generator and dynamic runtime completion engine for **Zsh**, **Bash**, **Fish**, and **PowerShell**.
@@ -85,7 +81,7 @@ await app.runMain();
 
 You can also attach `complete(ctx)` directly on command options (`command("checkout <branch>", { async complete(ctx) { ... }, run(ctx) {} })`), or set `complete: false` on any command, argument, or flag to exclude it from completions.
 
-<CliPlayground :scenario="dynamicCompletions" lang="en" />
+<CliPlayground demo="plugin-completions/dynamicCompletions" />
 
 ## `Complete` Helpers and Options
 
@@ -136,7 +132,7 @@ acme completions powershell | Out-String | Invoke-Expression
 
 :::
 
-<CliPlayground :scenario="shellScripts" lang="en" />
+<CliPlayground demo="plugin-completions/shellScripts" />
 
 ## What Gets Completed and Programmatic API
 

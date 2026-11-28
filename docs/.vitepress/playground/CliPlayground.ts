@@ -1,5 +1,7 @@
+import { useData } from "vitepress";
 import type { Component, PropType } from "vue";
 import {
+  computed,
   defineComponent,
   h,
   onBeforeUnmount,
@@ -9,10 +11,8 @@ import {
   watch,
 } from "vue";
 
-import type { PlaygroundScenario } from "./playground-runtime.ts";
-
-export type LazyPlaygroundScenario =
-  PlaygroundScenario | (() => Promise<PlaygroundScenario>);
+import { loadPlayground } from "./registry.ts";
+import type { PlaygroundScenario } from "./runtime.ts";
 
 let cachedViewPromise: Promise<Component> | null = null;
 
@@ -84,13 +84,13 @@ const renderCodeSkeleton = () =>
 export const CliPlayground = defineComponent({
   name: "CliPlayground",
   props: {
+    demo: {
+      type: String,
+      required: true,
+    },
     lang: {
       type: String as PropType<"en" | "zh">,
-      default: "en",
-    },
-    scenario: {
-      type: [Object, Function] as PropType<LazyPlaygroundScenario>,
-      required: true,
+      default: undefined,
     },
     variant: {
       type: String as PropType<"inline" | "compact" | "split">,
@@ -98,6 +98,11 @@ export const CliPlayground = defineComponent({
     },
   },
   setup(props) {
+    const { lang: pageLang } = useData();
+    const resolvedLang = computed<"en" | "zh">(
+      () => props.lang ?? (pageLang.value.startsWith("zh") ? "zh" : "en"),
+    );
+
     const rootEl = ref<HTMLElement | null>(null);
     const status = ref<"idle" | "loading" | "ready" | "error">("idle");
     const viewComponent = shallowRef<Component | null>(null);
@@ -110,13 +115,9 @@ export const CliPlayground = defineComponent({
       const seq = ++loadSeq;
       status.value = "loading";
       try {
-        const scenarioPromise =
-          typeof props.scenario === "function"
-            ? props.scenario()
-            : Promise.resolve(props.scenario);
         const [view, scenario] = await Promise.all([
           loadPlaygroundView(),
-          scenarioPromise,
+          loadPlayground(props.demo),
         ]);
         if (seq !== loadSeq) {
           return;
@@ -158,7 +159,7 @@ export const CliPlayground = defineComponent({
     });
 
     watch(
-      () => props.scenario,
+      () => props.demo,
       () => {
         if (status.value !== "idle") {
           void load();
@@ -177,13 +178,13 @@ export const CliPlayground = defineComponent({
         resolvedScenario.value
       ) {
         return h(viewComponent.value, {
-          lang: props.lang,
+          lang: resolvedLang.value,
           scenario: resolvedScenario.value,
           variant: props.variant,
         });
       }
 
-      const isZh = props.lang === "zh";
+      const isZh = resolvedLang.value === "zh";
       const isSplit = props.variant === "split";
       const isInline = props.variant === "inline";
       const isError = status.value === "error";

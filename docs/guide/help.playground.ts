@@ -1,10 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  cli,
-  command,
-  defaultHelpSections,
-  group,
-} from "../.vitepress/components/playground-runtime.ts";
+import { cli, command, defaultHelpSections, group } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const groupedHelp: PlaygroundScenario = {
   createCli: () => {

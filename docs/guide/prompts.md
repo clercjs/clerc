@@ -2,14 +2,6 @@
 title: Spinners and Prompts
 ---
 
-<script setup>
-import {
-  interactivePrompts,
-  manualSpinner,
-  taskSpinner,
-} from "./prompts.playground.ts";
-</script>
-
 # Spinners and Prompts
 
 Clerc includes task spinners on `ctx.log` and re-exports `@clack/prompts` from `clerc/prompts` for interactive terminal input.
@@ -34,7 +26,7 @@ const upload = command("upload", {
 const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 ```
 
-<CliPlayground :scenario="taskSpinner" lang="en" />
+<CliPlayground demo="prompts/taskSpinner" />
 
 ## Manual Spinner (`ctx.log.spinner`)
 
@@ -51,7 +43,7 @@ s.message("Authenticating...");
 s.stop("Connected");
 ```
 
-<CliPlayground :scenario="manualSpinner" lang="en" />
+<CliPlayground demo="prompts/manualSpinner" />
 
 ## Interactive Prompts
 
@@ -82,7 +74,7 @@ const deploy = command("deploy", {
 const app = cli({ name: "acme", version: "1.0.0", commands: [deploy] });
 ```
 
-<CliPlayground :scenario="interactivePrompts" lang="en" />
+<CliPlayground demo="prompts/interactivePrompts" />
 
 ## Non-TTY Safety and Piped Input
 

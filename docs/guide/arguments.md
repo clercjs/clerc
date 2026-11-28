@@ -2,10 +2,6 @@
 title: Arguments
 ---
 
-<script setup>
-import { doubleDash, envFallback, signature } from "./arguments.playground.ts";
-</script>
-
 # Positional Arguments
 
 Positional arguments are declared directly in the command signature string using angle brackets `<required>` and square brackets `[optional]`.
@@ -45,13 +41,16 @@ const copy = command("copy <source-path> [dest-path] [extra-files...]", {
 The keys inside `args: { ... }` are constrained to the exact argument names extracted from your command signature. Mistyping `sourcePth` produces an immediate TypeScript error. Variadic arguments also support `unique`, `minItems`, and `maxItems`.
 :::
 
-<CliPlayground :scenario="signature" lang="en" />
+<CliPlayground demo="arguments/signature" />
 
 ## Defaults and Environment Fallbacks
 
 Optional arguments support `default` values (or factory functions). Both required and optional arguments support `env` fallbacks:
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const deploy = command("deploy <token> [region]", {
   args: {
     token: {
@@ -76,7 +75,7 @@ const deploy = command("deploy <token> [region]", {
 
 When a required argument with `env` is missing from both `argv` and `process.env`, Clerc appends a hint:
 
-<CliPlayground :scenario="envFallback" lang="en" />
+<CliPlayground demo="arguments/envFallback" />
 
 ## Double-Dash (`--`) Arguments
 
@@ -87,6 +86,9 @@ POSIX `--` stops flag parsing. Clerc handles `--` in three ways depending on you
 3. **No `--` in signature** (`"rm <file>"`): passing `acme rm -- -weird-name.txt` treats `-weird-name.txt` as the positional `<file>` argument per POSIX convention.
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const runScript = command("run <script> -- [pass-through...]", {
   run(ctx) {
     // $ acme run build -- --watch --port 4000
@@ -97,4 +99,4 @@ const runScript = command("run <script> -- [pass-through...]", {
 });
 ```
 
-<CliPlayground :scenario="doubleDash" lang="en" />
+<CliPlayground demo="arguments/doubleDash" />

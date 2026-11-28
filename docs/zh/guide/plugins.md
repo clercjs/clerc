@@ -2,10 +2,6 @@
 title: 插件
 ---
 
-<script setup>
-import { authPluginDemo, rbacMetaDemo } from "../../guide/plugins.playground.ts";
-</script>
-
 # 插件
 
 Clerc 没有单独的 `Plugin` 类。无论是业务内部抽离的可复用模块，还是发布到 npm 的第三方插件，本质上都只是返回 **`Middleware`**、**`Command`** 或 **`Command[]`** 的普通函数：
@@ -68,7 +64,7 @@ const app = cli({
 
 由于 `auth` 是通过 `use(auth, [whoami])` 局部挂载的，同级的 `ping` 完全不受影响——既不接受也不展示 `--token`；而在 `whoami` 的 `use: [auth]` 和外层 `use(auth, [whoami])` 中复用的同一个 `auth` 实例会自动按引用去重。
 
-<CliPlayground :scenario="authPluginDemo" lang="zh" />
+<CliPlayground demo="plugins/authPluginDemo" />
 
 ## `meta` 元数据扩充
 
@@ -106,4 +102,4 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="rbacMetaDemo" lang="zh" />
+<CliPlayground demo="plugins/rbacMetaDemo" />

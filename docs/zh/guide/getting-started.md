@@ -2,10 +2,6 @@
 title: 快速开始
 ---
 
-<script setup>
-import scenario from "../../guide/getting-started.playground.ts";
-</script>
-
 # 快速开始
 
 Clerc 是面向 Node.js 的函数式组合强类型命令行框架。`--help`、`--version`、`-v`/`-q` 日志级别、未知选项检查、拼写提示和结构化终端日志都已内置在 `clerc` 中，开箱即用。
@@ -95,7 +91,7 @@ await app.runMain();
 
 ## 在线交互演示
 
-<CliPlayground :scenario="scenario" variant="compact" lang="zh" />
+<CliPlayground demo="getting-started" variant="compact" />
 
 ## `runMain()` 与 `run()` 的区别
 

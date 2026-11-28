@@ -2,10 +2,6 @@
 title: 帮助文档
 ---
 
-<script setup>
-import { customHelp, groupedHelp } from "../../guide/help.playground.ts";
-</script>
-
 # 帮助文档
 
 Clerc 内置结构清晰的 `--help` 输出，包含分组标题、自动列对齐，以及不会被换行截断的元数据标签（`[default: ...]`、`[env: ...]`）。
@@ -45,7 +41,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="groupedHelp" lang="zh" />
+<CliPlayground demo="help/groupedHelp" />
 
 ## 定制帮助区块与渲染器
 
@@ -78,7 +74,7 @@ const app = cli({
 
 在命令处理函数中，调用 `await ctx.help.print()`（或 `await ctx.help.render()`）可输出根帮助，传入子命令路径（如 `await ctx.help.print(["db", "migrate"])`）可输出指定命令帮助。在运行外部需要离线生成帮助文本时，可直接调用 `buildHelpDocument(model, node?)`、`renderHelpDocument(doc, options)` 或 `renderHelp(model, options)`。
 
-<CliPlayground :scenario="customHelp" lang="zh" />
+<CliPlayground demo="help/customHelp" />
 
 ## 主题样式定制（`@clerc/theme`）
 

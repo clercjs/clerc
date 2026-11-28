@@ -2,10 +2,6 @@
 title: Plugins
 ---
 
-<script setup>
-import { authPluginDemo, rbacMetaDemo } from "./plugins.playground.ts";
-</script>
-
 # Plugins
 
 Clerc does not have a separate `Plugin` class. Reusable capabilities—both within your own codebase and published as npm packages—are plain functions returning **`Middleware`**, **`Command`**, or **`Command[]`**:
@@ -68,7 +64,7 @@ const app = cli({
 
 Because `auth` is passed via `use(auth, [whoami])` rather than root `cli`, `ping` stays completely untouched—it neither accepts nor displays `--token`. Meanwhile, referencing the same `auth` instance in both `whoami`'s `use: [auth]` and `use(auth, [whoami])` is automatically deduplicated.
 
-<CliPlayground :scenario="authPluginDemo" lang="en" />
+<CliPlayground demo="plugins/authPluginDemo" />
 
 ## Typed `meta` Augmentation
 
@@ -106,4 +102,4 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="rbacMetaDemo" lang="en" />
+<CliPlayground demo="plugins/rbacMetaDemo" />

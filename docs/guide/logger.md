@@ -2,10 +2,6 @@
 title: Logger
 ---
 
-<script setup>
-import { alignedOutput, calloutBox, logLevels } from "./logger.playground.ts";
-</script>
-
 # Logger
 
 Every Clerc context includes `ctx.log` (powered by `@clerc/logger` and `@clerc/theme`), and you can create standalone loggers anywhere with `createLogger()`.
@@ -29,7 +25,7 @@ log.error(
 );
 ```
 
-<CliPlayground :scenario="alignedOutput" lang="en" />
+<CliPlayground demo="logger/alignedOutput" />
 
 `warn` and `error` write to `stderr`; `step`, `info`, `success`, and `debug` write to `stdout`.
 
@@ -63,10 +59,10 @@ ctx.log.box.warn(
 );
 ```
 
-<CliPlayground :scenario="calloutBox" lang="en" />
+<CliPlayground demo="logger/calloutBox" />
 
 ## Log Levels and Themes
 
 By default, `cli()` registers `-q, --quiet` (`"error"`) and `-v, --verbose` (`"debug"`) flags automatically (yielding if your command defines its own `-q` or `-v`, or disabled via `verbosity: false`). You can also change `ctx.log.level` (`"silent" | "error" | "warn" | "info" | "debug"`) at runtime, write unformatted output with `ctx.log.raw()`, and customize colors via `theme` in `cli({ theme: { brand: ["bold", "cyan"] } })`.
 
-<CliPlayground :scenario="logLevels" lang="en" />
+<CliPlayground demo="logger/logLevels" />

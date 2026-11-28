@@ -2,10 +2,6 @@
 title: 测试
 ---
 
-<script setup>
-import { inspectModel, memoryTerminal } from "../../guide/testing.playground.ts";
-</script>
-
 # 测试
 
 Clerc 核心执行管线完全不依赖全局 `process.argv`、`process.env` 或 `process.exit()`，所有命令、中间件和错误诊断都可以在内存中直接做单元测试。
@@ -52,7 +48,7 @@ test("读取模拟环境变量并校验枚举参数", async () => {
 });
 ```
 
-<CliPlayground :scenario="memoryTerminal" lang="zh" />
+<CliPlayground demo="testing/memoryTerminal" />
 
 ## 直接断言异常实例（`throwOnError`）
 
@@ -97,4 +93,4 @@ const helpAst = await buildHelpDocument(model);
 // helpAst.commandGroups[0].items -> [{ name: "build", ... }]
 ```
 
-<CliPlayground :scenario="inspectModel" lang="zh" />
+<CliPlayground demo="testing/inspectModel" />

@@ -2,10 +2,6 @@
 title: Types
 ---
 
-<script setup>
-import { builtinTypes, customParser } from "./types.playground.ts";
-</script>
-
 # Types
 
 Every flag and positional argument in Clerc goes through a single type descriptor pipeline. You can use JavaScript constructors (`String`, `Number`, `Boolean`), built-in `Types.*`, custom parser functions, or **any [Standard Schema v1](https://standardschema.dev) validator** (Zod, Valibot, ArkType).
@@ -68,7 +64,7 @@ const release = command("release <channel>", {
 });
 ```
 
-<CliPlayground :scenario="builtinTypes" lang="en" />
+<CliPlayground demo="types/builtinTypes" />
 
 ## Standard Schema v1 (Zod, Valibot, ArkType)
 
@@ -178,4 +174,4 @@ const envCmd = command("env", {
 });
 ```
 
-<CliPlayground :scenario="customParser" lang="en" />
+<CliPlayground demo="types/customParser" />

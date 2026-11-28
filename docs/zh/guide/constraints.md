@@ -2,10 +2,6 @@
 title: 约束
 ---
 
-<script setup>
-import { customChecks, flagConstraints } from "../../guide/constraints.playground.ts";
-</script>
-
 # 约束
 
 在 `flags` 中直接通过 `oneOf`、`exclusive`、`together`、`atLeastOne` 组合声明选项约束，并用 `check` 编写跨字段取值校验。同一份定义会同时驱动 **TypeScript 可辨识联合类型收窄**、运行期校验、`--help` 标签、Shell 补全过滤和 MCP JSON Schema 导出。
@@ -56,7 +52,7 @@ const serve = command("serve <env>", {
 
 所有组合子末尾均可附带可选的 `{ message, hints }` 配置对象，用于自定义报错文案与提示。
 
-<CliPlayground :scenario="flagConstraints" lang="zh" />
+<CliPlayground demo="constraints/flagConstraints" />
 
 ## 跨字段检查（`check`）
 
@@ -99,7 +95,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="customChecks" lang="zh" />
+<CliPlayground demo="constraints/customChecks" />
 
 ## 执行时机与生态联动
 

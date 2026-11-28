@@ -2,10 +2,6 @@
 title: 类型
 ---
 
-<script setup>
-import { builtinTypes, customParser } from "../../guide/types.playground.ts";
-</script>
-
 # 类型
 
 Clerc 的选项和位置参数共用同一套类型系统。你可以使用原生构造函数（`String`、`Number`、`Boolean`）、内置 `Types.*`、自定义解析函数，或直接传入任意 **[Standard Schema v1](https://standardschema.dev)** 校验器（Zod、Valibot、ArkType）。
@@ -61,7 +57,7 @@ const release = command("release <channel>", {
 });
 ```
 
-<CliPlayground :scenario="builtinTypes" lang="zh" />
+<CliPlayground demo="types/builtinTypes" />
 
 ## 直接使用 Zod / Valibot / ArkType
 
@@ -164,4 +160,4 @@ const envCmd = command("env", {
 });
 ```
 
-<CliPlayground :scenario="customParser" lang="zh" />
+<CliPlayground demo="types/customParser" />

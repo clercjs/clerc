@@ -2,17 +2,13 @@
 title: 错误处理
 ---
 
-<script setup>
-import { clercError, typoSuggestions } from "../../guide/errors.playground.ts";
-</script>
-
 # 错误处理
 
 命令行解析、参数校验与约束违反错误默认退出码为 `2`（用法错误），并自动附带 `usage` 行与 `--help` 提示；定义期错误（`InvalidSchemaError`）与业务 `ClercError` 默认退出码为 `1`。遇到未知命令、未知选项或非法枚举值时，Clerc 会自动查找最相近的候选并给出拼写建议。
 
 ## 拼写提示
 
-<CliPlayground :scenario="typoSuggestions" lang="zh" />
+<CliPlayground demo="errors/typoSuggestions" />
 
 ## 内置错误类一览
 
@@ -57,7 +53,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="clercError" lang="zh" />
+<CliPlayground demo="errors/clercError" />
 
 ::: tip 堆栈输出与无诊断退出
 

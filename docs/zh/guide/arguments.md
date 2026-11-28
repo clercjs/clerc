@@ -2,10 +2,6 @@
 title: 位置参数
 ---
 
-<script setup>
-import { doubleDash, envFallback, signature } from "../../guide/arguments.playground.ts";
-</script>
-
 # 位置参数
 
 位置参数直接在命令签名中用尖括号 `<必填>` 和方括号 `[可选]` 声明。
@@ -42,13 +38,16 @@ const copy = command("copy <source-path> [dest-path] [extra-files...]", {
 `args: { ... }` 中的属性名严格受命令签名约束，拼错成 `sourcePth` 会在编译期直接报错。可变参数还支持 `unique`、`minItems` 与 `maxItems` 约束。
 :::
 
-<CliPlayground :scenario="signature" lang="zh" />
+<CliPlayground demo="arguments/signature" />
 
 ## 默认值与环境变量回退（`env`）
 
 可选参数支持 `default`（值或工厂函数），必填与可选参数均支持 `env` 环境变量回退：
 
 ```ts
+import { command } from "clerc";
+
+// ---cut---
 const deploy = command("deploy <token> [region]", {
   args: {
     token: {
@@ -71,7 +70,7 @@ const deploy = command("deploy <token> [region]", {
 
 当绑定了 `env` 的必填参数既未通过命令行传入、环境变量也未设置时，诊断输出会自动附上提示：
 
-<CliPlayground :scenario="envFallback" lang="zh" />
+<CliPlayground demo="arguments/envFallback" />
 
 ## `--` 分隔符与透传参数
 
@@ -81,4 +80,4 @@ const deploy = command("deploy <token> [region]", {
 2. **签名以裸 `--` 结尾**（如 `"run <script> --"`）：`--` 后的内容仅保留在 `ctx.raw.doubleDash` 中，不触发多余参数报错。
 3. **签名不含 `--`**（如 `"rm <file>"`）：遵循 POSIX 惯例，`acme rm -- -weird-name.txt` 会将 `-weird-name.txt` 作为普通位置参数传给 `<file>`。
 
-<CliPlayground :scenario="doubleDash" lang="zh" />
+<CliPlayground demo="arguments/doubleDash" />

@@ -2193,20 +2193,12 @@ span {
   padding: 0 !important;
 }
 
-.tok-kw {
-  color: var(--clerc-term-brand);
+.pg-code.shiki span {
+  color: var(--shiki-light);
 }
-.tok-str {
-  color: var(--clerc-tok-str);
-}
-.tok-typ {
-  color: var(--clerc-term-cyan);
-}
-.tok-num {
-  color: var(--clerc-term-purple);
-}
-.tok-cmt {
-  color: var(--clerc-term-faint);
+
+.dark .pg-code.shiki span {
+  color: var(--shiki-dark);
 }
 
 .pg-presets {

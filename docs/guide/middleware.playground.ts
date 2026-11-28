@@ -1,9 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  cli,
-  command,
-  middleware,
-} from "../.vitepress/components/playground-runtime.ts";
+import { cli, command, middleware } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const onionState: PlaygroundScenario = {
   createCli: () => {

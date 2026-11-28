@@ -2,10 +2,6 @@
 title: Constraints
 ---
 
-<script setup>
-import { customChecks, flagConstraints } from "./constraints.playground.ts";
-</script>
-
 # Constraints and Checks
 
 Compose flag relationships directly inside `flags` using `oneOf`, `exclusive`, `together`, and `atLeastOne`, and validate value-level invariants with `check`. One definition drives **TypeScript discriminated-union narrowing**, runtime validation, `--help` badges, shell completions, and MCP JSON Schemas.
@@ -56,7 +52,7 @@ const serve = command("serve <env>", {
 
 Every combinator also accepts an optional trailing `{ message, hints }` options object to customize its error diagnostic.
 
-<CliPlayground :scenario="flagConstraints" lang="en" />
+<CliPlayground demo="constraints/flagConstraints" />
 
 ## Cross-Field Checks (`check`)
 
@@ -99,7 +95,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="customChecks" lang="en" />
+<CliPlayground demo="constraints/customChecks" />
 
 ## Execution Lifecycle and Integrations
 

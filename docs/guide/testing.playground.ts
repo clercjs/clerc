@@ -1,9 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import {
-  Types,
-  cli,
-  command,
-} from "../.vitepress/components/playground-runtime.ts";
+import { Types, cli, command } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const memoryTerminal: PlaygroundScenario = {
   env: { ACME_TOKEN: "secret_123" },

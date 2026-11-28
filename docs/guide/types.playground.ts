@@ -1,12 +1,7 @@
-import type {
-  PlaygroundScenario,
-  TypeFunction,
-} from "../.vitepress/components/playground-runtime.ts";
-import {
-  Types,
-  cli,
-  command,
-} from "../.vitepress/components/playground-runtime.ts";
+import type { TypeFunction } from "clerc";
+import { Types, cli, command } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 const parseKeyValue: TypeFunction<[string, string]> = (raw) => {
   const eq = raw.indexOf("=");

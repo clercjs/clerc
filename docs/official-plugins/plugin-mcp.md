@@ -2,10 +2,6 @@
 title: "@clerc/plugin-mcp"
 ---
 
-<script setup>
-import { mcpRpc } from "./plugin-mcp.playground.ts";
-</script>
-
 # @clerc/plugin-mcp
 
 Exposes any Clerc CLI as a zero-dependency **Model Context Protocol (MCP)** stdio server. Every runnable command becomes a typed MCP tool, and every `--help` page becomes an ANSI-free MCP resource that AI agents (Claude Desktop, Cursor, Windsurf, Zed, etc.) can read and invoke through your full validation and middleware pipeline.
@@ -86,7 +82,7 @@ Point any MCP client at `acme mcp`:
 }
 ```
 
-<CliPlayground :scenario="mcpRpc" lang="en" />
+<CliPlayground demo="plugin-mcp/mcpRpc" />
 
 ## `McpOptions` Reference
 

@@ -2,17 +2,13 @@
 title: Error Handling
 ---
 
-<script setup>
-import { clercError, typoSuggestions } from "./errors.playground.ts";
-</script>
-
 # Error Handling
 
 Parse, validation, and constraint errors exit with code `2` (usage error) and automatically attach the command's `usage` line and `--help` hint. Schema configuration errors (`InvalidSchemaError`) and runtime/domain `ClercError` instances exit with code `1`. For unknown commands, flags, and enum values, Clerc suggests the closest match.
 
 ## Typo Suggestions
 
-<CliPlayground :scenario="typoSuggestions" lang="en" />
+<CliPlayground demo="errors/typoSuggestions" />
 
 ## Built-in Error Classes
 
@@ -57,7 +53,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="clercError" lang="en" />
+<CliPlayground demo="errors/clercError" />
 
 ::: tip Stack traces and clean exits
 

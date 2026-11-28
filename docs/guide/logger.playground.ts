@@ -1,5 +1,6 @@
-import type { PlaygroundScenario } from "../.vitepress/components/playground-runtime.ts";
-import { cli, command } from "../.vitepress/components/playground-runtime.ts";
+import { cli, command } from "clerc";
+
+import type { PlaygroundScenario } from "../.vitepress/playground/runtime.ts";
 
 export const alignedOutput: PlaygroundScenario = {
   createCli: () =>

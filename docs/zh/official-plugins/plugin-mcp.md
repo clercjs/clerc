@@ -2,10 +2,6 @@
 title: "@clerc/plugin-mcp"
 ---
 
-<script setup>
-import { mcpRpc } from "../../official-plugins/plugin-mcp.playground.ts";
-</script>
-
 # @clerc/plugin-mcp
 
 零依赖将 Clerc CLI 暴露为 **Model Context Protocol (MCP)** stdio 服务。每个可执行命令自动映射为带 JSON Schema 的 MCP Tool，每页 `--help` 文档映射为纯文本 MCP Resource，供 Claude Desktop、Cursor、Windsurf、Zed 等客户端调用。
@@ -84,7 +80,7 @@ await app.runMain();
 }
 ```
 
-<CliPlayground :scenario="mcpRpc" lang="zh" />
+<CliPlayground demo="plugin-mcp/mcpRpc" />
 
 ## `McpOptions` 配置项
 

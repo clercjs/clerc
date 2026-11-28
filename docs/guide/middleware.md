@@ -2,10 +2,6 @@
 title: Middleware
 ---
 
-<script setup>
-import { onionState } from "./middleware.playground.ts";
-</script>
-
 # Middleware
 
 Middlewares wrap command execution in an onion pipeline and can bundle shared flags, checks, error handlers, and typed `ctx.state`. Middleware only runs after a command matches and passes validation; built-in `--help` and `--version` requests return immediately without opening connections or running auth checks.
@@ -83,7 +79,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="onionState" lang="en" />
+<CliPlayground demo="middleware/onionState" />
 
 ## Execution Order and Deduplication
 

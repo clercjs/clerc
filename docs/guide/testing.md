@@ -2,10 +2,6 @@
 title: Testing
 ---
 
-<script setup>
-import { inspectModel, memoryTerminal } from "./testing.playground.ts";
-</script>
-
 # Testing
 
 Clerc never hard-codes `process.argv`, `process.env`, `process.stdout`, or `process.exit()` inside its execution core. Every CLI can be exercised in memory in a few milliseconds.
@@ -52,7 +48,7 @@ test("deploys using env token and rejects invalid enum", async () => {
 });
 ```
 
-<CliPlayground :scenario="memoryTerminal" lang="en" />
+<CliPlayground demo="testing/memoryTerminal" />
 
 ## Asserting Error Instances (`throwOnError`)
 
@@ -97,4 +93,4 @@ const helpAst = await buildHelpDocument(model);
 // helpAst.commandGroups[0].items -> [{ name: "build", ... }]
 ```
 
-<CliPlayground :scenario="inspectModel" lang="en" />
+<CliPlayground demo="testing/inspectModel" />

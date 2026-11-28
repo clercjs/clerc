@@ -2,10 +2,6 @@
 title: 中间件
 ---
 
-<script setup>
-import { onionState } from "../../guide/middleware.playground.ts";
-</script>
-
 # 中间件
 
 Clerc 使用洋葱中间件包裹命令执行，同时支持在中间件内打包共享选项、校验规则、错误处理器以及强类型 `ctx.state`。中间件只在匹配到可执行命令且参数校验通过后运行，`--help` 和 `--version` 会直接短路返回，不会触发数据库连接或鉴权逻辑。
@@ -83,7 +79,7 @@ const app = cli({
 });
 ```
 
-<CliPlayground :scenario="onionState" lang="zh" />
+<CliPlayground demo="middleware/onionState" />
 
 ## 执行顺序与引用去重
 
