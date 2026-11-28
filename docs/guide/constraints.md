@@ -60,26 +60,31 @@ Every combinator also accepts an optional trailing `{ message, hints }` options 
 
 ## Cross-Field Checks (`check`)
 
-For value-dependent invariants or rules spanning both `args` and `flags`, pass `check` on `command()`, `middleware()`, or `cli()`. A check can be a function `(ctx) => string | CheckFailure | void` (receiving `{ args, flags, provided, terminal }`) or `{ description, validate }` (whose `description` is rendered automatically under `NOTES` in `--help`):
+For value-dependent invariants or rules spanning both `args` and `flags`, pass `check` (a function or array of functions) on `command()`, `middleware()`, or `cli()`. Each check receives `{ args, flags, provided, terminal }` and returns a failure message string, a structured `{ message, detail?, hints? }` object, or `undefined`:
 
 ```ts
 import { cli, command, exclusive } from "clerc";
 
 const listen = command("listen", {
   flags: {
-    port: { type: Number, short: "p", default: 3000 },
-    sudo: Boolean,
-  },
-  check: {
-    description: "Ports below 1024 require --sudo",
-    validate({ flags }) {
-      if (flags.port < 1024 && !flags.sudo) {
-        return {
-          message: "ports below 1024 require '--sudo'",
-          hints: [`pass '--sudo' or choose a port >= 1024`],
-        };
-      }
+    port: {
+      type: Number,
+      short: "p",
+      default: 3000,
+      description: "Port to listen on (below 1024 requires --sudo)",
     },
+    sudo: {
+      type: Boolean,
+      description: "Allow privileged ports",
+    },
+  },
+  check({ flags }) {
+    if (flags.port < 1024 && !flags.sudo) {
+      return {
+        message: "ports below 1024 require '--sudo'",
+        hints: [`pass '--sudo' or choose a port >= 1024`],
+      };
+    }
   },
   run({ flags, log }) {
     log.success(`Listening on port ${flags.port}`);
@@ -102,6 +107,6 @@ Constraints and `check` validators run **after** flag/argument parsing, environm
 
 - **Built-in `--help` & `--version`** short-circuit before constraint evaluation, so help and version output are never blocked by `oneOf` or `atLeastOne`.
 - **Diagnostics**: violations throw `ConstraintError` (`code: "ERR_CONSTRAINT"`, exit code `2`) with automatic `env` hints and the command's `usage` line.
-- **`--help`**: constraints render inline on options (`[conflicts: --yaml]`, `[with: --tls-cert]`, `[one of: ...]`) or on wrapped group headings (`TLS OPTIONS  [together]`), and `{ description, validate }` checks appear under `NOTES`.
+- **`--help`**: constraints render inline on options (`[conflicts: --yaml]`, `[with: --tls-cert]`, `[one of: ...]`) or on wrapped group headings (`TLS OPTIONS  [together]`).
 - **`@clerc/plugin-completions`**: `exclusive` and `oneOf` hide conflicting flags once a partner is already present on the command line.
 - **`@clerc/plugin-mcp`**: constraints export directly to JSON Schema `dependentRequired` and `allOf` rules on exposed tool schemas.

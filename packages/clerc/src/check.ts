@@ -1,5 +1,6 @@
 import { ConstraintError } from "./errors";
 import type { Terminal } from "./terminal";
+import type { MaybeArray } from "./utils";
 
 export interface CheckContext<
   Args extends Record<string, any> = Record<string, any>,
@@ -27,72 +28,34 @@ export type CheckFn<
   Flags extends Record<string, any> = Record<string, any>,
 > = (ctx: CheckContext<Args, Flags>) => CheckResult | Promise<CheckResult>;
 
-export interface CheckOptions<
-  Args extends Record<string, any> = Record<string, any>,
-  Flags extends Record<string, any> = Record<string, any>,
-> {
-  readonly description: string;
-  readonly validate: CheckFn<Args, Flags>;
-}
-
-export type CheckItem<
-  Args extends Record<string, any> = Record<string, any>,
-  Flags extends Record<string, any> = Record<string, any>,
-> = CheckFn<Args, Flags> | CheckOptions<Args, Flags>;
-
 export type CheckInput<
   Args extends Record<string, any> = Record<string, any>,
   Flags extends Record<string, any> = Record<string, any>,
-> = CheckItem<Args, Flags> | readonly CheckItem<Args, Flags>[];
+> = MaybeArray<CheckFn<Args, Flags>>;
 
-export interface CompiledChecks {
-  readonly validators: readonly CheckFn[];
-  readonly notes: readonly string[];
-}
-
-export const EMPTY_CHECKS: CompiledChecks = {
-  validators: [],
-  notes: [],
-};
-
-export function compileChecks(
+export function collectChecks(
   inputs: readonly (CheckInput<any, any> | undefined)[],
-): CompiledChecks {
-  const validators: CheckFn[] = [];
-  const notes: string[] = [];
-
-  function addItem(item: CheckItem<any, any>): void {
-    if (typeof item === "function") {
-      validators.push(item);
-    } else {
-      validators.push(item.validate);
-      notes.push(item.description);
-    }
-  }
-
+): readonly CheckFn[] {
+  const checks: CheckFn[] = [];
   for (const input of inputs) {
     if (!input) {
       continue;
     }
     if (Array.isArray(input)) {
-      for (const item of input) {
-        addItem(item);
-      }
+      checks.push(...input);
     } else {
-      addItem(input as CheckItem<any, any>);
+      checks.push(input as CheckFn);
     }
   }
 
-  return validators.length === 0 && notes.length === 0
-    ? EMPTY_CHECKS
-    : { validators, notes };
+  return checks;
 }
 
 export async function validateChecks(
-  validators: readonly CheckFn[],
+  checks: readonly CheckFn[],
   ctx: CheckContext,
 ): Promise<void> {
-  for (const validate of validators) {
+  for (const validate of checks) {
     const result = await validate(ctx);
     if (typeof result === "string" && result.length > 0) {
       throw new ConstraintError(result);

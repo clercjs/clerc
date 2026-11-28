@@ -1,7 +1,7 @@
 import type { ArgDescriptor, CompiledArgs } from "./args";
 import { compileArgs, parseCommandSpec } from "./args";
-import type { CheckInput, CompiledChecks } from "./check";
-import { compileChecks } from "./check";
+import type { CheckFn, CheckInput } from "./check";
+import { collectChecks } from "./check";
 import type { Command } from "./command";
 import { COMMAND_ID, COMMAND_NODE } from "./command";
 import type { CommandNode } from "./command-tree";
@@ -35,7 +35,7 @@ export interface CompiledNodeRuntime {
   readonly args?: CompiledArgs;
   readonly argsByName: ReadonlyMap<string, ArgDescriptor>;
   readonly constraints: readonly FlagConstraint[];
-  readonly checks: CompiledChecks;
+  readonly checks: readonly CheckFn[];
   readonly middlewares: readonly Middleware<any, any>[];
   readonly errorHandlers: readonly ErrorHandler<any, any>[];
   defaultAcceptsArgs: boolean;
@@ -408,7 +408,7 @@ export function compileCli(input: CompileCliInput): CompiledCli {
       (args?.descriptors ?? []).map((a) => [a.name, a]),
     );
 
-    const checks = compileChecks([
+    const checks = collectChecks([
       ...env.middlewares.map((m) => m.check),
       ...env.directChecks,
     ]);
@@ -418,7 +418,6 @@ export function compileCli(input: CompileCliInput): CompiledCli {
       localFlags,
       builtinFlags: builtins.descriptors,
       constraints: compiledFlagSet.constraints,
-      checkNotes: checks.notes,
     });
 
     const mwErrorHandlers = env.middlewares

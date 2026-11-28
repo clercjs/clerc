@@ -90,17 +90,14 @@ export const customChecks: PlaygroundScenario = {
               type: Number,
               short: "p",
               default: 3000,
-              description: "Port",
+              description: "Port (below 1024 requires --sudo)",
             },
             sudo: { type: Boolean, description: "Allow privileged ports" },
           },
-          check: {
-            description: "Ports below 1024 require --sudo",
-            validate({ flags }) {
-              if (flags.port < 1024 && !flags.sudo) {
-                return "ports below 1024 require '--sudo'";
-              }
-            },
+          check({ flags }) {
+            if (flags.port < 1024 && !flags.sudo) {
+              return "ports below 1024 require '--sudo'";
+            }
           },
           run({ flags, log }) {
             log.success(`Listening on port ${flags.port}`);

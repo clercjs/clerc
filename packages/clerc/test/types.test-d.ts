@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type {
-  CheckOptions,
+  CheckFn,
   CliContext,
   CommandContext,
   FlagsDefinition,
@@ -284,15 +284,12 @@ describe("core combinator static types & discriminated union narrowing", () => {
           statusMax: Types.Integer({ min: 100, max: 599 }),
         }),
       ),
-      check: {
-        description: "--status-max must be >= --status-min",
-        validate({ args, flags }) {
-          expectTypeOf(args.id).toEqualTypeOf<string>();
-          expectTypeOf(flags.statusMin).toEqualTypeOf<number | undefined>();
-          expectTypeOf(flags.statusMax).toEqualTypeOf<number | undefined>();
+      check({ args, flags }) {
+        expectTypeOf(args.id).toEqualTypeOf<string>();
+        expectTypeOf(flags.statusMin).toEqualTypeOf<number | undefined>();
+        expectTypeOf(flags.statusMax).toEqualTypeOf<number | undefined>();
 
-          return undefined;
-        },
+        return undefined;
       },
       run() {},
     });
@@ -395,12 +392,10 @@ describe("core combinator static types & discriminated union narrowing", () => {
     expectTypeOf<
       MiddlewareContext<{ json: boolean }, { user: string }>
     >().toMatchTypeOf<CliContext<{ json: boolean }, { user: string }>>();
-    const checkOpts: CheckOptions<{ id: string }, { min?: number }> = {
-      description: "valid id",
-      validate: ({ args }) => (args.id ? undefined : "missing id"),
-    };
+    const checkFn: CheckFn<{ id: string }, { min?: number }> = ({ args }) =>
+      args.id ? undefined : "missing id";
     const mwOpts: MiddlewareOptions = {};
-    void checkOpts;
+    void checkFn;
     void mwOpts;
     void new ConstraintError("constraint violation");
     void new ClercError("domain failure");

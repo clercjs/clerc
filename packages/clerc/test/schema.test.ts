@@ -281,7 +281,7 @@ describe("Types and Standard Schema v1", () => {
     expect(() => badArgCli.buildModel()).toThrow(InvalidSchemaError);
   });
 
-  it("supports group(title, constraint), auto env hints, structured check failures, and documented NOTES", async () => {
+  it("supports group(title, constraint), auto env hints, and structured check failures", async () => {
     const terminal = createMemoryTerminal();
 
     const app = createTestBaseCli({
@@ -310,21 +310,18 @@ describe("Types and Standard Schema v1", () => {
               }),
             ),
           ],
-          check: {
-            description: "--status-max must be >= --status-min",
-            validate({ flags }) {
-              if (
-                flags.statusMin !== undefined &&
-                flags.statusMax !== undefined &&
-                flags.statusMax < flags.statusMin
-              ) {
-                return {
-                  message: "'--status-max' must be >= '--status-min'",
-                  detail: `got min=${flags.statusMin}, max=${flags.statusMax}`,
-                  hints: ["pass a status-max >= status-min"],
-                };
-              }
-            },
+          check({ flags }) {
+            if (
+              flags.statusMin !== undefined &&
+              flags.statusMax !== undefined &&
+              flags.statusMax < flags.statusMin
+            ) {
+              return {
+                message: "'--status-max' must be >= '--status-min'",
+                detail: `got min=${flags.statusMin}, max=${flags.statusMax}`,
+                hints: ["pass a status-max >= status-min"],
+              };
+            }
           },
           run() {},
         }),
@@ -369,6 +366,6 @@ describe("Types and Standard Schema v1", () => {
 
     expect(help).toContain("MONITOR FIELDS  [at least one]");
     expect(help).toContain("[one of: --token, --token-file]");
-    expect(help).toContain("NOTES\n  --status-max must be >= --status-min");
+    expect(help).not.toContain("NOTES");
   });
 });

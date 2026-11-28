@@ -451,8 +451,8 @@ export function cli(
           runtime.userFlags.byName,
         );
       }
-      if (runtime.checks.validators.length > 0) {
-        await validateChecks(runtime.checks.validators, {
+      if (runtime.checks.length > 0) {
+        await validateChecks(runtime.checks, {
           args: ctx.args,
           flags: ctx.flags,
           provided: { flags: provided, args: providedArgs },

@@ -403,7 +403,7 @@ const monitorEdit = command("edit <id>", {
       },
       statusMax: {
         type: Types.Integer({ min: 100, max: 599 }),
-        description: "Maximum accepted HTTP status code",
+        description: "Maximum accepted HTTP status code (>= --status-min)",
       },
       interval: {
         type: Types.Integer({ min: 10, max: 86_400 }),
@@ -415,23 +415,20 @@ const monitorEdit = command("edit <id>", {
       },
     }),
   ),
-  check: {
-    description: "--status-max must be >= --status-min",
-    validate({ flags }) {
-      if (
-        flags.statusMin !== undefined &&
-        flags.statusMax !== undefined &&
-        flags.statusMax < flags.statusMin
-      ) {
-        return {
-          message: "'--status-max' must be >= '--status-min'",
-          detail: `received status-min=${flags.statusMin}, status-max=${flags.statusMax}`,
-          hints: [
-            `try '--status-min ${flags.statusMax} --status-max ${flags.statusMin}'`,
-          ],
-        };
-      }
-    },
+  check({ flags }) {
+    if (
+      flags.statusMin !== undefined &&
+      flags.statusMax !== undefined &&
+      flags.statusMax < flags.statusMin
+    ) {
+      return {
+        message: "'--status-max' must be >= '--status-min'",
+        detail: `received status-min=${flags.statusMin}, status-max=${flags.statusMax}`,
+        hints: [
+          `try '--status-min ${flags.statusMax} --status-max ${flags.statusMin}'`,
+        ],
+      };
+    }
   },
   run(ctx) {
     ctx.log.success(

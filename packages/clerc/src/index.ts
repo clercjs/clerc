@@ -37,8 +37,6 @@ export type {
   CheckFailure,
   CheckFn,
   CheckInput,
-  CheckItem,
-  CheckOptions,
   CheckResult,
 } from "./check";
 export type {

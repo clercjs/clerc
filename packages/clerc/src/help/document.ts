@@ -442,10 +442,7 @@ export async function buildHelpDocument(
     : [];
 
   const notesSource = command?.notes ?? (isRoot ? meta.notes : undefined);
-  const rawNotes = notesSource
-    ? await resolveAsyncValue(notesSource, meta)
-    : [];
-  const notes = [...rawNotes, ...node.checkNotes];
+  const notes = notesSource ? await resolveAsyncValue(notesSource, meta) : [];
 
   const flagMap = new Map<string, FlagDescriptor>(
     getCommandFlags(model, node).map((f) => [f.name, f]),

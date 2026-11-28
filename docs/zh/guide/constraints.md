@@ -60,26 +60,31 @@ const serve = command("serve <env>", {
 
 ## 跨字段条件校验（`check`）
 
-涉及具体取值或同时横跨 `args` 与 `flags` 的业务规则，可在 `command()`、`middleware()` 或 `cli()` 上配置 `check`。既可以直接传函数 `(ctx) => string | CheckFailure | void`（接收 `{ args, flags, provided, terminal }`），也可以传入 `{ description, validate }`（`description` 会自动展示在 `--help` 的 `NOTES` 区块中）：
+涉及具体取值或同时横跨 `args` 与 `flags` 的业务规则，可在 `command()`、`middleware()` 或 `cli()` 上配置 `check`（支持单个函数或函数数组）。校验函数接收 `{ args, flags, provided, terminal }`，返回错误提示字符串、结构化的 `{ message, detail?, hints? }` 对象，或返回 `undefined` 表示通过：
 
 ```ts
 import { cli, command, exclusive } from "clerc";
 
 const listen = command("listen", {
   flags: {
-    port: { type: Number, short: "p", default: 3000 },
-    sudo: Boolean,
-  },
-  check: {
-    description: "Ports below 1024 require --sudo",
-    validate({ flags }) {
-      if (flags.port < 1024 && !flags.sudo) {
-        return {
-          message: "ports below 1024 require '--sudo'",
-          hints: ["pass '--sudo' or choose a port >= 1024"],
-        };
-      }
+    port: {
+      type: Number,
+      short: "p",
+      default: 3000,
+      description: "监听端口（小于 1024 需要 --sudo）",
     },
+    sudo: {
+      type: Boolean,
+      description: "允许绑定特权端口",
+    },
+  },
+  check({ flags }) {
+    if (flags.port < 1024 && !flags.sudo) {
+      return {
+        message: "ports below 1024 require '--sudo'",
+        hints: ["pass '--sudo' or choose a port >= 1024"],
+      };
+    }
   },
   run({ flags, log }) {
     log.success(`Listening on port ${flags.port}`);
@@ -102,6 +107,6 @@ const app = cli({
 
 - **`--help` 与 `--version` 优先短路**：不会被 `oneOf` 或 `atLeastOne` 阻断。
 - **结构化报错**：校验失败抛出 `ConstraintError`（`code: "ERR_CONSTRAINT"`，退出码 `2`），自动附带关联环境变量提示与当前命令的 `usage` 行。
-- **`--help` 展示**：约束组合子会自动内联渲染为选项标签（如 `[conflicts: --yaml]`、`[with: --tls-cert]`）或分组标题注解（如 `TLS OPTIONS  [together]`），带 `description` 的 `check` 会自动归入 `NOTES`。
+- **`--help` 展示**：约束组合子会自动内联渲染为选项标签（如 `[conflicts: --yaml]`、`[with: --tls-cert]`）或分组标题注解（如 `TLS OPTIONS  [together]`）。
 - **`@clerc/plugin-completions`**：`exclusive` 与 `oneOf` 会在伙伴选项出现后自动隐藏互斥选项。
 - **`@clerc/plugin-mcp`**：约束组合子会自动导出为 JSON Schema 的 `dependentRequired` 与 `allOf` 约束。

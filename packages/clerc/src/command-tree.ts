@@ -21,7 +21,6 @@ export interface CommandNode {
   readonly localFlags: readonly FlagDescriptor[];
   readonly builtinFlags: readonly FlagDescriptor[];
   readonly constraints: readonly FlagConstraint[];
-  readonly checkNotes: readonly string[];
 }
 
 export interface CommandTree {
@@ -101,7 +100,6 @@ const createNode = (
   localFlags: [],
   builtinFlags: [],
   constraints: [],
-  checkNotes: [],
 });
 
 const isVisibleNode = (node: CommandNode): boolean =>
@@ -189,7 +187,7 @@ export class CommandTreeBuilder implements CommandTree {
     node: CommandNode,
     compiled: Pick<
       CommandNode,
-      "args" | "localFlags" | "builtinFlags" | "constraints" | "checkNotes"
+      "args" | "localFlags" | "builtinFlags" | "constraints"
     >,
   ): void {
     Object.assign(node as MutableCommandNode, compiled);
