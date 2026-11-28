@@ -39,6 +39,7 @@ Every log call returns a `LogEntry` with a chainable `.line(...values)` method s
 
 ```ts
 import type { CommandContext } from "clerc";
+
 declare const ctx: CommandContext;
 // ---cut---
 const entry = ctx.log.step("Applying migrations");
@@ -52,6 +53,7 @@ entry.line("0002_indexes.sql (8ms)");
 
 ```ts
 import type { CommandContext } from "clerc";
+
 declare const ctx: CommandContext;
 // ---cut---
 ctx.log.box.warn(

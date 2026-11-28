@@ -59,12 +59,12 @@ test("deploys using env token and rejects invalid enum", async () => {
 When a test wants to assert the specific `ClercError` subclass rather than rendered `stderr` text, pass `throwOnError: true`:
 
 ```ts
-import type { Cli } from "clerc";
-import { createMemoryTerminal } from "clerc";
+import { MissingRequiredFlagError, createMemoryTerminal } from "clerc";
+// ---cut-start---
 import { expect } from "vitest";
-declare const app: Cli;
-// ---cut---
-import { MissingRequiredFlagError } from "clerc";
+
+declare const app: import("clerc").Cli;
+// ---cut-end---
 
 await expect(
   app.run(["deploy", "prod"], {

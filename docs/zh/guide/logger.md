@@ -40,6 +40,7 @@ log.error(
 
 ```ts
 import type { CommandContext } from "clerc";
+
 declare const ctx: CommandContext;
 // ---cut---
 const step = ctx.log.step("正在执行数据库迁移");

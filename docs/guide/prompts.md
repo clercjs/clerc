@@ -42,6 +42,7 @@ When you need explicit lifecycle control, use `ctx.log.spinner()`, which exposes
 
 ```ts
 import type { CommandContext } from "clerc";
+
 declare const ctx: CommandContext;
 // ---cut---
 const s = ctx.log.spinner();

@@ -42,6 +42,7 @@ const app = cli({ name: "acme", version: "1.0.0", commands: [upload] });
 
 ```ts
 import type { CommandContext } from "clerc";
+
 declare const ctx: CommandContext;
 // ---cut---
 const s = ctx.log.spinner();
